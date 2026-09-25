@@ -1,0 +1,15 @@
+{
+  "registerVersion": "GRIT-SCAN-ALIASES-0.3",
+  "note": "Explicit reviewed alias overlay keyed on slug-derived RegistryEntry IDs (RegistryKind-slugified-canonical-name), generated from the actual URS Entity Info.xlsx workbook. Canonical workbook names remain primary; aliases are never inferred at runtime. Slug collisions in the loader fail loudly rather than silently re-pointing an alias.",
+  "aliases": [
+    { "entity_id": "ENTITY-st-engineering-urban-solutions-ltd-taiwan-branch", "alias": "STE Urban Solutions Taiwan" },
+    { "entity_id": "ENTITY-st-engineering-urban-solutions-ltd-taiwan-branch", "alias": "ST Engineering Urban Solutions Taiwan" },
+    { "entity_id": "ENTITY-st-engineering-taiwan-ltd", "alias": "ST Engineering Taiwan" },
+    { "entity_id": "SUPPLIER-leonardo-s-p-a", "alias": "Leonardo" },
+    { "entity_id": "SUPPLIER-l-s-electric-co-ltd", "alias": "L&S Electric" },
+    { "entity_id": "SUPPLIER-infochamp-systems-corporation", "alias": "InfoChamp Systems" },
+    { "entity_id": "SUPPLIER-ub-union-technologies-inc", "alias": "UB Union" },
+    { "entity_id": "SUPPLIER-ag-neovo-technology-corporation", "alias": "AG Neovo" },
+    { "entity_id": "SUPPLIER-tatung-system-technologies-inc", "alias": "Tatung" }
+  ]
+}
