@@ -92,6 +92,7 @@ class Supervisor:
         self.guard_log: list[dict[str, Any]] = []
         self.review_log: list[dict[str, Any]] = []
         self.approvals: list[dict[str, Any]] = []
+        self.accepted_proposals: list[dict[str, Any]] = []
         self._packages: dict[str, Package] = {}
         self._projection: dict[tuple[str, str], str] = {}
 
@@ -192,6 +193,40 @@ class Supervisor:
             }
         )
         return record_id
+
+    def submit_agent_proposal(
+        self,
+        proposal: dict[str, Any],
+        *,
+        signal_id: str,
+        execution_id: str,
+        correlation_id: str,
+        permitted_urls: set[str] | None = None,
+    ) -> dict[str, Any]:
+        from agents.validate import validate_proposal
+
+        reasons = validate_proposal(proposal, known_entity_ids=self.known_entity_ids, permitted_urls=permitted_urls)
+        accepted = not reasons
+        record_id = f"ag-{len(self.agent_log) + 1:03d}"
+        record = {
+            "record_id": record_id,
+            "signal_id": signal_id,
+            "execution_id": execution_id,
+            "agent_name": proposal.get("agent_name"),
+            "status": "SUCCEEDED" if accepted else "REJECTED",
+            "accepted": accepted,
+            "reason_codes": reasons,
+            "correlation_id": correlation_id,
+            "prompt_version": proposal.get("prompt_version"),
+            "response_hash": proposal.get("response_hash"),
+            "proposal": proposal,
+            "unknown_entity_ids": [item for item in proposal.get("cited_entity_ids") or [] if item not in self.known_entity_ids],
+            "supervisor_validation_passed": accepted,
+        }
+        self.agent_log.append(record)
+        if accepted:
+            self.accepted_proposals.append(record)
+        return record
 
     def create_package(self, signal_ids: list[str], *, package_id: str, version: int, content: dict[str, Any]) -> Package:
         members = tuple(sorted(signal_ids))

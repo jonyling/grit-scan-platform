@@ -26,6 +26,7 @@ MODULES = (
     "tests.test_p3_review_gate",
     "tests.test_p3_supervisor",
     "tests.test_p4_ui",
+    "tests.test_p5_agents",
 )
 
 

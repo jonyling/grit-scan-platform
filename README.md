@@ -19,6 +19,7 @@ not a harm score.
 - `grit_scan/transition_guard.py` and `grit_scan/review_gate.py`: pure workflow decisions. They do not write state.
 - `supervisor/`: the only writer of the workflow ledger. It persists a row only after `TransitionGuard()` returns `ALLOW`.
 - `ui/`: the Streamlit review screen. It calls `ReviewGate()`. It does not write state.
+- `agents/`: Researcher, Assessment, Critic, and Reporting. They propose. The Supervisor accepts or rejects. Gemini is not called.
 - `tests/` and `run-impact-contract-tests.py`: the contract runner. P0 and P2 fixture tests are registered.
 - `specs/`: governing specifications. Spec 34 is the build order.
 - `URS Entity Info.xlsx` and `config/registry_aliases.json`: the URS ontology inputs the tests require.

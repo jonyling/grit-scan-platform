@@ -179,7 +179,7 @@ Replaces the model-driven app. Minimum: signal list, signal detail with its impa
 | **P2** | S2 matchers + S7 pipeline | Fixture contracts pass (89 total with P0). Byte-identical 2026-09-21 `revision.json` is not yet proven: the governed registers and golden output are content-excluded on this VM. |
 | **P3** | S4 guards + S5 Supervisor | In-memory chain proven: `NEW → APPROVED` with an `ALLOW` guard on every advance, plus stale-sequence, idempotency conflict, and `FAILED → RESTORE`. Dataverse persistence of the ledger is not wired in this repo. |
 | **P4** | S8 UI | Review screen calls `ReviewGate()` and does not write state. An approval names the exact package version and hash. Streamlit rendering is present; the contract test drives the screen action, not a browser. |
-| **P5** | S6 agents | Proposals logged, validated, rejected when unevidenced |
+| **P5** | S6 agents | Four agents propose through tools. A proposal that cites an entity not in the register is logged and rejected, and no workflow row is written. Live Gemini is not called: no credential is stored here. |
 | **P6** | Theme/Event layer (specs 22, 26, 31) | Deferred — do not start before P4 |
 
 Do not begin a phase before its predecessor's exit criteria are met.
@@ -197,6 +197,7 @@ Do not begin a phase before its predecessor's exit criteria are met.
 7. **P2 golden week is not reproducible here.** The four matchers and the weekly pipeline are ported and covered by in-repo fixtures that encode the PowerShell contracts, including the `ai`/`war` short-token guard. `URS-TW-Exposure-Ontology.json`, the source register, LOB profiles, annual-risks JSON, the global baseline, and `output/2026-09-21/` are content-excluded, so byte-identical `revision.json` cannot be checked until those files are supplied another way. Python JSON will also not be byte-identical to Windows PowerShell `ConvertTo-Json`.
 8. **P3 ledger is in memory.** `TransitionGuard()` and `ReviewGate()` are pure. The Supervisor is the only writer, and a denied decision appends nothing. The initial `NEW` row is the spec 20 exception and has no guard. Live Dataverse writes are not part of this proof: this repo has no gateway client and no credential.
 9. **P4 screen is the same in-memory ledger.** The review action calls `ReviewGate()` and the Supervisor persists. `NOT_ASSESSED` and `INSUFFICIENT_DATA` render as "not established". Empty fields are omitted. The contract test does not open a browser. `streamlit` is on the approved list and in `requirements.txt`; install it in a venv before `streamlit run ui/app.py`. Do not install it into system Python.
+10. **P5 does not call Gemini.** The four agents have narrow prompts and a tool surface. The Critic must report `NOT_VERIFIABLE` rather than fill a gap. The Supervisor logs every proposal with its prompt version and response hash, and rejects an unknown entity without writing a workflow row. `gemini_proposer()` refuses to run. No API key is stored in the repo.
 
 ---
 
