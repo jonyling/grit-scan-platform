@@ -18,6 +18,7 @@ not a harm score.
 - `grit_scan/weekly_pipeline.py`: one weekly chain — import, revise, rank, write the review delta.
 - `grit_scan/transition_guard.py` and `grit_scan/review_gate.py`: pure workflow decisions. They do not write state.
 - `supervisor/`: the only writer of the workflow ledger. It persists a row only after `TransitionGuard()` returns `ALLOW`.
+- `ui/`: the Streamlit review screen. It calls `ReviewGate()`. It does not write state.
 - `tests/` and `run-impact-contract-tests.py`: the contract runner. P0 and P2 fixture tests are registered.
 - `specs/`: governing specifications. Spec 34 is the build order.
 - `URS Entity Info.xlsx` and `config/registry_aliases.json`: the URS ontology inputs the tests require.
@@ -32,4 +33,5 @@ agent environment exports, and GCP_Gemini secrets. Do not import them.
 
 ```bash
 python3 run-impact-contract-tests.py
+streamlit run ui/app.py
 ```

@@ -282,7 +282,7 @@ class Supervisor:
         self._projection[(signal_id, execution_id)] = row.row_id
         return decision | {"row": row}
 
-    def submit_review(
+    def review_context(
         self,
         package_id: str,
         *,
@@ -290,7 +290,6 @@ class Supervisor:
         reviewer_intent: str,
         findings: list[dict[str, Any]],
         correlation_id: str,
-        accepted_at: str,
         reviewer_is_human: bool = True,
         reviewer_is_eligible: bool = True,
         separation_of_duties_passed: bool = True,
@@ -298,7 +297,7 @@ class Supervisor:
         missing_signal_ids: list[str] | None = None,
     ) -> dict[str, Any]:
         package = self._packages[package_id]
-        context = {
+        return {
             "review_package_id": package.package_id,
             "review_package_version": package.version,
             "review_package_hash": package.content_hash,
@@ -321,6 +320,35 @@ class Supervisor:
             "configuration_version": self.configuration_version,
             "function_version": REVIEW_GATE_VERSION,
         }
+
+    def submit_review(
+        self,
+        package_id: str,
+        *,
+        reviewer_id: str,
+        reviewer_intent: str,
+        findings: list[dict[str, Any]],
+        correlation_id: str,
+        accepted_at: str,
+        reviewer_is_human: bool = True,
+        reviewer_is_eligible: bool = True,
+        separation_of_duties_passed: bool = True,
+        policy_is_active: bool = True,
+        missing_signal_ids: list[str] | None = None,
+    ) -> dict[str, Any]:
+        context = self.review_context(
+            package_id,
+            reviewer_id=reviewer_id,
+            reviewer_intent=reviewer_intent,
+            findings=findings,
+            correlation_id=correlation_id,
+            reviewer_is_human=reviewer_is_human,
+            reviewer_is_eligible=reviewer_is_eligible,
+            separation_of_duties_passed=separation_of_duties_passed,
+            policy_is_active=policy_is_active,
+            missing_signal_ids=missing_signal_ids,
+        )
+        package = self._packages[package_id]
         decision = review_gate(context)
         self.review_log.append(decision)
         outcome = decision["review_outcome"]
