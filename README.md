@@ -14,10 +14,12 @@ not a harm score.
 ## What is in this seed
 
 - `grit_scan/`: scoring core, including opportunity-cost classification.
-- `tests/` and `run-impact-contract-tests.py`: the contract runner.
+- `grit_scan/matchers/`: credibility, exposure, LOB, and theme matchers. They bind text. They do not score.
+- `grit_scan/weekly_pipeline.py`: one weekly chain — import, revise, rank, write the review delta.
+- `tests/` and `run-impact-contract-tests.py`: the contract runner. P0 and P2 fixture tests are registered.
 - `specs/`: governing specifications. Spec 34 is the build order.
 - `URS Entity Info.xlsx` and `config/registry_aliases.json`: the URS ontology inputs the tests require.
-- `acquisition/`: empty on purpose. GCP_Gemini collectors are not copied yet.
+- `acquisition/`: candidate-only adapters for approved web, wild scan, Sphera, AGILE, and ISOS.
 
 ## Left behind on purpose
 

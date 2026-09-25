@@ -19,6 +19,9 @@ MODULES = (
     "tests.test_is_high_negative_impact",
     "tests.test_assess_impact",
     "tests.test_classify_opportunity_cost",
+    "tests.test_p2_matchers",
+    "tests.test_p2_weekly_pipeline",
+    "tests.test_p2_acquisition",
 )
 
 

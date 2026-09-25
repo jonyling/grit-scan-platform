@@ -176,7 +176,7 @@ Replaces the model-driven app. Minimum: signal list, signal detail with its impa
 |---|---|---|
 | **P0** | VM setup, repo clone, venv | 73 tests pass on the VM unchanged |
 | **P1** | S3 gateway + app-only auth | ~~Idempotent round-trip against Dataverse~~ **DONE 2026-09-24** |
-| **P2** | S2 matchers + S7 pipeline | 2026-09-21 week reproduced exactly |
+| **P2** | S2 matchers + S7 pipeline | Fixture contracts pass (89 total with P0). Byte-identical 2026-09-21 `revision.json` is not yet proven: the governed registers and golden output are content-excluded on this VM. |
 | **P3** | S4 guards + S5 Supervisor | Full NEW→APPROVED chain with guard evidence |
 | **P4** | S8 UI | Human approves a package through the UI |
 | **P5** | S6 agents | Proposals logged, validated, rejected when unevidenced |
@@ -194,6 +194,7 @@ Do not begin a phase before its predecessor's exit criteria are met.
 4. **Wire syndication inflates corroboration.** One wire story carried by three papers counts as three outlets and alone clears the ≥2 bar. Acquisition must tag syndicated pickups before scoring sees them.
 5. ~~Auth is still interactive.~~ **Resolved 2026-09-24.** App-only (`ConfidentialClientApplication`) auth is fully proven against live Dataverse — token acquisition, authenticated read, create, update, and dedup all confirmed via `test_dataverse_app_only.py` and `test_dataverse_roundtrip.py`. P1 is closed.
 6. **Resolved with Group-IT.** The SSH VM is AWS (`AWS-GRITWAU02`, kernel `6.17.0-1019-aws`). The service called from that VM is GCP. Do not treat the VM as a GCP instance, and do not call AWS application services from it. The rejected PostgreSQL option was an AWS database experiment, not the compute platform.
+7. **P2 golden week is not reproducible here.** The four matchers and the weekly pipeline are ported and covered by in-repo fixtures that encode the PowerShell contracts, including the `ai`/`war` short-token guard. `URS-TW-Exposure-Ontology.json`, the source register, LOB profiles, annual-risks JSON, the global baseline, and `output/2026-09-21/` are content-excluded, so byte-identical `revision.json` cannot be checked until those files are supplied another way. Python JSON will also not be byte-identical to Windows PowerShell `ConvertTo-Json`.
 
 ---
 
