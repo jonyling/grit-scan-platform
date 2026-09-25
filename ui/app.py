@@ -9,6 +9,13 @@ The screen calls ReviewGate through ui.actions. It does not write the ledger.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 from ui.actions import submit_from_screen
 from ui.seed import ACCEPTED_AT, CORRELATION_ID, seed_pending_package
 from ui.view_model import package_view, signal_detail, signal_list
