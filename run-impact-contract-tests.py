@@ -22,6 +22,9 @@ MODULES = (
     "tests.test_p2_matchers",
     "tests.test_p2_weekly_pipeline",
     "tests.test_p2_acquisition",
+    "tests.test_p3_transition_guard",
+    "tests.test_p3_review_gate",
+    "tests.test_p3_supervisor",
 )
 
 

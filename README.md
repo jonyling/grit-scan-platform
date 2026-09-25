@@ -16,6 +16,8 @@ not a harm score.
 - `grit_scan/`: scoring core, including opportunity-cost classification.
 - `grit_scan/matchers/`: credibility, exposure, LOB, and theme matchers. They bind text. They do not score.
 - `grit_scan/weekly_pipeline.py`: one weekly chain — import, revise, rank, write the review delta.
+- `grit_scan/transition_guard.py` and `grit_scan/review_gate.py`: pure workflow decisions. They do not write state.
+- `supervisor/`: the only writer of the workflow ledger. It persists a row only after `TransitionGuard()` returns `ALLOW`.
 - `tests/` and `run-impact-contract-tests.py`: the contract runner. P0 and P2 fixture tests are registered.
 - `specs/`: governing specifications. Spec 34 is the build order.
 - `URS Entity Info.xlsx` and `config/registry_aliases.json`: the URS ontology inputs the tests require.
