@@ -23,7 +23,8 @@ not a harm score.
 - `tests/` and `run-impact-contract-tests.py`: the contract runner. P0 and P2 fixture tests are registered.
 - `specs/`: governing specifications. Spec 34 is the build order.
 - `URS Entity Info.xlsx` and `config/registry_aliases.json`: the URS ontology inputs the tests require.
-- `acquisition/`: candidate-only adapters for approved web, wild scan, Sphera, AGILE, and ISOS.
+- `acquisition/`: candidate-only adapters for approved web, wild scan, Sphera, AGILE, and ISOS. The wild scan reads the GDELT DOC artlist. It does not score.
+- `grit_scan/theme_layer.py`: theme and event matches, metric calculation, escalation, and the register write gate. They do not write state.
 
 ## Left behind on purpose
 

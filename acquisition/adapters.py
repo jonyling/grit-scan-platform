@@ -15,6 +15,7 @@ def from_articles(records: list[dict[str, Any]], *, lane: SourceLane, fetched_at
         url = _optional(record.get("url") or record.get("article_url"))
         publisher = _optional(record.get("publisher") or record.get("source_name"))
         published_at = _optional(record.get("published_at") or record.get("publishedAt"))
+        seen_at = _optional(record.get("seen_at"))
         if not title and not text:
             continue
         candidates.append(
@@ -27,6 +28,7 @@ def from_articles(records: list[dict[str, Any]], *, lane: SourceLane, fetched_at
                 published_at=published_at,
                 fetched_at=fetched_at,
                 content_hash=content_hash(lane, url, title, text),
+                seen_at=seen_at,
             )
         )
     return candidates

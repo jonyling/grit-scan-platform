@@ -47,6 +47,8 @@ Dataverse (unchanged schema)          ← system of record
 Streamlit UI                          ← review/approve, read-only on facts
 ```
 
+**Wild scan:** the public GDELT DOC 2.0 artlist, one supplied query per condition. Not Google, Bing, DuckDuckGo, or the old Copilot Studio Web Search connector. GDELT rows are `WILD` candidates, not assessed signals.
+
 **Runtime:** Group-IT VM `10.193.39.151` (Ubuntu 24.04). Shared box — use a venv, never system Python. Do not apply OS updates; IT owns the host.
 
 **Approved libraries only:** `pydantic, requests, msal, openpyxl, pandas, python-dotenv, streamlit, plotly, google-genai, beautifulsoup4, nbformat, nbclient, ipykernel, ipywidgets, scikit-learn, xgboost, paramiko`.
@@ -180,9 +182,22 @@ Replaces the model-driven app. Minimum: signal list, signal detail with its impa
 | **P3** | S4 guards + S5 Supervisor | In-memory chain proven: `NEW → APPROVED` with an `ALLOW` guard on every advance, plus stale-sequence, idempotency conflict, and `FAILED → RESTORE`. Dataverse persistence of the ledger is not wired in this repo. |
 | **P4** | S8 UI | Review screen calls `ReviewGate()` and does not write state. An approval names the exact package version and hash. Streamlit rendering is present; the contract test drives the screen action, not a browser. |
 | **P5** | S6 agents | Four agents propose through tools. A proposal that cites an entity not in the register is logged and rejected, and no workflow row is written. Live Gemini is not called: no credential is stored here. |
-| **P6** | Theme/Event layer (specs 22, 26, 31) | Deferred — do not start before P4 |
+| **P6** | Theme/Event layer (specs 22, 26, 31) | In-memory register. `ThemeMatch()` and `EventMatch()` return candidates only. `ThemeEscalationAssessment()` is pure and never returns `CLOSE_CANDIDATE` for a standing risk. `RegisterWriteGate()` must allow a mutation before the Supervisor appends a version. A theme write does not append a workflow row. Dataverse persistence is not wired. |
 
 Do not begin a phase before its predecessor's exit criteria are met.
+
+### Wild-scan source (2026-09-26)
+
+This is not a new phase and it does not gate P6. Spec 33 still governs the scan shape: one query per condition, using that condition's watch indicators, over the prior 7 days. Not one combined search.
+
+For this rebuild, that query goes to the GDELT DOC artlist through `collect_wild_scan()`. The approved-publisher lane does not.
+
+- The adapter emits `WILD` candidates only. It does not call the scorer.
+- GDELT tone and Goldstein scores are dropped. They are not severity.
+- `seendate` is stored as `seen_at`. It is not written to `published_at`. The artlist has no article body, so `text` stays empty.
+- An outlet stays `UNRATED` until `CredibilityLookup()` matches the register.
+- A failed or rate-limited fetch raises `GdeltFetchError`. It must not be reported as an empty week.
+- The contract test injects a payload. It does not call GDELT.
 
 ---
 
@@ -198,6 +213,8 @@ Do not begin a phase before its predecessor's exit criteria are met.
 8. **P3 ledger is in memory.** `TransitionGuard()` and `ReviewGate()` are pure. The Supervisor is the only writer, and a denied decision appends nothing. The initial `NEW` row is the spec 20 exception and has no guard. Live Dataverse writes are not part of this proof: this repo has no gateway client and no credential.
 9. **P4 screen is the same in-memory ledger.** The review action calls `ReviewGate()` and the Supervisor persists. `NOT_ASSESSED` and `INSUFFICIENT_DATA` render as "not established". Empty fields are omitted. The contract test does not open a browser. `streamlit` is on the approved list and in `requirements.txt`; install it in a venv before `streamlit run ui/app.py`. Do not install it into system Python.
 10. **P5 does not call Gemini.** The four agents have narrow prompts and a tool surface. The Critic must report `NOT_VERIFIABLE` rather than fill a gap. The Supervisor logs every proposal with its prompt version and response hash, and rejects an unknown entity without writing a workflow row. `gemini_proposer()` refuses to run. No API key is stored in the repo.
+11. **Wild scan is a GDELT index, not a verified article.** `collect_wild_scan()` keeps the title, URL, domain, and seen time. It does not fetch the article page, and it does not assign credibility. A live call can be rate-limited; that failure stays an error. No GDELT key is stored because the DOC artlist does not use one.
+12. **P6 register is in memory.** Theme and event versions append only after `RegisterWriteGate()` returns `ALLOW`. A denied mutation appends nothing, and a theme write does not append `GRIT_WorkflowState`. Standing-risk names are not hard-coded; the Annual Report register is not in this repo. Live Dataverse GUIDs are not issued. The horizon pack builder returns sections; it does not render a document.
 
 ---
 

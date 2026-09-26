@@ -19,6 +19,7 @@ class Candidate:
     published_at: str | None
     fetched_at: str
     content_hash: str
+    seen_at: str | None = None
 
     def as_record(self) -> dict[str, str | None]:
         return asdict(self)

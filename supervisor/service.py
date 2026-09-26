@@ -14,6 +14,7 @@ from grit_scan.review_gate import FUNCTION_VERSION as REVIEW_GATE_VERSION
 from grit_scan.review_gate import review_gate
 from grit_scan.transition_guard import FUNCTION_VERSION as GUARD_VERSION
 from grit_scan.transition_guard import transition_guard
+from supervisor.theme_register import ThemeRegister
 
 
 @dataclass(frozen=True)
@@ -95,6 +96,7 @@ class Supervisor:
         self.accepted_proposals: list[dict[str, Any]] = []
         self._packages: dict[str, Package] = {}
         self._projection: dict[tuple[str, str], str] = {}
+        self.theme_register = ThemeRegister(self._token)
 
     def package(self, package_id: str) -> Package:
         return self._packages[package_id]
@@ -726,6 +728,13 @@ class Supervisor:
             ),
             None,
         )
+
+    def apply_register_mutation(self, mutation: dict[str, Any]) -> dict[str, Any]:
+        before = len(self.ledger.rows())
+        decision = self.theme_register.apply(mutation, self._token)
+        if len(self.ledger.rows()) != before:
+            raise RuntimeError("A theme mutation wrote a workflow row")
+        return decision
 
     def _execution_for(self, signal_id: str) -> str:
         rows = [row for row in self.ledger.rows() if row.signal_id == signal_id]
