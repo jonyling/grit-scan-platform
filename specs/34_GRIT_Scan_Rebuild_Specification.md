@@ -190,14 +190,18 @@ Do not begin a phase before its predecessor's exit criteria are met.
 
 This is not a new phase and it does not gate P6. Spec 33 still governs the scan shape: one query per condition, using that condition's watch indicators, over the prior 7 days. Not one combined search.
 
-For this rebuild, that query goes to the GDELT DOC artlist through `collect_wild_scan()`. The approved-publisher lane does not.
+The scan loop does not poll the DOC API. That API answers HTTP 429 when asked too often. Volume comes from the public 15-minute events export: one download from `lastupdate.txt`, then each condition is filtered on that file. Mentions and GKG are not read. BigQuery `gdelt-bq` is the other volume option and is not wired; it would need a GCP credential, and the known service-account key must not be used.
 
-- The adapter emits `WILD` candidates only. It does not call the scorer.
-- GDELT tone and Goldstein scores are dropped. They are not severity.
-- `seendate` is stored as `seen_at`. It is not written to `published_at`. The artlist has no article body, so `text` stays empty.
+The export file has a source URL and a date added. It has no headline. Those rows are an index. They are not written to Dataverse as signals, and actor names are not turned into a headline.
+
+Currents is currentsapi.services, not the DOC API. `acquisition/currents.py` allows one or two pulls per run, not a firehose. The key is `CURRENTS_API_KEY` and is not stored here. Only a titled Currents candidate can be written.
+
+- Neither path calls the scorer.
+- Tone and Goldstein scores are not read. They are not severity.
+- `DATEADDED` is stored as `seen_at`. It is not written to `published_at`.
 - An outlet stays `UNRATED` until `CredibilityLookup()` matches the register.
-- A failed or rate-limited fetch raises `GdeltFetchError`. It must not be reported as an empty week.
-- The contract test injects a payload. It does not call GDELT.
+- A failed download or a bad checksum raises `GdeltFetchError`. A failed Currents pull raises `CurrentsFetchError`. Neither is an empty week.
+- The contract test injects a file. It does not call GDELT.
 
 ---
 
@@ -213,8 +217,9 @@ For this rebuild, that query goes to the GDELT DOC artlist through `collect_wild
 8. **P3 ledger is in memory.** `TransitionGuard()` and `ReviewGate()` are pure. The Supervisor is the only writer, and a denied decision appends nothing. The initial `NEW` row is the spec 20 exception and has no guard. Live Dataverse writes are not part of this proof: this repo has no gateway client and no credential.
 9. **P4 screen is the same in-memory ledger.** The review action calls `ReviewGate()` and the Supervisor persists. `NOT_ASSESSED` and `INSUFFICIENT_DATA` render as "not established". Empty fields are omitted. The contract test does not open a browser. `streamlit` is on the approved list and in `requirements.txt`; install it in a venv before `streamlit run ui/app.py`. Do not install it into system Python.
 10. **P5 does not call Gemini.** The four agents have narrow prompts and a tool surface. The Critic must report `NOT_VERIFIABLE` rather than fill a gap. The Supervisor logs every proposal with its prompt version and response hash, and rejects an unknown entity without writing a workflow row. `gemini_proposer()` refuses to run. No API key is stored in the repo.
-11. **Wild scan is a GDELT index, not a verified article.** `collect_wild_scan()` keeps the title, URL, domain, and seen time. It does not fetch the article page, and it does not assign credibility. A live call can be rate-limited; that failure stays an error. No GDELT key is stored because the DOC artlist does not use one.
+11. **Wild scan is a GDELT index, not a verified article.** The scan loop reads the 15-minute events export and keeps the URL, domain, and date added. It does not fetch the article page, invent a headline, or assign credibility. Currents is a separate headline source and only a titled Currents row can be written. A failed fetch stays an error. No GDELT key is stored. The Currents key is an environment variable. BigQuery is not called.
 12. **P6 register is in memory.** Theme and event versions append only after `RegisterWriteGate()` returns `ALLOW`. A denied mutation appends nothing, and a theme write does not append `GRIT_WorkflowState`. Standing-risk names are not hard-coded; the Annual Report register is not in this repo. Live Dataverse GUIDs are not issued. The horizon pack builder returns sections; it does not render a document.
+13. **Dataverse gateway reads the environment.** `dataverse/client.py` is the only module that calls Dataverse. It needs `DATAVERSE_TENANT_ID`, `DATAVERSE_CLIENT_ID`, `DATAVERSE_CLIENT_SECRET`, and `DATAVERSE_ORG_URL`. Those values are not stored in this repo. A wild-scan import writes a signal and a `NEW` workflow row. It does not write a publication date, a trend, or a score. Content-hash dedup is done in Python, not by a text `$filter`.
 
 ---
 

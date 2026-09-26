@@ -18,7 +18,7 @@ if str(_ROOT) not in sys.path:
 
 from ui.actions import submit_from_screen
 from ui.seed import ACCEPTED_AT, CORRELATION_ID, seed_pending_package
-from ui.view_model import package_view, signal_detail, signal_list
+from ui.view_model import acquired_detail, package_view, signal_detail, signal_list
 
 
 def main() -> None:
@@ -36,9 +36,13 @@ def main() -> None:
     package_id = st.session_state.package_id
     st.title("GRIT-Scan review")
     st.caption("A missing fact reads as not established. This screen does not write state.")
+    _show_acquired(st)
 
+    st.divider()
+    st.subheader("Sample review package")
+    st.caption("SIG-1 is a sample. It is not one of the Currents rows written to Dataverse.")
     signals = signal_list(supervisor)
-    selected = st.sidebar.radio("Signals", [item["signal_id"] for item in signals])
+    selected = st.sidebar.radio("Sample signals", [item["signal_id"] for item in signals])
     chosen = next(item for item in signals if item["signal_id"] == selected)
     record = dict(st.session_state.assessments.get(selected, {}))
     record["state"] = chosen["state"]
@@ -85,6 +89,84 @@ def main() -> None:
         st.success(f"ReviewGate: {st.session_state.last_decision}")
     if st.session_state.get("last_approval"):
         st.write(st.session_state.last_approval)
+
+
+def _show_acquired(st) -> None:
+    rows, note = _acquired_rows()
+    st.subheader(f"Acquired signals ({len(rows)})")
+    st.caption(note)
+    if not rows:
+        st.write("No acquired signal is on this screen yet.")
+        return
+    for index, row in enumerate(rows, start=1):
+        title = row.get("title") or row.get("url") or "untitled"
+        with st.expander(f"{index}. {title}", expanded=index == 1):
+            for label, value in acquired_detail(row):
+                st.write(f"**{label}:** {value}")
+
+
+def _acquired_rows() -> tuple[list[dict], str]:
+    saved = _snapshot_rows()
+    live = _dataverse_rows()
+    rows = _merge_rows(saved, live or [])
+    if live is not None and saved:
+        return rows, f"Dataverse returned {len(live)}. The last write saved {len(saved)}. No score is asserted."
+    if live is not None:
+        return rows, "Read from Dataverse. No score is asserted."
+    if saved:
+        return rows, "Local snapshot from the last Currents write. No score is asserted."
+    return [], "No Dataverse credentials in this process, and no local snapshot yet."
+
+
+def _snapshot_rows() -> list[dict]:
+    import json
+
+    snapshot = _ROOT / "output" / "currents-latest.json"
+    if not snapshot.is_file():
+        return []
+    payload = json.loads(snapshot.read_text(encoding="utf-8"))
+    return list(payload.get("signals") or [])
+
+
+def _merge_rows(saved: list[dict], live: list[dict]) -> list[dict]:
+    merged: list[dict] = []
+    seen: set[str] = set()
+    for row in [*saved, *live]:
+        key = str(row.get("url") or row.get("title") or "")
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        merged.append(row)
+    return merged
+
+
+def _dataverse_rows() -> list[dict] | None:
+    import os
+
+    if not os.environ.get("DATAVERSE_ORG_URL"):
+        return None
+    from dataverse.client import DataverseClient
+    from dataverse.choices import EVIDENCE_LOW
+
+    client = DataverseClient.from_env()
+    payload = client.get(
+        "grit_signals?$select=grit_signalname,grit_headline,grit_sourcename,grit_sourceurl,grit_evidenceconfidence,grit_correlationid,createdon"
+        "&$orderby=createdon desc&$top=20"
+    )
+    rows = []
+    for row in payload.get("value") or []:
+        if not str(row.get("grit_correlationid") or "").startswith("CURRENTS-"):
+            continue
+        evidence = row.get("grit_evidenceconfidence")
+        rows.append(
+            {
+                "title": row.get("grit_headline") or row.get("grit_signalname"),
+                "publisher": row.get("grit_sourcename"),
+                "url": row.get("grit_sourceurl"),
+                "evidence": "LOW" if evidence == EVIDENCE_LOW else evidence,
+            }
+        )
+    return rows
 
 
 def _finding(note: str) -> dict[str, object]:

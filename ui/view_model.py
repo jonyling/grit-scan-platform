@@ -37,6 +37,21 @@ def signal_list(supervisor: Supervisor) -> list[dict[str, str]]:
     ]
 
 
+def acquired_detail(record: dict[str, Any]) -> list[tuple[str, str]]:
+    """A fetched headline is not an assessment. Unscored fields stay absent."""
+    labels = (
+        ("Headline", record.get("title") or record.get("headline")),
+        ("Source", record.get("publisher") or record.get("source")),
+        ("URL", record.get("url")),
+        ("Published", record.get("published_at")),
+        ("Evidence", record.get("evidence")),
+        ("Severity", "NOT_ASSESSED"),
+        ("Financial basis", "INSUFFICIENT_DATA"),
+        ("Transmission", "NOT_ASSESSED"),
+    )
+    return [(label, text) for label, value in labels if (text := shown(value)) is not None]
+
+
 def signal_detail(record: dict[str, Any]) -> list[tuple[str, str]]:
     labels = (
         ("Signal", record.get("signal_id")),

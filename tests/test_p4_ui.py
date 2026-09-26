@@ -2,7 +2,7 @@ from pathlib import Path
 
 from ui.actions import submit_from_screen
 from ui.seed import seed_pending_package
-from ui.view_model import NOT_ESTABLISHED, package_view, signal_detail, signal_list
+from ui.view_model import NOT_ESTABLISHED, acquired_detail, package_view, signal_detail, signal_list
 
 
 def test_reviewer_approves_the_exact_package_version_and_hash() -> None:
@@ -65,6 +65,24 @@ def test_screen_shows_absence_and_hides_empty_fields() -> None:
     assert package["Version"] == "1"
     assert "Weekly delta" not in package
     assert signal_list(_supervisor) == [{"signal_id": "SIG-1", "execution_id": "EXEC-1", "state": "PENDING_REVIEW"}]
+
+
+def test_acquired_headline_does_not_invent_a_score() -> None:
+    detail = dict(
+        acquired_detail(
+            {
+                "title": "Strait traffic slows",
+                "publisher": "reuters.com",
+                "url": "https://www.reuters.com/world/strait",
+                "published_at": None,
+                "evidence": "LOW",
+            }
+        )
+    )
+    assert detail["Headline"] == "Strait traffic slows"
+    assert detail["Severity"] == NOT_ESTABLISHED
+    assert detail["Financial basis"] == NOT_ESTABLISHED
+    assert "Published" not in detail
 
 
 def test_screen_modules_do_not_write_the_ledger() -> None:

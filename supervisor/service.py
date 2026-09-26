@@ -14,6 +14,7 @@ from grit_scan.review_gate import FUNCTION_VERSION as REVIEW_GATE_VERSION
 from grit_scan.review_gate import review_gate
 from grit_scan.transition_guard import FUNCTION_VERSION as GUARD_VERSION
 from grit_scan.transition_guard import transition_guard
+from dataverse.signals import execution_body, signal_body, workflow_body
 from supervisor.theme_register import ThemeRegister
 
 
@@ -728,6 +729,67 @@ class Supervisor:
             ),
             None,
         )
+
+    def persist_acquired_signals(
+        self,
+        candidates: list[Any],
+        client: Any,
+        *,
+        correlation_id: str,
+        accepted_at: str,
+        reason_code: str = "GDELT_ARTLIST_CANDIDATE",
+        reason: str = "GDELT artlist candidate. Article body was not fetched. Outlet credibility is not established.",
+        configuration_version: str = "gdelt-wild-1",
+    ) -> dict[str, Any]:
+        """Write new acquisition rows. A repeated content hash is not created again."""
+        execution_id = client.create(
+            "grit_executions",
+            execution_body(
+                name=correlation_id,
+                correlation_id=correlation_id,
+                started_at=accepted_at,
+                configuration_version=configuration_version,
+            ),
+        )
+        known = dict(client.content_hashes())
+        created: list[str] = []
+        reused: list[str] = []
+        skipped: list[str] = []
+        for candidate in candidates:
+            if not getattr(candidate, "title", None) or not getattr(candidate, "url", None):
+                skipped.append(getattr(candidate, "content_hash", ""))
+                continue
+            existing = known.get(candidate.content_hash)
+            if existing:
+                reused.append(existing)
+                continue
+            signal_id = client.create(
+                "grit_signals",
+                signal_body(candidate, execution_id=execution_id, correlation_id=correlation_id),
+            )
+            state_id = client.create(
+                "grit_workflowstates",
+                workflow_body(
+                    candidate,
+                    signal_id=signal_id,
+                    execution_id=execution_id,
+                    correlation_id=correlation_id,
+                    accepted_at=accepted_at,
+                    actor_id=self.actor_id,
+                    reason_code=reason_code,
+                    reason=reason,
+                    configuration_version=configuration_version,
+                ),
+            )
+            client.patch(
+                "grit_signals",
+                signal_id,
+                {"grit_CurrentWorkflowStateId@odata.bind": f"/grit_workflowstates({state_id})"},
+            )
+            self.accept_signal(signal_id, execution_id, correlation_id, accepted_at=accepted_at)
+            known[candidate.content_hash] = signal_id
+            created.append(signal_id)
+        return {"execution_id": execution_id, "created": created, "reused": reused, "skipped": skipped}
 
     def apply_register_mutation(self, mutation: dict[str, Any]) -> dict[str, Any]:
         before = len(self.ledger.rows())
