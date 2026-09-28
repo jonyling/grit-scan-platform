@@ -15,7 +15,8 @@ not a harm score.
 
 - `grit_scan/`: scoring core, including opportunity-cost classification.
 - `grit_scan/matchers/`: credibility, exposure, LOB, and theme matchers. They bind text. They do not score.
-- `grit_scan/weekly_pipeline.py`: one weekly chain — import, revise, rank, write the review delta.
+- `grit_scan/weekly_pipeline.py`: one weekly chain — import, revise, rank, write the review delta. `rank()` also attaches Trend, Risk Level, and Basis of Relevance to Business Area (see `grit_scan/relevance_scoring.py`).
+- `grit_scan/relevance_scoring.py`: deterministic Trend / Risk Level / Basis-of-Relevance labels, built only from the Ontology model (condition domain, matched STE themes, evidenced descent). Generalised for any reader pack — Urban Solutions (`urs`) included, not just `urs-tw`.
 - `grit_scan/transition_guard.py` and `grit_scan/review_gate.py`: pure workflow decisions. They do not write state.
 - `supervisor/`: the only writer of the workflow ledger. It persists a row only after `TransitionGuard()` returns `ALLOW`.
 - `ui/`: the Streamlit review screen. It calls `ReviewGate()`. It does not write state.
@@ -25,6 +26,7 @@ not a harm score.
 - `URS Entity Info.xlsx` and `config/registry_aliases.json`: the URS ontology inputs the tests require.
 - `config/urs/`: the Urban Solutions reader pack. Rebuild it with `python3 -m grit_scan.build_urs_pack`. `urs-tw` remains the Taiwan reader pack and is not the whole ontology. The News sheet lists outlets; it does not rate them. No Taiwan baseline condition is copied.
 - `acquisition/`: candidate-only adapters for approved web, wild scan, Sphera, AGILE, and ISOS. The wild scan reads the GDELT 15-minute events export. It does not score. Currents is a separate currentsapi.services headline stream, capped at two pulls.
+- `dataverse/run_weekly_import.py`: writes a `weekly_pipeline` ranking into Dataverse — Trend, Risk Level, and Basis of Relevance to Business Area on `grit_signals`. Defaults to the Urban Solutions `urs` pack.
 - `grit_scan/theme_layer.py`: theme and event matches, metric calculation, escalation, and the register write gate. They do not write state.
 
 ## Secrets
@@ -45,6 +47,7 @@ python3 run-impact-contract-tests.py
 streamlit run ui/app.py
 python3 -m dataverse.run_wild_scan --query "Taiwan Strait" --max-records 10
 python3 -m dataverse.run_wild_scan --currents --query "Taiwan Strait" --max-records 10
+python3 -m dataverse.run_weekly_import --ranking output/urs/ranking.json --pack urs --dry-run
 python3 -m agents.run_pass
 ```
 

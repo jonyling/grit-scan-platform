@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from grit_scan.ontology import OntologyPack
-from grit_scan.weekly_pipeline import compose_delta, import_scan, revise, run_weekly_pipeline
+from grit_scan.weekly_pipeline import compose_delta, import_scan, rank, revise, run_weekly_pipeline
 
 
 def _pack() -> OntologyPack:
@@ -92,3 +92,30 @@ def test_weekly_pipeline_writes_revision_without_a_score() -> None:
     written = json.loads(paths["revision"].read_text(encoding="utf-8"))
     assert written["revisionId"] == "URS-TW-WEEKLY-2026-09-21"
     assert written["developmentsReceived"] == 1
+
+
+def test_rank_adds_the_powerapps_trend_risklevel_and_relevance_basis_fields() -> None:
+    pack = _pack()
+    scan = json.dumps(
+        [
+            {
+                "conditionHint": "C01",
+                "movement": "ESCALATING",
+                "evidenceConfidence": "HIGH",
+                "headline": "Strait pressure",
+                "summary": "Pressure increased on the rail corridor.",
+                "sources": [{"url": "https://www.reuters.com/world/asia-pacific/story"}],
+            }
+        ]
+    )
+    revision_input = import_scan(scan, pack.baseline, revision_id="URS-TW-WEEKLY-2026-09-21", revision_date="2026-09-21")
+    revision = revise(revision_input, pack)
+    ranking = rank(revision, pack)
+    item = ranking["rankedItems"][0]
+    assert item["trend"] == "ESCALATING"
+    expected_risk_level = {"HIGH": "HIGH", "MEDIUM": "MEDIUM", "WATCHPOINT": "LOW"}[item["priorityLabel"]]
+    assert item["riskLevel"] == expected_risk_level
+    assert "Security condition" in item["businessRelevanceBasis"]
+    assert "Geopolitical volatility" in item["businessRelevanceBasis"]
+    assert "score" not in item
+

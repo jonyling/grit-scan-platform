@@ -10,10 +10,25 @@ from dataverse.choices import (
     ACTOR_SUPERVISOR,
     EVIDENCE_LOW,
     EXECUTION_COMPLETE,
+    RISK_LEVEL_HIGH,
+    RISK_LEVEL_LOW,
+    RISK_LEVEL_MEDIUM,
     TRANSITION_START,
+    TREND_EASING,
+    TREND_ESCALATING,
+    TREND_NO_MATERIAL_CHANGE,
     TRIGGER_SYSTEM,
     WORKFLOW_NEW,
 )
+
+_EVIDENCE_CONFIDENCE_CHOICE = {"HIGH": 100000500, "MEDIUM": 100000501, "LOW": EVIDENCE_LOW}
+_TREND_CHOICE = {
+    "ESCALATING": TREND_ESCALATING,
+    "EASING": TREND_EASING,
+    "NO_MATERIAL_CHANGE": TREND_NO_MATERIAL_CHANGE,
+}
+_RISK_LEVEL_CHOICE = {"HIGH": RISK_LEVEL_HIGH, "MEDIUM": RISK_LEVEL_MEDIUM, "LOW": RISK_LEVEL_LOW}
+
 
 
 def execution_body(
@@ -115,6 +130,101 @@ def workflow_body(
         "grit_supervisorversion": configuration_version,
         "grit_inputhash": candidate.content_hash,
         "grit_statesnapshothash": hashlib.sha256(f"{candidate.content_hash}:NEW".encode("utf-8")).hexdigest(),
+        "grit_ExecutionId@odata.bind": f"/grit_executions({execution_id})",
+        "grit_SignalId@odata.bind": f"/grit_signals({signal_id})",
+    }
+
+
+def ranked_finding_content_hash(item: dict[str, Any]) -> str:
+    """Identity key for a weekly-ranked finding, primary source URL first.
+
+    A finding with no source at all still needs a stable identity across
+    re-runs, so it falls back to the deterministic ``developmentId`` the
+    weekly pipeline assigned; two distinct findings never collapse into one
+    signal because of a shared or missing URL.
+    """
+    sources = list(item.get("sources") or [])
+    primary = str(sources[0]) if sources else ""
+    key = primary or f"NO-SOURCE-{item.get('developmentId') or item.get('conditionId') or ''}"
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()
+
+
+def ranked_finding_body(
+    item: dict[str, Any],
+    *,
+    execution_id: str,
+    correlation_id: str,
+    country_market: str | None = None,
+    line_of_business: str | None = None,
+) -> dict[str, Any]:
+    """Map one ``weekly_pipeline.rank()`` item to a Dataverse ``grit_signals`` body.
+
+    This is the Urban Solutions (or any reader pack) equivalent of the
+    archived URS-TW cascade's PowerShell import: it writes Trend, Risk Level,
+    and Basis of Relevance to Business Area, all three computed by
+    ``grit_scan.relevance_scoring`` from the Ontology model, never invented
+    here. It writes no formal severity or likelihood score.
+    """
+    condition = item.get("condition") or item.get("conditionId")
+    if not condition:
+        raise ValueError("A ranked finding needs a condition to become a Dataverse signal")
+    headline = str(item.get("headline") or item.get("summary") or condition)
+    sources = list(item.get("sources") or [])
+    confidence = str(item.get("evidenceConfidence") or "LOW").strip().upper()
+    trend = str(item.get("trend") or "NO_MATERIAL_CHANGE")
+    risk_level = str(item.get("riskLevel") or "LOW")
+    basis = str(item.get("businessRelevanceBasis") or "")
+    body: dict[str, Any] = {
+        "grit_signalname": headline[:100],
+        "grit_headline": str(condition)[:400],
+        "grit_trend": _TREND_CHOICE.get(trend, TREND_NO_MATERIAL_CHANGE),
+        "grit_risklevel": _RISK_LEVEL_CHOICE.get(risk_level, RISK_LEVEL_LOW),
+        "grit_businessrelevancebasis": basis[:4000],
+        "grit_evidenceconfidence": _EVIDENCE_CONFIDENCE_CHOICE.get(confidence, EVIDENCE_LOW),
+        "grit_fingerprint": hashlib.sha256(headline.encode("utf-8")).hexdigest(),
+        "grit_contenthash": ranked_finding_content_hash(item),
+        "grit_signalversion": 1,
+        "grit_correlationid": correlation_id[:100],
+        "grit_ExecutionId@odata.bind": f"/grit_executions({execution_id})",
+    }
+    if sources:
+        body["grit_sourceurl"] = str(sources[0])
+    if country_market:
+        body["grit_countrymarket"] = country_market
+    if line_of_business:
+        body["grit_lineofbusiness"] = line_of_business
+    return body
+
+
+def ranked_workflow_body(
+    content_hash: str,
+    *,
+    signal_id: str,
+    execution_id: str,
+    correlation_id: str,
+    accepted_at: str,
+    actor_id: str,
+    reason_code: str = "URS_WEEKLY_RANKED_FINDING",
+    reason: str = "Urban Solutions weekly ontology finding, ranked by the deterministic priority function.",
+    configuration_version: str = "urs-weekly-1",
+) -> dict[str, Any]:
+    """Same NEW workflow row as ``workflow_body``, for a ranked finding rather than a raw candidate."""
+    return {
+        "grit_workflowstatename": f"{correlation_id} NEW"[:100],
+        "grit_transitionsequence": 0,
+        "grit_state": WORKFLOW_NEW,
+        "grit_transitiontype": TRANSITION_START,
+        "grit_transitionreasoncode": reason_code,
+        "grit_transitionreason": reason,
+        "grit_transitiontimestamputc": accepted_at,
+        "grit_actortype": ACTOR_SUPERVISOR,
+        "grit_actorid": actor_id,
+        "grit_triggertype": TRIGGER_SYSTEM,
+        "grit_correlationid": correlation_id[:100],
+        "grit_configurationversion": configuration_version,
+        "grit_supervisorversion": configuration_version,
+        "grit_inputhash": content_hash,
+        "grit_statesnapshothash": hashlib.sha256(f"{content_hash}:NEW".encode("utf-8")).hexdigest(),
         "grit_ExecutionId@odata.bind": f"/grit_executions({execution_id})",
         "grit_SignalId@odata.bind": f"/grit_signals({signal_id})",
     }

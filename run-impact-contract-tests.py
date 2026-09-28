@@ -22,6 +22,7 @@ MODULES = (
     "tests.test_p2_matchers",
     "tests.test_urs_pack",
     "tests.test_p2_weekly_pipeline",
+    "tests.test_relevance_scoring",
     "tests.test_p2_acquisition",
     "tests.test_wild_scan_gdelt",
     "tests.test_currents",

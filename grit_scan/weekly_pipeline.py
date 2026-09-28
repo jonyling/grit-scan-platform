@@ -16,6 +16,11 @@ from grit_scan.matchers.exposure_matcher import exposure_entity_match
 from grit_scan.matchers.lob_matcher import lob_match
 from grit_scan.matchers.theme_matcher import theme_match
 from grit_scan.ontology import OntologyPack
+from grit_scan.relevance_scoring import (
+    classify_risk_level,
+    classify_trend,
+    compose_business_relevance_basis,
+)
 
 _MOVEMENT = {
     "ESCALATING": "ESCALATING",
@@ -331,9 +336,11 @@ def _priority(item: dict[str, Any], pack: OntologyPack) -> dict[str, Any]:
         reasons.append("evidenced entity-level transmission path (+2)")
     checks = [credibility_lookup(url, pack.source_register) for url in list(item.get("sources") or [])]
     label = "HIGH" if score >= 5 else "MEDIUM" if score >= 3 else "WATCHPOINT"
-    return {
+    ranked_item = {
+        "developmentId": item.get("developmentId"),
         "conditionId": item.get("conditionId"),
         "condition": item.get("condition"),
+        "domain": item.get("domain"),
         "movement": item.get("movement"),
         "evidenceConfidence": confidence,
         "priorityScore": score,
@@ -348,7 +355,12 @@ def _priority(item: dict[str, Any], pack: OntologyPack) -> dict[str, Any]:
         "steThemes": themes,
         "descentStatus": item.get("descentStatus"),
         "descent": item.get("descent"),
+        "exposureEntities": item.get("exposureEntities"),
     }
+    ranked_item["riskLevel"] = classify_risk_level(ranked_item)
+    ranked_item["trend"] = classify_trend(ranked_item["movement"])
+    ranked_item["businessRelevanceBasis"] = compose_business_relevance_basis(ranked_item)
+    return ranked_item
 
 
 def _resolve_condition(hint: str, conditions: list[dict[str, Any]]) -> dict[str, Any] | None:

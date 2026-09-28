@@ -14,7 +14,7 @@ from grit_scan.review_gate import FUNCTION_VERSION as REVIEW_GATE_VERSION
 from grit_scan.review_gate import review_gate
 from grit_scan.transition_guard import FUNCTION_VERSION as GUARD_VERSION
 from grit_scan.transition_guard import transition_guard
-from dataverse.signals import execution_body, signal_body, workflow_body
+from dataverse.signals import execution_body, ranked_finding_body, ranked_finding_content_hash, ranked_workflow_body, signal_body, workflow_body
 from supervisor.theme_register import ThemeRegister
 
 
@@ -790,6 +790,87 @@ class Supervisor:
             known[candidate.content_hash] = signal_id
             created.append(signal_id)
         return {"execution_id": execution_id, "created": created, "reused": reused, "skipped": skipped}
+
+    def persist_ranked_findings(
+        self,
+        items: list[dict[str, Any]],
+        client: Any,
+        *,
+        correlation_id: str,
+        accepted_at: str,
+        country_market: str | None = None,
+        line_of_business: str | None = None,
+        configuration_version: str = "urs-weekly-1",
+    ) -> dict[str, Any]:
+        """Write ``weekly_pipeline.rank()`` output: Trend, Risk Level, and Basis of
+        Relevance to Business Area, generalised for any reader pack.
+
+        A repeated content hash refreshes those three fields (the finding may
+        have moved since the last cycle) but never creates a second workflow
+        row and never touches a human's approval fields, matching the
+        acquired-signal path above.
+        """
+        execution_id = client.create(
+            "grit_executions",
+            execution_body(
+                name=correlation_id,
+                correlation_id=correlation_id,
+                started_at=accepted_at,
+                configuration_version=configuration_version,
+            ),
+        )
+        known = dict(client.content_hashes())
+        created: list[str] = []
+        updated: list[str] = []
+        skipped: list[str] = []
+        for item in items:
+            if not item.get("condition") and not item.get("conditionId"):
+                skipped.append(str(item.get("developmentId") or ""))
+                continue
+            content_hash = ranked_finding_content_hash(item)
+            body = ranked_finding_body(
+                item,
+                execution_id=execution_id,
+                correlation_id=correlation_id,
+                country_market=country_market,
+                line_of_business=line_of_business,
+            )
+            existing = known.get(content_hash)
+            if existing:
+                client.patch(
+                    "grit_signals",
+                    existing,
+                    {
+                        "grit_trend": body["grit_trend"],
+                        "grit_risklevel": body["grit_risklevel"],
+                        "grit_businessrelevancebasis": body["grit_businessrelevancebasis"],
+                        "grit_evidenceconfidence": body["grit_evidenceconfidence"],
+                    },
+                )
+                updated.append(existing)
+                continue
+            signal_id = client.create("grit_signals", body)
+            state_id = client.create(
+                "grit_workflowstates",
+                ranked_workflow_body(
+                    content_hash,
+                    signal_id=signal_id,
+                    execution_id=execution_id,
+                    correlation_id=correlation_id,
+                    accepted_at=accepted_at,
+                    actor_id=self.actor_id,
+                    configuration_version=configuration_version,
+                ),
+            )
+            client.patch(
+                "grit_signals",
+                signal_id,
+                {"grit_CurrentWorkflowStateId@odata.bind": f"/grit_workflowstates({state_id})"},
+            )
+            self.accept_signal(signal_id, execution_id, correlation_id, accepted_at=accepted_at)
+            known[content_hash] = signal_id
+            created.append(signal_id)
+        return {"execution_id": execution_id, "created": created, "updated": updated, "skipped": skipped}
 
     def apply_register_mutation(self, mutation: dict[str, Any]) -> dict[str, Any]:
         before = len(self.ledger.rows())
