@@ -20,6 +20,7 @@ MODULES = (
     "tests.test_assess_impact",
     "tests.test_classify_opportunity_cost",
     "tests.test_p2_matchers",
+    "tests.test_urs_pack",
     "tests.test_p2_weekly_pipeline",
     "tests.test_p2_acquisition",
     "tests.test_wild_scan_gdelt",

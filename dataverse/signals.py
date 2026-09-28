@@ -52,6 +52,41 @@ def signal_body(candidate: Candidate, *, execution_id: str, correlation_id: str)
     }
 
 
+def agent_log_body(
+    *,
+    agent_name: str,
+    prompt_version: str,
+    task: str,
+    citations: list[str],
+    response_hash: str,
+    rationale: str | None,
+    validation: str,
+    correlation_id: str,
+    completed_at: str,
+    execution_id: str,
+    signal_id: str,
+) -> dict[str, Any]:
+    """Record a proposal. This is not a score and not a workflow transition."""
+    from dataverse.choices import AGENT_LOG_SUCCEEDED
+
+    return {
+        "grit_agentexecutionname": f"{correlation_id} {agent_name}"[:100],
+        "grit_agentname": agent_name[:100],
+        "grit_agentversion": prompt_version[:100],
+        "grit_task": task[:2000],
+        "grit_citations": "\n".join(citations)[:4000],
+        "grit_responsehash": response_hash,
+        "grit_responsereference": (rationale or "No rationale was returned.")[:4000],
+        "grit_supervisorvalidationresult": validation[:200],
+        "grit_correlationid": correlation_id[:100],
+        "grit_logstatus": AGENT_LOG_SUCCEEDED,
+        "grit_requireshumansignoff": True,
+        "grit_completedatutc": completed_at,
+        "grit_ExecutionId@odata.bind": f"/grit_executions({execution_id})",
+        "grit_SignalId@odata.bind": f"/grit_signals({signal_id})",
+    }
+
+
 def workflow_body(
     candidate: Candidate,
     *,

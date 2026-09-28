@@ -22,6 +22,9 @@ from ui.view_model import acquired_detail, package_view, signal_detail, signal_l
 
 
 def main() -> None:
+    from grit_scan.local_env import load_local_env
+
+    load_local_env()
     import streamlit as st
 
     st.set_page_config(page_title="GRIT-Scan review", layout="wide")

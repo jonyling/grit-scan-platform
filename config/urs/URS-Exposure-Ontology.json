@@ -1,0 +1,629 @@
+{
+  "registerId": "URS-EXPOSURE",
+  "workbook": "URS Entity Info.xlsx",
+  "absence": {
+    "projects": "URS Entity Info.xlsx has no project sheet. No project was invented.",
+    "sites": "Registered addresses were not promoted to site aliases. A repeated legal name was not split into a second site."
+  },
+  "nameColumnNote": "10 rows leave NameOfEntity blank and put the legal name in LOB1. Those names are entities, not lines of business.",
+  "entities": [
+    {
+      "entityId": "ENTITY-seel-electronic-engineering-sdn-bhd",
+      "entityName": "SEEL Electronic & Engineering Sdn. Bhd.",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Rail",
+      "countryOfIncorporation": "Malaysia",
+      "aliases": [
+        "SEEL Electronic & Engineering Sdn. Bhd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-chongqing-co-ltd",
+      "entityName": "ST Engineering (Chongqing) Co., Ltd",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Rail",
+      "countryOfIncorporation": "China",
+      "aliases": [
+        "ST Engineering (Chongqing) Co., Ltd"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-latin-america-ltda",
+      "entityName": "ST Engineering (Latin America) Ltda.",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "lob": "Smart Sustainable Utilities",
+      "countryOfIncorporation": "Brazil",
+      "aliases": [
+        "ST Engineering (Latin America) Ltda."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-shanghai-co-ltd",
+      "entityName": "ST Engineering (Shanghai) Co., Ltd.",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Rail",
+      "countryOfIncorporation": "China",
+      "aliases": [
+        "ST Engineering (Shanghai) Co., Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-taiwan-ltd",
+      "entityName": "ST Engineering (Taiwan) Ltd.",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Rail",
+      "countryOfIncorporation": "Taiwan",
+      "aliases": [
+        "ST Engineering (Taiwan) Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-wuxi-co-ltd",
+      "entityName": "ST Engineering (Wuxi) Co., Ltd",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Rail",
+      "countryOfIncorporation": "China",
+      "aliases": [
+        "ST Engineering (Wuxi) Co., Ltd"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-aethon-inc",
+      "entityName": "ST Engineering Aethon, Inc.",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "lob": "Healthcare Robotics & Automation",
+      "countryOfIncorporation": "USA",
+      "aliases": [
+        "ST Engineering Aethon, Inc."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-infa-systems-limited",
+      "entityName": "ST Engineering Infa Systems Limited",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "lob": "Smart Security & Automation",
+      "countryOfIncorporation": "Hong Kong",
+      "aliases": [
+        "ST Engineering Infa Systems Limited"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-innosparks-pte-ltd",
+      "entityName": "ST Engineering InnoSparks Pte. Ltd.",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "lob": "Smart Security & Automation",
+      "countryOfIncorporation": "Singapore",
+      "aliases": [
+        "ST Engineering InnoSparks Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-mobility-services-pte-ltd",
+      "entityName": "ST Engineering Mobility Services Pte. Ltd.",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Services",
+      "countryOfIncorporation": "Singapore",
+      "aliases": [
+        "ST Engineering Mobility Services Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-saudi-limited",
+      "entityName": "ST Engineering Saudi Limited",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Rail",
+      "countryOfIncorporation": "Saudi Arabia",
+      "aliases": [
+        "ST Engineering Saudi Limited"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-telematics-wireless-ltd",
+      "entityName": "ST Engineering Telematics Wireless Ltd",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "lob": "Smart Sustainable Utilities",
+      "countryOfIncorporation": "Israel",
+      "aliases": [
+        "ST Engineering Telematics Wireless Ltd"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-telematics-wireless-u-s-a-corp",
+      "entityName": "ST Engineering Telematics Wireless U.S.A. Corp.",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "lob": "Smart Sustainable Utilities",
+      "countryOfIncorporation": "USA",
+      "aliases": [
+        "ST Engineering Telematics Wireless U.S.A. Corp."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-urban-solutions-ltd-taiwan-branch",
+      "entityName": "ST Engineering Urban Solutions Ltd. - Taiwan Branch",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Rail",
+      "countryOfIncorporation": "Taiwan",
+      "aliases": [
+        "ST Engineering Urban Solutions Ltd. - Taiwan Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-urban-solutions-thailand-ltd",
+      "entityName": "ST Engineering Urban Solutions (Thailand) Ltd",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Rail",
+      "countryOfIncorporation": "Thailand",
+      "aliases": [
+        "ST Engineering Urban Solutions (Thailand) Ltd"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-urban-solutions-ltd-abu-dhabi-branch",
+      "entityName": "ST Engineering Urban Solutions Ltd - Abu Dhabi Branch",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Road",
+      "countryOfIncorporation": "Abu Dhabi",
+      "aliases": [
+        "ST Engineering Urban Solutions Ltd - Abu Dhabi Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-urban-solutions-ltd-dubai-branch",
+      "entityName": "ST Engineering Urban Solutions Ltd - Dubai Branch",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Road",
+      "countryOfIncorporation": "Dubai",
+      "aliases": [
+        "ST Engineering Urban Solutions Ltd - Dubai Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-urban-solutions-ltd",
+      "entityName": "ST Engineering Urban Solutions Ltd.",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "lob": "Smart Security & Automation",
+      "countryOfIncorporation": "Singapore",
+      "aliases": [
+        "ST Engineering Urban Solutions Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-urban-solutions-ltd-australia-branch",
+      "entityName": "ST Engineering Urban Solutions Ltd. - Australia Branch",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Rail",
+      "countryOfIncorporation": "Australia",
+      "aliases": [
+        "ST Engineering Urban Solutions Ltd. - Australia Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-urban-solutions-ltd-canada-branch",
+      "entityName": "ST Engineering Urban Solutions Ltd. - Canada Branch",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Rail",
+      "countryOfIncorporation": "Canada",
+      "aliases": [
+        "ST Engineering Urban Solutions Ltd. - Canada Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-urban-solutions-ltd-india-office",
+      "entityName": "ST Engineering Urban Solutions Ltd. - India Office",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Rail",
+      "countryOfIncorporation": "India",
+      "aliases": [
+        "ST Engineering Urban Solutions Ltd. - India Office"
+      ]
+    },
+    {
+      "entityId": "ENTITY-sta-inspection-pte-ltd",
+      "entityName": "STA Inspection Pte Ltd",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility Services",
+      "countryOfIncorporation": "Singapore",
+      "aliases": [
+        "STA Inspection Pte Ltd"
+      ]
+    },
+    {
+      "entityId": "ENTITY-ste-transcore-holdings-inc",
+      "entityName": "STE TransCore Holdings, Inc.",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": null,
+      "countryOfIncorporation": "USA",
+      "aliases": [
+        "STE TransCore Holdings, Inc."
+      ]
+    },
+    {
+      "entityId": "ENTITY-ste-urs-qfc-branch",
+      "entityName": "STE URS QFC Branch",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "lob": "Smart Sustainable Utilities",
+      "countryOfIncorporation": "Qatar",
+      "aliases": [
+        "STE URS QFC Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-tlp-holdings-llc",
+      "entityName": "TLP Holdings, LLC",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": null,
+      "countryOfIncorporation": "USA",
+      "aliases": [
+        "TLP Holdings, LLC"
+      ]
+    },
+    {
+      "entityId": "ENTITY-transcore-asia-pte-ltd",
+      "entityName": "Transcore Asia Pte. Ltd.",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": null,
+      "countryOfIncorporation": "Singapore",
+      "aliases": [
+        "Transcore Asia Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-transcore-atlantic-llc",
+      "entityName": "TransCore Atlantic, LLC",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": null,
+      "countryOfIncorporation": "USA",
+      "aliases": [
+        "TransCore Atlantic, LLC"
+      ]
+    },
+    {
+      "entityId": "ENTITY-transcore-its-llc",
+      "entityName": "TransCore ITS, LLC",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": null,
+      "countryOfIncorporation": "USA",
+      "aliases": [
+        "TransCore ITS, LLC"
+      ]
+    },
+    {
+      "entityId": "ENTITY-transcore-its-llc-saudi-branch",
+      "entityName": "TransCore ITS, LLC Saudi Branch",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": null,
+      "countryOfIncorporation": "Saudi Arabia",
+      "aliases": [
+        "TransCore ITS, LLC Saudi Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-transcore-partners-llc",
+      "entityName": "TransCore Partners, LLC",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": null,
+      "countryOfIncorporation": "USA",
+      "aliases": [
+        "TransCore Partners, LLC"
+      ]
+    },
+    {
+      "entityId": "ENTITY-transcore-lp",
+      "entityName": "TransCore, LP",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": null,
+      "countryOfIncorporation": "USA",
+      "aliases": [
+        "TransCore, LP"
+      ]
+    },
+    {
+      "entityId": "ENTITY-transcore-lp-dubai",
+      "entityName": "TransCore, LP - Dubai",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": null,
+      "countryOfIncorporation": "United Arab Emirates",
+      "aliases": [
+        "TransCore, LP - Dubai"
+      ]
+    }
+  ],
+  "projects": [],
+  "customers": [
+    {
+      "customerId": "CUSTOMER-land-transport-authority",
+      "customerName": "LAND TRANSPORT AUTHORITY",
+      "aliases": [
+        "LAND TRANSPORT AUTHORITY"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-home-affairs",
+      "customerName": "MINISTRY OF HOME AFFAIRS",
+      "aliases": [
+        "MINISTRY OF HOME AFFAIRS"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-ch-karnchang-public-company-limited",
+      "customerName": "CH. KARNCHANG PUBLIC COMPANY LIMITED",
+      "aliases": [
+        "CH. KARNCHANG PUBLIC COMPANY LIMITED"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-housing-development-board",
+      "customerName": "Housing Development Board",
+      "aliases": [
+        "Housing Development Board"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-hyundai-rotem-company",
+      "customerName": "HYUNDAI ROTEM COMPANY",
+      "aliases": [
+        "HYUNDAI ROTEM COMPANY"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-sbs-transit-ltd",
+      "customerName": "SBS TRANSIT LTD",
+      "aliases": [
+        "SBS TRANSIT LTD"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-alstom-transport",
+      "customerName": "ALSTOM TRANSPORT",
+      "aliases": [
+        "ALSTOM TRANSPORT"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-chennai-metro-rail-limited",
+      "customerName": "CHENNAI METRO RAIL LIMITED",
+      "aliases": [
+        "CHENNAI METRO RAIL LIMITED"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-defence-science-and-technology",
+      "customerName": "DEFENCE SCIENCE AND TECHNOLOGY",
+      "aliases": [
+        "DEFENCE SCIENCE AND TECHNOLOGY"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-defence",
+      "customerName": "MINISTRY OF DEFENCE",
+      "aliases": [
+        "MINISTRY OF DEFENCE"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-changchun-changke-alstom-railway",
+      "customerName": "CHANGCHUN CHANGKE ALSTOM RAILWAY",
+      "aliases": [
+        "CHANGCHUN CHANGKE ALSTOM RAILWAY"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-siemens",
+      "customerName": "SIEMENS",
+      "aliases": [
+        "SIEMENS"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-health",
+      "customerName": "MINISTRY OF HEALTH",
+      "aliases": [
+        "MINISTRY OF HEALTH"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-changi-airport-group-singapore-pte-ltd",
+      "customerName": "CHANGI AIRPORT GROUP (SINGAPORE) PTE LTD",
+      "aliases": [
+        "CHANGI AIRPORT GROUP (SINGAPORE) PTE LTD"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-sembcorp-specialised-construction",
+      "customerName": "SEMBCORP SPECIALISED CONSTRUCTION",
+      "aliases": [
+        "SEMBCORP SPECIALISED CONSTRUCTION"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-hitachi-rail",
+      "customerName": "HITACHI RAIL",
+      "aliases": [
+        "HITACHI RAIL"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-cpb-bam-ghella-ugl-joint-venture",
+      "customerName": "CPB BAM GHELLA UGL JOINT VENTURE",
+      "aliases": [
+        "CPB BAM GHELLA UGL JOINT VENTURE"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-citycab-pte-ltd",
+      "customerName": "CITYCAB PTE LTD",
+      "aliases": [
+        "CITYCAB PTE LTD"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-setia-utama-lrt3-sdn-bhd",
+      "customerName": "SETIA UTAMA LRT3 SDN. BHD.",
+      "aliases": [
+        "SETIA UTAMA LRT3 SDN. BHD."
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-public-utilities-board",
+      "customerName": "PUBLIC UTILITIES BOARD",
+      "aliases": [
+        "PUBLIC UTILITIES BOARD"
+      ]
+    }
+  ],
+  "suppliers": [
+    {
+      "supplierId": "SUPPLIER-leonardo-s-p-a",
+      "supplierName": "LEONARDO S.P.A.",
+      "businessArea": "URS Singapore; URS Taiwan",
+      "aliases": [
+        "LEONARDO S.P.A."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-byd-singapore-pte-ltd",
+      "supplierName": "BYD (SINGAPORE) PTE LTD",
+      "businessArea": "URS Singapore",
+      "aliases": [
+        "BYD (SINGAPORE) PTE LTD"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-motorola-solutions-singapore-pte-ltd",
+      "supplierName": "MOTOROLA SOLUTIONS SINGAPORE PTE. LTD.",
+      "businessArea": "URS Singapore",
+      "aliases": [
+        "MOTOROLA SOLUTIONS SINGAPORE PTE. LTD."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-frontier-integrated-technology-pte-ltd",
+      "supplierName": "FRONTIER INTEGRATED TECHNOLOGY PTE LTD",
+      "businessArea": "URS Singapore",
+      "aliases": [
+        "FRONTIER INTEGRATED TECHNOLOGY PTE LTD"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-man-truck-bus-se",
+      "supplierName": "MAN TRUCK & BUS SE",
+      "businessArea": "URS Singapore",
+      "aliases": [
+        "MAN TRUCK & BUS SE"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-trapeze-group-singapore-pte-ltd",
+      "supplierName": "TRAPEZE GROUP SINGAPORE PTE. LTD.",
+      "businessArea": "URS Singapore",
+      "aliases": [
+        "TRAPEZE GROUP SINGAPORE PTE. LTD."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-cong-ty-tnhh-cei-international-investments-vn",
+      "supplierName": "CONG TY TNHH CEI INTERNATIONAL INVESTMENTS (VN)",
+      "businessArea": "URS Singapore",
+      "aliases": [
+        "CONG TY TNHH CEI INTERNATIONAL INVESTMENTS (VN)"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-zhejiang-crrc-electric",
+      "supplierName": "ZHEJIANG CRRC ELECTRIC",
+      "businessArea": "URS Singapore",
+      "aliases": [
+        "ZHEJIANG CRRC ELECTRIC"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-l-s-electric-co-ltd",
+      "supplierName": "L&S Electric Co., Ltd.",
+      "businessArea": "URS Taiwan",
+      "aliases": [
+        "L&S Electric Co., Ltd."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-infochamp-systems-corporation",
+      "supplierName": "InfoChamp Systems Corporation",
+      "businessArea": "URS Taiwan",
+      "aliases": [
+        "InfoChamp Systems Corporation"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-ub-union-technologies-inc",
+      "supplierName": "UB Union Technologies Inc",
+      "businessArea": "URS Taiwan",
+      "aliases": [
+        "UB Union Technologies Inc"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-ag-neovo-technology-corporation",
+      "supplierName": "AG Neovo Technology Corporation",
+      "businessArea": "URS Taiwan",
+      "aliases": [
+        "AG Neovo Technology Corporation"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-tatung-system-technologies-inc",
+      "supplierName": "Tatung System Technologies Inc.",
+      "businessArea": "URS Taiwan",
+      "aliases": [
+        "Tatung System Technologies Inc."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-3s-system-tech-inc",
+      "supplierName": "3S System Tech. Inc.",
+      "businessArea": "URS Taiwan",
+      "aliases": [
+        "3S System Tech. Inc."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-sen-yeh-construction-co-ltd",
+      "supplierName": "Sen Yeh Construction Co., Ltd",
+      "businessArea": "URS Taiwan",
+      "aliases": [
+        "Sen Yeh Construction Co., Ltd"
+      ]
+    }
+  ],
+  "sites": []
+}

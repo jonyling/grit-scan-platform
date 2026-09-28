@@ -9,3 +9,5 @@ WORKFLOW_NEW = 100000000
 TRANSITION_START = 100000100
 ACTOR_SUPERVISOR = 100000200
 TRIGGER_SYSTEM = 100000304
+# Live grit_logstatus choice. Formatted label is SUCCEEDED. It means the call finished, not that the proposal was accepted.
+AGENT_LOG_SUCCEEDED = 100000800

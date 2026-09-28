@@ -113,7 +113,7 @@ def test_same_proposal_has_the_same_response_hash() -> None:
     assert first["response_hash"] == second["response_hash"]
 
 
-def test_agents_hold_no_dataverse_credential_and_gemini_is_unwired() -> None:
+def test_agents_hold_no_dataverse_credential_and_gemini_refuses_without_a_key() -> None:
     root = Path(__file__).parents[1] / "agents"
     for path in root.glob("*.py"):
         text = path.read_text(encoding="utf-8")
@@ -121,9 +121,62 @@ def test_agents_hold_no_dataverse_credential_and_gemini_is_unwired() -> None:
         assert "DATAVERSE" not in text
         assert "ledger.append" not in text
         assert "assess_impact" not in text
+        assert "BEGIN PRIVATE KEY" not in text
     raised = False
     try:
-        gemini_proposer("Researcher", "prompt", {})
+        gemini_proposer("Researcher", "prompt", {}, env={})
     except RuntimeError as exc:
-        raised = "not wired" in str(exc)
+        raised = "not configured" in str(exc) or "service-account file" in str(exc)
+        assert "AIza" not in str(exc)
     assert raised
+
+
+def test_private_key_text_is_not_accepted_as_an_api_key() -> None:
+    raised = False
+    try:
+        gemini_proposer("Researcher", "prompt", {}, env={"GOOGLE_API_KEY": "-----BEGIN PRIVATE KEY-----\nnot-a-real-key\n-----END PRIVATE KEY-----"})
+    except RuntimeError as exc:
+        raised = "not an API key" in str(exc)
+        assert "not-a-real-key" not in str(exc)
+    assert raised
+
+
+def test_agent_log_body_records_a_proposal_and_not_a_score() -> None:
+    from dataverse.signals import agent_log_body
+
+    body = agent_log_body(
+        agent_name="Critic",
+        prompt_version="p5-critic-1",
+        task="A headline",
+        citations=["https://news.example/story"],
+        response_hash="abc",
+        rationale="One outlet only.",
+        validation="REJECTED: NOT_VERIFIABLE",
+        correlation_id="AGENTS-1",
+        completed_at="2026-09-28T00:00:00Z",
+        execution_id="exec-1",
+        signal_id="sig-1",
+    )
+    assert body["grit_logstatus"] == 100000800
+    assert body["grit_supervisorvalidationresult"] == "REJECTED: NOT_VERIFIABLE"
+    assert "severity" not in body
+    assert "score" not in body
+    assert "grit_state" not in body
+
+
+def test_injected_client_returns_a_proposal_without_a_credential() -> None:
+    class _Response:
+        text = '{"cited_entity_ids":["ENT-KMRT"],"claims":[{"statement":"Named.","established":true}],"rationale":"From the task."}'
+
+    class _Models:
+        def generate_content(self, **kwargs):
+            assert kwargs["model"] == "gemini-2.5-flash"
+            assert "score" in kwargs["config"]["system_instruction"]
+            return _Response()
+
+    class _Client:
+        models = _Models()
+
+    raw = gemini_proposer("Assessment", "prompt", {"query": "Taiwan"}, env={}, client=_Client())
+    assert raw["cited_entity_ids"] == ["ENT-KMRT"]
+    assert raw["claims"][0]["established"] is True

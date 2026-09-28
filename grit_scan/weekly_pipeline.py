@@ -165,6 +165,10 @@ def revise(document: dict[str, Any], pack: OntologyPack) -> dict[str, Any]:
         "supportedDescents": sum(item["descentStatus"] == "SUPPORTED" for item in revisions),
         "unreviewedConditionIds": [condition["id"] for condition in conditions if condition["id"] not in reviewed],
         "revisions": revisions,
+    } | {
+        key: pack.baseline[key]
+        for key in ("deltaTitle", "posture", "idleLine")
+        if pack.baseline.get(key)
     }
 
 
@@ -188,7 +192,7 @@ def compose_delta(revision: dict[str, Any]) -> str:
     supported = [item for item in revision.get("revisions") or [] if item.get("descentStatus") == "SUPPORTED"]
     unreviewed = list(revision.get("unreviewedConditionIds") or [])
     lines = [
-        "URS TAIWAN WEEKLY STRATEGIC DELTA",
+        str(revision.get("deltaTitle") or "URS TAIWAN WEEKLY STRATEGIC DELTA"),
         "",
         f"Revision: {revision.get('revisionDate')}",
         f"Baseline: {revision.get('baselineId')}",
@@ -197,7 +201,7 @@ def compose_delta(revision: dict[str, Any]) -> str:
         "BOTTOM LINE",
     ]
     if not changed:
-        lines.append("No material change was recorded against the standing Taiwan baseline.")
+        lines.append(str(revision.get("idleLine") or "No material change was recorded against the standing Taiwan baseline."))
     else:
         lines.append(
             f"{len(changed)} baseline condition(s) moved during this revision. "
@@ -257,7 +261,10 @@ def compose_delta(revision: dict[str, Any]) -> str:
         [
             "",
             "MANAGEMENT POSTURE",
-            "Maintain Taiwan as an active strategic watchpoint. Treat entity-level action as evidence-led and do not infer a confirmed loss event from a changed global condition alone.",
+            str(
+                revision.get("posture")
+                or "Maintain Taiwan as an active strategic watchpoint. Treat entity-level action as evidence-led and do not infer a confirmed loss event from a changed global condition alone."
+            ),
         ]
     )
     return "\n".join(lines) + "\n"
@@ -274,7 +281,7 @@ def run_weekly_pipeline(
     revision_input = import_scan(
         scan_text,
         pack.baseline,
-        revision_id=f"URS-TW-WEEKLY-{revision_date}",
+        revision_id=f"{pack.baseline.get('revisionPrefix') or 'URS-TW'}-WEEKLY-{revision_date}",
         revision_date=revision_date,
     )
     revision = revise(revision_input, pack)

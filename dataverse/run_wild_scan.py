@@ -17,6 +17,9 @@ from supervisor.service import Supervisor
 
 
 def main(argv: list[str] | None = None) -> int:
+    from grit_scan.local_env import load_local_env
+
+    load_local_env()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--query", action="append", required=True, help="One condition. Do not combine them.")
     parser.add_argument("--slices", type=int, default=1, help="15-minute export files to read, from 1 to 4.")

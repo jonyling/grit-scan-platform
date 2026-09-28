@@ -1,4 +1,7 @@
-"""Bind free text to the URS exposure ontology. No inference, one declared hop."""
+"""Bind free text to the URS exposure ontology. No inference, one declared hop.
+
+Legal entities are a separate collection. They are not relabelled as sites.
+"""
 
 from __future__ import annotations
 
@@ -9,6 +12,7 @@ from typing import Any
 from grit_scan.matchers.text_norm import normalise_exposure, standalone_pattern
 
 _COLLECTIONS = (
+    ("ENTITY", "entities", "entityId", "entityName"),
     ("PROJECT", "projects", "projectId", "projectName"),
     ("CUSTOMER", "customers", "customerId", "customerName"),
     ("SUPPLIER", "suppliers", "supplierId", "supplierName"),

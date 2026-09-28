@@ -1,0 +1,352 @@
+{
+  "registerId": "URS-NEWS-OUTLETS",
+  "scope": "outlets named with a URL on the News sheet",
+  "ratingStatus": "UNRATED",
+  "workbook": "URS Entity Info.xlsx",
+  "sheet": "News",
+  "absence": "The News sheet names outlets. It does not assign credibility ratings, and rows without a URL were not given an invented domain. This is not the company source-credibility register.",
+  "skippedWithoutUrl": [
+    "Reuters",
+    "Bloomberg",
+    "Associated Press (AP)",
+    "Agence France-Presse (AFP)",
+    "CNBC",
+    "Financial Times",
+    "Wall Street Journal",
+    "Nikkei Asia",
+    "New York Times",
+    "Washington Post",
+    "The Telegraph",
+    "Forbes",
+    "Additional Sources Highly Relevant for GRIT-Scan",
+    "Requested report / article",
+    "Accenture Year-end Macro Brief Special Edition: 2026 Outlook and Top 10 Macro Trends",
+    "Allianz Risk Barometer 2026",
+    "EY Geostrategic Outlook 2026",
+    "World Bank Group Global Economic Prospects 2026",
+    "World Economic Forum Global Risks Report 2026",
+    "Moody’s Global Risk Outlook 2026",
+    "Economist Intelligence Unit Global Risk Leadership Report for 2026",
+    "Capgemini Top Trends 2026",
+    "Forrester Predictions 2026: Technology & Security",
+    "KPMG Internal Audit: Key Risk Areas 2026",
+    "Protiviti Unlocking Opportunity: Executive Perspectives on Top Risks and Opportunities 2026",
+    "PwC The Risk Agenda for Assurance Functions 2026",
+    "PwC’s 29th Global CEO Survey: Leading Through Uncertainty in the Age of AI",
+    "BCG Global Trade Report 2026: Trade in Transition, How to Prepare for a Patchwork World Order",
+    "Internal Audit Foundation Risk in Focus: Hot Topics for Internal Auditors",
+    "KPMG Global Tech Report 2026",
+    "Allianz Risk Barometer Results Appendix 2026",
+    "Verizon Data Breach Investigations Report 2025",
+    "CNBC Davos 2026: Tariffs and AI’s Downside Pose Top Global Risks for Business",
+    "Marsh: Global Business Challenged by Rapid Emergence of a New Age of Competition, January 2026",
+    "Aon Industry Insights: Findings from Aon’s Global Risk Management Survey 2026",
+    "Aon: Richard Waterer on Aon’s Global Risk Survey 2026"
+  ],
+  "sources": [
+    {
+      "sourceName": "BBC News",
+      "sourceDomain": "bbc.com",
+      "sourceUrl": "https://www.bbc.com/news",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "CNN",
+      "sourceDomain": "cnn.com",
+      "sourceUrl": "https://www.cnn.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Channel News Asia (CNA)",
+      "sourceDomain": "channelnewsasia.com",
+      "sourceUrl": "https://www.channelnewsasia.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "The Straits Times",
+      "sourceDomain": "straitstimes.com",
+      "sourceUrl": "https://www.straitstimes.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "NBC News",
+      "sourceDomain": "nbcnews.com",
+      "sourceUrl": "https://www.nbcnews.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "The Guardian",
+      "sourceDomain": "theguardian.com",
+      "sourceUrl": "https://www.theguardian.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "The Economist",
+      "sourceDomain": "economist.com",
+      "sourceUrl": "https://www.economist.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Foreign Affairs",
+      "sourceDomain": "foreignaffairs.com",
+      "sourceUrl": "https://www.foreignaffairs.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Defense News",
+      "sourceDomain": "defensenews.com",
+      "sourceUrl": "https://www.defensenews.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Breaking Defense",
+      "sourceDomain": "breakingdefense.com",
+      "sourceUrl": "https://breakingdefense.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "CyberScoop",
+      "sourceDomain": "cyberscoop.com",
+      "sourceUrl": "https://cyberscoop.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "The Record",
+      "sourceDomain": "therecord.media",
+      "sourceUrl": "https://therecord.media/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Maritime Executive",
+      "sourceDomain": "maritime-executive.com",
+      "sourceUrl": "https://www.maritime-executive.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Aviation Week",
+      "sourceDomain": "aviationweek.com",
+      "sourceUrl": "https://aviationweek.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Supply Chain Dive",
+      "sourceDomain": "supplychaindive.com",
+      "sourceUrl": "https://www.supplychaindive.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Lloyd's List",
+      "sourceDomain": "lloydslist.com",
+      "sourceUrl": "https://lloydslist.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "ICAO",
+      "sourceDomain": "icao.int",
+      "sourceUrl": "https://www.icao.int",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "FAA",
+      "sourceDomain": "faa.gov",
+      "sourceUrl": "https://www.faa.gov",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "EASA",
+      "sourceDomain": "easa.europa.eu",
+      "sourceUrl": "https://www.easa.europa.eu",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Railway Gazette",
+      "sourceDomain": "railwaygazette.com",
+      "sourceUrl": "https://www.railwaygazette.com",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "International Railway Journal",
+      "sourceDomain": "railjournal.com",
+      "sourceUrl": "https://www.railjournal.com",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Metro Report",
+      "sourceDomain": "metro-report.com",
+      "sourceUrl": "https://www.metro-report.com",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Intelligent Transport",
+      "sourceDomain": "itsinternational.com",
+      "sourceUrl": "https://www.itsinternational.com",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Smart Cities World",
+      "sourceDomain": "smartcitiesworld.net",
+      "sourceUrl": "https://www.smartcitiesworld.net",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Future Transport News",
+      "sourceDomain": "futuretransport-news.com",
+      "sourceUrl": "https://futuretransport-news.com",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "UITP",
+      "sourceDomain": "uitp.org",
+      "sourceUrl": "https://www.uitp.org",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "World Economic Forum (WEF)",
+      "sourceDomain": "weforum.org",
+      "sourceUrl": "https://www.weforum.org/publications/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "WEF Strategic Intelligence",
+      "sourceDomain": "intelligence.weforum.org",
+      "sourceUrl": "https://intelligence.weforum.org/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Gartner",
+      "sourceDomain": "gartner.com",
+      "sourceUrl": "https://www.gartner.com/en/insights",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Deloitte",
+      "sourceDomain": "deloitte.com",
+      "sourceUrl": "https://www.deloitte.com/us/en/insights.html",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "KPMG",
+      "sourceDomain": "kpmg.com",
+      "sourceUrl": "https://kpmg.com/us/en/insights-by-industry.html",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "KPMG",
+      "sourceDomain": "assets.kpmg.com",
+      "sourceUrl": "https://assets.kpmg.com/content/dam/kpmgsites/xx/pdf/2026/01/global-tech-report.pdf.coredownload.inline.pdf",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "PwC",
+      "sourceDomain": "pwc.com",
+      "sourceUrl": "https://www.pwc.com/gx/en/research-insights.html",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Strategy& (PwC)",
+      "sourceDomain": "strategyand.pwc.com",
+      "sourceUrl": "https://www.strategyand.pwc.com/gx/en/insights/reports-and-studies.html",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "McKinsey",
+      "sourceDomain": "mckinsey.com",
+      "sourceUrl": "https://www.mckinsey.com/featured-insights/insights-store",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "International Transport Forum (ITF)",
+      "sourceDomain": "itf-oecd.org",
+      "sourceUrl": "https://www.itf-oecd.org/publications",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "World Bank Urban Development",
+      "sourceDomain": "worldbank.org",
+      "sourceUrl": "https://www.worldbank.org/en/topic/urbandevelopment",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    },
+    {
+      "sourceName": "Smart Cities Council",
+      "sourceDomain": "smartcitiescouncil.com",
+      "sourceUrl": "https://smartcitiescouncil.com",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true
+    }
+  ]
+}

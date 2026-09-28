@@ -1,0 +1,124 @@
+{
+  "registerId": "URS-STE-THEMES",
+  "workbook": "URS Entity Info.xlsx",
+  "sheet": "7. Annual Risks",
+  "absence": "Keywords are the governed risk title, not an invented search list. Driver text is stored and is not used as a keyword.",
+  "themes": [
+    {
+      "themeId": "URS-KEY-01",
+      "themeName": "Competition",
+      "tier": "KEY",
+      "keywords": [],
+      "sheetDetail": "Competition in pricing, quality and delivery; products and solutions portfolio and technology differentiation; speed and access to overseas markets, customers and partnerships.",
+      "sheetExtra": "Strategic choices on customer relationships, business models, offerings and geographies; competitor monitoring; partnerships to increase win rates; cost savings and operational excellence; R&D and AI-enabled productivity."
+    },
+    {
+      "themeId": "URS-KEY-02",
+      "themeName": "Financial volatility (inflation, interest rate fluctuations, forex, credit risks)",
+      "tier": "KEY",
+      "keywords": [
+        "Financial volatility"
+      ],
+      "sheetDetail": "Increased interest rates and financing costs; forex exposure; labour and material cost increases; customer and supplier credit risks; tariffs, operating cost pressures and recessionary pressures.",
+      "sheetExtra": "Monthly hedging process; improved net working capital management; reduction of excess cash balances; charge late payment interest where possible; pass through inflated costs for new tenders; diversify and strengthen supply chains; allow price renegotiation where contracts permit."
+    },
+    {
+      "themeId": "URS-KEY-03",
+      "themeName": "Escalating costs of major projects impacting margins",
+      "tier": "KEY",
+      "keywords": [],
+      "sheetDetail": "Inadequate project risk management and cost monitoring; uneven project management competencies; inability to fulfil contractual requirements; cybersecurity requirements in solutions; rising labour and material costs; ineffective negotiation strategies.",
+      "sheetExtra": "Project Risk Management Plan for projects above $5m; project cost/WIP reviews and progress reporting; management involvement in high-value vendor negotiations; support for new project managers; competency training; monthly EAC and net working capital monitoring; strategic sourcing to raise price competition."
+    },
+    {
+      "themeId": "URS-KEY-04",
+      "themeName": "Cybersecurity risks leading to major IT outage/data exfiltration (N2 & IBUs)",
+      "tier": "KEY",
+      "keywords": [
+        "Cybersecurity risks leading to major IT outage/data exfiltration"
+      ],
+      "sheetDetail": "Inadequate cybersecurity awareness; staff lapses; lack of N2 IT network policies/SOPs; inconsistent controls in standalone project networks; AI-enhanced malicious attacks and data privacy concerns.",
+      "sheetExtra": "Annual e-learning, GISO publicity and phishing campaigns; Group standard cybersecurity solutions; endpoint protection, vulnerability scans and assessments; weekly patch and website vulnerability assessments; IT DRP exercises; N2 cybersecurity infrastructure and EDR; ISO27001:2022 ISMS implementation."
+    },
+    {
+      "themeId": "URS-KEY-05",
+      "themeName": "Geopolitical impact to business operations",
+      "tier": "KEY",
+      "keywords": [],
+      "sheetDetail": "Heightened scrutiny of entities perceived to have Chinese affiliations, especially in the U.S.; reputational exposure from social media and public sentiment; legal and regulatory scrutiny from evolving U.S. standards and government regulations.",
+      "sheetExtra": "Business Heads to review business activities, partnerships and supply chains; comply with Guidelines on Publicity Content; external-facing marketing, publicity and social media content to be reviewed with Group Corp Comms and BA Marketing; media monitoring and social listening with PR agency support; escalate potential reputational risks."
+    },
+    {
+      "themeId": "URS-KEY-06",
+      "themeName": "Fraud, bribery and corruption",
+      "tier": "KEY",
+      "keywords": [],
+      "sheetDetail": "No key issues identified.",
+      "sheetExtra": "Mandatory Code of Business Conduct & Ethics e-learning; communication of Group risk appetite statements; management reminders on key policies and consequences; ongoing risk assessment in high-risk areas; annual COI declaration; intermediary onboarding and review with screening and ABC e-learning; sharing of cases; escalation of assurance, IA and CSA findings; CSA exercises across LOBs and BA."
+    },
+    {
+      "themeId": "URS-TIER_2-01",
+      "themeName": "Business concentration risk for Taiwan",
+      "tier": "TIER_2",
+      "keywords": [],
+      "sheetDetail": "Continue as Tier-2. Current impact can be mitigated with existing controls and additional action plans. Continue monitoring as part of Taiwan concentration risk review, considering six prospective rail projects in Taiwan.",
+      "sheetExtra": null
+    },
+    {
+      "themeId": "URS-TIER_2-02",
+      "themeName": "Business & supply chain disruptions from natural disasters & pandemic",
+      "tier": "TIER_2",
+      "keywords": [],
+      "sheetDetail": "Continue as Tier-2. Pandemics can still cause operational disruption, lockdowns and supply chain interruptions. More frequent climate-related weather conditions, such as typhoons, may cause physical damage or business disruption.",
+      "sheetExtra": null
+    },
+    {
+      "themeId": "URS-TIER_2-03",
+      "themeName": "Regulatory compliance",
+      "tier": "TIER_2",
+      "keywords": [],
+      "sheetDetail": "Continue as Tier-2 as there are no major changes to the regulatory landscape in which URS operates.",
+      "sheetExtra": null
+    },
+    {
+      "themeId": "URS-TIER_2-04",
+      "themeName": "Workplace health and safety",
+      "tier": "TIER_2",
+      "keywords": [],
+      "sheetDetail": "Continue as Tier-2 as business operations do not involve construction or use of heavy machinery and equipment by staff.",
+      "sheetExtra": null
+    },
+    {
+      "themeId": "URS-TIER_2-05",
+      "themeName": "Climate change adaptation",
+      "tier": "TIER_2",
+      "keywords": [],
+      "sheetDetail": "Continue as Tier-2. Continue monitoring evolving climate regulations and reporting requirements to meet compliance and stakeholder expectations for ESG disclosures and green practices.",
+      "sheetExtra": null
+    },
+    {
+      "themeId": "URS-EMERGING-01",
+      "themeName": "Geopolitical volatility & conflicts impacting staff safety & supply chain",
+      "tier": "EMERGING",
+      "keywords": [],
+      "sheetDetail": "Urgent Mitigations",
+      "sheetExtra": "GMs/BCM Champions to incorporate crisis escalation and evacuation plans into BCP by 31 Dec 2025 and perform BCP testing by mid-2026 for war/conflict scenarios in crisis-zone entities."
+    },
+    {
+      "themeId": "URS-EMERGING-02",
+      "themeName": "Emerging technologies disrupting businesses",
+      "tier": "EMERGING",
+      "keywords": [],
+      "sheetDetail": "Close monitoring of watchpoints & action plans",
+      "sheetExtra": "Develop non-RFID technology/transaction-based revenue model; use AI/GenAI to improve operations productivity; develop Smart City OS AI/GenAI use cases; enhance Edge AI devices; develop AI/GenAI use cases for Enterprise Asset Management; push AI coding and testing; collaborate with GEC on Smart City OS and Unified Traffic Management; continue R&D to leverage AI/GenAI across URS products; establish AI manpower build-up plan."
+    },
+    {
+      "themeId": "URS-EMERGING-03",
+      "themeName": "Talent scarcity in emerging technologies to support business growth",
+      "tier": "EMERGING",
+      "keywords": [],
+      "sheetDetail": "Close monitoring of watchpoints & action plans",
+      "sheetExtra": "Run Workforce Planning project with Accenture, covering Transformation Management Office, talent mapping, project management team and Go-To-Market strategy; foster AI and machine learning competencies aligned with Group HR and P24."
+    }
+  ]
+}
