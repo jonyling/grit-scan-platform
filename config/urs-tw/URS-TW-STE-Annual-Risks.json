@@ -1,0 +1,22 @@
+{
+  "registerVersion": "URS-TW-STE-ANNUAL-RISKS-2026-09-07-v2",
+  "note": "Mirrors the 14 documented STE risk themes from 13_Annual_Risks.md (source: URS Entity Info.xlsx). Used for per-finding classification via Get-STEThemeMatch.ps1, replacing the static per-condition steThemes lookup in config/URS-TW-Global-Baseline.json as the primary source of truth. Keywords are drawn from each theme's own documented Key Drivers/Issues text, not invented. v2: removed bare 'ai' and 'war' keywords after confirmed false-positive substring matches inside 'Taiwan' and 'warehouses' respectively -- keep keywords at least 5-6 characters or multi-word to avoid this class of bug.",
+  "themes": [
+    { "themeId": "KEY-01", "themeName": "Competition", "tier": "KEY_RISK", "keywords": ["competition", "competitor", "pricing pressure", "technology differentiation", "market access", "win rate"] },
+    { "themeId": "KEY-02", "themeName": "Financial volatility", "tier": "KEY_RISK", "keywords": ["financial volatility", "interest rate", "inflation", "forex", "foreign exchange", "credit risk", "tariff", "financing cost", "borrowing cost", "recessionary"] },
+    { "themeId": "KEY-03", "themeName": "Escalating costs of major projects impacting margins", "tier": "KEY_RISK", "keywords": ["escalating cost", "project cost", "margin", "cost overrun", "labour cost", "material cost", "contractual requirement", "project risk management"] },
+    { "themeId": "KEY-04", "themeName": "Cybersecurity risks leading to major IT outage/data exfiltration", "tier": "KEY_RISK", "keywords": ["cybersecurity", "cyber attack", "data exfiltration", "IT outage", "ransomware", "network security", "data privacy", "OT security"] },
+    { "themeId": "KEY-05", "themeName": "Geopolitical impact to business operations", "tier": "KEY_RISK", "keywords": ["geopolitical", "sanctions", "export control", "chinese affiliation", "regulatory scrutiny", "reputational exposure", "strategic competition"] },
+    { "themeId": "KEY-06", "themeName": "Fraud, bribery and corruption", "tier": "KEY_RISK", "keywords": ["fraud", "bribery", "corruption", "code of conduct", "conflict of interest"] },
+
+    { "themeId": "T2-01", "themeName": "Business concentration risk for Taiwan", "tier": "TIER2_RISK", "keywords": ["taiwan concentration", "taiwan order book", "taiwan rail", "concentration risk"] },
+    { "themeId": "T2-02", "themeName": "Business & supply chain disruptions from natural disasters & pandemic", "tier": "TIER2_RISK", "keywords": ["natural disaster", "typhoon", "earthquake", "pandemic", "supply chain disruption", "flood"] },
+    { "themeId": "T2-03", "themeName": "Regulatory compliance", "tier": "TIER2_RISK", "keywords": ["regulatory compliance", "regulation", "licensing", "compliance requirement"] },
+    { "themeId": "T2-04", "themeName": "Workplace health and safety", "tier": "TIER2_RISK", "keywords": ["workplace safety", "health and safety", "occupational safety"] },
+    { "themeId": "T2-05", "themeName": "Climate change adaptation", "tier": "TIER2_RISK", "keywords": ["climate change", "climate adaptation", "esg", "green practices", "carbon", "sustainability reporting"] },
+
+    { "themeId": "EMG-01", "themeName": "Geopolitical volatility & conflicts impacting staff safety & supply chain", "tier": "EMERGING_RISK", "keywords": ["staff safety", "evacuation", "crisis escalation", "wartime", "act of war", "conflict zone", "blockade", "military exercise", "maritime pressure", "civil-military"] },
+    { "themeId": "EMG-02", "themeName": "Emerging technologies disrupting businesses", "tier": "EMERGING_RISK", "keywords": ["genai", "artificial intelligence", "smart city os", "edge ai", "emerging technology", "semiconductor", "ai chip", "ai-enabled", "chip export"] },
+    { "themeId": "EMG-03", "themeName": "Talent scarcity in emerging technologies to support business growth", "tier": "EMERGING_RISK", "keywords": ["talent scarcity", "workforce planning", "talent mapping", "skills shortage", "hiring", "labour shortage"] }
+  ]
+}

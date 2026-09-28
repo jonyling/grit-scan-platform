@@ -46,7 +46,9 @@ def test_signal_body_does_not_invent_a_score_but_does_theme_match() -> None:
     assert "grit_sourcepublicationdateutc" not in body
     assert body["grit_trend"] == TREND_NO_MATERIAL_CHANGE
     assert body["grit_risklevel"] == RISK_LEVEL_HIGH
-    assert "Cybersecurity" in body["grit_businessrelevancebasis"]
+    assert body["grit_headline"] == "China political trajectory and Taiwan objective"
+    assert body["grit_headline"] != body["grit_signalname"]
+    assert "not yet confirmed by an analyst" in body["grit_businessrelevancebasis"]
     assert "tone" not in body
     assert "severity" not in body
 
@@ -54,7 +56,8 @@ def test_signal_body_does_not_invent_a_score_but_does_theme_match() -> None:
 def test_signal_body_with_no_theme_match_is_low_risk_and_says_so() -> None:
     body = signal_body(_candidate(title="A quiet afternoon in a small town"), execution_id="exec-1", correlation_id="GDELT-1")
     assert body["grit_risklevel"] == RISK_LEVEL_LOW
-    assert "did not match any governed STE" in body["grit_businessrelevancebasis"]
+    assert "no governed URS-TW condition matched" in body["grit_headline"]
+    assert "did not match any governed URS-TW condition" in body["grit_businessrelevancebasis"]
 
 
 def _ranked_item(**overrides) -> dict:

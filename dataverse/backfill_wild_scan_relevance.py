@@ -21,12 +21,16 @@ from dataverse.client import DataverseClient, DataverseError
 from grit_scan.wild_scan_relevance import (
     classify_wild_scan_risk_level,
     compose_wild_scan_basis,
+    match_wild_scan_condition,
     match_wild_scan_themes,
+    wild_scan_headline,
 )
 
 _WILD_SCAN_PREFIXES = ("GDELT-", "CURRENTS-")
 _RISK_LEVEL_CHOICE = {"HIGH": 100002300, "MEDIUM": 100002301, "LOW": 100002302}
 _SELECT = "grit_signalid,grit_signalname,grit_headline,grit_sourcename,grit_correlationid"
+_THEMES_REGISTER = "config/urs-tw/URS-TW-STE-Annual-Risks.json"
+_BASELINE_REGISTER = "config/urs-tw/URS-TW-Global-Baseline.json"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -51,18 +55,20 @@ def main(argv: list[str] | None = None) -> int:
 
     updated = 0
     for row in wild_rows:
-        text = str(row.get("grit_headline") or row.get("grit_signalname") or "")
-        matched_themes = match_wild_scan_themes(text, "config/urs/URS-STE-Themes.json")
+        text = str(row.get("grit_signalname") or "")
+        matched_themes = match_wild_scan_themes(text, _THEMES_REGISTER)
+        condition = match_wild_scan_condition(matched_themes, _BASELINE_REGISTER)
         risk_level = classify_wild_scan_risk_level(matched_themes)
-        basis = compose_wild_scan_basis(matched_themes, publisher=row.get("grit_sourcename"))
-        theme_names = "; ".join(theme["themeName"] for theme in matched_themes) or "no theme matched"
-        print(f"  {row['grit_signalid']} | {risk_level} | {theme_names}")
+        headline = wild_scan_headline(condition)
+        basis = compose_wild_scan_basis(condition, publisher=row.get("grit_sourcename"))
+        print(f"  {row['grit_signalid']} | {risk_level} | {headline}")
         if args.dry_run:
             continue
         client.patch(
             "grit_signals",
             row["grit_signalid"],
             {
+                "grit_headline": headline,
                 "grit_trend": TREND_NO_MATERIAL_CHANGE,
                 "grit_risklevel": _RISK_LEVEL_CHOICE[risk_level],
                 "grit_businessrelevancebasis": basis,

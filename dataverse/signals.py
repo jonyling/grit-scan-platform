@@ -24,7 +24,9 @@ from dataverse.choices import (
 from grit_scan.wild_scan_relevance import (
     classify_wild_scan_risk_level,
     compose_wild_scan_basis,
+    match_wild_scan_condition,
     match_wild_scan_themes,
+    wild_scan_headline,
 )
 
 _EVIDENCE_CONFIDENCE_CHOICE = {"HIGH": 100000500, "MEDIUM": 100000501, "LOW": EVIDENCE_LOW}
@@ -34,7 +36,9 @@ _TREND_CHOICE = {
     "NO_MATERIAL_CHANGE": TREND_NO_MATERIAL_CHANGE,
 }
 _RISK_LEVEL_CHOICE = {"HIGH": RISK_LEVEL_HIGH, "MEDIUM": RISK_LEVEL_MEDIUM, "LOW": RISK_LEVEL_LOW}
-_DEFAULT_THEMES_REGISTER = Path(__file__).resolve().parents[1] / "config" / "urs" / "URS-STE-Themes.json"
+_CONFIG_ROOT = Path(__file__).resolve().parents[1] / "config"
+_DEFAULT_THEMES_REGISTER = _CONFIG_ROOT / "urs-tw" / "URS-TW-STE-Annual-Risks.json"
+_DEFAULT_BASELINE_REGISTER = _CONFIG_ROOT / "urs-tw" / "URS-TW-Global-Baseline.json"
 
 
 
@@ -63,19 +67,23 @@ def signal_body(
     execution_id: str,
     correlation_id: str,
     themes_register: dict[str, Any] | Path | str = _DEFAULT_THEMES_REGISTER,
+    baseline_register: dict[str, Any] | Path | str = _DEFAULT_BASELINE_REGISTER,
 ) -> dict[str, Any]:
-    """A wild-scan candidate never gets a formal score, but it does get the
-    same STE theme match, and a best-effort Risk Level/Trend/Basis of
-    Relevance, that ``grit_scan.wild_scan_relevance`` derives from that match
-    alone (see that module for why Trend is always flat here)."""
+    """A wild-scan candidate never gets a formal score, but its own title is
+    matched against the governed URS-TW STE theme register and baseline
+    conditions (see ``grit_scan.wild_scan_relevance``), so ``grit_headline``
+    ("Theme" in PowerApps) carries one of the ten real condition names --
+    never a repeat of the signal's own title -- and Basis of Relevance
+    quotes that condition's own governed transmission sentence."""
     if not candidate.title or not candidate.url:
         raise ValueError("A Dataverse signal needs a title and a URL")
     matched_themes = match_wild_scan_themes(candidate.title, themes_register)
+    condition = match_wild_scan_condition(matched_themes, baseline_register)
     risk_level = classify_wild_scan_risk_level(matched_themes)
-    basis = compose_wild_scan_basis(matched_themes, publisher=candidate.publisher)
+    basis = compose_wild_scan_basis(condition, publisher=candidate.publisher)
     return {
         "grit_signalname": candidate.title[:100],
-        "grit_headline": candidate.title[:400],
+        "grit_headline": wild_scan_headline(condition),
         "grit_sourcename": candidate.publisher,
         "grit_sourceurl": candidate.url,
         "grit_fingerprint": hashlib.sha256(candidate.title.encode("utf-8")).hexdigest(),

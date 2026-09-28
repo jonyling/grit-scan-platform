@@ -1,0 +1,130 @@
+{
+  "baselineId": "URS-TW-GLOBAL-BASELINE-2026-09-05",
+  "effectiveDate": "2026-09-05",
+  "status": "WORKING_BASELINE",
+  "audience": "CEO_CFO",
+  "organisingLogic": "US-China strategic competition is the master condition; each condition below describes how that contest, or a connected global force, can transmit into Taiwan and then STE.",
+  "masterCondition": "US-China strategic competition",
+  "conditions": [
+    {
+      "id": "TW-GLOBAL-01",
+      "domain": "Geopolitical security",
+      "name": "US-China strategic competition",
+      "direction": "ESCALATING",
+      "confidence": "HIGH",
+      "currentAssessment": "Strategic competition remains the master condition for Taiwan risk. Military, technology, trade, investment and diplomatic competition are increasingly connected, making Taiwan a central point at which wider rivalry can transmit into business operations.",
+      "taiwanTransmission": "A deterioration in the relationship can increase pressure on Taiwan without immediately becoming a military conflict.",
+      "steThemes": ["Geopolitical impact to business operations", "Taiwan business concentration", "Financial volatility"],
+      "watchIndicators": ["New US or China restrictions linked to Taiwan", "Changes in deterrence or alliance commitments", "Direct disruption of cross-border business or financial channels"],
+      "relatedCfoQuestions": ["Cross-Strait tail risk", "Concentration risk", "Cash and contractual exposure"]
+    },
+    {
+      "id": "TW-GLOBAL-02",
+      "domain": "China politics",
+      "name": "China political trajectory and Taiwan objective",
+      "direction": "STABLE_HIGH",
+      "confidence": "MEDIUM",
+      "currentAssessment": "China's Taiwan objective remains connected to national identity, political legitimacy, military modernisation and national rejuvenation. Domestic economic or political pressure may increase the use of controlled external pressure without implying an immediate decision for war.",
+      "taiwanTransmission": "The most likely near-term transmission is calibrated political, administrative, economic or information pressure.",
+      "steThemes": ["Geopolitical impact to business operations", "Cybersecurity risks", "Fraud, bribery and corruption"],
+      "watchIndicators": ["Changes in official Taiwan red-line language", "Economic or regulatory action against Taiwan-linked companies", "Civil-military mobilisation or resilience preparation"],
+      "relatedCfoQuestions": ["Cross-Strait tail risk", "Sanctions and contractual obligations"]
+    },
+    {
+      "id": "TW-GLOBAL-03",
+      "domain": "Geopolitical security",
+      "name": "Taiwan Strait military and maritime pressure",
+      "direction": "ELEVATED_BASELINE",
+      "confidence": "HIGH",
+      "currentAssessment": "Military exercises, air activity, maritime pressure and coast guard operations form an elevated baseline. The important change is not any single exercise but whether the pattern becomes more frequent, prolonged, geographically restrictive or disruptive to commercial activity.",
+      "taiwanTransmission": "Pressure can affect staff confidence, shipping, insurance, supplier lead times and customer decisions before a formal blockade.",
+      "steThemes": ["Geopolitical impact to business operations", "Taiwan business concentration", "Business and supply chain disruptions"],
+      "watchIndicators": ["Exercises that effectively surround Taiwan", "Restrictions on commercial air or sea routes", "Boarding, interception or communications incidents", "Use of civilian transport or logistics assets"],
+      "relatedCfoQuestions": ["Blockade tail risk", "Staff safety", "Project continuity"]
+    },
+    {
+      "id": "TW-GLOBAL-04",
+      "domain": "US politics and alliances",
+      "name": "US political, alliance and Taiwan policy trajectory",
+      "direction": "CONTESTED",
+      "confidence": "MEDIUM",
+      "currentAssessment": "US policy toward China and Taiwan is shaped by the presidency, Congress, defence planning, alliance commitments and domestic political competition. A more explicit US commitment may strengthen deterrence while also increasing China's perception that Taiwan is aligning with the United States.",
+      "taiwanTransmission": "Policy changes can alter deterrence, sanctions exposure, technology access and the likelihood of allied responses to disruption.",
+      "steThemes": ["Geopolitical impact to business operations", "Regulatory compliance", "Emerging technologies disrupting businesses"],
+      "watchIndicators": ["Taiwan-related legislation or security commitments", "Changes in alliance posture", "Political pressure to restrict China-linked technology or suppliers", "Divergence between US and allied implementation"],
+      "relatedCfoQuestions": ["Sanctions", "Supply-chain continuity", "Technology access"]
+    },
+    {
+      "id": "TW-GLOBAL-05",
+      "domain": "Economic and financial",
+      "name": "US Federal Reserve policy and global borrowing costs",
+      "direction": "MATERIAL_DRIVER",
+      "confidence": "HIGH",
+      "currentAssessment": "US Federal Reserve decisions transmit through global funding costs, exchange rates, credit conditions and investor risk appetite. The Taiwan question is therefore affected not only by war or sanctions but also by the cost and availability of financing throughout the world.",
+      "taiwanTransmission": "Higher-for-longer US rates can increase financing costs, strengthen the US dollar, pressure TWD, raise supplier and customer credit risk, and reduce the financial flexibility available during a Taiwan disruption.",
+      "steThemes": ["Financial volatility", "Escalating costs of major projects", "Taiwan business concentration"],
+      "watchIndicators": ["Fed rate decisions and forward guidance", "US dollar and TWD movement", "Credit-spread and project-financing changes", "Customer payment or supplier liquidity deterioration", "Any restriction affecting NRA cash sweeps or repatriation"],
+      "relatedCfoQuestions": ["Are we out of pocket cash wise?", "NRA cash sweep", "Project financing", "Subcontractor solvency"]
+    },
+    {
+      "id": "TW-GLOBAL-06",
+      "domain": "Technology and industrial policy",
+      "name": "US-China technology and AI confrontation",
+      "direction": "ESCALATING",
+      "confidence": "HIGH",
+      "currentAssessment": "The technology contest covers semiconductors, AI, data, cloud infrastructure, sensors, industrial software, communications and dual-use systems. Taiwan is central to this ecosystem, while STE systems increasingly depend on trusted technology and resilient electronics supply chains.",
+      "taiwanTransmission": "Technology restrictions can create supplier eligibility, licensing, component availability, cost and delivery problems without a military escalation.",
+      "steThemes": ["Emerging technologies disrupting businesses", "Escalating costs of major projects", "Cybersecurity risks", "Business and supply chain disruptions"],
+      "watchIndicators": ["Controls on AI chips, memory, sensors or advanced manufacturing", "Trusted-origin requirements", "Restrictions on Chinese or Taiwan-linked suppliers", "Customer restrictions on AI, cloud or communications architecture"],
+      "relatedCfoQuestions": ["Margin protection", "Value-added AI services", "Supplier resilience"]
+    },
+    {
+      "id": "TW-GLOBAL-07",
+      "domain": "Economic coercion",
+      "name": "Sanctions, export controls and selective economic pressure",
+      "direction": "GRADUALLY_INTENSIFYING",
+      "confidence": "MEDIUM",
+      "currentAssessment": "Economic pressure is likely to remain a usable instrument for both Washington and Beijing because it can signal resolve without immediately causing full economic rupture. Ambiguous restrictions can be operationally difficult because companies must interpret them while continuing delivery.",
+      "taiwanTransmission": "Customs delays, licensing, sanctions, shipping restrictions or pressure on cross-border companies can affect Taiwan projects, suppliers, insurance and banking.",
+      "steThemes": ["Geopolitical impact to business operations", "Regulatory compliance", "Financial volatility", "Business and supply chain disruptions"],
+      "watchIndicators": ["Sanctions involving Taiwan, China or strategic industries", "Restrictions on rail, electronics, power or communications components", "Customs or licensing delays", "Banking restrictions involving Taiwan transactions"],
+      "relatedCfoQuestions": ["Contractual obligations", "Sanctions exposure", "Supplier failure", "Cash access"]
+    },
+    {
+      "id": "TW-GLOBAL-08",
+      "domain": "Taiwan politics and economy",
+      "name": "Taiwan domestic, economic and financial resilience",
+      "direction": "STABLE_WITH_VULNERABILITIES",
+      "confidence": "MEDIUM",
+      "currentAssessment": "Taiwan remains economically capable and institutionally functioning, but its global technology concentration and exposure to cross-Strait disruption create vulnerabilities. Domestic political contestation matters when it affects infrastructure decisions, emergency response, regulation, energy, investment or customer budgets.",
+      "taiwanTransmission": "Financial stress may appear through TWD volatility, delayed payments, higher insurance, supplier liquidity pressure or restrictions on moving cash before physical disruption occurs.",
+      "steThemes": ["Taiwan business concentration", "Financial volatility", "Regulatory compliance", "Business and supply chain disruptions"],
+      "watchIndicators": ["Material TWD volatility", "Customer payment delays", "Supplier liquidity deterioration", "Changes to foreign investment or critical infrastructure policy", "Energy or infrastructure reliability concerns"],
+      "relatedCfoQuestions": ["Concentration risk", "Cash preservation", "Customer and city-government exposure"]
+    },
+    {
+      "id": "TW-GLOBAL-09",
+      "domain": "Connected theatres",
+      "name": "Middle East and Russia-Ukraine conflicts affecting the Taiwan calculation",
+      "direction": "CONDITIONAL",
+      "confidence": "MEDIUM",
+      "currentAssessment": "The Middle East and Russia-Ukraine conflicts matter to Taiwan when they alter US military attention, energy and shipping costs, sanctions precedent, alliance cohesion, defence-industrial capacity or China's assessment of Western willingness to absorb economic costs.",
+      "taiwanTransmission": "A crisis elsewhere can change deterrence, increase energy and freight costs, divert resources or provide China with lessons about sanctions and coalition response.",
+      "steThemes": ["Geopolitical impact to business operations", "Financial volatility", "Business and supply chain disruptions", "Taiwan business concentration"],
+      "watchIndicators": ["US force diversion from the Indo-Pacific", "Sanctions precedents applied to China", "Shipping or energy disruption", "Chinese diplomatic or economic support for Russia or Middle Eastern actors", "Military lessons transferred to the Taiwan scenario"],
+      "relatedCfoQuestions": ["Blockade economics", "Supply-chain continuity", "Project cost and delivery"]
+    },
+    {
+      "id": "TW-GLOBAL-10",
+      "domain": "Resilience and disruption",
+      "name": "Taiwan whole-of-society and infrastructure resilience",
+      "direction": "IMPROVING_UNEVENLY",
+      "confidence": "MEDIUM",
+      "currentAssessment": "Taiwan's resilience depends on power, telecommunications, ports, transport, cyber systems, public communications, emergency supplies and staff continuity. Natural hazards and cyber incidents matter even when they are not caused by geopolitical conflict, because a contested environment can make recovery slower and attribution more difficult.",
+      "taiwanTransmission": "A limited disruption can create project delay, staff-safety exposure or supplier failure while the wider political situation remains below the threshold of war.",
+      "steThemes": ["Business and supply chain disruptions", "Cybersecurity risks", "Workplace health and safety", "Climate change adaptation"],
+      "watchIndicators": ["Damage to cables, ports, power or transport systems", "Cyber incidents affecting government, rail or infrastructure operators", "Emergency-response and continuity exercises", "Typhoons or earthquakes near operating sites", "Changes to evacuation or shelter guidance"],
+      "relatedCfoQuestions": ["Project continuity", "Staff safety", "Prime contractor obligations"]
+    }
+  ]
+}

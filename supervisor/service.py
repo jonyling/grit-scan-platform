@@ -768,6 +768,7 @@ class Supervisor:
                     "grit_signals",
                     existing,
                     {
+                        "grit_headline": body["grit_headline"],
                         "grit_trend": body["grit_trend"],
                         "grit_risklevel": body["grit_risklevel"],
                         "grit_businessrelevancebasis": body["grit_businessrelevancebasis"],
