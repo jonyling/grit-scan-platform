@@ -759,14 +759,23 @@ class Supervisor:
             if not getattr(candidate, "title", None) or not getattr(candidate, "url", None):
                 skipped.append(getattr(candidate, "content_hash", ""))
                 continue
+            body = signal_body(candidate, execution_id=execution_id, correlation_id=correlation_id)
             existing = known.get(candidate.content_hash)
             if existing:
+                # Re-scanning the same article: refresh theme/risk/basis to the
+                # current STE theme register, never touch approval fields.
+                client.patch(
+                    "grit_signals",
+                    existing,
+                    {
+                        "grit_trend": body["grit_trend"],
+                        "grit_risklevel": body["grit_risklevel"],
+                        "grit_businessrelevancebasis": body["grit_businessrelevancebasis"],
+                    },
+                )
                 reused.append(existing)
                 continue
-            signal_id = client.create(
-                "grit_signals",
-                signal_body(candidate, execution_id=execution_id, correlation_id=correlation_id),
-            )
+            signal_id = client.create("grit_signals", body)
             state_id = client.create(
                 "grit_workflowstates",
                 workflow_body(

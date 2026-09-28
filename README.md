@@ -24,8 +24,10 @@ not a harm score.
 - `tests/` and `run-impact-contract-tests.py`: the contract runner. P0 and P2 fixture tests are registered.
 - `specs/`: governing specifications. Spec 34 is the build order.
 - `URS Entity Info.xlsx` and `config/registry_aliases.json`: the URS ontology inputs the tests require.
-- `config/urs/`: the Urban Solutions reader pack. Rebuild it with `python3 -m grit_scan.build_urs_pack`. `urs-tw` remains the Taiwan reader pack and is not the whole ontology. The News sheet lists outlets; it does not rate them. No Taiwan baseline condition is copied.
+- `config/urs/`: the Urban Solutions reader pack. Rebuild it with `python3 -m grit_scan.build_urs_pack`. `urs-tw` remains the Taiwan reader pack and is not the whole ontology. The News sheet lists outlets; it does not rate them. No Taiwan baseline condition is copied. The STE theme register's keywords include generic business-risk vocabulary shared with the Taiwan pack's own theme list (same entity-wide Sheet 7 register) with any country- or condition-specific term left out.
 - `acquisition/`: candidate-only adapters for approved web, wild scan, Sphera, AGILE, and ISOS. The wild scan reads the GDELT 15-minute events export. It does not score. Currents is a separate currentsapi.services headline stream, capped at two pulls.
+- `grit_scan/wild_scan_relevance.py`: best-effort Trend / Risk Level / Basis-of-Relevance for a raw wild-scan candidate (GDELT/Currents), from an STE theme keyword match on the candidate's own title alone. Trend is always flat (a single unverified article carries no evidence of movement); Risk Level follows the matched theme's own tier (KEY/TIER_2/EMERGING); Basis names the matched theme(s) and states plainly this is single-source and unreviewed. `dataverse/signals.py::signal_body()` writes all three on every wild-scan signal.
+- `dataverse/backfill_wild_scan_relevance.py`: one-off CLI that refreshes theme match, Risk Level, Trend, and Basis of Relevance on wild-scan signals already in Dataverse (identified by `GDELT-`/`CURRENTS-` correlation IDs), without touching a weekly ranked finding's row or any approval field.
 - `dataverse/run_weekly_import.py`: writes a `weekly_pipeline` ranking into Dataverse — Trend, Risk Level, and Basis of Relevance to Business Area on `grit_signals`. Defaults to the Urban Solutions `urs` pack.
 - `grit_scan/theme_layer.py`: theme and event matches, metric calculation, escalation, and the register write gate. They do not write state.
 
@@ -48,6 +50,7 @@ streamlit run ui/app.py
 python3 -m dataverse.run_wild_scan --query "Taiwan Strait" --max-records 10
 python3 -m dataverse.run_wild_scan --currents --query "Taiwan Strait" --max-records 10
 python3 -m dataverse.run_weekly_import --ranking output/urs/ranking.json --pack urs --dry-run
+python3 -m dataverse.backfill_wild_scan_relevance --dry-run
 python3 -m agents.run_pass
 ```
 

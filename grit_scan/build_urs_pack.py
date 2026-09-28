@@ -224,6 +224,51 @@ def _lobs(workbook: Path) -> dict:
     }
 
 
+# Entity-wide STE Annual Risk vocabulary, not a Taiwan baseline. Sheet 7 of
+# URS Entity Info.xlsx is a single, entity-wide risk register: the same 14
+# themes were reused for the Taiwan reader pack's own keyword list, which is
+# why that list is safe to draw generic business-risk vocabulary from here.
+# Anything specific to a country or a Layer-1 condition/development (e.g.
+# "Taiwan concentration", "Taiwan rail", "maritime pressure") is left out --
+# that is the Taiwan baseline, and it is still not copied. What remains is
+# the same generic business-risk terms (cybersecurity, fraud, regulatory
+# compliance, ...) that describe the governed theme itself, independent of
+# any one reader's geography.
+_GENERAL_RISK_KEYWORDS: dict[str, list[str]] = {
+    "URS-KEY-01": ["competition", "competitor", "pricing pressure", "technology differentiation", "market access"],
+    "URS-KEY-02": [
+        "financial volatility", "interest rate", "inflation", "forex", "foreign exchange",
+        "credit risk", "tariff", "financing cost", "borrowing cost", "recessionary",
+    ],
+    "URS-KEY-03": [
+        "escalating cost", "project cost", "margin", "cost overrun", "labour cost",
+        "material cost", "contractual requirement", "project risk management",
+    ],
+    "URS-KEY-04": [
+        "cybersecurity", "cyber attack", "data exfiltration", "IT outage", "ransomware",
+        "network security", "data privacy",
+    ],
+    "URS-KEY-05": [
+        "geopolitical", "sanctions", "export control", "regulatory scrutiny", "reputational exposure",
+        "strategic competition",
+    ],
+    "URS-KEY-06": ["fraud", "bribery", "corruption", "code of conduct", "conflict of interest"],
+    "URS-TIER_2-02": ["natural disaster", "typhoon", "earthquake", "pandemic", "supply chain disruption", "flood"],
+    "URS-TIER_2-03": ["regulatory compliance", "regulation", "licensing", "compliance requirement"],
+    "URS-TIER_2-04": ["workplace safety", "health and safety", "occupational safety"],
+    "URS-TIER_2-05": ["climate change", "climate adaptation", "esg", "green practices", "carbon", "sustainability reporting"],
+    "URS-EMERGING-01": [
+        "staff safety", "evacuation", "crisis escalation", "wartime", "act of war", "conflict zone",
+        "military exercise", "civil-military",
+    ],
+    "URS-EMERGING-02": [
+        "genai", "artificial intelligence", "smart city os", "edge ai", "emerging technology",
+        "semiconductor", "ai chip", "ai-enabled", "chip export",
+    ],
+    "URS-EMERGING-03": ["talent scarcity", "workforce planning", "talent mapping", "skills shortage", "hiring", "labour shortage"],
+}
+
+
 def _themes(workbook: Path) -> dict:
     rows = read_worksheet(workbook, "7. Annual Risks")
     sections = (
@@ -237,11 +282,17 @@ def _themes(workbook: Path) -> dict:
         if len(found) != expected:
             raise ValueError(f"Sheet 7 {tier} section has {len(found)} rows; expected {expected}.")
         for ref, name, detail, extra in found:
+            theme_id = f"URS-{tier}-{int(ref):02d}"
             short = name.split("(", 1)[0].strip()
             keywords = [short] if short and short != name and len(short) >= 6 else []
+            seen_lower = {k.lower() for k in keywords}
+            for keyword in _GENERAL_RISK_KEYWORDS.get(theme_id, []):
+                if keyword.lower() not in seen_lower:
+                    keywords.append(keyword)
+                    seen_lower.add(keyword.lower())
             themes.append(
                 {
-                    "themeId": f"URS-{tier}-{int(ref):02d}",
+                    "themeId": theme_id,
                     "themeName": name,
                     "tier": tier,
                     "keywords": keywords,
@@ -253,7 +304,12 @@ def _themes(workbook: Path) -> dict:
         "registerId": "URS-STE-THEMES",
         "workbook": _WORKBOOK,
         "sheet": "7. Annual Risks",
-        "absence": "Keywords are the governed risk title, not an invented search list. Driver text is stored and is not used as a keyword.",
+        "absence": (
+            "Keywords beyond the governed risk title are generic business-risk vocabulary "
+            "for the same entity-wide theme (see _GENERAL_RISK_KEYWORDS), not per-condition "
+            "prose. Country- or condition-specific terms -- the Taiwan Layer-1 baseline -- "
+            "are still not copied. Driver text is stored and is not used as a keyword."
+        ),
         "themes": themes,
     }
 

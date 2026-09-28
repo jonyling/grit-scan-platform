@@ -1,5 +1,5 @@
 from acquisition.candidate import Candidate
-from dataverse.choices import EVIDENCE_LOW, RISK_LEVEL_LOW, TREND_ESCALATING
+from dataverse.choices import EVIDENCE_LOW, RISK_LEVEL_HIGH, RISK_LEVEL_LOW, TREND_ESCALATING, TREND_NO_MATERIAL_CHANGE
 from dataverse.client import DataverseError, organization_url, require_env
 from dataverse.signals import ranked_finding_body, ranked_finding_content_hash, signal_body
 from supervisor.service import Supervisor
@@ -39,14 +39,22 @@ def _candidate(title: str = "Vietnam rail note", url: str = "https://www.reuters
     )
 
 
-def test_signal_body_does_not_invent_a_score_or_publication_date() -> None:
-    body = signal_body(_candidate(), execution_id="exec-1", correlation_id="GDELT-1")
+def test_signal_body_does_not_invent_a_score_but_does_theme_match() -> None:
+    body = signal_body(_candidate(title="Reuters: cybersecurity data exfiltration hits rail operator"), execution_id="exec-1", correlation_id="GDELT-1")
     assert body["grit_evidenceconfidence"] == EVIDENCE_LOW
     assert body["grit_sourceurl"] == "https://www.reuters.com/rail"
     assert "grit_sourcepublicationdateutc" not in body
-    assert "grit_trend" not in body
+    assert body["grit_trend"] == TREND_NO_MATERIAL_CHANGE
+    assert body["grit_risklevel"] == RISK_LEVEL_HIGH
+    assert "Cybersecurity" in body["grit_businessrelevancebasis"]
     assert "tone" not in body
     assert "severity" not in body
+
+
+def test_signal_body_with_no_theme_match_is_low_risk_and_says_so() -> None:
+    body = signal_body(_candidate(title="A quiet afternoon in a small town"), execution_id="exec-1", correlation_id="GDELT-1")
+    assert body["grit_risklevel"] == RISK_LEVEL_LOW
+    assert "did not match any governed STE" in body["grit_businessrelevancebasis"]
 
 
 def _ranked_item(**overrides) -> dict:

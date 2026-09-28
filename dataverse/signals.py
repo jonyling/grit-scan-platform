@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from pathlib import Path
 from typing import Any
 
 from acquisition.candidate import Candidate
@@ -20,6 +21,11 @@ from dataverse.choices import (
     TRIGGER_SYSTEM,
     WORKFLOW_NEW,
 )
+from grit_scan.wild_scan_relevance import (
+    classify_wild_scan_risk_level,
+    compose_wild_scan_basis,
+    match_wild_scan_themes,
+)
 
 _EVIDENCE_CONFIDENCE_CHOICE = {"HIGH": 100000500, "MEDIUM": 100000501, "LOW": EVIDENCE_LOW}
 _TREND_CHOICE = {
@@ -28,6 +34,7 @@ _TREND_CHOICE = {
     "NO_MATERIAL_CHANGE": TREND_NO_MATERIAL_CHANGE,
 }
 _RISK_LEVEL_CHOICE = {"HIGH": RISK_LEVEL_HIGH, "MEDIUM": RISK_LEVEL_MEDIUM, "LOW": RISK_LEVEL_LOW}
+_DEFAULT_THEMES_REGISTER = Path(__file__).resolve().parents[1] / "config" / "urs" / "URS-STE-Themes.json"
 
 
 
@@ -50,9 +57,22 @@ def execution_body(
     }
 
 
-def signal_body(candidate: Candidate, *, execution_id: str, correlation_id: str) -> dict[str, Any]:
+def signal_body(
+    candidate: Candidate,
+    *,
+    execution_id: str,
+    correlation_id: str,
+    themes_register: dict[str, Any] | Path | str = _DEFAULT_THEMES_REGISTER,
+) -> dict[str, Any]:
+    """A wild-scan candidate never gets a formal score, but it does get the
+    same STE theme match, and a best-effort Risk Level/Trend/Basis of
+    Relevance, that ``grit_scan.wild_scan_relevance`` derives from that match
+    alone (see that module for why Trend is always flat here)."""
     if not candidate.title or not candidate.url:
         raise ValueError("A Dataverse signal needs a title and a URL")
+    matched_themes = match_wild_scan_themes(candidate.title, themes_register)
+    risk_level = classify_wild_scan_risk_level(matched_themes)
+    basis = compose_wild_scan_basis(matched_themes, publisher=candidate.publisher)
     return {
         "grit_signalname": candidate.title[:100],
         "grit_headline": candidate.title[:400],
@@ -62,6 +82,9 @@ def signal_body(candidate: Candidate, *, execution_id: str, correlation_id: str)
         "grit_contenthash": candidate.content_hash,
         "grit_signalversion": 1,
         "grit_evidenceconfidence": EVIDENCE_LOW,
+        "grit_trend": TREND_NO_MATERIAL_CHANGE,
+        "grit_risklevel": _RISK_LEVEL_CHOICE[risk_level],
+        "grit_businessrelevancebasis": basis,
         "grit_correlationid": correlation_id[:100],
         "grit_ExecutionId@odata.bind": f"/grit_executions({execution_id})",
     }
