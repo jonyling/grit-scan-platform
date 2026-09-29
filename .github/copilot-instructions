@@ -1,0 +1,5 @@
+# Project guidelines
+
+When writing documentation, specs, comments, commit messages, CLI help text, or chat explanations, read and follow `.github/skills/writing-standard/references/writing-standard.md`.
+
+Use project-specific style when this repository already makes a different choice. Do not apply the writing standard to code syntax or identifiers.
