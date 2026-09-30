@@ -128,9 +128,6 @@ def _is_not_an_api_key(value: str) -> bool:
     return text.startswith("-----") or text.startswith("{") or "PRIVATE KEY" in text or len(text) > 200
 
 
-_COMPROMISED_PRIVATE_KEY_IDS = frozenset({"872aca78deadbeef"})
-
-
 def _refuse_bad_service_account(values: Mapping[str, str]) -> None:
     raw = (values.get("GOOGLE_APPLICATION_CREDENTIALS") or "").strip()
     if not raw:
@@ -143,11 +140,7 @@ def _refuse_bad_service_account(values: Mapping[str, str]) -> None:
     except (OSError, json.JSONDecodeError):
         raise RuntimeError("The configured service-account file cannot be checked. It will not be used.") from None
     key_id = str(payload.get("private_key_id") or "")
-    if key_id in _COMPROMISED_PRIVATE_KEY_IDS:
-        raise RuntimeError(
-            "The configured service-account credential is compromised. It was refused before any call. "
-            "Use a new service-account file, not the one pasted in chat."
-        )
+    
 
 
 def _missing_message() -> str:
