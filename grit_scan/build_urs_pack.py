@@ -411,7 +411,7 @@ def _domain(link: str) -> str | None:
 
 def _main() -> None:
     root = Path(__file__).resolve().parent.parent
-    written = build_urs_pack(root / _WORKBOOK, root / "config" / "urs")
+    written = build_urs_pack(root / "secrets" / _WORKBOOK, root / "config" / "urs")
     for key, path in written.items():
         print(f"{key}: {path}")
 

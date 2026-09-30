@@ -93,7 +93,7 @@ def main() -> None:
     raw_source = json.loads((root / "output" / "2026-09-21" / "raw-scan-source.json").read_text(encoding="utf-8"))
     scan_date = date.fromisoformat(revision["revisionDate"])
 
-    registry = load_transmission_registry(root / "URS Entity Info.xlsx", root / "config" / "registry_aliases.json")
+    registry = load_transmission_registry(root / "secrets" / "URS Entity Info.xlsx", root / "config" / "registry_aliases.json")
     definition = parse_severity_definition(root / "specs" / "15_Severity_Definition.md", preceding_year_ebit=136.2)
 
     header = (

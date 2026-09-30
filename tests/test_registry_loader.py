@@ -9,7 +9,7 @@ ROOT = Path(__file__).parents[1]
 
 def test_workbook_entries_are_primary_and_aliases_are_overlays() -> None:
     registry = load_transmission_registry(
-        ROOT / "URS Entity Info.xlsx",
+        ROOT / "secrets" / "URS Entity Info.xlsx",
         ROOT / "config" / "registry_aliases.json",
     )
     counts = {kind: sum(entry.registry_kind is kind for entry in registry.entries) for kind in RegistryKind}

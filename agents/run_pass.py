@@ -136,7 +136,7 @@ def _latest_signal(client: DataverseClient) -> dict[str, str] | None:
 
 
 def _entity_names() -> dict[str, str]:
-    workbook = ROOT / "URS Entity Info.xlsx"
+    workbook = ROOT / "secrets" / "URS Entity Info.xlsx"
     aliases = ROOT / "config" / "registry_aliases.json"
     if not workbook.is_file() or not aliases.is_file():
         return {}

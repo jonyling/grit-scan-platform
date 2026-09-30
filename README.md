@@ -107,7 +107,7 @@ A written Currents row is a `NEW` signal. Theme matching uses the candidate titl
 
 Absence uses one sentinel per cause. `ValueAtRiskBasis.INSUFFICIENT_DATA` is for the Financial dimension only. `DimensionAssessment.NOT_ASSESSED` is for the other dimensions, and for the overall band when every dimension is absent.
 
-The transmission registry comes from `URS Entity Info.xlsx` plus `config/registry_aliases.json`, through `grit_scan/registry_loader.py`. The severity definition is parsed from `specs/15_Severity_Definition.md`. `grit_scan/inspect_severity.py` writes that parse as JSON. `grit_scan/backtest_shadow_mode.py` runs the scorer against an audited-signals export and prints a comparison. It does not write the workbook, and it does not treat the human audit as ground truth. The audited export has no structured observations, no value-at-risk, and no expected impact date, so those fields stay absent.
+The transmission registry comes from `secrets/URS Entity Info.xlsx` plus `config/registry_aliases.json`, through `grit_scan/registry_loader.py`. The severity definition is parsed from `specs/15_Severity_Definition.md`. `grit_scan/inspect_severity.py` writes that parse as JSON. `grit_scan/backtest_shadow_mode.py` runs the scorer against an audited-signals export and prints a comparison. It does not write the workbook, and it does not treat the human audit as ground truth. The audited export has no structured observations, no value-at-risk, and no expected impact date, so those fields stay absent.
 
 `grit_scan/risk_taxonomy.py` resolves a taxonomy reference. A taxonomy tag is not an arithmetic multiplicand.
 
@@ -147,7 +147,7 @@ Gemini uses Vertex. A service-account file is used when `GOOGLE_CLOUD_PROJECT` a
 
 | Pack | Role | Baseline | How it is produced |
 |---|---|---|---|
-| `urs` | Urban Solutions. This is the default for weekly import. | `URS-LAYER1-ABSENT`. The condition list is empty. No Taiwan condition is copied. | `python3 -m grit_scan.build_urs_pack`, from `URS Entity Info.xlsx`. |
+| `urs` | Urban Solutions. This is the default for weekly import. | `URS-LAYER1-ABSENT`. The condition list is empty. No Taiwan condition is copied. | `python3 -m grit_scan.build_urs_pack`, from `secrets/URS Entity Info.xlsx`. |
 | `urs-tw` | Taiwan reader pack. | Ten governed baseline conditions, including their `taiwanTransmission` sentences. | Copied from the archived production registers. Not rebuilt by `build_urs_pack`. |
 
 An empty `urs` baseline means `import_scan()` cannot accept a development for that pack: every `conditionHint` is unmatched. Weekly import still defaults to `urs`. Pass `--pack urs-tw` only when the ranking was produced from the Taiwan baseline.
@@ -187,7 +187,7 @@ The in-memory Supervisor also records a `NEW` row during those imports. That led
 | `config/` | `urs` and `urs-tw` registers, plus `registry_aliases.json`. |
 | `specs/` | Governing specifications. Spec 34 is the build order. |
 | `tests/` | Contract tests. The runner is `run-impact-contract-tests.py`. |
-| `URS Entity Info.xlsx` | Workbook for the `urs` pack and the transmission registry. |
+| `secrets/URS Entity Info.xlsx` | Workbook for the `urs` pack and the transmission registry. Confidential; gitignored, not committed. |
 
 `requirements.txt` installs `msal`, `requests`, `streamlit`, and `google-genai`. The xlsx and docx readers use the standard library. `grit_scan/local_env.py` parses `.env`. It does not import `python-dotenv`, and it does not override a variable already set in the process.
 

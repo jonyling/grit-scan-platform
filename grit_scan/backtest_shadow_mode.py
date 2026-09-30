@@ -108,7 +108,7 @@ def run(audited_signals: Path, entity_workbook: Path, aliases_path: Path, severi
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("audited_signals", type=Path)
-    parser.add_argument("--entity-workbook", type=Path, default=Path("URS Entity Info.xlsx"))
+    parser.add_argument("--entity-workbook", type=Path, default=Path("secrets/URS Entity Info.xlsx"))
     parser.add_argument("--aliases", type=Path, default=Path("config/registry_aliases.json"))
     parser.add_argument("--severity-definition", type=Path, default=Path("specs/15_Severity_Definition.md"))
     parser.add_argument("--ebit", type=float, required=True, help="Preceding-year EBIT in S$ millions.")

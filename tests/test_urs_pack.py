@@ -10,7 +10,7 @@ _PACK = _ROOT / "config" / "urs"
 
 
 def test_urs_pack_is_rebuilt_from_the_workbook_and_does_not_invent() -> None:
-    rebuilt = build_urs_pack(_ROOT / "URS Entity Info.xlsx", Path("/tmp/grit-urs-pack"))
+    rebuilt = build_urs_pack(_ROOT / "secrets" / "URS Entity Info.xlsx", Path("/tmp/grit-urs-pack"))
     for key, path in rebuilt.items():
         assert json.loads(path.read_text(encoding="utf-8")) == json.loads((_PACK / path.name).read_text(encoding="utf-8")), key
 
