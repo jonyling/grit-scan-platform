@@ -13,7 +13,7 @@ def test_workbook_entries_are_primary_and_aliases_are_overlays() -> None:
         ROOT / "config" / "registry_aliases.json",
     )
     counts = {kind: sum(entry.registry_kind is kind for entry in registry.entries) for kind in RegistryKind}
-    assert counts[RegistryKind.ENTITY] == 23
+    assert counts[RegistryKind.ENTITY] == 32
     assert counts[RegistryKind.CUSTOMER] == 20
     assert counts[RegistryKind.SUPPLIER] == 15
     assert counts[RegistryKind.PROJECT] == 0
@@ -21,6 +21,10 @@ def test_workbook_entries_are_primary_and_aliases_are_overlays() -> None:
     by_id = {entry.entity_id: entry for entry in registry.entries}
     assert by_id["ENTITY-st-engineering-taiwan-ltd"].canonical_name == "ST Engineering (Taiwan) Ltd."
     assert by_id["SUPPLIER-leonardo-s-p-a"].canonical_name == "LEONARDO S.P.A."
+    # These names live in LOB1, not NameOfEntity, on sheet "2. Entity Address".
+    assert by_id["ENTITY-tlp-holdings-llc"].canonical_name == "TLP Holdings, LLC"
+    # 33 address rows for TransCore, LP - Dubai collapse into one entity, not two.
+    assert by_id["ENTITY-transcore-lp-dubai"].canonical_name == "TransCore, LP - Dubai"
 
     entry_ids = set(by_id)
     assert all(alias.entity_id in entry_ids for alias in registry.aliases)

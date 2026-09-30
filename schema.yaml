@@ -1,0 +1,50 @@
+version: 1
+descriptions:
+  STE: ST Engineering
+  Customer: Entity that STE sells to
+  Supplier: Entity that STE buys from
+  Site: A specific project location or facility in the exposure register (e.g. a warehouse), not a country of incorporation.
+  State: A sovereign actor in the event
+  Org: Organization or a company or institution that is not a row on the STE register
+  Policy: Policy or a named instrument e.g. CHIPS Act, Entity List, an export licence rule, a travel ban
+  Good: Material under control or in the chain e.g. lithography tools, rare earths, dual-use AI chips
+  Place: Geography that is not a register site e.g. Taiwan Strait, Kaohsiung, Shenzhen, a sea lane
+  Event: Incident the article reports e.g. a licence denial, a drill, a plant fire
+classes:
+  - STE
+  - Customer
+  - Supplier
+  - Site
+  - State
+  - Org
+  - Policy
+  - Good
+  - Place
+  - Event
+relations:
+  involves:
+    from: [Event, Org, State]
+    to: [STE, Customer, Supplier, Site]
+  located_in:
+    from: [STE, Customer, Supplier, Site, Org]
+    to: [Place, Site]
+  supplies:
+    from: [Supplier, Org]
+    to: [STE, Customer]
+    obj: [Good]
+  restricts_export_to:
+    from: [State, Org]
+    to: [State, Org]
+    obj: [Good, Policy]
+  sanctions:
+    from: [State]
+    to: [State, Org]
+    obj: [Policy]
+  military_action_toward:
+    from: [State]
+    to: [Place, State]
+goods:
+  - semiconductors
+  - lithography
+  - dual_use_ai
+  - rare_earths

@@ -89,8 +89,16 @@ def _seed_entries(workbook_path: Path) -> tuple[RegistryEntry, ...]:
     entries: list[RegistryEntry] = []
     seen_ids: dict[str, str] = {}
 
-    for row in _sheet_rows(workbook_path, "2. Entity Address"):
+    entity_rows = _sheet_rows(workbook_path, "2. Entity Address")
+    # Some rows leave NameOfEntity blank and put the legal name in LOB1 instead;
+    # only treat LOB1 as a name when it never appears as a real LOB alongside a filled NameOfEntity.
+    lob_names = {keyword.lob for keyword in load_lob_keywords(workbook_path)}
+    lob_names.update(_value(row, "LOB1") for row in entity_rows if _value(row, "NameOfEntity") and _value(row, "LOB1"))
+    for row in entity_rows:
         name = _value(row, "NameOfEntity")
+        lob = _value(row, "LOB1")
+        if not name and lob and lob not in lob_names:
+            name = lob
         if name:
             _add_entry(entries, seen_ids, RegistryKind.ENTITY, name, _value(row, "BusinessArea"), _value(row, "CountryOfIncorporation"))
 
