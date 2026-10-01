@@ -8,7 +8,7 @@ Add a **deterministic bind engine** on top of the packs and STE register that al
 
 The engine answers one question:
 
-> Does this candidate instantiate a governed pattern **and** touch a named STE entity, customer, supplier, site, or corridor?
+> Does this candidate instantiate a governed pattern **and** touch a named STE entity, customer, supplier, site, line of business, or corridor?
 
 If the STE link is missing, it is **not** a bound GRIT signal. Keep it unclassified. Do not invent the link.
 
@@ -38,7 +38,7 @@ Do not reimplement these.
 |---|---|
 | `grit_scan/ontology.py` | Pack loader. Taiwan is a reader, not the world. |
 | `config/urs/` and `config/urs-tw/` | Registers, baseline conditions, `steThemes`. |
-| `URS Entity Info.xlsx` + `grit_scan/registry_loader.py` + `config/registry_aliases.json` | STE entities and transmission. |
+| `secrets/URS Entity Info.xlsx` + `grit_scan/registry_loader.py` + `config/registry_aliases.json` | STE entities and transmission. |
 | `grit_scan/matchers/` | Keyword / exposure / LOB / theme binding. Keep; call from the new bind, or replace **one** call site. |
 | `grit_scan/impact_scoring.py` | Harm scorer. Do not call it. |
 | `grit_scan/relevance_scoring.py` | Weekly briefing labels from ontology fields. Do not create a parallel file. |
@@ -56,12 +56,16 @@ Do not reimplement these.
 A bind is valid only when **all** of the following hold:
 
 1. A pack is named (`urs` or `urs-tw`, from `--pack` or an explicit caller argument). No silent default to Taiwan on a non-Taiwan run.
-2. At least one **register entity id** from that pack matches. Allowed classes: STE legal entity, customer, supplier, site, named corridor / country **only if that country is a register row**, not because “Taiwan” appeared in a headline.
+2. At least one **register id** from that pack matches. Allowed classes: STE legal entity, customer, supplier, site, line of business (LOB), named corridor / country **only if that country is a register row**, not because “Taiwan” appeared in a headline.
 3. Country of incorporation is not a site. A country string without a site or counterparty row is not a STE link.
-4. The match type is recorded: `REGISTER_ALIAS` | `REGISTER_EXACT` | `GDELT_ACTOR_MAPPED` | `PROPOSED_TRIPLE_ACCEPTED`.
+4. The match type is recorded: `REGISTER_ALIAS` | `REGISTER_EXACT` | `LOB_EXACT` | `LOB_KEYWORD` | `GDELT_ACTOR_MAPPED` | `PROPOSED_TRIPLE_ACCEPTED`.
 5. If nothing in (2) hits, result is `UNBOUND`. Theme may still be empty. Do not apply `CONDITION_DEFAULT_FALLBACK` to manufacture a STE link.
 
 Headline text containing a customer name is not enough unless that string maps through `registry_aliases.json` or the pack entity list to a stable id.
+
+An LOB link is enough on its own, because news rarely names the legal entity. It needs exactly one active LOB in the named pack to match by registered name or governed keyword, through `grit_scan/matchers/lob_matcher.py`. A match to more than one LOB is not a link. `priorityCountries` alone is not a link. An LOB-only bind has no entity id: `entity_ids` carries the LOB id and `match_types` records `LOB_EXACT` or `LOB_KEYWORD`.
+
+A `ManagementRequest` (spec 29) is never an STE link. It sets priority for a signal that is already bound. A request keyword extends an LOB's keyword match only after governance sets the request `ACTIVE`, and only when the request is scoped to that LOB. The request keyword field is not stored yet, so `bind_candidate()` ignores requests until it is.
 
 ## What to add (small)
 
@@ -95,6 +99,7 @@ Suggested starting set (edit to match the actual workbook columns; do not invent
 version: 1
 classes:
   - STE
+  - LOB
   - Customer
   - Supplier
   - Site
@@ -107,7 +112,10 @@ classes:
 relations:
   involves:
     from: [Event, Org, State]
-    to: [STE, Customer, Supplier, Site]
+    to: [STE, Customer, Supplier, Site, LOB]
+  operates_in:
+    from: [STE]
+    to: [LOB]
   located_in:
     from: [STE, Customer, Supplier, Site, Org]
     to: [Place, Site]
@@ -118,10 +126,11 @@ relations:
   restricts_export_to:
     from: [State, Org]
     to: [State, Org]
-    obj: [Good]
+    obj: [Good, Policy]
   sanctions:
     from: [State]
     to: [State, Org]
+    obj: [Policy]
   military_action_toward:
     from: [State]
     to: [Place, State]
@@ -190,7 +199,7 @@ bind_candidate(candidate, pack, schema, patterns, register) -> BindResult
 
 ```text
 bound: bool
-entity_ids: list[str]          # STE / customer / supplier / site ids
+entity_ids: list[str]          # STE / customer / supplier / site / LOB ids
 match_types: list[str]
 pattern_ids: list[str]
 condition_id: str | None
@@ -204,7 +213,7 @@ evidence_spans: list[str]      # short excerpts or GDELT fields used; no invente
 Logic order:
 
 1. Resolve pack. Empty baseline is allowed. It just cannot fire a condition.
-2. Link entities from register + aliases + mapped GDELT actors. Record match type.
+2. Link entities from register + aliases + mapped GDELT actors, and an LOB from `lob_match`. Record match type.
 3. Accept proposed triples only if `p` ∈ schema relations and every endpoint is a known class / known id. Else drop the triple. Do not repair it.
 4. Derive cheap triples from GDELT when `cameo_map.yaml` has the EventCode.
 5. Fire patterns against linked ids + triples + places.
@@ -260,6 +269,17 @@ If you touch `agents/` at all:
 
 Default for this task: **do not change agent prompts** unless tests fail without it. Bind must work with empty `proposed_triples`.
 
+### Query phrases (later, not this patch)
+
+The query planner builds Boolean strings from the register, the LOB keywords, and active `ManagementRequest` scopes. An LLM may propose extra search phrases, for example a Vietnam metro tender phrase for a Vietnam request, and nothing else.
+
+- A phrase only widens what is pulled. It is never a register term, an alias, or an STE link.
+- Each phrase is logged as `PROPOSED` with its prompt version and the request or LOB that triggered it. A human may approve it into the keyword set.
+- Every article pulled by a proposed phrase still goes through `bind_candidate()` unchanged. Unbound stays unbound.
+- Cap the phrases per run. Source credibility and URL checks apply as before.
+
+An event with no STE link, such as a global financial shock, is a Layer 1 question (spec 32), not a bind question. Bind keeps it unbound until the pack holds a governed Layer 1 condition for it.
+
 ## Dataverse
 
 No new tables. No new choice codes unless an existing column already stores entity ids and is unused.
@@ -282,7 +302,10 @@ Minimum cases:
 6. Proposed triple pointing at an entity id not in `known_entity_ids` → dropped.
 7. `urs` pack with empty conditions → no `condition_id`, bind can still return entity ids if the workbook has entities.
 8. `--pack` honour: bind for `urs` must not load URS-TW conditions.
-9. Existing wild-scan / weekly contract tests still pass.
+9. Text names only an LOB keyword, no entity → `bound=true`, LOB id in `entity_ids`, match type `LOB_KEYWORD`.
+10. Text matches keywords of two LOBs → unbound, `NO_REGISTER_HIT`.
+11. Text names only a priority country → unbound.
+12. Existing wild-scan / weekly contract tests still pass.
 
 Use fixtures copied from real pack JSON / aliases. Do not hard-code live customer names in assertions beyond what the repo already contains. If the register in tests is a stub, say so in the test file.
 
@@ -300,7 +323,7 @@ Use fixtures copied from real pack JSON / aliases. Do not hard-code live custome
 ## Done
 
 - [ ] `bind_candidate()` is pure and tested.
-- [ ] Every bound hit has at least one STE / customer / supplier / site id from the pack register.
+- [ ] Every bound hit has at least one STE / customer / supplier / site / LOB id from the pack register.
 - [ ] Wild scan theme bind uses it and honours `--pack`.
 - [ ] Unbound rows stay unclassified, not fallback-Taiwan.
 - [ ] No LLM in the bind or score path.

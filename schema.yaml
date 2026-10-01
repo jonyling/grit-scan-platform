@@ -1,6 +1,7 @@
 version: 1
 descriptions:
   STE: ST Engineering
+  LOB: A line of business / business area an STE entity operates in, e.g. Mobility Rail, Smart Sustainable Utilities
   Customer: Entity that STE sells to
   Supplier: Entity that STE buys from
   Site: A specific project location or facility in the exposure register (e.g. a warehouse), not a country of incorporation.
@@ -10,8 +11,10 @@ descriptions:
   Good: Material under control or in the chain e.g. lithography tools, rare earths, dual-use AI chips
   Place: Geography that is not a register site e.g. Taiwan Strait, Kaohsiung, Shenzhen, a sea lane
   Event: Incident the article reports e.g. a licence denial, a drill, a plant fire
+  ManagementRequest: An approved leadership or LOB-head monitoring request (spec 29). It sets priority only and is never an STE link on its own.
 classes:
   - STE
+  - LOB
   - Customer
   - Supplier
   - Site
@@ -21,10 +24,17 @@ classes:
   - Good
   - Place
   - Event
+  - ManagementRequest
 relations:
   involves:
     from: [Event, Org, State]
-    to: [STE, Customer, Supplier, Site]
+    to: [STE, Customer, Supplier, Site, LOB]
+  operates_in:
+    from: [STE]
+    to: [LOB]
+  focuses_on:
+    from: [ManagementRequest]
+    to: [LOB, Place, Site]
   located_in:
     from: [STE, Customer, Supplier, Site, Org]
     to: [Place, Site]
