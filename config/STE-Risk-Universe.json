@@ -1,0 +1,1045 @@
+{
+  "registerVersion": "STE-RISK-UNIVERSE-R&A-RISK-006-GL001-2026-06-29",
+  "note": "Verbatim transcription of Appendix A: Risk Universe from the STE Enterprise Risk Management Manual. Text, codes and factor labels are as printed (including source inconsistencies listed in sourceAnomalies); nothing was normalised or invented. Per section 3.5 of the manual, the Group's centralised risk depository holds the latest copy of the risk universe.",
+  "source": {
+    "document": "R&A-RISK-006-GL001 Enterprise Risk Management Manual",
+    "file": "RA-RISK-006-GL001 - Enterprise Risk Management Manual R8 (29 Jun 2026).pdf",
+    "effectiveDate": "2026-06-29",
+    "revisionNumberOnCover": "007",
+    "appendix": "Appendix A: Risk Universe",
+    "pages": "35-47 of 52"
+  },
+  "riskCount": 102,
+  "sourceAnomalies": [
+    "Row 79 (N1.1) has no description; the cell holds a note that N1.1 has been shifted to CC1.1 (row 96).",
+    "Rows 77-78 print the risk codes as '08.1' and '08.2' (digit zero) under factor O8; kept as printed.",
+    "Row 91 prints factor 'C2. Cyber Risks' but risk code C1.2; rows 92-95 print factors T1-T4 ('IT Risks') but risk codes T1.1-T1.4; kept as printed.",
+    "Risk codes are not contiguous within some factors: L2.9 is followed by L2.15, L3.1 by L3.3, and N1.8 by N1.10; kept as printed.",
+    "The PDF contains an invisible number column overlapping the Factor cell on many rows; it is not rendered and is not included.",
+    "The cover page states Revision Number 007 while the revision history table lists revision 008 dated 29 Jun 2026."
+  ],
+  "risks": [
+    {
+      "number": 1,
+      "category": "Strategic",
+      "factorCode": "S1",
+      "factorName": "Business Concentration Risks",
+      "riskCode": "S1.1",
+      "riskName": "Country concentration risk",
+      "riskEventDescription": "This refers to the concentration of business in one or just a few key countries. Such concentration could be motivated by economies of scales. Nevertheless, the risk would be the uncertainties arising from these few countries for which should there be a major change in the economic factors, governments, legislation or strategies, there will be major adverse consequences on our business.",
+      "sourcePage": 35
+    },
+    {
+      "number": 2,
+      "category": "Strategic",
+      "factorCode": "S1",
+      "factorName": "Business Concentration Risks",
+      "riskCode": "S1.2",
+      "riskName": "Customer concentration risk",
+      "riskEventDescription": "This refers to the concentration of business in one or just a few key customers. Such concentration could be motivated by economies of scales and focus on quality. Nevertheless, the risk would be that major changes in economic factors, failures, changes in key staff or strategies involving such customer may result in major adverse consequences on our business.",
+      "sourcePage": 35
+    },
+    {
+      "number": 3,
+      "category": "Strategic",
+      "factorCode": "S1",
+      "factorName": "Business Concentration Risks",
+      "riskCode": "S1.3",
+      "riskName": "Product concentration risk (Dependence on limited products/services)",
+      "riskEventDescription": "This refers to the concentration of business in one or just a few products. Such concentration could be motivated by economies of scales and focus on quality. Nevertheless, the risk would be that major changes in economic factors, shifts in demand pattern and changes in technological or demographic trends may result in major adverse consequences on our business.",
+      "sourcePage": 35
+    },
+    {
+      "number": 4,
+      "category": "Strategic",
+      "factorCode": "S1",
+      "factorName": "Business Concentration Risks",
+      "riskCode": "S1.4",
+      "riskName": "Industry / market concentration",
+      "riskEventDescription": "This refers to the concentration of business in one or just a few markets or industries. Such concentration could be motivated by economies of scales and focus on quality. Nevertheless, the risk would be that major changes in economic factors, shifts in demand pattern and changes in technological or demographic trends may have major adverse consequences on our business.",
+      "sourcePage": 35
+    },
+    {
+      "number": 5,
+      "category": "Strategic",
+      "factorCode": "S1",
+      "factorName": "Business Concentration Risks",
+      "riskCode": "S1.5",
+      "riskName": "Loss of a major agency representation",
+      "riskEventDescription": "This is a risk arising from major shifts in a key agency involving a product / service line in which the company is the exclusive agent. It also includes the loss of such an agency.",
+      "sourcePage": 35
+    },
+    {
+      "number": 6,
+      "category": "Strategic",
+      "factorCode": "S1",
+      "factorName": "Business Concentration Risks",
+      "riskCode": "S1.6",
+      "riskName": "Over-reliance on major vendors (e.g. AI-related)",
+      "riskEventDescription": "Over-reliance on a small number of large third-party vendors (e.g. AI related) increases concentration risk. If one fails or suffers operational loss, it may trigger systemic disruption due to network effects.",
+      "sourcePage": 35
+    },
+    {
+      "number": 7,
+      "category": "Strategic",
+      "factorCode": "S2",
+      "factorName": "Competition Risks",
+      "riskCode": "S2.1",
+      "riskName": "Increasingly intensified competition due to changes in the market structures",
+      "riskEventDescription": "Increasingly intensified competition due to changes in the market structures may pertain especially in the commercial business.",
+      "sourcePage": 36
+    },
+    {
+      "number": 8,
+      "category": "Strategic",
+      "factorCode": "S2",
+      "factorName": "Competition Risks",
+      "riskCode": "S2.2",
+      "riskName": "Infringement or loss of our patents",
+      "riskEventDescription": "This refers to the expiry/ loss of patent registration and the infringement of our patented rights by 3rd parties.",
+      "sourcePage": 36
+    },
+    {
+      "number": 9,
+      "category": "Strategic",
+      "factorCode": "S3",
+      "factorName": "Business Growth Risks",
+      "riskCode": "S3.1",
+      "riskName": "New acquisition not performing as intended",
+      "riskEventDescription": "A new business acquired failed to meet its M&A objectives whether in increased growth or profitability, market share, new products, or recruitment of key talent.",
+      "sourcePage": 36
+    },
+    {
+      "number": 10,
+      "category": "Strategic",
+      "factorCode": "S3",
+      "factorName": "Business Growth Risks",
+      "riskCode": "S3.2",
+      "riskName": "New business not performing as intended",
+      "riskEventDescription": "New subsidiaries or JV companies acquired failed to meet its performance targets, resulting in write downs in goodwill or cost of acquisitions.",
+      "sourcePage": 36
+    },
+    {
+      "number": 11,
+      "category": "Strategic",
+      "factorCode": "S3",
+      "factorName": "Business Growth Risks",
+      "riskCode": "S3.3",
+      "riskName": "Risks relating to expansion into new markets",
+      "riskEventDescription": "There is an inherent risk associated with the inadequate or a lack of a complete understanding of the workings of the industry and market (i.e. including laws, legal framework, tax laws, general business practices, culture etc) when entering into new countries or markets.",
+      "sourcePage": 36
+    },
+    {
+      "number": 12,
+      "category": "Strategic",
+      "factorCode": "S3",
+      "factorName": "Business Growth Risks",
+      "riskCode": "S3.4",
+      "riskName": "Risks relating to the distribution channel",
+      "riskEventDescription": "This relates to the quality of support that the dealers can provide to our customers. The ability of the dealers ability to understand how the products work, and the services can benefit the customers have a direct impact on the sales volume and our ability to penetrate markets.",
+      "sourcePage": 36
+    },
+    {
+      "number": 13,
+      "category": "Strategic",
+      "factorCode": "S3",
+      "factorName": "Business Growth Risks",
+      "riskCode": "S3.5",
+      "riskName": "Uncompetitive cost structure",
+      "riskEventDescription": "Uncompetitive cost structure due to a general rise in raw material and commodity prices and the inability to pass on the rising cost increases the cost of production",
+      "sourcePage": 36
+    },
+    {
+      "number": 14,
+      "category": "Strategic",
+      "factorCode": "S3",
+      "factorName": "Business Growth Risks",
+      "riskCode": "S3.6",
+      "riskName": "Product or services becoming obsolete/non-competitive due to external factors",
+      "riskEventDescription": "Our product or services becoming obsolete/non-competitive due to changes in the external environment such as emergence of new technologies, regulatory reforms etc",
+      "sourcePage": 36
+    },
+    {
+      "number": 15,
+      "category": "Strategic",
+      "factorCode": "S3",
+      "factorName": "Business Growth Risks",
+      "riskCode": "S3.7",
+      "riskName": "Risks relating to approval for defence exports",
+      "riskEventDescription": "This refers to difficulty in obtaining approval for the marketing and sale of defence exports.",
+      "sourcePage": 36
+    },
+    {
+      "number": 16,
+      "category": "Strategic",
+      "factorCode": "S3",
+      "factorName": "Business Growth Risks",
+      "riskCode": "S3.8",
+      "riskName": "Geopolitical Risk",
+      "riskEventDescription": "Geopolitical developments (e.g. sanctions, trade restrictions or blockades) affecting market access, operations or supply chains, potentially resulting in financial loss or reputational impact.",
+      "sourcePage": 37
+    },
+    {
+      "number": 17,
+      "category": "Strategic",
+      "factorCode": "S4",
+      "factorName": "Value and Branding Risks",
+      "riskCode": "S4.1",
+      "riskName": "Brand Confusion",
+      "riskEventDescription": "Branding can create or erode the equity of a company. The way we communicate our product, services, or respond to the branding/re-branding initiatives of a current or new competitor can have an impact on our business. Brand confusion could lead to: (1) Confusion in marketplace and (2) Loss of confidence in our product and services.",
+      "sourcePage": 37
+    },
+    {
+      "number": 18,
+      "category": "Strategic",
+      "factorCode": "S4",
+      "factorName": "Value and Branding Risks",
+      "riskCode": "S4.2",
+      "riskName": "Errors in publicity materials",
+      "riskEventDescription": "Press releases that have been made or published contain errors or contain information that is not factually accurate.",
+      "sourcePage": 37
+    },
+    {
+      "number": 19,
+      "category": "Strategic",
+      "factorCode": "S5",
+      "factorName": "Market & Economic Risks",
+      "riskCode": "S5.1",
+      "riskName": "Business cycle volatility",
+      "riskEventDescription": "Industry moves along a cycle, the volatility i.e. changes from the uptrend to the downtrend of the cycle brings about the same volatility to the earnings of the company. Therefore, the company experiences both the \"boom\" and \"bust\" cycle, thereby creating uncertainties to its earnings and growth prospects from the perspective of the stakeholders.",
+      "sourcePage": 37
+    },
+    {
+      "number": 20,
+      "category": "Strategic",
+      "factorCode": "S5",
+      "factorName": "Market & Economic Risks",
+      "riskCode": "S5.2",
+      "riskName": "Revenue slowdown arising from cut back in demand due to economic conditions",
+      "riskEventDescription": "Revenue slowdown arising from cut back in demand due to economic conditions",
+      "sourcePage": 37
+    },
+    {
+      "number": 21,
+      "category": "Strategic",
+      "factorCode": "S5",
+      "factorName": "Market & Economic Risks",
+      "riskCode": "S5.3",
+      "riskName": "Consolidation among customers",
+      "riskEventDescription": "The consolidation among key customers has implications on the market share and may also lead to a shift in the supply side dynamics and competition.",
+      "sourcePage": 37
+    },
+    {
+      "number": 22,
+      "category": "Strategic",
+      "factorCode": "S5",
+      "factorName": "Market & Economic Risks",
+      "riskCode": "S5.4",
+      "riskName": "Industry maturity or limited industry capacity",
+      "riskEventDescription": "As the industry moves through a cycle, saturation in demand and supply occurs, resulting in industry maturity. A mature industry is characterised by low price, high competition.",
+      "sourcePage": 37
+    },
+    {
+      "number": 23,
+      "category": "Strategic",
+      "factorCode": "S5",
+      "factorName": "Market & Economic Risks",
+      "riskCode": "S5.5",
+      "riskName": "Defence Budget Cuts",
+      "riskEventDescription": "Changes in socio-economic and political factors and changes in government priorities may cause a cut in the defence budget.",
+      "sourcePage": 37
+    },
+    {
+      "number": 24,
+      "category": "Strategic",
+      "factorCode": "S6",
+      "factorName": "Innovation and growth risks",
+      "riskCode": "S6.1",
+      "riskName": "Rapid advancements in technologies and digitalisation",
+      "riskEventDescription": "Incessant technological innovation and growing complexity of the Group’s businesses require constant alignment of skills and maintain competitive edge. Failure to innovate and invest in developing new technologies could result in loss of customers and impact achievement of corporate business objectives",
+      "sourcePage": 38
+    },
+    {
+      "number": 25,
+      "category": "Financial / Market",
+      "factorCode": "F1",
+      "factorName": "Foreign exchange risks",
+      "riskCode": "F1.1",
+      "riskName": "Earning volatility due to changes in the foreign exchanges rates",
+      "riskEventDescription": "This refers to the earning volatility risk due to the fluctuations in the foreign exchange rates versus our main reporting currencies, resulting from our transacting in foreign currencies such as billings or expenditures. Such fluctuations may result in either a financial gain or loss.",
+      "sourcePage": 38
+    },
+    {
+      "number": 26,
+      "category": "Financial / Market",
+      "factorCode": "F2",
+      "factorName": "Interest rate risks",
+      "riskCode": "F2.1",
+      "riskName": "Exposure to interest rates fluctuation",
+      "riskEventDescription": "This refers to the risk (variability in value) borne by an interest-bearing asset or liability. Depending which way the interest rate moves, it may result in an increase or decrease in the cost of the interest payable on an outstanding loan, with immediate direct impact on the profit after tax, or an increase or decrease in the interest income earned on an interest-bearing asset.",
+      "sourcePage": 38
+    },
+    {
+      "number": 27,
+      "category": "Financial / Market",
+      "factorCode": "F3",
+      "factorName": "Client credit risks",
+      "riskCode": "F3.1",
+      "riskName": "Customer non-payment risk due to failure or other reasons",
+      "riskEventDescription": "Risk of our customers facing financial distress, resulting in bankruptcy or judicial management. The impact of such failures include: (1) the inability to collect the existing debts in full resulting in potential write-off; (2) the delay in collection of outstanding receivables.",
+      "sourcePage": 38
+    },
+    {
+      "number": 28,
+      "category": "Financial / Market",
+      "factorCode": "F4",
+      "factorName": "Liquidity risks",
+      "riskCode": "F4.1",
+      "riskName": "Liquidity shortfall impacting working capital and funding",
+      "riskEventDescription": "Liquidity shortfall impacting our working capital and funding arising from credit crunch, poor cash flow management, non-payment and/or slow collection of long outstanding accounts receivables, and tightened access to credit from banks. This is the risk of us facing possible financial distress due to a lack of working capital. This can result from a slowdown in our AR collection, call back of outstanding loans from banks, inability to renew a loan facility etc.",
+      "sourcePage": 38
+    },
+    {
+      "number": 29,
+      "category": "Financial / Market",
+      "factorCode": "F5",
+      "factorName": "Asset Valuation Risk",
+      "riskCode": "F5.1",
+      "riskName": "Losses arising from inventory obsolescence",
+      "riskEventDescription": "The values of the inventory can be affected by obsolescence in that inventory. Obsolescence can result from changes in technology, the end of commission or support of a product by the OEM, the discontinuance of a product etc. The direct impact is the inability to liquidate the inventory at the original purchase price.",
+      "sourcePage": 38
+    },
+    {
+      "number": 30,
+      "category": "Financial / Market",
+      "factorCode": "F5",
+      "factorName": "Asset Valuation Risk",
+      "riskCode": "F5.2",
+      "riskName": "Valuation risk of fixed assets",
+      "riskEventDescription": "This refers to the valuation risks of company's fixed assets.",
+      "sourcePage": 38
+    },
+    {
+      "number": 31,
+      "category": "Financial / Market",
+      "factorCode": "F6",
+      "factorName": "Counterparty Risk",
+      "riskCode": "F6.1",
+      "riskName": "Failure of financial counterparty",
+      "riskEventDescription": "Risk of our financial counterparts (e.g. banks and insurance companies) facing financial distress, resulting in bankruptcy or judicial management. The impact of such failures include: (1) inability to access to cash deposits; (2) loss of deposits or investments placed with banks and financial institutions; and (3) call back of loan facilities",
+      "sourcePage": 38,
+      "continuesOnPage": 39
+    },
+    {
+      "number": 32,
+      "category": "Legal / Compliance",
+      "factorCode": "L1",
+      "factorName": "Legal risks",
+      "riskCode": "L1.1",
+      "riskName": "Disputes over contractual terms and conditions",
+      "riskEventDescription": "Risks that our business / entity is drawn into a legal dispute, for which time and effort need to be spent to manage the outcome of such a lawsuit, which may result in us winning or losing the case. It also includes the risk of the entity / business being bound by certain contractual commitment or undertaking, for which effort or time has to be expended to meet the term, resulting in increased cost or delay in delivery.",
+      "sourcePage": 39
+    },
+    {
+      "number": 33,
+      "category": "Legal / Compliance",
+      "factorCode": "L1",
+      "factorName": "Legal risks",
+      "riskCode": "L1.2",
+      "riskName": "Intellectual property rights Infringement",
+      "riskEventDescription": "The risk of Intellectual property rights Infringement by our entity / business or 3rd party on our products, resulting in lawsuit, and claim for damages or financial compensation.",
+      "sourcePage": 39
+    },
+    {
+      "number": 34,
+      "category": "Legal / Compliance",
+      "factorCode": "L2",
+      "factorName": "Regulatory & Compliance risks",
+      "riskCode": "L2.1",
+      "riskName": "Violation of Export Control Regulations",
+      "riskEventDescription": "This refers to a violation of Exports Controls Regulations.",
+      "sourcePage": 39
+    },
+    {
+      "number": 35,
+      "category": "Legal / Compliance",
+      "factorCode": "L2",
+      "factorName": "Regulatory & Compliance risks",
+      "riskCode": "L2.2",
+      "riskName": "Violation of Environment, Health or Safety (EHS) Regulations",
+      "riskEventDescription": "This refers to an inadvertent violation of a law or regulation relating to environmental, health and safety.",
+      "sourcePage": 39
+    },
+    {
+      "number": 36,
+      "category": "Legal / Compliance",
+      "factorCode": "L2",
+      "factorName": "Regulatory & Compliance risks",
+      "riskCode": "L2.3",
+      "riskName": "Violation of Industry Related/Specific Laws and Regulations (e.g. Aviation)",
+      "riskEventDescription": "This refers to an inadvertent violation of industry related/specific laws and regulations, such as Aviation Laws and Regulations, Maritime Laws and Regulations.",
+      "sourcePage": 39
+    },
+    {
+      "number": 37,
+      "category": "Legal / Compliance",
+      "factorCode": "L2",
+      "factorName": "Regulatory & Compliance risks",
+      "riskCode": "L2.4",
+      "riskName": "Change in regulations and/or regulatory environment, and addition of new regulations",
+      "riskEventDescription": "This refers to the risk of changes in regulations whether locally or in another country and addition of a new regulation to the industry. The direct impact is the need to expend time and effort to re-engineer processes or put in place new processes or controls for purposes of complying with the new regulations",
+      "sourcePage": 39
+    },
+    {
+      "number": 38,
+      "category": "Legal / Compliance",
+      "factorCode": "L2",
+      "factorName": "Regulatory & Compliance risks",
+      "riskCode": "L2.5",
+      "riskName": "Violation of country tax laws and regulations",
+      "riskEventDescription": "Tax avoidance strategy and/or lack of tax transparency leading to legal liabilities and negative publicity from the media.",
+      "sourcePage": 39
+    },
+    {
+      "number": 39,
+      "category": "Legal / Compliance",
+      "factorCode": "L2",
+      "factorName": "Regulatory & Compliance risks",
+      "riskCode": "L2.6",
+      "riskName": "Violation of MSD Security Rules & Regulations",
+      "riskEventDescription": "This refers to the risk of a violation of MSD Security rules & regulations resulting in leakage of secret or classified information.",
+      "sourcePage": 39
+    },
+    {
+      "number": 40,
+      "category": "Legal / Compliance",
+      "factorCode": "L2",
+      "factorName": "Regulatory & Compliance risks",
+      "riskCode": "L2.7",
+      "riskName": "Non-compliance with statutory or mandatory certification requirements resulting in the loss of operational certificates or licences.",
+      "riskEventDescription": "This risk includes non-compliance with regulations resulting in suspension or loss of a certification.",
+      "sourcePage": 40
+    },
+    {
+      "number": 41,
+      "category": "Legal / Compliance",
+      "factorCode": "L2",
+      "factorName": "Regulatory & Compliance risks",
+      "riskCode": "L2.8",
+      "riskName": "Non-compliance with laws and regulations governing collection, use, disclosure and care of personal data (e.g. PDPA, GDPR)",
+      "riskEventDescription": "This refers to a violation of the laws and regulations governing protection of personal data. AI systems may breach data protection laws (e.g., GDPR) due to opaque decision-making and evolving data usage, affecting data subject rights. Significant failure of security measures or lapses in established processes may undermine customer confidence and result in litigation actions from customers and/or regulatory fines and penalties.",
+      "sourcePage": 40
+    },
+    {
+      "number": 42,
+      "category": "Legal / Compliance",
+      "factorCode": "L2",
+      "factorName": "Regulatory & Compliance risks",
+      "riskCode": "L2.9",
+      "riskName": "Human Rights Risk",
+      "riskEventDescription": "Inadequate identification and management of human rights risks (including modern slavery, labour practices, freedom of association and workplace safety) across operations and supply chain, potentially resulting in legal, regulatory, contractual or reputational impact.",
+      "sourcePage": 40
+    },
+    {
+      "number": 43,
+      "category": "Legal / Compliance",
+      "factorCode": "L2",
+      "factorName": "Regulatory & Compliance risks",
+      "riskCode": "L2.15",
+      "riskName": "Taxation/Transfer Pricing Risk",
+      "riskEventDescription": "With increasing complexities in tax laws and given that the Group operates in Singapore and many other overseas countries, the company may face greater transfer pricing risk and incur additional costs to comply with the regulations. It may also result in cross-border disputes with tax authorities.",
+      "sourcePage": 40
+    },
+    {
+      "number": 44,
+      "category": "Legal / Compliance",
+      "factorCode": "L3",
+      "factorName": "Political risks",
+      "riskCode": "L3.1",
+      "riskName": "Offset Programme Risk",
+      "riskEventDescription": "This risk refers to the inability to fulfill offset obligations stated in offshore defence contracts",
+      "sourcePage": 40
+    },
+    {
+      "number": 45,
+      "category": "Legal / Compliance",
+      "factorCode": "L3",
+      "factorName": "Political risks",
+      "riskCode": "L3.3",
+      "riskName": "Change in government plans, policy or priorities",
+      "riskEventDescription": "Change in government plans, policy or priorities could lead to unforeseen changes in scope on major defence, technology and engineering programmes. This could have a material adverse effect on economic or social conditions in the countries which we operate in, as well as the ownership, control and condition of our assets in these countries.",
+      "sourcePage": 40
+    },
+    {
+      "number": 46,
+      "category": "Legal / Compliance",
+      "factorCode": "L4",
+      "factorName": "Fraud Risk",
+      "riskCode": "L4.1",
+      "riskName": "Asset misappropriation risk",
+      "riskEventDescription": "Asset misappropriation risk including intentional act by employees, customers or suppliers to deceive the company resulting in financial or reputation loss. Economic crisis may result in increased distress among employees, suppliers and customers, which may lead to increased unfavourable practices such as theft, misappropriation of company's funds or cover up losses or transactions.",
+      "sourcePage": 40
+    },
+    {
+      "number": 47,
+      "category": "Legal / Compliance",
+      "factorCode": "L4",
+      "factorName": "Fraud Risk",
+      "riskCode": "L4.2",
+      "riskName": "Corruption risk or violation of anti-corruption laws and regulations",
+      "riskEventDescription": "This refers to any corrupt practices involving the employees, suppliers or customers of the company which directly violates anti-corruption laws in the country of operation, and can lead to pro-longed investigations, fines & other penalties on the company.",
+      "sourcePage": 41
+    },
+    {
+      "number": 48,
+      "category": "Operational",
+      "factorCode": "O1",
+      "factorName": "Project or Production Management Risks",
+      "riskCode": "O1.1",
+      "riskName": "Unclear specifications or customer requirements",
+      "riskEventDescription": "Failure to meet customers' needs due to unclear specifications or customer requirements.",
+      "sourcePage": 41
+    },
+    {
+      "number": 49,
+      "category": "Operational",
+      "factorCode": "O1",
+      "factorName": "Project or Production Management Risks",
+      "riskCode": "O1.2",
+      "riskName": "Design inadequacies discovered during production and/or after delivery",
+      "riskEventDescription": "This refers to design inadequacies discovered during production and/or after delivery.",
+      "sourcePage": 41
+    },
+    {
+      "number": 50,
+      "category": "Operational",
+      "factorCode": "O1",
+      "factorName": "Project or Production Management Risks",
+      "riskCode": "O1.3",
+      "riskName": "Over-reliance on a single or just a few key partners",
+      "riskEventDescription": "This is a concentration risk where sales are generated from working with one or just a few key partners.",
+      "sourcePage": 41
+    },
+    {
+      "number": 51,
+      "category": "Operational",
+      "factorCode": "O1",
+      "factorName": "Project or Production Management Risks",
+      "riskCode": "O1.4",
+      "riskName": "Project cost overruns due to any reasons",
+      "riskEventDescription": "Project cost over runs due to any reasons. For example, issues relating to people, process and/or system, can result in risks in a program which if not well managed, can lead to a reduced margin.",
+      "sourcePage": 41
+    },
+    {
+      "number": 52,
+      "category": "Operational",
+      "factorCode": "O1",
+      "factorName": "Project or Production Management Risks",
+      "riskCode": "O1.5",
+      "riskName": "Project schedule underestimation",
+      "riskEventDescription": "Underestimation of duration required to complete project due to either a wrong assumption made, or the non-inclusion of a key consideration.",
+      "sourcePage": 41
+    },
+    {
+      "number": 53,
+      "category": "Operational",
+      "factorCode": "O1",
+      "factorName": "Project or Production Management Risks",
+      "riskCode": "O1.6",
+      "riskName": "Wrong costing estimates",
+      "riskEventDescription": "Underestimation of project costs due to either a costing estimate/wrong assumption made, or the non-inclusion of a key consideration.",
+      "sourcePage": 41
+    },
+    {
+      "number": 54,
+      "category": "Operational",
+      "factorCode": "O1",
+      "factorName": "Project or Production Management Risks",
+      "riskCode": "O1.7",
+      "riskName": "Damage to customers' property",
+      "riskEventDescription": "This can result in financial losses and loss of reputation for the company.",
+      "sourcePage": 41
+    },
+    {
+      "number": 55,
+      "category": "Operational",
+      "factorCode": "O1",
+      "factorName": "Project or Production Management Risks",
+      "riskCode": "O1.8",
+      "riskName": "Not meeting customer product or service requirements or specifications",
+      "riskEventDescription": "The risk of not meeting customer product or service requirements or specifications due to issues relating to people, process and/or system, can result in risks in a program or major sales order which if not well managed, can lead to a products that do not meet specifications. This also includes development of AI products which do not meet customer needs (i.e. use of AI for the sake of using AI).",
+      "sourcePage": 41
+    },
+    {
+      "number": 56,
+      "category": "Operational",
+      "factorCode": "O1",
+      "factorName": "Project or Production Management Risks",
+      "riskCode": "O1.9",
+      "riskName": "Not meeting customer schedule",
+      "riskEventDescription": "This refers to the risk of not meeting customer schedule due to issues relating to people, process and/or system, can result in risks in a program or major sales order which if not well managed, can lead to a delay in delivery.",
+      "sourcePage": 41
+    },
+    {
+      "number": 57,
+      "category": "Operational",
+      "factorCode": "O1",
+      "factorName": "Project or Production Management Risks",
+      "riskCode": "O1.10",
+      "riskName": "Difficulty in Matching Resources with Operational Needs",
+      "riskEventDescription": "Unforeseen circumstances leading to delays, which will result in multiple programmes or operations running in parallel instead of staggered per originally scheduled. The difficulty in allocating manpower and facilities (collectively known as resources) will result in inefficiencies which will impact commercial performance, including cost and timeliness.",
+      "sourcePage": 41,
+      "continuesOnPage": 42
+    },
+    {
+      "number": 58,
+      "category": "Operational",
+      "factorCode": "O2",
+      "factorName": "Supply Chain Risks",
+      "riskCode": "O2.1",
+      "riskName": "Earning volatility as a result of changes in the material prices",
+      "riskEventDescription": "Earning volatility as a result of changes in the material prices of tender submission & the actual purchase of such materials may result in either an increase or decrease in the cost of production.",
+      "sourcePage": 42
+    },
+    {
+      "number": 59,
+      "category": "Operational",
+      "factorCode": "O2",
+      "factorName": "Supply Chain Risks",
+      "riskCode": "O2.2",
+      "riskName": "Non-performance by key partners/ suppliers/OEMs due to failure or other reasons",
+      "riskEventDescription": "This is a risk of the non-performance by key partners/suppliers/OEMs/subcontractors/contract manufacturers due to failure or other reasons. The direct impact includes a delay in the schedule of the overall project, liquidated damages, etc.",
+      "sourcePage": 42
+    },
+    {
+      "number": 60,
+      "category": "Operational",
+      "factorCode": "O2",
+      "factorName": "Supply Chain Risks",
+      "riskCode": "O2.3",
+      "riskName": "Non availability of materials due to product retirement and obsolescence",
+      "riskEventDescription": "This refers to the risk of delay in program or sales due to the lack of availability of materials or parts for assembly or production, due to OEM defined product retirement and obsolescence",
+      "sourcePage": 42
+    },
+    {
+      "number": 61,
+      "category": "Operational",
+      "factorCode": "O2",
+      "factorName": "Supply Chain Risks",
+      "riskCode": "O2.4",
+      "riskName": "Loss of access or lock out by the OEMs",
+      "riskEventDescription": "Loss of access or lock out by the OEMs for whatever reasons. Results in inability to carry out agreements/contracts.",
+      "sourcePage": 42
+    },
+    {
+      "number": 62,
+      "category": "Operational",
+      "factorCode": "O2",
+      "factorName": "Supply Chain Risks",
+      "riskCode": "O2.5",
+      "riskName": "Poor quality of materials received",
+      "riskEventDescription": "This refers to the risk of poor quality of materials received. It could be due to various reasons, for example inadequacies in the quality check or verification process.",
+      "sourcePage": 42
+    },
+    {
+      "number": 63,
+      "category": "Operational",
+      "factorCode": "O2",
+      "factorName": "Supply Chain Risks",
+      "riskCode": "O2.6",
+      "riskName": "Shortage in raw materials or supplies",
+      "riskEventDescription": "This refers to the shortage in raw materials or supplies, due to global scarcity of resources. It could have an impact on prices, international security and government / regulatory policies.",
+      "sourcePage": 42
+    },
+    {
+      "number": 64,
+      "category": "Operational",
+      "factorCode": "O2",
+      "factorName": "Supply Chain Risks",
+      "riskCode": "O2.7",
+      "riskName": "Non-performance of key suppliers/subcontractors/contract manufacturers",
+      "riskEventDescription": "This is failure of a key supplier, subcontractor, or contract manufacturer to perform to agreed or expected standards, that results in poor quality products, inability to complete the performance of a contract or a project, etc. This also involves smaller or newer AI vendors that may lack robust governance and internal controls, increasing the risk of failure and service disruption.",
+      "sourcePage": 42
+    },
+    {
+      "number": 65,
+      "category": "Operational",
+      "factorCode": "O3",
+      "factorName": "Security Risks",
+      "riskCode": "O3.1",
+      "riskName": "Security breach resulting in unauthorised access to sensitive or secret info",
+      "riskEventDescription": "Security breach (physical or otherwise) resulting in unauthorised access to company sensitive or secret information.",
+      "sourcePage": 42
+    },
+    {
+      "number": 66,
+      "category": "Operational",
+      "factorCode": "O3",
+      "factorName": "Security Risks",
+      "riskCode": "O3.2",
+      "riskName": "Controlled items ending up in the wrong hands or locations",
+      "riskEventDescription": "Risk of controlled items ending up in the wrong hands or locations. This risk could be due to negligence or theft, and could stem from access to equipment and stocks by unauthorised personnel.",
+      "sourcePage": 42
+    },
+    {
+      "number": 67,
+      "category": "Operational",
+      "factorCode": "O4",
+      "factorName": "People risks",
+      "riskCode": "O4.1",
+      "riskName": "Staff turnover",
+      "riskEventDescription": "High staff turnover i.e. above national average, and loss of key personnel resulting in business disruption and poor quality.",
+      "sourcePage": 42
+    },
+    {
+      "number": 68,
+      "category": "Operational",
+      "factorCode": "O4",
+      "factorName": "People risks",
+      "riskCode": "O4.2",
+      "riskName": "Reliance on foreign labour",
+      "riskEventDescription": "Risk related to importation of foreign labour",
+      "sourcePage": 43
+    },
+    {
+      "number": 69,
+      "category": "Operational",
+      "factorCode": "O4",
+      "factorName": "People risks",
+      "riskCode": "O4.3",
+      "riskName": "Fall in workers' competency and productivity",
+      "riskEventDescription": "This refers to the risk of a fall in workers' competency and productivity, due to various reasons. For example lack of training, lack of/insufficient in-house skills to understand, use and appropriately supervise AI solutions being adopted",
+      "sourcePage": 43
+    },
+    {
+      "number": 70,
+      "category": "Operational",
+      "factorCode": "O4",
+      "factorName": "People risks",
+      "riskCode": "O4.4",
+      "riskName": "Shortage of labour",
+      "riskEventDescription": "Shortage of trained technical staff with specialised skill set as a result of market forces or the lack of adequate training (e.g. small number of resources with AI knowledge and expertise), the inability of the company to assess the needs of staff and hire to meet those needs, the inability of the company to attract or retain staff or high staff turnover",
+      "sourcePage": 43
+    },
+    {
+      "number": 71,
+      "category": "Operational",
+      "factorCode": "O4",
+      "factorName": "People risks",
+      "riskCode": "O4.5",
+      "riskName": "Talent Management and Succession Planning",
+      "riskEventDescription": "Lack of proper talent management program or succession plan may result in failure to recruit or retain qualified and experienced talents. This may result in business disruption if there is a sudden departure leadership personnel and inability to find appropriate personnel to fill in the position in a timely manner",
+      "sourcePage": 43
+    },
+    {
+      "number": 72,
+      "category": "Operational",
+      "factorCode": "O5",
+      "factorName": "Risk of poor public image",
+      "riskCode": "O5.1",
+      "riskName": "Poor PR Handling in times of a crisis",
+      "riskEventDescription": "Inadequate handling or the delay in response to an event made public (whether this is a crisis event, an exposure of unethical/corrupt practice), due largely to the lack of preparedness. This may cause panic or destruct of the public in the company, and may also result in business disruption or libel lawsuits.",
+      "sourcePage": 43
+    },
+    {
+      "number": 73,
+      "category": "Operational",
+      "factorCode": "O6",
+      "factorName": "Product or Service Performance/Liability Risks",
+      "riskCode": "O6.1",
+      "riskName": "Non-performance of after sales support services",
+      "riskEventDescription": "The non-performance of after sales support services due to various reasons e.g. inadequacies or a lack of after sales support infrastructure that result in expectation gaps or inability to compete.",
+      "sourcePage": 43
+    },
+    {
+      "number": 74,
+      "category": "Operational",
+      "factorCode": "O6",
+      "factorName": "Product or Service Performance/Liability Risks",
+      "riskCode": "O6.2",
+      "riskName": "Product not performing as intended due to design deficiencies or other reasons",
+      "riskEventDescription": "This relates to product not performing as intended due to design deficiencies or other reasons. This applies to both cases where products are produced or equipment is maintained and repaired by the company. These defects involve internal defects resulting from workmanship or design and can include non-adherence to industry quality and safety standards.",
+      "sourcePage": 43
+    },
+    {
+      "number": 75,
+      "category": "Operational",
+      "factorCode": "O6",
+      "factorName": "Product or Service Performance/Liability Risks",
+      "riskCode": "O6.3",
+      "riskName": "Quality or safety issues/incidents relating to our products or services",
+      "riskEventDescription": "Quality or safety issues/incidents relating to our products or services. For example, an accident involving an equipment maintained or repaired by the company occurred resulting in death or major injuries.",
+      "sourcePage": 43
+    },
+    {
+      "number": 76,
+      "category": "Operational",
+      "factorCode": "O7",
+      "factorName": "Accounting risks",
+      "riskCode": "O7.1",
+      "riskName": "Errors or inaccuracies in accounting, management or financial records",
+      "riskEventDescription": "This refers to errors or inaccuracies in various recordings of transactions, such as order taking, BOM, pricing and costing of products, which have direct implications on the ability of management to make effective or right decisions.",
+      "sourcePage": 44
+    },
+    {
+      "number": 77,
+      "category": "Operational",
+      "factorCode": "O8",
+      "factorName": "System/Process integration risks",
+      "riskCode": "08.1",
+      "riskName": "Challenges in data integration of new systems and platforms",
+      "riskEventDescription": "Risks arising from the integration, standardisation, or harmonisation of data, systems, platforms, and business processes",
+      "sourcePage": 44
+    },
+    {
+      "number": 78,
+      "category": "Operational",
+      "factorCode": "O8",
+      "factorName": "System/Process integration risks",
+      "riskCode": "08.2",
+      "riskName": "Algorithm risk in AI systems",
+      "riskEventDescription": "AI systems may suffer from bias (due to data quality and evolving datasets), inaccuracy (from poor algorithm selection or tuning), misuse (by users misinterpreting outputs), complex AI model limitations and feedback flaws (from continuous learning loops).",
+      "sourcePage": 44
+    },
+    {
+      "number": 79,
+      "category": "Business Continuity",
+      "factorCode": "N1",
+      "factorName": "Business Interruption/Stoppage Risks",
+      "riskCode": "N1.1",
+      "riskName": "Interruption to business operations resulting from a major catastrophic event",
+      "riskEventDescription": "*Note: Risk Code N1.1 has been shifted to Risk Code CC1.1 under Climate Change (Physical Climate Risk Category)",
+      "sourcePage": 44
+    },
+    {
+      "number": 80,
+      "category": "Business Continuity",
+      "factorCode": "N1",
+      "factorName": "Business Interruption/Stoppage Risks",
+      "riskCode": "N1.2",
+      "riskName": "Interruption to business operations resulting from a pandemic outbreak",
+      "riskEventDescription": "This refers to an outbreak of infectious diseases. The disease spreads easily person-to-person, causes serious illness, and can sweep across the country and around the world in very short time. Wherever and whenever a pandemic starts, everyone around the world is at risk. Countries might, through measures such as border closures and travel restrictions, delay arrival of the virus, but cannot stop it. A severe pandemic outbreak could lead to high levels of illness, death, social disruption, and economic loss. Everyday life would be disrupted because so many people in so many places become seriously ill at the same time. Impacts can range from school and business closings to the interruption of basic services such as public transportation and food delivery.",
+      "sourcePage": 44
+    },
+    {
+      "number": 81,
+      "category": "Business Continuity",
+      "factorCode": "N1",
+      "factorName": "Business Interruption/Stoppage Risks",
+      "riskCode": "N1.3",
+      "riskName": "Interruption to business operations resulting from vacancies in key positions",
+      "riskEventDescription": "This refers to the sudden loss in a key leadership position (whether in overall management positions, or key marketing, sales or production) from resignation, accident, illness or death. The impact of this is the loss in direction, poor staff morale, and will be very much affected by whether there is in place a sufficiently developed plan to provide for orderly succession. Such a risk also involves personnel not adequately prepared or groomed for key leadership positions.",
+      "sourcePage": 44
+    },
+    {
+      "number": 82,
+      "category": "Business Continuity",
+      "factorCode": "N1",
+      "factorName": "Business Interruption/Stoppage Risks",
+      "riskCode": "N1.4",
+      "riskName": "Interruption to business operations resulting from incidents in the work premise",
+      "riskEventDescription": "Interruption to business operations resulting from incidents in the work premises or when providing a service. This refers to an occurrence of a major accident or incident such as fire, oil spill, gas leak etc in the plant which severely reduces production capability or forces plant closure.",
+      "sourcePage": 45
+    },
+    {
+      "number": 83,
+      "category": "Business Continuity",
+      "factorCode": "N1",
+      "factorName": "Business Interruption/Stoppage Risks",
+      "riskCode": "N1.5",
+      "riskName": "Interruption to business operations resulting from security-related incidents",
+      "riskEventDescription": "Interruption to business operations resulting from security-related incidents in the work premises or when providing a service e.g. bomb threat, intrusion, terrorism, sabotage, etc.",
+      "sourcePage": 45
+    },
+    {
+      "number": 84,
+      "category": "Business Continuity",
+      "factorCode": "N1",
+      "factorName": "Business Interruption/Stoppage Risks",
+      "riskCode": "N1.6",
+      "riskName": "Interruption to business operations resulting from environmental, health and safety-related incidents",
+      "riskEventDescription": "Interruption to business operations resulting from environmental, health and safety-related incidents in the work premises or when providing a service e.g. pollution, exposure to harmful agents, fire/explosion, workplace accidents, etc",
+      "sourcePage": 45
+    },
+    {
+      "number": 85,
+      "category": "Business Continuity",
+      "factorCode": "N1",
+      "factorName": "Business Interruption/Stoppage Risks",
+      "riskCode": "N1.7",
+      "riskName": "Interruption to business operations resulting from facility-related incidents",
+      "riskEventDescription": "Interruption to business operations resulting from facility-related incidents in the work premises or when providing a service e.g. breakdown of major equipment. disruption in utilities e.g. power and water supply, flooding, etc.",
+      "sourcePage": 45
+    },
+    {
+      "number": 86,
+      "category": "Business Continuity",
+      "factorCode": "N1",
+      "factorName": "Business Interruption/Stoppage Risks",
+      "riskCode": "N1.8",
+      "riskName": "Labour incidents (such as labour unrest, strikes etc)",
+      "riskEventDescription": "Interruption to business operations resulting from labour incidents (such as labour unrest, strikes etc)",
+      "sourcePage": 45
+    },
+    {
+      "number": 87,
+      "category": "Business Continuity",
+      "factorCode": "N1",
+      "factorName": "Business Interruption/Stoppage Risks",
+      "riskCode": "N1.10",
+      "riskName": "Non-availability of business equipment",
+      "riskEventDescription": "Interruption to business operations resulting from non-availability of business equipment",
+      "sourcePage": 45
+    },
+    {
+      "number": 88,
+      "category": "Business Continuity",
+      "factorCode": "N1",
+      "factorName": "Business Interruption/Stoppage Risks",
+      "riskCode": "N1.11",
+      "riskName": "Incidents arising from product tests",
+      "riskEventDescription": "Interruption to business operations resulting from incidents in the testing of products",
+      "sourcePage": 45
+    },
+    {
+      "number": 89,
+      "category": "Business Continuity",
+      "factorCode": "N1",
+      "factorName": "Business Interruption/Stoppage Risks",
+      "riskCode": "N1.12",
+      "riskName": "Lack of availability of facilities",
+      "riskEventDescription": "Interruption to business operations resulting in lack of availability of critical facilities such as office building, manpower, production facilities.",
+      "sourcePage": 45
+    },
+    {
+      "number": 90,
+      "category": "IT / Cyber",
+      "factorCode": "C1",
+      "factorName": "Cyber Risks",
+      "riskCode": "C1.1",
+      "riskName": "Cyber terrorism",
+      "riskEventDescription": "This refers to the premeditated use of disruptive activities against computers and/or networks, with the intention to cause harm/intimidation or further social, ideological, religious, political or similar objectives.",
+      "sourcePage": 45
+    },
+    {
+      "number": 91,
+      "category": "IT / Cyber",
+      "factorCode": "C2",
+      "factorName": "Cyber Risks",
+      "riskCode": "C1.2",
+      "riskName": "Data Leakage /Exfiltration Risks",
+      "riskEventDescription": "Lack of adequate data protection controls may result in severe loss in highly sensitive information, including price sensitive and/or trade sensitive data, in the event of any cybersecurity breach. This could adversely impact customer confidence/reputation and result in litigation actions from customers and/or regulatory fines and penalties.",
+      "sourcePage": 45
+    },
+    {
+      "number": 92,
+      "category": "IT / Cyber",
+      "factorCode": "T1",
+      "factorName": "IT Risks",
+      "riskCode": "T1.1",
+      "riskName": "Crash or non-availability of critical IT systems",
+      "riskEventDescription": "Interruption to business operations resulting from a crash or non-availability of critical IT systems and IT applications such as email, SAP, CRM etc due to the failure in hardware infrastructure.",
+      "sourcePage": 46
+    },
+    {
+      "number": 93,
+      "category": "IT / Cyber",
+      "factorCode": "T2",
+      "factorName": "IT Risks",
+      "riskCode": "T1.2",
+      "riskName": "Incompatibility between new systems (e.g. AI) and legacy IT infrastructure",
+      "riskEventDescription": "Significant dependence on big data for AI applications increases the risk posed by existing legacy IT infrastructure, as the latter may not be compatible with AI (e.g. legacy systems unable to process big data)",
+      "sourcePage": 46
+    },
+    {
+      "number": 94,
+      "category": "IT / Cyber",
+      "factorCode": "T3",
+      "factorName": "IT Risks",
+      "riskCode": "T1.3",
+      "riskName": "Security vulnerabilities from outdated open-source components",
+      "riskEventDescription": "Increased dependency on open-source components (software packages, programming language, API, etc.) which are no longer supported or updated or freely available by the creator may introduce additional security vulnerabilities",
+      "sourcePage": 46
+    },
+    {
+      "number": 95,
+      "category": "IT / Cyber",
+      "factorCode": "T4",
+      "factorName": "IT Risks",
+      "riskCode": "T1.4",
+      "riskName": "Change management in relation to AI dependencies",
+      "riskEventDescription": "Difficulty in identifying the impact of changes to upstream systems that feed the AI solutions. This may result in unforeseen consequences for how AI interacts with its environment.",
+      "sourcePage": 46
+    },
+    {
+      "number": 96,
+      "category": "Climate Change",
+      "factorCode": "CC1",
+      "factorName": "Physical Climate Risk",
+      "riskCode": "CC1.1",
+      "riskName": "Interruption to business operations resulting from a major catastrophic event (acute physical risk)",
+      "riskEventDescription": "A natural catastrophic event refers to an act of nature (e.g. earthquake, river, coastal and surface flood, forest fire, hurricane / tropical cyclone, etc) that adversely affects people or resources and have increased in intensity and frequency due to climate change factors. When it occurs it not only creates damage to the business premises, in the severe case, may result in death. Often the direct consequences of such a risk are financial losses in terms of cost incurred to repair the damaged areas and compensation to employees, as well as operational disruption caused by the damage. For the latter, may also result in delays and inability to meet timelines for deliveries.",
+      "sourcePage": 46
+    },
+    {
+      "number": 97,
+      "category": "Climate Change",
+      "factorCode": "CC1",
+      "factorName": "Physical Climate Risk",
+      "riskCode": "CC1.2",
+      "riskName": "Interruption to business operations resulting from chronic physical risk event",
+      "riskEventDescription": "Property damage and interruption to business operations arising from chronic physical risks e.g. extreme heat and wind, freeze-thaw, soil subsidence, sea level risk, etc.",
+      "sourcePage": 46
+    },
+    {
+      "number": 98,
+      "category": "Climate Change",
+      "factorCode": "CC2",
+      "factorName": "Transition Climate Risk",
+      "riskCode": "CC2.1",
+      "riskName": "Product or services becoming obsolete /non-competitive due to inability to transition into greener products and solutions",
+      "riskEventDescription": "Our product or services becoming obsolete/non-competitive due to inability to address regulatory reforms towards greener services & products or competitors developing new products with lower carbon emission standards, resulting in lower demand for current and future generation of products and loss of revenue.",
+      "sourcePage": 46
+    },
+    {
+      "number": 99,
+      "category": "Climate Change",
+      "factorCode": "CC2",
+      "factorName": "Transition Climate Risk",
+      "riskCode": "CC2.2",
+      "riskName": "Change in climate related regulations and / or regulatory environment",
+      "riskEventDescription": "This refers to the risk of changes in climate related regulations and addition of new climate related regulations to the industry, such as mandatory verification requirements for sustainability-related disclosures on greenhouse gas emissions and energy usage. The direct impact is the need to spend time and effort to re-engineer processes or put in place new processes/ controls to ensure compliance.",
+      "sourcePage": 47
+    },
+    {
+      "number": 100,
+      "category": "Climate Change",
+      "factorCode": "CC2",
+      "factorName": "Transition Climate Risk",
+      "riskCode": "CC2.3",
+      "riskName": "Failure to attract/retain talent due to inability to integrate sustainability into business strategy",
+      "riskEventDescription": "Inability to integrate sustainability into business strategy and becoming a sustainable company may result in failure to recruit or retain qualified and experienced talents.",
+      "sourcePage": 47
+    },
+    {
+      "number": 101,
+      "category": "Climate Change",
+      "factorCode": "CC2",
+      "factorName": "Transition Climate Risk",
+      "riskCode": "CC2.4",
+      "riskName": "Increase in financial expenditures due to response to climate change",
+      "riskEventDescription": "Financial performance could be adversely impacted with the increase in operational and compliance expenditures and those of our suppliers, including increased energy and raw material costs, investments in new technologies and capabilities, product designs and facility upgrades and increase in manpower resources.",
+      "sourcePage": 47
+    },
+    {
+      "number": 102,
+      "category": "Climate Change",
+      "factorCode": "CC2",
+      "factorName": "Transition Climate Risk",
+      "riskCode": "CC2.5",
+      "riskName": "Change in capital allocation and investors’ strategies to sustainable / transition financing",
+      "riskEventDescription": "Expansion of sustainable / transition financing at the exclusion of other traditional sectors which results in inability to secure sufficient funding for business growth and/or operational needs.",
+      "sourcePage": 47
+    }
+  ]
+}

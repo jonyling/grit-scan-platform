@@ -1,8 +1,19 @@
 version: 1
+# DRAFT for review; no code loads this yet.
+# Sources: condition ids and watchIndicators from config/urs-tw/URS-TW-Global-Baseline.json,
+# theme ids from config/urs/URS-STE-Themes.json, titles from 268 GRIT_Signals rows (2026-10-01).
+# Each pattern has a label (condition_id or theme_id) and one trigger. The trigger is keywords_any,
+# else the triple fields (each *_any list holds on one hit), else the label theme's own keywords.
+# theme_id and keywords_any are proposed additions to the bind doc's field set.
+#   keywords_any: case-insensitive phrase in title or body; 6+ characters or multi-word.
+# Triple triggers only fire on GDELT rows or accepted proposed triples.
+# Currents and weekly text rows can only fire keyword and theme triggers.
+# OPEN: with require_ste_link true, Trump-Xi coverage (about 51 of 268 rows) stays unbound.
 patterns:
+  # --- urs-tw: ten Layer 1 conditions. condition_id is the baseline id. ---
   - id: US_CN_TECH_RIVALRY
-    pack: [urs, urs-tw]          # only packs that may fire it
-    condition_id: null           # set to a real baseline id when one exists
+    pack: [urs-tw]
+    condition_id: TW-GLOBAL-06
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
     actors_any: [US, PRC, TW]
@@ -11,10 +22,183 @@ patterns:
     exclude_rel: []
   - id: TW_PERSONNEL_DUTY_OF_CARE
     pack: [urs-tw]
-    condition_id: null           # MUST be filled from URS-TW baseline; leave unused if no id
-    aperture: [DAILY, WEEKLY, RED]
+    condition_id: TW-GLOBAL-03   # closest baseline condition; evacuation guidance sits in TW-GLOBAL-10
+    aperture: [DAILY, WEEKLY, RED]   # RED stays only if a named human approves it as pageable
     require_ste_link: true
     require_site_or_personnel: true
     actors_any: [PRC, PLA]
     rel_any: [military_action_toward]
     places_any: [TAIWAN]
+  - id: TW_US_CN_COMPETITION
+    pack: [urs-tw]
+    condition_id: TW-GLOBAL-01
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [US-China, Trump-Xi, trade truce, strategic competition]
+  - id: TW_CHINA_TRAJECTORY
+    pack: [urs-tw]
+    condition_id: TW-GLOBAL-02
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [Defense Mobilization, red-line, Taiwan-linked companies, civil-military]
+  - id: TW_STRAIT_PRESSURE
+    pack: [urs-tw]
+    condition_id: TW-GLOBAL-03
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [PLA aircraft, Coast Guard patrol, military exercise, blockade, sorties]
+  - id: TW_US_ALLIANCE_POLICY
+    pack: [urs-tw]
+    condition_id: TW-GLOBAL-04
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [arms sale, arms package, Taiwan policy, alliance posture]
+  - id: TW_FED_BORROWING_COSTS
+    pack: [urs-tw]
+    condition_id: TW-GLOBAL-05
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [Federal Reserve, Fed rate, rate hike, borrowing cost, forward guidance]
+  - id: TW_SANCTIONS_EXPORT_CONTROLS
+    pack: [urs-tw]
+    condition_id: TW-GLOBAL-07
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    actors_any: [US, PRC, TW]
+    rel_any: [sanctions, restricts_export_to]
+  - id: TW_DOMESTIC_FINANCIAL_RESILIENCE
+    pack: [urs-tw]
+    condition_id: TW-GLOBAL-08
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [Taiwan dollar, TWD weakens, payment delay, supplier liquidity, foreign investment]
+  - id: TW_MIDEAST_RUSSIA_UKRAINE
+    pack: [urs-tw]
+    condition_id: TW-GLOBAL-09
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [Middle East, Russia-Ukraine, Ukraine war, Moscow]
+  - id: TW_INFRASTRUCTURE_RESILIENCE
+    pack: [urs-tw]
+    condition_id: TW-GLOBAL-10
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [disaster prevention, radio security, spoofing, typhoon, earthquake, shelter guidance]
+
+  # --- urs: no baseline conditions, so each pattern points at a theme_id. ---
+  - id: URS_COMPETITION
+    pack: [urs]
+    theme_id: URS-KEY-01
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+  - id: URS_FINANCIAL_VOLATILITY
+    pack: [urs]
+    theme_id: URS-KEY-02       # management focus: USD/ILS for Israel, SGD/QAR for Qatar
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+  - id: URS_PROJECT_COST_MARGIN
+    pack: [urs]
+    theme_id: URS-KEY-03       # e.g. "Tri-Rail $60M funding shortfall", rail labour strikes
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+  - id: URS_CYBER_INCIDENT
+    pack: [urs]
+    theme_id: URS-KEY-04       # e.g. UK airports ransomware, rail SCADA directives, TETRA spoofing
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+  - id: URS_GEOPOLITICAL_OPERATIONS
+    pack: [urs]
+    theme_id: URS-KEY-05
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+  - id: URS_TECH_EXPORT_CONTROLS   # GDELT or proposed-triple path; urs counterpart of US_CN_TECH_RIVALRY
+    pack: [urs]
+    theme_id: URS-KEY-05
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    actors_any: [US, PRC, TW]
+    rel_any: [restricts_export_to, sanctions]
+    obj_any: [semiconductors, lithography, dual_use_ai]
+  - id: URS_FRAUD_CORRUPTION
+    pack: [urs]
+    theme_id: URS-KEY-06       # sheet 7: no key issues identified, so no extra triggers
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+  - id: URS_NATURAL_DISASTER_PANDEMIC
+    pack: [urs]
+    theme_id: URS-TIER_2-02    # e.g. Kumamoto earthquake rail restoration, heat-warped rails
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+  - id: URS_REGULATORY_COMPLIANCE
+    pack: [urs]
+    theme_id: URS-TIER_2-03    # e.g. TSA rail cybersecurity directives, German locomotive approval
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+  - id: URS_HEALTH_AND_SAFETY
+    pack: [urs]
+    theme_id: URS-TIER_2-04    # sheet 7: URS has no construction or heavy machinery; e.g. LA Metro platform strike
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+  - id: URS_CLIMATE_ADAPTATION
+    pack: [urs]
+    theme_id: URS-TIER_2-05
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+  - id: URS_STAFF_SAFETY_CONFLICT   # non-Taiwan counterpart of TW_PERSONNEL_DUTY_OF_CARE; no RED proposed
+    pack: [urs]
+    theme_id: URS-EMERGING-01
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+  - id: URS_EMERGING_TECHNOLOGY
+    pack: [urs]
+    theme_id: URS-EMERGING-02  # e.g. AI traffic management, post-quantum call, EV charging and ADAS
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+  - id: URS_TALENT_SCARCITY
+    pack: [urs]
+    theme_id: URS-EMERGING-03  # management focus: critical skills and visa changes for STE URS QFC Branch
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+  # --- urs: additions from sheet 7 (drivers, Tier-2 rationale, watchpoints). Trigger is keywords_any. ---
+  - id: URS_TAIWAN_CONCENTRATION   # sheet 7 Tier-2 #1: six prospective rail projects in Taiwan
+    pack: [urs]
+    theme_id: URS-TIER_2-01
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [Taiwan concentration, Taiwan rail, rail projects in Taiwan]
+  - id: URS_CHINESE_AFFILIATION_SCRUTINY   # sheet 7 Key Risk 5 driver
+    pack: [urs]
+    theme_id: URS-KEY-05
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [Chinese affiliation, public sentiment]
+  - id: URS_AI_ENABLED_ATTACK   # sheet 7 Key Risk 4 driver
+    pack: [urs]
+    theme_id: URS-KEY-04
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [AI-enhanced, malicious attack, phishing]
+  - id: URS_CONFLICT_SUPPLY_CHAIN   # sheet 7 section 5.1 watchpoints
+    pack: [urs]
+    theme_id: URS-EMERGING-01
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [blockade, embargo, critical materials, alternative sourcing]
+  - id: URS_TOLLING_TECHNOLOGY   # sheet 7 section 5.2, TransCore; road user charging is from a real signal
+    pack: [urs]
+    theme_id: URS-EMERGING-02
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [toll collection, RFID tolling, electronic toll, road user charging]
+  - id: URS_AI_ADOPTION_GOVERNANCE   # sheet 7 sections 5.3 and 5.4
+    pack: [urs]
+    theme_id: URS-EMERGING-02
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [Generative AI, edge computing, AI governance, responsible AI, predictive maintenance]
+  - id: URS_TALENT_MARKET   # sheet 7 section 5.5 watchpoints
+    pack: [urs]
+    theme_id: URS-EMERGING-03
+    aperture: [DAILY, WEEKLY]
+    require_ste_link: true
+    keywords_any: [talent demand, talent supply, hot skills, reskilling]

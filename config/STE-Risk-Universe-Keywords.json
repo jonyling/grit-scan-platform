@@ -1,0 +1,2646 @@
+{
+  "registerId": "STE-RISK-UNIVERSE-KEYWORDS",
+  "universeRegisterVersion": "STE-RISK-UNIVERSE-R&A-RISK-006-GL001-2026-06-29",
+  "scope": "GROUP",
+  "status": "APPROVED_FOR_MVP",
+  "note": "Search keywords for the Group risk universe, kept apart from the verbatim transcription in STE-Risk-Universe.json. REGISTER_NAME entries are the register's own risk name with any bracketed text removed, and only when it is five words or fewer, since a longer sentence will not appear verbatim in news. PROPOSED entries were drafted for review and must not be matched until a human sets them to APPROVED.",
+  "keywordRule": "6 or more characters, or more than one word. Shorter single words cause false hits.",
+  "statusValues": [
+    "APPROVED",
+    "PROPOSED"
+  ],
+  "excluded": [
+    {
+      "riskCode": "N1.1",
+      "reason": "The source shifted N1.1 to CC1.1 and left it without a description."
+    }
+  ],
+  "risks": [
+    {
+      "riskCode": "S1.1",
+      "riskName": "Country concentration risk",
+      "keywords": [
+        {
+          "text": "Country concentration risk",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "country concentration",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "geographic concentration",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "dependence on one market",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S1.2",
+      "riskName": "Customer concentration risk",
+      "keywords": [
+        {
+          "text": "Customer concentration risk",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "customer concentration",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "major customer loss",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "key customer dependence",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S1.3",
+      "riskName": "Product concentration risk",
+      "keywords": [
+        {
+          "text": "Product concentration risk",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "product concentration",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "single product dependence",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "reliance on limited products",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S1.4",
+      "riskName": "Industry / market concentration",
+      "keywords": [
+        {
+          "text": "Industry / market concentration",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "market concentration",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "industry concentration",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "sector downturn",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S1.5",
+      "riskName": "Loss of a major agency representation",
+      "keywords": [
+        {
+          "text": "agency representation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "exclusive distributor",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "distributorship terminated",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S1.6",
+      "riskName": "Over-reliance on major vendors",
+      "keywords": [
+        {
+          "text": "Over-reliance on major vendors",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "vendor lock-in",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "AI vendor dependence",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "over-reliance on vendors",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S2.1",
+      "riskName": "Increasingly intensified competition due to changes in the market structures",
+      "keywords": [
+        {
+          "text": "market consolidation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "new market entrants",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "price war",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "competitive landscape",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S2.2",
+      "riskName": "Infringement or loss of our patents",
+      "keywords": [
+        {
+          "text": "patent infringement",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "patent dispute",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "patent loss",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S3.1",
+      "riskName": "New acquisition not performing as intended",
+      "keywords": [
+        {
+          "text": "acquisition integration",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "acquisition impairment",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "goodwill impairment",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S3.2",
+      "riskName": "New business not performing as intended",
+      "keywords": [
+        {
+          "text": "new venture losses",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "new business underperforming",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "business venture failure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S3.3",
+      "riskName": "Risks relating to expansion into new markets",
+      "keywords": [
+        {
+          "text": "market entry",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "overseas expansion",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "new market expansion",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S3.4",
+      "riskName": "Risks relating to the distribution channel",
+      "keywords": [
+        {
+          "text": "distribution channel",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "distributor dispute",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "channel partner",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S3.5",
+      "riskName": "Uncompetitive cost structure",
+      "keywords": [
+        {
+          "text": "Uncompetitive cost structure",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "cost structure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "uncompetitive pricing",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "cost competitiveness",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S3.6",
+      "riskName": "Product or services becoming obsolete/non-competitive due to external factors",
+      "keywords": [
+        {
+          "text": "technology obsolescence",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "product obsolescence",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "disruptive technology",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S3.7",
+      "riskName": "Risks relating to approval for defence exports",
+      "keywords": [
+        {
+          "text": "defence export",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "defense export",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "export licence approval",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "export approval",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S3.8",
+      "riskName": "Geopolitical Risk",
+      "keywords": [
+        {
+          "text": "Geopolitical Risk",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "geopolitical tensions",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "geopolitical conflict",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S4.1",
+      "riskName": "Brand Confusion",
+      "keywords": [
+        {
+          "text": "Brand Confusion",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "brand dilution",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "trademark dispute",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S4.2",
+      "riskName": "Errors in publicity materials",
+      "keywords": [
+        {
+          "text": "Errors in publicity materials",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "publicity error",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "misleading advertisement",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "advertising complaint",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S5.1",
+      "riskName": "Business cycle volatility",
+      "keywords": [
+        {
+          "text": "Business cycle volatility",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "business cycle",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "economic downturn",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "economic slowdown",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S5.2",
+      "riskName": "Revenue slowdown arising from cut back in demand due to economic conditions",
+      "keywords": [
+        {
+          "text": "demand slowdown",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "revenue slowdown",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "weak demand",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S5.3",
+      "riskName": "Consolidation among customers",
+      "keywords": [
+        {
+          "text": "Consolidation among customers",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "customer consolidation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "customer merger",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "merger of customers",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S5.4",
+      "riskName": "Industry maturity or limited industry capacity",
+      "keywords": [
+        {
+          "text": "industry capacity",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "market maturity",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "industry maturity",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S5.5",
+      "riskName": "Defence Budget Cuts",
+      "keywords": [
+        {
+          "text": "Defence Budget Cuts",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "defence budget",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "defense budget",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "defence spending cuts",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "military budget cut",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "S6.1",
+      "riskName": "Rapid advancements in technologies and digitalisation",
+      "keywords": [
+        {
+          "text": "digital transformation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "rapid technology change",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "digitalisation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "F1.1",
+      "riskName": "Earning volatility due to changes in the foreign exchanges rates",
+      "keywords": [
+        {
+          "text": "exchange rate",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "currency volatility",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "foreign exchange",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "F2.1",
+      "riskName": "Exposure to interest rates fluctuation",
+      "keywords": [
+        {
+          "text": "Exposure to interest rates fluctuation",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "interest rate",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "rate hike",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "rate cut",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "F3.1",
+      "riskName": "Customer non-payment risk due to failure or other reasons",
+      "keywords": [
+        {
+          "text": "customer non-payment",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "payment default",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "client insolvency",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "late payment",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "F4.1",
+      "riskName": "Liquidity shortfall impacting working capital and funding",
+      "keywords": [
+        {
+          "text": "liquidity shortfall",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "working capital",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "funding shortfall",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "cash flow",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "F5.1",
+      "riskName": "Losses arising from inventory obsolescence",
+      "keywords": [
+        {
+          "text": "Losses arising from inventory obsolescence",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "inventory obsolescence",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "inventory write-down",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "stock write-off",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "F5.2",
+      "riskName": "Valuation risk of fixed assets",
+      "keywords": [
+        {
+          "text": "Valuation risk of fixed assets",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "asset impairment",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "fixed asset valuation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "asset write-down",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "F6.1",
+      "riskName": "Failure of financial counterparty",
+      "keywords": [
+        {
+          "text": "Failure of financial counterparty",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "counterparty failure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "bank failure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "counterparty default",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L1.1",
+      "riskName": "Disputes over contractual terms and conditions",
+      "keywords": [
+        {
+          "text": "contract dispute",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "contractual dispute",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "arbitration claim",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "breach of contract",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L1.2",
+      "riskName": "Intellectual property rights Infringement",
+      "keywords": [
+        {
+          "text": "Intellectual property rights Infringement",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "intellectual property infringement",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "IP infringement",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "copyright infringement",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L2.1",
+      "riskName": "Violation of Export Control Regulations",
+      "keywords": [
+        {
+          "text": "Violation of Export Control Regulations",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "export control",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "sanctions violation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "export licence",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L2.2",
+      "riskName": "Violation of Environment, Health or Safety Regulations",
+      "keywords": [
+        {
+          "text": "EHS violation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "environmental violation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "safety regulation breach",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "workplace safety fine",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L2.3",
+      "riskName": "Violation of Industry Related/Specific Laws and Regulations",
+      "keywords": [
+        {
+          "text": "aviation regulation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "industry regulation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "regulatory breach",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "aviation authority",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L2.4",
+      "riskName": "Change in regulations and/or regulatory environment, and addition of new regulations",
+      "keywords": [
+        {
+          "text": "regulatory change",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "new regulation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "regulatory environment",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "regulatory tightening",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L2.5",
+      "riskName": "Violation of country tax laws and regulations",
+      "keywords": [
+        {
+          "text": "tax violation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "tax evasion",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "tax investigation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "tax audit",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L2.6",
+      "riskName": "Violation of MSD Security Rules & Regulations",
+      "keywords": [
+        {
+          "text": "security regulations breach",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "classified information",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L2.7",
+      "riskName": "Non-compliance with statutory or mandatory certification requirements resulting in the loss of operational certificates or licences.",
+      "keywords": [
+        {
+          "text": "certification lapse",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "licence revoked",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "operating licence",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "certificate suspended",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L2.8",
+      "riskName": "Non-compliance with laws and regulations governing collection, use, disclosure and care of personal data",
+      "keywords": [
+        {
+          "text": "data protection law",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "personal data breach",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "privacy regulation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "GDPR fine",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "PDPA breach",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L2.9",
+      "riskName": "Human Rights Risk",
+      "keywords": [
+        {
+          "text": "Human Rights Risk",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "human rights",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "forced labour",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "modern slavery",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "labour rights",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L2.15",
+      "riskName": "Taxation/Transfer Pricing Risk",
+      "keywords": [
+        {
+          "text": "Taxation/Transfer Pricing Risk",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "transfer pricing",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "tax dispute",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "transfer pricing audit",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L3.1",
+      "riskName": "Offset Programme Risk",
+      "keywords": [
+        {
+          "text": "Offset Programme Risk",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "offset programme",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "offset obligation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "industrial participation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L3.3",
+      "riskName": "Change in government plans, policy or priorities",
+      "keywords": [
+        {
+          "text": "government policy change",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "policy shift",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "government priorities",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "budget reallocation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L4.1",
+      "riskName": "Asset misappropriation risk",
+      "keywords": [
+        {
+          "text": "Asset misappropriation risk",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "asset misappropriation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "embezzlement",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "employee theft",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "L4.2",
+      "riskName": "Corruption risk or violation of anti-corruption laws and regulations",
+      "keywords": [
+        {
+          "text": "anti-corruption",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "bribery investigation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "corruption charges",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "bribery scandal",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O1.1",
+      "riskName": "Unclear specifications or customer requirements",
+      "keywords": [
+        {
+          "text": "Unclear specifications or customer requirements",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "unclear specifications",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "requirements dispute",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "scope creep",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O1.2",
+      "riskName": "Design inadequacies discovered during production and/or after delivery",
+      "keywords": [
+        {
+          "text": "design defect",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "design flaw",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "design deficiency",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O1.3",
+      "riskName": "Over-reliance on a single or just a few key partners",
+      "keywords": [
+        {
+          "text": "key partner dependence",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "partner failure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "single partner reliance",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O1.4",
+      "riskName": "Project cost overruns due to any reasons",
+      "keywords": [
+        {
+          "text": "cost overrun",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "project cost overrun",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "budget overrun",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O1.5",
+      "riskName": "Project schedule underestimation",
+      "keywords": [
+        {
+          "text": "Project schedule underestimation",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "schedule delay",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "project delay",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "project schedule",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "delayed completion",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O1.6",
+      "riskName": "Wrong costing estimates",
+      "keywords": [
+        {
+          "text": "Wrong costing estimates",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "costing error",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "cost estimate",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "cost estimation error",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O1.7",
+      "riskName": "Damage to customers' property",
+      "keywords": [
+        {
+          "text": "Damage to customers' property",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "property damage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "damage to customer property",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "customer asset damage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O1.8",
+      "riskName": "Not meeting customer product or service requirements or specifications",
+      "keywords": [
+        {
+          "text": "failed acceptance test",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "customer specification",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "non-conformance",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O1.9",
+      "riskName": "Not meeting customer schedule",
+      "keywords": [
+        {
+          "text": "Not meeting customer schedule",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "late delivery",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "delivery delay",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "missed delivery date",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "liquidated damages",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O1.10",
+      "riskName": "Difficulty in Matching Resources with Operational Needs",
+      "keywords": [
+        {
+          "text": "resource shortage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "resource constraints",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "resource planning",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O2.1",
+      "riskName": "Earning volatility as a result of changes in the material prices",
+      "keywords": [
+        {
+          "text": "material prices",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "commodity prices",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "raw material cost",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O2.2",
+      "riskName": "Non-performance by key partners/ suppliers/OEMs due to failure or other reasons",
+      "keywords": [
+        {
+          "text": "supplier failure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "supplier non-performance",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "OEM failure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "key supplier",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O2.3",
+      "riskName": "Non availability of materials due to product retirement and obsolescence",
+      "keywords": [
+        {
+          "text": "end-of-life component",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "component obsolescence",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "product retirement",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "last-time buy",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O2.4",
+      "riskName": "Loss of access or lock out by the OEMs",
+      "keywords": [
+        {
+          "text": "OEM access",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "OEM lockout",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "OEM restriction",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O2.5",
+      "riskName": "Poor quality of materials received",
+      "keywords": [
+        {
+          "text": "Poor quality of materials received",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "poor quality materials",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "defective components",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "quality defect",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "supplier quality",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O2.6",
+      "riskName": "Shortage in raw materials or supplies",
+      "keywords": [
+        {
+          "text": "material shortage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "supply shortage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "chip shortage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "raw material shortage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "supply chain disruption",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O2.7",
+      "riskName": "Non-performance of key suppliers/subcontractors/contract manufacturers",
+      "keywords": [
+        {
+          "text": "Non-performance of key suppliers/subcontractors/contract manufacturers",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "subcontractor failure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "subcontractor insolvency",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "contract manufacturer",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "subcontractor default",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O3.1",
+      "riskName": "Security breach resulting in unauthorised access to sensitive or secret info",
+      "keywords": [
+        {
+          "text": "security breach",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "unauthorised access",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "data breach",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "classified leak",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O3.2",
+      "riskName": "Controlled items ending up in the wrong hands or locations",
+      "keywords": [
+        {
+          "text": "export diversion",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "controlled items",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "chip smuggling",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "illegal transshipment",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O4.1",
+      "riskName": "Staff turnover",
+      "keywords": [
+        {
+          "text": "Staff turnover",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "employee attrition",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "high attrition",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "staff resignations",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O4.2",
+      "riskName": "Reliance on foreign labour",
+      "keywords": [
+        {
+          "text": "Reliance on foreign labour",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "foreign labour",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "foreign workers",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "work permit",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "visa changes",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "foreign worker quota",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O4.3",
+      "riskName": "Fall in workers' competency and productivity",
+      "keywords": [
+        {
+          "text": "worker competency",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "productivity decline",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "skills gap",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "training shortfall",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O4.4",
+      "riskName": "Shortage of labour",
+      "keywords": [
+        {
+          "text": "Shortage of labour",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "labour shortage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "manpower shortage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "worker shortage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O4.5",
+      "riskName": "Talent Management and Succession Planning",
+      "keywords": [
+        {
+          "text": "Talent Management and Succession Planning",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "succession planning",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "talent management",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "leadership succession",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "key talent",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O5.1",
+      "riskName": "Poor PR Handling in times of a crisis",
+      "keywords": [
+        {
+          "text": "crisis communication",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "reputational damage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "public backlash",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "PR crisis",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O6.1",
+      "riskName": "Non-performance of after sales support services",
+      "keywords": [
+        {
+          "text": "after-sales support",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "maintenance service failure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "service level breach",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "warranty claims",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O6.2",
+      "riskName": "Product not performing as intended due to design deficiencies or other reasons",
+      "keywords": [
+        {
+          "text": "product defect",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "product failure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "design deficiency",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "product recall",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O6.3",
+      "riskName": "Quality or safety issues/incidents relating to our products or services",
+      "keywords": [
+        {
+          "text": "product safety",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "safety incident",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "product recall",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "quality incident",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "O7.1",
+      "riskName": "Errors or inaccuracies in accounting, management or financial records",
+      "keywords": [
+        {
+          "text": "accounting error",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "financial restatement",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "accounting irregularities",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "misstatement",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "08.1",
+      "riskName": "Challenges in data integration of new systems and platforms",
+      "keywords": [
+        {
+          "text": "data integration",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "system integration",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "platform migration",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "systems migration",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "08.2",
+      "riskName": "Algorithm risk in AI systems",
+      "keywords": [
+        {
+          "text": "Algorithm risk in AI systems",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "algorithm risk",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "algorithmic bias",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "AI model failure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "AI governance",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "N1.2",
+      "riskName": "Interruption to business operations resulting from a pandemic outbreak",
+      "keywords": [
+        {
+          "text": "pandemic outbreak",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "disease outbreak",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "lockdown measures",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "health emergency",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "N1.3",
+      "riskName": "Interruption to business operations resulting from vacancies in key positions",
+      "keywords": [
+        {
+          "text": "key position vacancies",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "leadership departure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "executive resignation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "key person loss",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "N1.4",
+      "riskName": "Interruption to business operations resulting from incidents in the work premise",
+      "keywords": [
+        {
+          "text": "workplace incident",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "fire at premises",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "building evacuation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "workplace accident",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "N1.5",
+      "riskName": "Interruption to business operations resulting from security-related incidents",
+      "keywords": [
+        {
+          "text": "security incident",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "terrorist attack",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "bomb threat",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "premises intrusion",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "N1.6",
+      "riskName": "Interruption to business operations resulting from environmental, health and safety-related incidents",
+      "keywords": [
+        {
+          "text": "workplace safety incident",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "environmental incident",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "chemical spill",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "occupational illness",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "N1.7",
+      "riskName": "Interruption to business operations resulting from facility-related incidents",
+      "keywords": [
+        {
+          "text": "facility outage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "power outage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "building closure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "facility damage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "fire alarm",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "N1.8",
+      "riskName": "Labour incidents",
+      "keywords": [
+        {
+          "text": "Labour incidents",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "labour unrest",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "strike action",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "industrial action",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "union strike",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "work stoppage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "N1.10",
+      "riskName": "Non-availability of business equipment",
+      "keywords": [
+        {
+          "text": "Non-availability of business equipment",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "equipment failure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "equipment shortage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "equipment breakdown",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "unavailable equipment",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "N1.11",
+      "riskName": "Incidents arising from product tests",
+      "keywords": [
+        {
+          "text": "Incidents arising from product tests",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "product test incident",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "test accident",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "trial incident",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "test failure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "N1.12",
+      "riskName": "Lack of availability of facilities",
+      "keywords": [
+        {
+          "text": "Lack of availability of facilities",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "facility availability",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "lack of facilities",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "warehouse shortage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "factory capacity",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "C1.1",
+      "riskName": "Cyber terrorism",
+      "keywords": [
+        {
+          "text": "Cyber terrorism",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "cyber attack",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "state-sponsored hackers",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "critical infrastructure attack",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "C1.2",
+      "riskName": "Data Leakage /Exfiltration Risks",
+      "keywords": [
+        {
+          "text": "Data Leakage /Exfiltration Risks",
+          "origin": "REGISTER_NAME",
+          "status": "APPROVED"
+        },
+        {
+          "text": "data leakage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "data exfiltration",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "data breach",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "data stolen",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "T1.1",
+      "riskName": "Crash or non-availability of critical IT systems",
+      "keywords": [
+        {
+          "text": "IT outage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "system outage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "IT system crash",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "service outage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "T1.2",
+      "riskName": "Incompatibility between new systems and legacy IT infrastructure",
+      "keywords": [
+        {
+          "text": "legacy systems",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "legacy infrastructure",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "AI integration",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "system incompatibility",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "T1.3",
+      "riskName": "Security vulnerabilities from outdated open-source components",
+      "keywords": [
+        {
+          "text": "open-source vulnerability",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "security vulnerability",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "zero-day vulnerability",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "open-source components",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "T1.4",
+      "riskName": "Change management in relation to AI dependencies",
+      "keywords": [
+        {
+          "text": "AI dependency",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "AI change management",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "AI adoption",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "model dependency",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "CC1.1",
+      "riskName": "Interruption to business operations resulting from a major catastrophic event",
+      "keywords": [
+        {
+          "text": "natural disaster",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "major catastrophe",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "typhoon damage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "earthquake damage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "flood damage",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "CC1.2",
+      "riskName": "Interruption to business operations resulting from chronic physical risk event",
+      "keywords": [
+        {
+          "text": "chronic physical risk",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "sea level rise",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "extreme heat",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "heatwave",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "rising temperatures",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "CC2.1",
+      "riskName": "Product or services becoming obsolete /non-competitive due to inability to transition into greener products and solutions",
+      "keywords": [
+        {
+          "text": "low-carbon transition",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "net-zero transition",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "carbon-neutral requirement",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "green technology demand",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "CC2.2",
+      "riskName": "Change in climate related regulations and / or regulatory environment",
+      "keywords": [
+        {
+          "text": "climate regulation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "carbon tax",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "emissions regulation",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "climate disclosure rules",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "sustainability reporting",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "CC2.3",
+      "riskName": "Failure to attract/retain talent due to inability to integrate sustainability into business strategy",
+      "keywords": [
+        {
+          "text": "sustainability talent",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "ESG talent",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "green skills",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "CC2.4",
+      "riskName": "Increase in financial expenditures due to response to climate change",
+      "keywords": [
+        {
+          "text": "climate adaptation cost",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "decarbonisation cost",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "carbon cost",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "emissions compliance cost",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    {
+      "riskCode": "CC2.5",
+      "riskName": "Change in capital allocation and investors’ strategies to sustainable / transition financing",
+      "keywords": [
+        {
+          "text": "sustainable investing",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "ESG investors",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "green financing",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        },
+        {
+          "text": "capital allocation shift",
+          "origin": "PROPOSED",
+          "status": "APPROVED"
+        }
+      ]
+    }
+  ],
+  "approval": {
+    "approvedBy": "khengaikjony.ling",
+    "approvedOn": "2026-10-02",
+    "basis": "Bulk approval of all drafted phrases for the MVP after a read-through. Not reviewed phrase by phrase."
+  }
+}
