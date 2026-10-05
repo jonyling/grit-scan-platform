@@ -14,4 +14,15 @@ rows are not Dataverse signals. `acquisition/currents.py` is the headline stream
 currentsapi.services, not GDELT, and allows one or two pulls. The key stays
 in `CURRENTS_API_KEY`. A failed fetch is an error, not an empty week.
 
+`acquisition/brave.py` is a second headline stream, from the Brave News Search
+API. Its queries are not typed by hand. `plan_queries()` builds one Boolean
+string per active LOB in a named pack, from that LOB's governed keywords:
+`"railway signalling" OR "CBTC" OR ...`. A long list is split, not cut, and
+inactive LOBs are skipped. A keyword only widens the pull. It is not an STE
+link, so every row still goes through the bind. The key stays in
+`BRAVE_SEARCH_API_KEY`. A failed fetch is an error, not an empty week. One run
+makes at most six pulls. Print the plan with
+`python -m acquisition.brave --pack urs-tw --plan-only`, and narrow a large
+pack with `--lob`. The command stores nothing.
+
 Do not copy `.env`, `secrets/`, `output/`, or credential files from GCP_Gemini.
