@@ -2,10 +2,10 @@ import copy
 import json
 from types import SimpleNamespace
 
-from loop.card import check
-from loop.engine import FindingLoop, LoopConfig, clean_issues
-from loop.prompts import DRAFT_SYSTEM
-from loop.tools import FollowUpTool
+from grit.agents.loop.card import check
+from grit.agents.loop.engine import FindingLoop, LoopConfig, clean_issues
+from grit.agents.loop.prompts import DRAFT_SYSTEM
+from grit.agents.loop.tools import FollowUpTool
 from tests.test_loop_card import _FILLER, _good, _page, _signal, _unit, _world
 
 _TITLE = "LAND TRANSPORT AUTHORITY awards a signalling contract"
@@ -234,13 +234,13 @@ def test_an_unexpected_failure_withholds_that_card_with_its_reason_and_the_next_
     assert failed["status"] == "WITHHELD" and failed["loop"]["stop"] == "LOOP_ERROR" and failed["violations"][0].startswith("LOOP_ERROR: shape: the loop failed (KeyError)")
     assert failed["q6"]["level"] == "NOT_ESTABLISHED" and failed["same_party"] is None and failed["doubted"] is False
     assert engine.run("F02", _signal_for(pack, index))["status"] == "COMPLETE"
-    from report.findings import render_card
+    from grit.report.findings import render_card
 
     assert "Withheld" in "\n".join(render_card(failed))  # the renderer reads the failure card without a key error
 
 
 def test_a_check_that_raises_is_a_shape_violation_and_not_a_crash() -> None:
-    import loop.engine as engine_module
+    import grit.agents.loop.engine as engine_module
 
     original = engine_module.check
     engine_module.check = lambda card, context: (_ for _ in ()).throw(ValueError("boom"))

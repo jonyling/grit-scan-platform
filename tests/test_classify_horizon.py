@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 
-from grit_scan.impact_scoring import (
+from grit.core.impact_scoring import (
     Horizon,
     MediaReach,
     RiskObservations,

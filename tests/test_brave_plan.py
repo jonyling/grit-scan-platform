@@ -4,8 +4,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 
-from acquisition.brave import BraveFetchError
-from acquisition.brave_plan import BraveResponse, canonical_url, collect_plan, main
+from grit.acquisition.brave import BraveFetchError
+from grit.acquisition.brave_plan import BraveResponse, canonical_url, collect_plan, main
 
 _OK_HEADERS = {"x-ratelimit-limit": "50, 0", "x-ratelimit-remaining": "49, 0"}
 _AT = "2026-10-12T07:00:00Z"

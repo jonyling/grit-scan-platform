@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from ui.actions import submit_from_screen
-from ui.seed import seed_pending_package
-from ui.view_model import NOT_ESTABLISHED, acquired_detail, package_view, signal_detail, signal_list
+from grit.ui.actions import submit_from_screen
+from grit.ui.seed import seed_pending_package
+from grit.ui.view_model import NOT_ESTABLISHED, acquired_detail, package_view, signal_detail, signal_list
 
 
 def test_reviewer_approves_the_exact_package_version_and_hash() -> None:
@@ -86,7 +86,7 @@ def test_acquired_headline_does_not_invent_a_score() -> None:
 
 
 def test_screen_modules_do_not_write_the_ledger() -> None:
-    root = Path(__file__).parents[1] / "ui"
+    root = Path(__file__).parents[1] / "grit" / "ui"
     for name in ("actions.py", "app.py", "view_model.py"):
         text = (root / name).read_text(encoding="utf-8")
         assert "ledger.append" not in text

@@ -1,8 +1,8 @@
-from acquisition.candidate import Candidate
-from dataverse.choices import EVIDENCE_LOW, RISK_LEVEL_HIGH, RISK_LEVEL_LOW, TREND_ESCALATING, TREND_NO_MATERIAL_CHANGE
-from dataverse.client import DataverseError, organization_url, require_env
-from dataverse.signals import ranked_finding_body, ranked_finding_content_hash, signal_body
-from supervisor.service import Supervisor
+from grit.acquisition.candidate import Candidate
+from grit.dataverse.choices import EVIDENCE_LOW, RISK_LEVEL_HIGH, RISK_LEVEL_LOW, TREND_ESCALATING, TREND_NO_MATERIAL_CHANGE
+from grit.dataverse.client import DataverseError, organization_url, require_env
+from grit.dataverse.signals import ranked_finding_body, ranked_finding_content_hash, signal_body
+from grit.workflow.supervisor import Supervisor
 
 
 class FakeDataverse:
@@ -186,7 +186,7 @@ def test_organization_url_drops_a_copied_api_path() -> None:
 def test_missing_dataverse_env_fails_before_a_write() -> None:
     import os
 
-    from dataverse.client import ENV_VARS
+    from grit.dataverse.client import ENV_VARS
 
     saved = {name: os.environ.pop(name, None) for name in ENV_VARS}
     try:

@@ -1,6 +1,6 @@
 from datetime import date
 
-from grit_scan.impact_scoring import (
+from grit.core.impact_scoring import (
     KeywordTier,
     LobKeyword,
     NullProjectRegistry,
@@ -15,7 +15,7 @@ from grit_scan.impact_scoring import (
     assess_impact,
     classify_opportunity_cost,
 )
-from grit_scan.impact_scoring import ImpactVerdict, SeverityBand, SeverityBandBracket, SeverityDefinition
+from grit.core.impact_scoring import ImpactVerdict, SeverityBand, SeverityBandBracket, SeverityDefinition
 
 
 _TAIWAN = RegistryEntry(

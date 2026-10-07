@@ -1,4 +1,4 @@
-from grit_scan.wild_scan_relevance import (
+from grit.core.wild_scan_relevance import (
     NO_CONDITION_HEADLINE,
     classify_wild_scan_risk_level,
     compose_wild_scan_basis,

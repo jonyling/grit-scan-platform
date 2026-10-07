@@ -3,9 +3,9 @@ import json
 from tempfile import TemporaryDirectory
 from pathlib import Path
 
-from grit_scan.link import LinkIndex, link_candidate
-from grit_scan.ontology_graph import PROPOSED, VALIDATED, build_graph
-from grit_scan.relationship_gaps import (
+from grit.ontology.link import LinkIndex, link_candidate
+from grit.ontology.graph import PROPOSED, VALIDATED, build_graph
+from grit.ontology.relationship_gaps import (
     ALIAS_COLUMNS,
     RELATIONSHIP_COLUMNS,
     alias_rows,
@@ -157,7 +157,7 @@ def test_the_later_alias_decision_wins_and_a_reject_removes_every_spelling_of_th
 
 
 def test_a_proposed_row_never_replaces_a_validated_one_and_the_import_says_so() -> None:
-    from grit_scan.relationship_gaps import downgrades
+    from grit.ontology.relationship_gaps import downgrades
 
     validated = {"src": "CUSTOMER-lta", "rel": "buys_from", "dst": "LOB-mobility-rail", "status": VALIDATED, "basis": "BA", "approvedBy": "Jony", "approvedOn": "2026-10-07"}
     proposed = {"src": "CUSTOMER-lta", "rel": "buys_from", "dst": "LOB-mobility-rail", "status": PROPOSED, "basis": "a note"}

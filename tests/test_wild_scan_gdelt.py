@@ -2,7 +2,7 @@ import hashlib
 import io
 import zipfile
 
-from acquisition.gdelt import (
+from grit.acquisition.gdelt import (
     GdeltFetchError,
     LASTUPDATE_URL,
     articles_from_payload,

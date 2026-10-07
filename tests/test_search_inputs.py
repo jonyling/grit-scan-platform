@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from grit_scan.ontology import load_ontology_pack
-from grit_scan.search_inputs import (
+from grit.ontology.pack import load_ontology_pack
+from grit.ontology.search_inputs import (
     LIBRARY_SHEETS,
     _is_note,
     parse_competitor_rows,

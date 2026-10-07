@@ -1,11 +1,11 @@
 import math
 from datetime import date
 
-from grit_scan.doc_type import LISTICLE, MARKET_RESEARCH, DocType
-from grit_scan.link import COMPETITOR, COUNTERPARTY, DIRECT, PERIMETER, SECTOR, THEME, Involvement, Link, ThemeHit
-from grit_scan.priority import PriorityConfig
-from grit_scan.scale_cues import Figure, ScaleCues
-from retrieval.signal_filter import FilterConfig, filter_candidates
+from grit.core.doc_type import LISTICLE, MARKET_RESEARCH, DocType
+from grit.ontology.link import COMPETITOR, COUNTERPARTY, DIRECT, PERIMETER, SECTOR, THEME, Involvement, Link, ThemeHit
+from grit.core.priority import PriorityConfig
+from grit.core.scale_cues import Figure, ScaleCues
+from grit.retrieval.signal_filter import FilterConfig, filter_candidates
 
 _RUN = date(2026, 10, 6)
 

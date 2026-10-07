@@ -1,4 +1,4 @@
-from grit_scan.impact_scoring import (
+from grit.core.impact_scoring import (
     DimensionAssessment,
     EvidenceConfidence,
     EvidenceResult,

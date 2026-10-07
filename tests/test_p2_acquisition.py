@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from acquisition.adapters import agile, approved_web, isos, sphera, wild_scan
+from grit.acquisition.adapters import agile, approved_web, isos, sphera, wild_scan
 
 
 def test_adapters_emit_candidates_and_drop_scores() -> None:
@@ -23,7 +23,7 @@ def test_adapters_emit_candidates_and_drop_scores() -> None:
 
 
 def test_acquisition_modules_do_not_call_the_scorer() -> None:
-    root = Path(__file__).parents[1] / "acquisition"
+    root = Path(__file__).parents[1] / "grit" / "acquisition"
     for path in root.glob("*.py"):
         text = path.read_text(encoding="utf-8")
         assert "assess_impact" not in text

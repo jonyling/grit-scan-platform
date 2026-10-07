@@ -1,11 +1,11 @@
 import json
 from pathlib import Path
 
-from grit_scan.build_urs_pack import build_urs_pack
-from grit_scan.lob_hierarchy import resolve_lob
-from grit_scan.matchers import credibility_lookup, exposure_entity_match
-from grit_scan.ontology import load_ontology_pack
-from grit_scan.workbook import workbook_path
+from grit.ontology.build_urs_pack import build_urs_pack
+from grit.ontology.lob_hierarchy import resolve_lob
+from grit.ontology.matchers import credibility_lookup, exposure_entity_match
+from grit.ontology.pack import load_ontology_pack
+from grit.ontology.workbook import workbook_path
 
 _ROOT = Path(__file__).resolve().parent.parent
 _PACK = _ROOT / "config" / "urs"

@@ -4,8 +4,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from grit_scan.ontology import load_ontology_pack
-from grit_scan.ontology_graph import DERIVED, PROPOSED, SOURCE_STATED, VALIDATED, build_graph, short_names, usable_name
+from grit.ontology.pack import load_ontology_pack
+from grit.ontology.graph import DERIVED, PROPOSED, SOURCE_STATED, VALIDATED, build_graph, short_names, usable_name
 
 _ROOT = Path(__file__).resolve().parent.parent
 

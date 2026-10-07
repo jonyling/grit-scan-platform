@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from grit_scan.canonical import canonical_hash
-from grit_scan.theme_layer import (
+from grit.core.canonical import canonical_hash
+from grit.core.theme_layer import (
     ESCALATION_VERSION,
     METRIC_VERSION,
     event_match,
@@ -10,7 +10,7 @@ from grit_scan.theme_layer import (
     theme_metric_calculation,
     theme_register_match,
 )
-from supervisor.service import Supervisor
+from grit.workflow.supervisor import Supervisor
 
 ROOT = Path(__file__).parents[1]
 CONFIG = {
@@ -308,7 +308,7 @@ def test_registry_seed_reseed_and_denied_writes_do_not_touch_workflow() -> None:
     )
     assert replay["decision"] == "ALREADY_APPLIED"
     assert len(supervisor.ledger.rows()) == before
-    source = (ROOT / "grit_scan" / "theme_layer.py").read_text(encoding="utf-8")
+    source = (ROOT / "grit" / "core" / "theme_layer.py").read_text(encoding="utf-8")
     assert "assess_impact" not in source
     assert "Supply interruption" not in source
     assert "cybersecurity" not in source

@@ -2,8 +2,8 @@ import json
 import tempfile
 from pathlib import Path
 
-from grit_scan.impact_scoring import SeverityBand
-from grit_scan.severity_definition import parse_severity_definition, severity_definition_to_json
+from grit.core.impact_scoring import SeverityBand
+from grit.core.severity_definition import parse_severity_definition, severity_definition_to_json
 
 
 ROOT = Path(__file__).parents[1]

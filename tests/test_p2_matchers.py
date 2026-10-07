@@ -1,4 +1,4 @@
-from grit_scan.matchers import credibility_lookup, exposure_entity_match, lob_match, theme_match
+from grit.ontology.matchers import credibility_lookup, exposure_entity_match, lob_match, theme_match
 
 
 _SOURCES = {

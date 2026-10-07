@@ -2,9 +2,9 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-from grit_scan.link import COMPETITOR, COUNTERPARTY, DIRECT, PERIMETER, SECTOR, THEME, LinkIndex, link_candidate, rung_rank
-from grit_scan.ontology import load_ontology_pack
-from grit_scan.ontology_graph import build_graph
+from grit.ontology.link import COMPETITOR, COUNTERPARTY, DIRECT, PERIMETER, SECTOR, THEME, LinkIndex, link_candidate, rung_rank
+from grit.ontology.pack import load_ontology_pack
+from grit.ontology.graph import build_graph
 
 _ROOT = Path(__file__).resolve().parent.parent
 _FILLER = "The programme covers design, delivery and operations across several phases and agencies. " * 8

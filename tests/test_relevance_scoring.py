@@ -1,4 +1,4 @@
-from grit_scan.relevance_scoring import (
+from grit.core.relevance_scoring import (
     classify_risk_level,
     classify_trend,
     compose_business_relevance_basis,

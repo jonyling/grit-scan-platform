@@ -1,4 +1,4 @@
-from grit_scan.transition_guard import transition_guard
+from grit.core.transition_guard import transition_guard
 
 
 def _envelope(**overrides):

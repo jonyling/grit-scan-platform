@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from agents.gemini import gemini_proposer
-from agents.layer import run_agent
-from agents.tools import AgentTools
-from supervisor.service import Supervisor
+from grit.agents.gemini import gemini_proposer
+from grit.agents.layer import run_agent
+from grit.agents.tools import AgentTools
+from grit.workflow.supervisor import Supervisor
 
 
 def _tools(**kwargs) -> AgentTools:
@@ -114,7 +114,7 @@ def test_same_proposal_has_the_same_response_hash() -> None:
 
 
 def test_agents_hold_no_dataverse_credential_and_gemini_refuses_without_a_key() -> None:
-    root = Path(__file__).parents[1] / "agents"
+    root = Path(__file__).parents[1] / "grit" / "agents"
     for path in root.glob("*.py"):
         text = path.read_text(encoding="utf-8")
         assert "client_secret" not in text
@@ -142,7 +142,7 @@ def test_private_key_text_is_not_accepted_as_an_api_key() -> None:
 
 
 def test_agent_log_body_records_a_proposal_and_not_a_score() -> None:
-    from dataverse.signals import agent_log_body
+    from grit.dataverse.signals import agent_log_body
 
     body = agent_log_body(
         agent_name="Critic",

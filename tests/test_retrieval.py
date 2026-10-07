@@ -5,12 +5,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 
-from grit_scan.ontology import load_ontology_pack
-from retrieval.anchors import build_anchors
-from retrieval.embed_run import candidate_text, main
-from retrieval.embedder import MAX_CHARS, Embedder, EmbeddingError
-from retrieval.similarity import dot, normalize, to_float32, top_matches
-from retrieval.store import VectorStore, text_hash
+from grit.ontology.pack import load_ontology_pack
+from grit.retrieval.anchors import build_anchors
+from grit.retrieval.embed_run import candidate_text, main
+from grit.retrieval.embedder import MAX_CHARS, Embedder, EmbeddingError
+from grit.retrieval.similarity import dot, normalize, to_float32, top_matches
+from grit.retrieval.store import VectorStore, text_hash
 
 _ROOT = Path(__file__).resolve().parent.parent
 
@@ -155,7 +155,7 @@ def test_embed_run_dry_run_calls_nothing_and_a_missing_run_is_an_error() -> None
 
 
 def test_filter_run_binds_keeps_a_decision_for_every_candidate_and_needs_the_cached_vectors() -> None:
-    from retrieval.filter_run import main as filter_main
+    from grit.retrieval.filter_run import main as filter_main
 
     items = [("siemens", "Siemens wins a Smart Metro Systems order", "A customer is named, with a LOB keyword so the one-word name has a second cue."), ("metro", "Smart Metro Systems extend a line", ""), ("trams", "Orlando airport debuts upgraded trams", "Gate link trams")]
     with TemporaryDirectory() as directory:

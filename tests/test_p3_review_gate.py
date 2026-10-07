@@ -1,4 +1,4 @@
-from grit_scan.review_gate import review_gate
+from grit.core.review_gate import review_gate
 
 
 def _context(**overrides):

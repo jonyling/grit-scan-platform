@@ -1,4 +1,4 @@
-from grit_scan.scale_cues import parse_figures, scale_cues
+from grit.core.scale_cues import parse_figures, scale_cues
 
 
 def _cue(title, text=""):

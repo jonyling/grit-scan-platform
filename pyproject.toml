@@ -1,0 +1,9 @@
+[project]
+name = "grit-scan"
+version = "0.6.0"
+description = "GRIT-Scan: a governed risk tracker for ST Engineering executives, business areas, and lines of business."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

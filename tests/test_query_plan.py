@@ -3,8 +3,8 @@ from datetime import date, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
-from grit_scan.ontology import load_ontology_pack
-from grit_scan.query_plan import (
+from grit.ontology.pack import load_ontology_pack
+from grit.ontology.query_plan import (
     DEFAULT_MAX_QUERIES,
     EXACT_LANES,
     LANES,

@@ -4,8 +4,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 
-from report.run import main
-from report.writer import MAX_SNIPPET_CHARS, ReportError, build_payload, model_view, render, request_draft, sanitize, validate
+from grit.report.digest import main
+from grit.report.digest_writer import MAX_SNIPPET_CHARS, ReportError, build_payload, model_view, render, request_draft, sanitize, validate
 
 
 def _signal(url, title, *, lob=None, level="LOB", names=(), types=("LOB_KEYWORD",), evidence=("Smart Metro Systems",), text="Body text 2033.", also=()):
@@ -47,7 +47,7 @@ def test_the_payload_orders_signals_labels_groups_and_hides_urls_from_the_model(
     assert len(payload["signals"][1]["text"]) == MAX_SNIPPET_CHARS and payload["signals"][1]["outlets"] == ["b.com", "c.com"]
     assert payload["signals"][2]["nearest_topics"][0].startswith("Hospital Logistics") and "link_basis" not in payload["signals"][2]
     focus = {"anchor": "Robotics scale-up. Robots must move from pilots to profitable deployments.", "kind": "MANAGEMENT_FOCUS"}
-    from report.writer import _topic
+    from grit.report.digest_writer import _topic
     assert _topic(focus) == "Robotics scale-up" and _topic({"anchor": "Mobility Rail: Smart Metro; Rail", "kind": "LOB_SCOPE"}) == "Mobility Rail"
     assert "http" not in json.dumps(model_view(payload)) and payload["signals"][0]["url"] == "https://a.com/x"
 

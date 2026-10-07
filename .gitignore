@@ -3,9 +3,11 @@
 .venv/
 __pycache__/
 *.pyc
+.pytest_cache/
 output/
 secrets/
 ~$*
+*.code-workspace
 
 # Confidential workbooks stay in secrets/ and out of Git.
 *.xlsx

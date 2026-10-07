@@ -1,4 +1,4 @@
-from grit_scan.doc_type import EXPLAINER, FINANCE_COMMENTARY, MARKET_RESEARCH, NEWS, NON_EVENT_TYPES, PRESS_RELEASE, classify, is_wire
+from grit.core.doc_type import EXPLAINER, FINANCE_COMMENTARY, MARKET_RESEARCH, NEWS, NON_EVENT_TYPES, PRESS_RELEASE, classify, is_wire
 
 
 def _doc(title, text="", publisher="example.com"):

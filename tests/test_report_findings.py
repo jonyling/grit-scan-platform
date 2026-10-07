@@ -1,6 +1,6 @@
 import json
 
-from report.findings import QUESTIONS, method_lines, render_card, render_findings
+from grit.report.findings import QUESTIONS, method_lines, render_card, render_findings
 
 _PATH = {"path_id": "P1", "text": "LAND TRANSPORT AUTHORITY —buys_from→ Urban Solutions", "status": "SOURCE_STATED", "targets_total": 1, "basis": ["4. Customers: listed as a customer of the business area"], "cited": True}
 

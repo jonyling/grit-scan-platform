@@ -1,0 +1,234 @@
+{
+  "registerId": "GRIT-RISK-CASCADE",
+  "status": "DRAFT_FOR_REVIEW",
+  "note": "Three levels of risk register, Group to business area to entity. Weight orders results and search effort only. It never decides whether a signal links to STE, and it never multiplies a severity. Every crosswalk row is PROPOSED until a named R&A owner approves it.",
+  "levels": [
+    {
+      "level": "ENTITY",
+      "scope": "urs-tw",
+      "register": "urs-tw/URS-TW-STE-Annual-Risks.json",
+      "weight": 3,
+      "tierOrder": [
+        "KEY_RISK",
+        "TIER2_RISK",
+        "EMERGING_RISK"
+      ]
+    },
+    {
+      "level": "BA",
+      "scope": "urs",
+      "register": "urs/URS-STE-Themes.json",
+      "weight": 2,
+      "tierOrder": [
+        "KEY",
+        "TIER_2",
+        "EMERGING"
+      ]
+    },
+    {
+      "level": "GROUP",
+      "scope": "group",
+      "register": "risk/STE-Risk-Universe-Keywords.json",
+      "weight": 1,
+      "tierOrder": []
+    }
+  ],
+  "overlap": "BEST_WEIGHT_WINS",
+  "crosswalk": [
+    {
+      "baThemeId": "URS-KEY-01",
+      "themeName": "Competition",
+      "entityThemeId": "KEY-01",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "S2.1",
+        "S2.2",
+        "S3.3",
+        "S3.5",
+        "S3.6"
+      ]
+    },
+    {
+      "baThemeId": "URS-KEY-02",
+      "themeName": "Financial volatility",
+      "entityThemeId": "KEY-02",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "F1.1",
+        "F2.1",
+        "F3.1",
+        "F4.1",
+        "F6.1",
+        "S5.1",
+        "S5.2",
+        "O2.1"
+      ]
+    },
+    {
+      "baThemeId": "URS-KEY-03",
+      "themeName": "Escalating costs of major projects",
+      "entityThemeId": "KEY-03",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "O1.1",
+        "O1.4",
+        "O1.5",
+        "O1.6",
+        "O1.10",
+        "O2.1",
+        "L1.1"
+      ]
+    },
+    {
+      "baThemeId": "URS-KEY-04",
+      "themeName": "Cybersecurity",
+      "entityThemeId": "KEY-04",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "C1.1",
+        "C1.2",
+        "T1.1",
+        "T1.3",
+        "O3.1",
+        "L2.8"
+      ]
+    },
+    {
+      "baThemeId": "URS-KEY-05",
+      "themeName": "Geopolitical impact to business operations",
+      "entityThemeId": "KEY-05",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "S3.8",
+        "S3.7",
+        "L2.1",
+        "L3.3",
+        "O3.2",
+        "O5.1"
+      ]
+    },
+    {
+      "baThemeId": "URS-KEY-06",
+      "themeName": "Fraud, bribery and corruption",
+      "entityThemeId": "KEY-06",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "L4.1",
+        "L4.2"
+      ]
+    },
+    {
+      "baThemeId": "URS-TIER_2-01",
+      "themeName": "Business concentration risk for Taiwan",
+      "entityThemeId": "T2-01",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "S1.1",
+        "S1.2"
+      ]
+    },
+    {
+      "baThemeId": "URS-TIER_2-02",
+      "themeName": "Natural disasters and pandemic",
+      "entityThemeId": "T2-02",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "N1.2",
+        "CC1.1",
+        "CC1.2",
+        "O2.2",
+        "O2.6"
+      ]
+    },
+    {
+      "baThemeId": "URS-TIER_2-03",
+      "themeName": "Regulatory compliance",
+      "entityThemeId": "T2-03",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "L2.1",
+        "L2.3",
+        "L2.4",
+        "L2.5",
+        "L2.6",
+        "L2.7",
+        "L2.8",
+        "L2.9",
+        "L2.15"
+      ]
+    },
+    {
+      "baThemeId": "URS-TIER_2-04",
+      "themeName": "Workplace health and safety",
+      "entityThemeId": "T2-04",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "L2.2",
+        "N1.4",
+        "N1.6",
+        "O6.3"
+      ]
+    },
+    {
+      "baThemeId": "URS-TIER_2-05",
+      "themeName": "Climate change adaptation",
+      "entityThemeId": "T2-05",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "CC1.1",
+        "CC1.2",
+        "CC2.1",
+        "CC2.2",
+        "CC2.3",
+        "CC2.4",
+        "CC2.5"
+      ]
+    },
+    {
+      "baThemeId": "URS-EMERGING-01",
+      "themeName": "Geopolitical volatility, staff safety and supply chain",
+      "entityThemeId": "EMG-01",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "S3.8",
+        "N1.5",
+        "O2.4",
+        "O2.6"
+      ]
+    },
+    {
+      "baThemeId": "URS-EMERGING-02",
+      "themeName": "Emerging technologies",
+      "entityThemeId": "EMG-02",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "S6.1",
+        "S1.6",
+        "08.1",
+        "08.2",
+        "T1.2",
+        "T1.4"
+      ]
+    },
+    {
+      "baThemeId": "URS-EMERGING-03",
+      "themeName": "Talent scarcity",
+      "entityThemeId": "EMG-03",
+      "status": "PROPOSED",
+      "groupRiskCodes": [
+        "O4.1",
+        "O4.2",
+        "O4.3",
+        "O4.4",
+        "O4.5",
+        "N1.3"
+      ]
+    }
+  ],
+  "omitted": [
+    {
+      "riskCode": "N1.1",
+      "reason": "The source shifted N1.1 to CC1.1."
+    }
+  ]
+}

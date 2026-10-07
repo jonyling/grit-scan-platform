@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from acquisition.brave import (
+from grit.acquisition.brave import (
     MAX_QUERY_CHARS,
     NEWS_URL,
     BraveFetchError,

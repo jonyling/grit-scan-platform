@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from grit_scan.risk_taxonomy import RiskTaxonomyTier, parse_risk_taxonomy, resolve_risk_taxonomy_ref
+from grit.core.risk_taxonomy import RiskTaxonomyTier, parse_risk_taxonomy, resolve_risk_taxonomy_ref
 
 ROOT = Path(__file__).parents[1]
 

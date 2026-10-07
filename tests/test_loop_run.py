@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from acquisition.brave_plan import BraveResponse
-from loop.run import brave_search
+from grit.acquisition.brave_plan import BraveResponse
+from grit.agents.loop.run import brave_search
 
 _HEADERS = {"x-ratelimit-limit": "50, 0", "x-ratelimit-remaining": "49, 0"}
 

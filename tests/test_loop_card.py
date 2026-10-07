@@ -3,10 +3,10 @@ import json
 import math
 from types import SimpleNamespace
 
-from grit_scan.link import LinkIndex, link_candidate
-from grit_scan.ontology_graph import build_graph
-from loop.card import HIGH, LOW, MEDIUM, NOT_ESTABLISHED, check, confidence, default_follow_up, finalize, valid_follow_up
-from loop.context import NAMED, PLACE_AND_LOB, add_outlet_evidence, build_context
+from grit.ontology.link import LinkIndex, link_candidate
+from grit.ontology.graph import build_graph
+from grit.agents.loop.card import HIGH, LOW, MEDIUM, NOT_ESTABLISHED, check, confidence, default_follow_up, finalize, valid_follow_up
+from grit.agents.loop.context import NAMED, PLACE_AND_LOB, add_outlet_evidence, build_context
 
 _FILLER = "The programme covers design, delivery and operations across several phases and agencies. " * 6
 

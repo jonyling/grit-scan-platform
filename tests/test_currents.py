@@ -1,4 +1,4 @@
-from acquisition.currents import CurrentsFetchError, SEARCH_URL, articles_from_payload, collect_currents
+from grit.acquisition.currents import CurrentsFetchError, SEARCH_URL, articles_from_payload, collect_currents
 
 
 def _payload(*articles: dict) -> dict:
@@ -81,7 +81,7 @@ def test_missing_currents_key_fails_before_a_call() -> None:
 
     saved = os.environ.pop("CURRENTS_API_KEY", None)
     try:
-        from acquisition.currents import require_key
+        from grit.acquisition.currents import require_key
 
         require_key()
     except CurrentsFetchError as exc:

@@ -2,9 +2,9 @@ from pathlib import Path
 
 import re
 
-from grit_scan.impact_scoring import KeywordTier
-from grit_scan.lob_keyword_loader import load_lob_keywords, parse_lob_keyword_rows
-from grit_scan.workbook import workbook_path
+from grit.core.impact_scoring import KeywordTier
+from grit.ontology.lob_keyword_loader import load_lob_keywords, parse_lob_keyword_rows
+from grit.ontology.workbook import workbook_path
 
 ROOT = Path(__file__).parents[1]
 WORKBOOK = workbook_path()

@@ -1,6 +1,6 @@
 from dataclasses import FrozenInstanceError
 
-from supervisor.service import Supervisor
+from grit.workflow.supervisor import Supervisor
 
 
 def _supervisor() -> Supervisor:

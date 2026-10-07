@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from grit_scan.ontology import OntologyPack
-from grit_scan.weekly_pipeline import compose_delta, import_scan, rank, revise, run_weekly_pipeline
+from grit.ontology.pack import OntologyPack
+from grit.core.conditions import compose_delta, import_scan, rank, revise, run_weekly_pipeline
 
 
 def _pack() -> OntologyPack:

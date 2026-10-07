@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from grit_scan.impact_scoring import RegistryKind
-from grit_scan.registry_loader import load_transmission_registry, slugify
-from grit_scan.workbook import workbook_path
+from grit.core.impact_scoring import RegistryKind
+from grit.ontology.registry_loader import load_transmission_registry, slugify
+from grit.ontology.workbook import workbook_path
 
 
 ROOT = Path(__file__).parents[1]
@@ -46,8 +46,8 @@ def test_snapshot_hash_is_content_derived_and_order_independent() -> None:
     """Same fix as the severity-definition version: hash content, not file
     bytes -- an .xlsx no-op re-save changes zip-embedded timestamps without
     changing content."""
-    from grit_scan.impact_scoring import AliasRecord, RegistryEntry
-    from grit_scan.registry_loader import _canonical_snapshot_hash
+    from grit.core.impact_scoring import AliasRecord, RegistryEntry
+    from grit.ontology.registry_loader import _canonical_snapshot_hash
 
     entry_a = RegistryEntry(entity_id="SUPPLIER-a", canonical_name="A Corp", registry_kind=RegistryKind.SUPPLIER, ba=None, country=None)
     entry_b = RegistryEntry(entity_id="SUPPLIER-b", canonical_name="B Corp", registry_kind=RegistryKind.SUPPLIER, ba=None, country=None)
@@ -62,8 +62,8 @@ def test_snapshot_hash_is_content_derived_and_order_independent() -> None:
 
 
 def test_slug_collision_between_distinct_canonical_names_fails_loudly() -> None:
-    from grit_scan.registry_loader import _add_entry
-    from grit_scan.impact_scoring import RegistryKind
+    from grit.ontology.registry_loader import _add_entry
+    from grit.core.impact_scoring import RegistryKind
 
     entries: list = []
     seen: dict[str, str] = {}

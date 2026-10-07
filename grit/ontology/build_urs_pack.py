@@ -1,0 +1,474 @@
+"""Build the Urban Solutions reader pack from URS Entity Info.xlsx.
+
+The workbook is the source. A missing rating, domain, project, site, or
+Layer 1 condition stays absent. The Taiwan baseline is not copied.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+from urllib.parse import urlparse
+
+from grit.ontology.lob_hierarchy import resolve_lob
+from grit.ontology.lob_keyword_loader import load_lob_keywords
+from grit.ontology.search_inputs import load_competitors, load_keyword_library, load_management_focus
+from grit.ontology.registry_loader import slugify
+from grit.ontology.workbook import workbook_path as default_workbook
+from grit.ontology.xlsx_reader import read_worksheet
+from grit.settings import CONFIG_DIR, ROOT
+
+_FILES = {
+    "source_register": "URS-Source-Register.json",
+    "exposure": "URS-Exposure-Ontology.json",
+    "lob_profiles": "URS-LOB-Profiles.json",
+    "themes": "URS-STE-Themes.json",
+    "baseline": "URS-Global-Baseline.json",
+    "keyword_library": "URS-Keyword-Library.json",
+    "competitors": "URS-Competitors.json",
+    "management_focus": "URS-Management-Focus.json",
+}
+
+
+_DEFAULT_HIERARCHY = CONFIG_DIR / "urs" / "URS-LOB-Hierarchy.json"
+
+
+def build_urs_pack(
+    workbook_path: str | Path,
+    output_dir: str | Path,
+    lob_hierarchy: str | Path | None = None,
+) -> dict[str, Path]:
+    """Build the generated registers. The LOB hierarchy is a hand-authored input and is never overwritten."""
+    workbook = Path(workbook_path)
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    hierarchy_file = Path(lob_hierarchy) if lob_hierarchy else _DEFAULT_HIERARCHY
+    hierarchy = json.loads(hierarchy_file.read_text(encoding="utf-8-sig")) if hierarchy_file.is_file() else None
+    documents = {
+        "source_register": _sources(workbook),
+        "exposure": _exposure(workbook),
+        "lob_profiles": _lobs(workbook, hierarchy),
+        "themes": _themes(workbook),
+        "baseline": _baseline(),
+        "keyword_library": load_keyword_library(workbook, hierarchy),
+        "competitors": load_competitors(workbook, hierarchy),
+        "management_focus": load_management_focus(workbook, hierarchy),
+    }
+    written: dict[str, Path] = {}
+    for key, name in _FILES.items():
+        path = output / name
+        path.write_text(json.dumps(documents[key], indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        written[key] = path
+    return written
+
+
+# name_col is where a source's name sits. heading_col is where a section heading sits, if the sheet has them.
+_SOURCE_SHEETS = {
+    "News-Pri": {"name_col": 2, "heading_col": 1},
+    "News-Sec": {"name_col": 0, "heading_col": None},
+    "9. Specific Industry News": {"name_col": 0, "heading_col": None},
+}
+_SOURCE_HEADERS = {"source", "organisation", "organization", "link", "focus", "keyreports"}
+
+
+def _sources(workbook: Path) -> dict:
+    sources: list[dict] = []
+    seen: set[str] = set()
+    skipped_without_url: list[str] = []
+    for sheet, layout in _SOURCE_SHEETS.items():
+        name_col, heading_col = layout["name_col"], layout["heading_col"]
+        group: str | None = None
+        for row in read_worksheet(workbook, sheet):
+            cells = [_clean(cell) for cell in row]
+            filled = [index for index, cell in enumerate(cells) if cell]
+            if not filled:
+                continue
+            link = next((cell for cell in cells if _domain(cell)), None)
+            name = cells[name_col].lstrip("-").strip() if name_col < len(cells) else ""
+            if link is None:
+                if heading_col is not None and filled == [heading_col]:
+                    group = cells[heading_col]
+                elif name and _key(name) not in _SOURCE_HEADERS and (heading_col is not None or len(filled) > 1):
+                    if name not in skipped_without_url:
+                        skipped_without_url.append(name)
+                continue
+            domain = _domain(link)
+            if not name or _key(name) in _SOURCE_HEADERS or domain in seen:
+                continue
+            seen.add(domain)
+            focus = next((cells[index] for index in filled if index != name_col and cells[index] != link), None)
+            source = {
+                "sourceName": name,
+                "sourceDomain": domain,
+                "sourceUrl": link,
+                "sourceClass": None,
+                "credibilityRating": "UNRATED",
+                "active": True,
+                "workbookSheet": sheet,
+            }
+            if group:
+                source["group"] = group
+            if focus:
+                source["focus"] = focus
+            sources.append(source)
+    return {
+        "registerId": "URS-NEWS-OUTLETS",
+        "scope": "sources named with a URL on the News-Pri, News-Sec, and 9. Specific Industry News sheets",
+        "ratingStatus": "UNRATED",
+        "workbook": workbook.name,
+        "sheets": list(_SOURCE_SHEETS),
+        "absence": (
+            "These sheets name sources. They do not assign credibility ratings, "
+            "and rows without a URL were not given an invented domain. "
+            "A source listed on more than one sheet appears once, under the first sheet read. "
+            "This is not the company source-credibility register."
+        ),
+        "skippedWithoutUrl": skipped_without_url,
+        "sources": sources,
+    }
+
+
+def _exposure(workbook: Path) -> dict:
+    sheet_rows = _sheet_dicts(workbook, "2. Entity Address")
+    lob_names = {keyword.lob for keyword in load_lob_keywords(workbook)}
+    lob_names.update(_value(row, "LOB1") for row in sheet_rows if _value(row, "NameOfEntity") and _value(row, "LOB1"))
+    entities = []
+    seen: set[str] = set()
+    shifted_names = 0
+    for row in sheet_rows:
+        name = _value(row, "NameOfEntity")
+        lob = _value(row, "LOB1")
+        if not name and lob and lob not in lob_names:
+            name = lob
+            lob = None
+            shifted_names += 1
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        entities.append(
+            {
+                "entityId": f"ENTITY-{slugify(name)}",
+                "sourceEntityId": _value(row, "EntityId"),
+                "entityName": name,
+                "cluster": _value(row, "Cluster"),
+                "businessArea": _value(row, "BusinessArea"),
+                "lobGrouping": _value(row, "LOBGrouping1"),
+                "lob": lob,
+                "countryOfIncorporation": _value(row, "CountryOfIncorporation"),
+                "natureOfShareholding": _value(row, "NatureOfShareholding"),
+                "reportingSegment": _value(row, "Reporting Segment"),
+                "aliases": [name],
+            }
+        )
+    customers = []
+    seen.clear()
+    for row in read_worksheet(workbook, "4. Customers"):
+        if len(row) < 2 or not _clean(row[0]).isdigit():
+            continue
+        name = _clean(row[1])
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        customers.append({"customerId": f"CUSTOMER-{slugify(name)}", "customerName": name, "aliases": [name]})
+    suppliers = []
+    seen.clear()
+    supplier_rows = read_worksheet(workbook, "5. Suppliers")
+    header_index = next(
+        (
+            index
+            for index, row in enumerate(supplier_rows)
+            if _key(row[0] if row else None) == "name" and _key(row[1] if len(row) > 1 else None) == "ba"
+        ),
+        None,
+    )
+    if header_index is None:
+        raise ValueError("Suppliers sheet is missing its Name/BA header row.")
+    headers = [_key(value) for value in supplier_rows[header_index]]
+    for values in supplier_rows[header_index + 1 :]:
+        row = dict(zip(headers, values, strict=False))
+        name = _value(row, "Name")
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        suppliers.append(
+            {
+                "supplierId": f"SUPPLIER-{slugify(name)}",
+                "supplierName": name,
+                "businessArea": _value(row, "BA"),
+                "aliases": [name],
+            }
+        )
+    _require_unique_ids(entities, "entityId")
+    _require_unique_ids(customers, "customerId")
+    _require_unique_ids(suppliers, "supplierId")
+    if not entities or not customers or not suppliers:
+        raise ValueError("Exposure pack is missing entities, customers, or suppliers from the workbook.")
+    return {
+        "registerId": "URS-EXPOSURE",
+        "workbook": workbook.name,
+        "absence": {
+            "projects": f"{workbook.name} has no project sheet. No project was invented.",
+            "sites": "Registered addresses were not promoted to site aliases. A repeated legal name was not split into a second site.",
+        },
+        **(
+            {
+                "nameColumnNote": (
+                    f"{shifted_names} rows leave NameOfEntity blank and put the legal name in LOB1. "
+                    "Those names are entities, not lines of business."
+                )
+            }
+            if shifted_names
+            else {}
+        ),
+        "entities": entities,
+        "projects": [],
+        "customers": customers,
+        "suppliers": suppliers,
+        "sites": [],
+    }
+
+
+def _lobs(workbook: Path, hierarchy: dict | None = None) -> dict:
+    entity_lobs: dict[str, dict[str, str | None]] = {}
+    for row in _sheet_dicts(workbook, "2. Entity Address"):
+        lob = _value(row, "LOB1")
+        if not lob or lob in entity_lobs:
+            continue
+        entity_lobs[lob] = {
+            "businessArea": _value(row, "BusinessArea"),
+            "lobGrouping": _value(row, "LOBGrouping1"),
+        }
+    grouped: dict[str, dict[str, list[str]]] = {}
+    for keyword in load_lob_keywords(workbook):
+        bucket = grouped.setdefault(keyword.lob, {"KEY_TIER_2": [], "EMERGING": []})
+        tier = keyword.tier.name
+        if keyword.keyword not in bucket[tier]:
+            bucket[tier].append(keyword.keyword)
+    lobs = []
+    for name, tiers in grouped.items():
+        spelled = name.replace("Heatlhcare", "Healthcare")
+        entity = entity_lobs.get(name) or entity_lobs.get(spelled) or {}
+        resolved = resolve_lob(name, hierarchy)
+        keywords = [*tiers["KEY_TIER_2"], *tiers["EMERGING"]]
+        record = {
+            "lobId": f"LOB-{slugify(name)}",
+            "lobName": name,
+            "canonicalLob": resolved["lobName"] if resolved else None,
+            "baName": hierarchy["businessArea"] if resolved else entity.get("businessArea"),
+            "lobGrouping": resolved["lobGrouping"] if resolved else entity.get("lobGrouping"),
+            "active": True,
+            "keywords": keywords,
+            "keywordTiers": tiers,
+            "priorityCountries": [],
+        }
+        if spelled != name and spelled in entity_lobs and spelled not in keywords:
+            record["keywords"] = [*keywords, spelled]
+            record["spellingNote"] = f"Sheet 6 spells this LOB '{name}'. Sheet 2 spells it '{spelled}'."
+        lobs.append(record)
+    if not lobs:
+        raise ValueError("No LOB profiles could be built from sheet 6.")
+    return {
+        "registerId": "URS-LOB-PROFILES",
+        "workbook": workbook.name,
+        "sheet": "6. LOB_Keywords",
+        "absence": "priorityCountries is empty. Country of incorporation is not a priority country, and none was invented.",
+        "lobHierarchy": None if hierarchy is None else {"registerId": hierarchy["registerId"], "status": hierarchy["status"]},
+        "lobs": lobs,
+    }
+
+
+# Entity-wide STE Annual Risk vocabulary, not a Taiwan baseline. Sheet 7 of
+# URS Entity Info.xlsx is a single, entity-wide risk register: the same 14
+# themes were reused for the Taiwan reader pack's own keyword list, which is
+# why that list is safe to draw generic business-risk vocabulary from here.
+# Anything specific to a country or a Layer-1 condition/development (e.g.
+# "Taiwan concentration", "Taiwan rail", "maritime pressure") is left out --
+# that is the Taiwan baseline, and it is still not copied. What remains is
+# the same generic business-risk terms (cybersecurity, fraud, regulatory
+# compliance, ...) that describe the governed theme itself, independent of
+# any one reader's geography.
+_GENERAL_RISK_KEYWORDS: dict[str, list[str]] = {
+    "URS-KEY-01": ["competition", "competitor", "pricing pressure", "technology differentiation", "market access"],
+    "URS-KEY-02": [
+        "financial volatility", "interest rate", "inflation", "forex", "foreign exchange",
+        "credit risk", "tariff", "financing cost", "borrowing cost", "recessionary",
+    ],
+    "URS-KEY-03": [
+        "escalating cost", "project cost", "margin", "cost overrun", "labour cost",
+        "material cost", "contractual requirement", "project risk management",
+    ],
+    "URS-KEY-04": [
+        "cybersecurity", "cyber attack", "data exfiltration", "IT outage", "ransomware",
+        "network security", "data privacy",
+    ],
+    "URS-KEY-05": [
+        "geopolitical", "sanctions", "export control", "regulatory scrutiny", "reputational exposure",
+        "strategic competition",
+    ],
+    "URS-KEY-06": ["fraud", "bribery", "corruption", "code of conduct", "conflict of interest"],
+    "URS-TIER_2-02": ["natural disaster", "typhoon", "earthquake", "pandemic", "supply chain disruption", "flood"],
+    "URS-TIER_2-03": ["regulatory compliance", "regulation", "licensing", "compliance requirement"],
+    "URS-TIER_2-04": ["workplace safety", "health and safety", "occupational safety"],
+    "URS-TIER_2-05": ["climate change", "climate adaptation", "esg", "green practices", "carbon", "sustainability reporting"],
+    "URS-EMERGING-01": [
+        "staff safety", "evacuation", "crisis escalation", "wartime", "act of war", "conflict zone",
+        "military exercise", "civil-military",
+    ],
+    "URS-EMERGING-02": [
+        "genai", "artificial intelligence", "smart city os", "edge ai", "emerging technology",
+        "semiconductor", "ai chip", "ai-enabled", "chip export",
+    ],
+    "URS-EMERGING-03": ["talent scarcity", "workforce planning", "talent mapping", "skills shortage", "hiring", "labour shortage"],
+}
+
+
+def _themes(workbook: Path) -> dict:
+    rows = read_worksheet(workbook, "7. Annual Risks")
+    sections = (
+        ("KEY", "ref", "keyrisk", 6),
+        ("TIER_2", "sn", "tier2risk", 5),
+        ("EMERGING", "no", "emergingrisk", 3),
+    )
+    themes = []
+    for tier, ref_key, name_key, expected in sections:
+        found = _section(rows, ref_key, name_key)
+        if len(found) != expected:
+            raise ValueError(f"Sheet 7 {tier} section has {len(found)} rows; expected {expected}.")
+        for ref, name, detail, extra in found:
+            theme_id = f"URS-{tier}-{int(ref):02d}"
+            short = name.split("(", 1)[0].strip()
+            keywords = [short] if short and short != name and len(short) >= 6 else []
+            seen_lower = {k.lower() for k in keywords}
+            for keyword in _GENERAL_RISK_KEYWORDS.get(theme_id, []):
+                if keyword.lower() not in seen_lower:
+                    keywords.append(keyword)
+                    seen_lower.add(keyword.lower())
+            themes.append(
+                {
+                    "themeId": theme_id,
+                    "themeName": name,
+                    "tier": tier,
+                    "keywords": keywords,
+                    "sheetDetail": detail or None,
+                    "sheetExtra": extra or None,
+                }
+            )
+    return {
+        "registerId": "URS-STE-THEMES",
+        "workbook": workbook.name,
+        "sheet": "7. Annual Risks",
+        "absence": (
+            "Keywords beyond the governed risk title are generic business-risk vocabulary "
+            "for the same entity-wide theme (see _GENERAL_RISK_KEYWORDS), not per-condition "
+            "prose. Country- or condition-specific terms -- the Taiwan Layer-1 baseline -- "
+            "are still not copied. Driver text is stored and is not used as a keyword."
+        ),
+        "themes": themes,
+    }
+
+
+def _baseline() -> dict:
+    return {
+        "baselineId": "URS-LAYER1-ABSENT",
+        "readerId": "URS",
+        "readerName": "Urban Solutions",
+        "revisionPrefix": "URS",
+        "deltaTitle": "URS WEEKLY STRATEGIC DELTA",
+        "effectiveDate": None,
+        "conditions": [],
+        "absence": (
+            "No governed Layer 1 condition set exists for Urban Solutions. "
+            "The ten Taiwan conditions belong to the urs-tw reader pack and are not copied here."
+        ),
+        "posture": (
+            "Urban Solutions has no governed Layer 1 condition set yet. "
+            "Do not treat the Taiwan baseline as the Urban Solutions picture. "
+            "Entity-level action stays evidence-led."
+        ),
+        "idleLine": "No material change was recorded. Urban Solutions has no governed Layer 1 condition set to revise.",
+    }
+
+
+def _require_unique_ids(rows: list[dict], field: str) -> None:
+    seen: dict[str, str] = {}
+    for row in rows:
+        identity = str(row[field])
+        name = str(row.get("entityName") or row.get("customerName") or row.get("supplierName") or "")
+        if identity in seen and seen[identity] != name:
+            raise ValueError(f"Slug collision on '{identity}': '{seen[identity]}' and '{name}'")
+        seen[identity] = name
+
+
+def _section(rows: list[list], ref_key: str, name_key: str) -> list[tuple[str, str, str, str]]:
+    start = next(
+        (
+            index + 1
+            for index, row in enumerate(rows)
+            if _key(row[0] if row else None) == ref_key and name_key in _key(row[1] if len(row) > 1 else None)
+        ),
+        None,
+    )
+    if start is None:
+        return []
+    found = []
+    for row in rows[start:]:
+        ref = _clean(row[0] if row else None)
+        if not re.fullmatch(r"\d+", ref):
+            if found:
+                break
+            continue
+        name = _clean(row[1] if len(row) > 1 else None)
+        if name:
+            found.append((ref, name, _clean(row[2] if len(row) > 2 else None), _clean(row[3] if len(row) > 3 else None)))
+    return found
+
+
+def _sheet_dicts(workbook: Path, sheet: str) -> list[dict[str, object]]:
+    worksheet = read_worksheet(workbook, sheet)
+    header_index = next((index for index, row in enumerate(worksheet) if any(_clean(value) for value in row)), None)
+    if header_index is None:
+        raise ValueError(f"Workbook sheet has no header row: {sheet}")
+    headers = [_key(value) for value in worksheet[header_index]]
+    return [
+        dict(zip(headers, values, strict=False))
+        for values in worksheet[header_index + 1 :]
+        if any(_clean(value) for value in values)
+    ]
+
+
+def _value(row: dict[str, object], *names: str) -> str | None:
+    for name in names:
+        cleaned = _clean(row.get(_key(name)))
+        if cleaned:
+            return cleaned
+    return None
+
+
+def _clean(value: object) -> str:
+    return re.sub(r"\s+", " ", str(value or "").replace("\xa0", " ")).strip()
+
+
+def _key(value: object) -> str:
+    return re.sub(r"[^a-z0-9]", "", _clean(value).casefold())
+
+
+def _domain(link: str) -> str | None:
+    if not link.lower().startswith(("http://", "https://")):
+        return None
+    host = urlparse(link).hostname
+    if not host:
+        return None
+    host = host.lower()
+    return host[4:] if host.startswith("www.") else host
+
+
+def _main() -> None:
+    root = ROOT
+    written = build_urs_pack(default_workbook(), root / "config" / "urs")
+    for key, path in written.items():
+        print(f"{key}: {path}")
+
+
+if __name__ == "__main__":
+    _main()

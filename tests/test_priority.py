@@ -1,8 +1,8 @@
 import json
 
-from grit_scan.link import COMPETITOR, COUNTERPARTY, DIRECT, SECTOR, ThemeHit
-from grit_scan.priority import ACTION, FIGURE, OUTLETS, WIRE_OUTLET, PriorityConfig, assess, outlet_groups, theme_rank
-from grit_scan.scale_cues import Figure, ScaleCues
+from grit.ontology.link import COMPETITOR, COUNTERPARTY, DIRECT, SECTOR, ThemeHit
+from grit.core.priority import ACTION, FIGURE, OUTLETS, WIRE_OUTLET, PriorityConfig, assess, outlet_groups, theme_rank
+from grit.core.scale_cues import Figure, ScaleCues
 
 _KEY = [ThemeHit("URS-KEY-04", "KEY", ("cybersecurity",), "TITLE", True)]
 _BODY_ONLY = [ThemeHit("URS-KEY-04", "KEY", ("cybersecurity",), "BODY", False)]
