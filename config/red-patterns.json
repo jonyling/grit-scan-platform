@@ -1,0 +1,145 @@
+{
+  "registerId": "GRIT-RED-PATTERNS",
+  "status": "DRAFT_FOR_REVIEW",
+  "note": "Tiny patterns for urgent events. A hit drafts an email for a named person to send or dismiss. Nothing is sent automatically. A pattern must hit the title or the lead, and the event must be corroborated by a second outlet or carried by a HIGH-rated registered source. A pattern in a sentence that forecasts, assesses, or rehearses the event (the rule's excludeInSentence words) does not count: 'invasion of Taiwan unlikely before 2028' is not an invasion.",
+  "patterns": [
+    {
+      "ruleId": "RED-TW-CONFLICT",
+      "label": "Military action against Taiwan",
+      "packs": [
+        "urs-tw",
+        "urs"
+      ],
+      "requiresTaiwan": true,
+      "phrases": [
+        "invasion of Taiwan",
+        "invade Taiwan",
+        "invaded Taiwan",
+        "blockade of Taiwan",
+        "Taiwan blockade",
+        "quarantine of Taiwan",
+        "attack on Taiwan",
+        "attacked Taiwan",
+        "strikes on Taiwan",
+        "war in the Taiwan Strait",
+        "martial law"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "likely",
+        "scenario",
+        "scenarios",
+        "wargame",
+        "war game",
+        "simulation",
+        "simulated",
+        "drill",
+        "drills",
+        "exercise",
+        "exercises",
+        "rehearse",
+        "rehearsal",
+        "could",
+        "would",
+        "might",
+        "may",
+        "if",
+        "fear",
+        "fears",
+        "risk of",
+        "threat of",
+        "deter",
+        "deterrence",
+        "prepare",
+        "preparing",
+        "readiness",
+        "assessment",
+        "assesses",
+        "warns",
+        "plan for"
+      ]
+    },
+    {
+      "ruleId": "RED-PANDEMIC",
+      "label": "Pandemic or public health emergency",
+      "packs": [
+        "urs-tw",
+        "urs"
+      ],
+      "requiresTaiwan": false,
+      "phrases": [
+        "public health emergency of international concern",
+        "declares pandemic",
+        "declared a pandemic",
+        "pandemic declared",
+        "PHEIC"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "likely",
+        "scenario",
+        "scenarios",
+        "wargame",
+        "war game",
+        "simulation",
+        "simulated",
+        "drill",
+        "drills",
+        "exercise",
+        "exercises",
+        "rehearse",
+        "rehearsal",
+        "could",
+        "would",
+        "might",
+        "may",
+        "if",
+        "fear",
+        "fears",
+        "risk of",
+        "threat of",
+        "deter",
+        "deterrence",
+        "prepare",
+        "preparing",
+        "readiness",
+        "assessment",
+        "assesses",
+        "warns",
+        "plan for"
+      ]
+    },
+    {
+      "ruleId": "RED-TW-MAJOR-QUAKE",
+      "label": "Major earthquake in Taiwan",
+      "packs": [
+        "urs-tw"
+      ],
+      "requiresTaiwan": true,
+      "regex": "magnitude[- ](?:[7-9](?:\\.\\d)?)\\b|\\b[7-9]\\.\\d[- ]magnitude"
+    },
+    {
+      "ruleId": "RED-STE-SANCTION",
+      "label": "Sanction, debarment or ban naming STE",
+      "packs": [
+        "urs-tw",
+        "urs"
+      ],
+      "requiresRung": [
+        "DIRECT"
+      ],
+      "phrases": [
+        "sanction",
+        "sanctions",
+        "Entity List",
+        "debarred",
+        "debarment",
+        "blacklist",
+        "banned"
+      ]
+    }
+  ],
+  "harmVerdicts": [
+    "HIGH_NEGATIVE_IMPACT"
+  ]
+}

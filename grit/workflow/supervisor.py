@@ -1,13 +1,14 @@
 """Supervisor: call the guards, then persist only on ALLOW.
 
-The ledger is in memory. Dataverse remains the system of record, and this
-service does not open a connection or invent a credential.
+The ledger lives in memory. A sink, such as the signal pool, receives each row as it is appended, and earlier rows can
+be reloaded, so the append-only rule stays in this one class. Dataverse remains the system of record. This service does
+not open a connection or hold a credential.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable, Iterable
 
 from grit.core.canonical import canonical_hash
 from grit.core.review_gate import FUNCTION_VERSION as REVIEW_GATE_VERSION
@@ -51,12 +52,14 @@ class Package:
     member_signal_ids: tuple[str, ...]
     status: str
     release_blocked: bool = False
+    execution_id: str | None = None  # the execution every member runs in; one per reader package
 
 
 class Ledger:
-    def __init__(self, token: object) -> None:
+    def __init__(self, token: object, *, rows: Iterable[WorkflowRow] = (), sink: Callable[[WorkflowRow], None] | None = None) -> None:
         self._token = token
-        self._rows: list[WorkflowRow] = []
+        self._rows: list[WorkflowRow] = list(rows)
+        self._sink = sink
 
     def rows(self) -> tuple[WorkflowRow, ...]:
         return tuple(self._rows)
@@ -69,6 +72,8 @@ class Ledger:
             for existing in self._rows
         ):
             raise RuntimeError("Duplicate workflow sequence")
+        if self._sink is not None:
+            self._sink(row)
         self._rows.append(row)
 
 
@@ -81,6 +86,8 @@ class Supervisor:
         supervisor_version: str = "v1",
         state_graph_version: str = "v1",
         known_entity_ids: frozenset[str] = frozenset(),
+        ledger_rows: Iterable[WorkflowRow] = (),
+        ledger_sink: Callable[[WorkflowRow], None] | None = None,
     ) -> None:
         self.actor_id = actor_id
         self.configuration_version = configuration_version
@@ -88,7 +95,7 @@ class Supervisor:
         self.state_graph_version = state_graph_version
         self.known_entity_ids = set(known_entity_ids)
         self._token = object()
-        self.ledger = Ledger(self._token)
+        self.ledger = Ledger(self._token, rows=ledger_rows, sink=ledger_sink)
         self.function_log: list[dict[str, Any]] = []
         self.agent_log: list[dict[str, Any]] = []
         self.guard_log: list[dict[str, Any]] = []
@@ -97,6 +104,8 @@ class Supervisor:
         self.accepted_proposals: list[dict[str, Any]] = []
         self._packages: dict[str, Package] = {}
         self._projection: dict[tuple[str, str], str] = {}
+        for row in sorted(self.ledger.rows(), key=lambda item: item.sequence):
+            self._projection[(row.signal_id, row.execution_id)] = row.row_id
         self.theme_register = ThemeRegister(self._token)
 
     def package(self, package_id: str) -> Package:
@@ -231,7 +240,7 @@ class Supervisor:
             self.accepted_proposals.append(record)
         return record
 
-    def create_package(self, signal_ids: list[str], *, package_id: str, version: int, content: dict[str, Any]) -> Package:
+    def create_package(self, signal_ids: list[str], *, package_id: str, version: int, content: dict[str, Any], execution_id: str | None = None) -> Package:
         members = tuple(sorted(signal_ids))
         package = Package(
             package_id=package_id,
@@ -240,6 +249,7 @@ class Supervisor:
             membership_hash=canonical_hash({"members": list(members)}),
             member_signal_ids=members,
             status="PENDING_REVIEW",
+            execution_id=execution_id,
         )
         self._packages[package_id] = package
         return package
@@ -410,7 +420,7 @@ class Supervisor:
         elif outcome == "RETURN_FOR_REWORK":
             review_id = self.record_function(
                 signal_id=package.member_signal_ids[0],
-                execution_id=self._execution_for(package.member_signal_ids[0]),
+                execution_id=package.execution_id or self._execution_for(package.member_signal_ids[0]),
                 function_name="ReviewGate",
                 status="SUCCEEDED",
                 correlation_id=correlation_id,
@@ -542,6 +552,37 @@ class Supervisor:
             evidence=evidence,
         )
 
+    def restore_package(self, package: Package, approval: dict[str, Any] | None = None) -> None:
+        """Reload a package, and its approval when one exists, from the pool in a later session. The ledger rows come in through the constructor."""
+        self._packages[package.package_id] = package
+        if approval is not None and not any(item["approval_id"] == approval["approval_id"] for item in self.approvals):
+            self.approvals.append(approval)
+
+    def handoff_to_airis(self, signal_id: str, execution_id: str, *, payload_valid: bool, correlation_id: str, accepted_at: str) -> dict[str, Any]:
+        """APPROVED to AIRIS_HANDOFF_READY. The handoff must name the exact approved package version and hash."""
+        approval = next((item for item in self.approvals if signal_id in item["member_signal_ids"]), None)
+        evidence: dict[str, Any] = {"airis_handoff_payload_valid": payload_valid}
+        if approval is not None:
+            evidence |= {
+                "trigger_approval_package_id": approval["package_id"],
+                "trigger_approval_package_version": approval["package_version"],
+                "trigger_approval_package_hash": approval["package_hash"],
+                "airis_handoff_package_id": approval["package_id"],
+                "airis_handoff_package_version": approval["package_version"],
+                "airis_handoff_package_hash": approval["package_hash"],
+            }
+        return self.request_transition(
+            signal_id,
+            execution_id,
+            requested_state="AIRIS_HANDOFF_READY",
+            transition_type="ADVANCE",
+            trigger_type="OUTPUT_PACKAGE",
+            trigger_record_id=approval["package_id"] if approval else None,
+            correlation_id=correlation_id,
+            accepted_at=accepted_at,
+            evidence=evidence,
+        )
+
     def _transition_members(
         self,
         package: Package,
@@ -555,7 +596,7 @@ class Supervisor:
         evidence: dict[str, Any],
     ) -> bool:
         for signal_id in package.member_signal_ids:
-            execution_id = self._execution_for(signal_id)
+            execution_id = package.execution_id or self._execution_for(signal_id)
             latest = self._latest(signal_id, execution_id)
             if latest is None:
                 return False
@@ -576,7 +617,7 @@ class Supervisor:
             if decision["decision"] != "ALLOW":
                 return False
         for signal_id in package.member_signal_ids:
-            execution_id = self._execution_for(signal_id)
+            execution_id = package.execution_id or self._execution_for(signal_id)
             persisted = self.request_transition(
                 signal_id,
                 execution_id,

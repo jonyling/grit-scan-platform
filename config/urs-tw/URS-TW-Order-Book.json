@@ -1,0 +1,16 @@
+{
+  "registerId": "URS-TW-ORDER-BOOK",
+  "status": "REPORTED_FOR_CONFIRMATION",
+  "note": "Materiality anchors for the Taiwan brief. Copied from the 2 Oct 2026 reference brief, which cites the URS ERM Meeting (Sept 2026, agenda item 6). A named BA owner must confirm these figures. A finding is escalated only where it credibly connects to one of these named lines, suppliers, or figures. These are anchors, not value-at-risk: the harm scorer does not read them.",
+  "source": "URS ERM Meeting, Sept 2026, agenda item 6",
+  "anchors": [
+    {"label": "Foregone profit stream (existing Tier-1 contracts)", "value": "approx. S$600m"},
+    {"label": "Refund exposure on advance payments", "value": "approx. S$225m", "note": "Supersedes the SOP's earlier ~S$284m baseline."}
+  ],
+  "contracts": [
+    {"projectId": "PRJ-TY-BROWN", "label": "Taoyuan MRT Brown Line", "value": "S$840m", "awarded": "Jul 2026"},
+    {"projectId": "PRJ-TY-GREEN-EXT", "label": "Taoyuan MRT Green Line Extension", "value": "S$750m", "awarded": "Aug 2026"},
+    {"projectId": "PRJ-TC-BLUE", "label": "Taichung MRT Blue Line", "value": "approx. S$1.4b"}
+  ],
+  "consortium": "all via consortium with Hyundai Rotem"
+}

@@ -165,6 +165,16 @@ def candidates_from_searches(searches: list[dict[str, Any]], *, fetched_at: str)
     return wild_scan(list(records.values()), fetched_at=fetched_at), hits
 
 
+_NAV_SEPARATOR = re.compile(r"\s[·|»]\s")
+
+
+def without_navigation(text: str) -> str:
+    """Drop page furniture that a search engine returns as a snippet: a run of headline links joined by middle dots.
+    One separator can be prose. Two or more in one line is a menu or a 'Latest' list of other stories."""
+    kept = [line for line in text.split("\n") if len(_NAV_SEPARATOR.findall(line)) < 2]
+    return "\n".join(kept)
+
+
 def _results(payload: dict[str, Any]) -> list[dict[str, Any]]:
     """Reuse the News adapter's mapping for each result, then add the engine's extra snippets to the text."""
     results: list[dict[str, Any]] = []
@@ -176,6 +186,7 @@ def _results(payload: dict[str, Any]) -> list[dict[str, Any]]:
             continue
         record = dict(records[0])
         extras = [_SPACES.sub(" ", html.unescape(_TAGS.sub("", extra))).strip() for extra in result.get("extra_snippets") or [] if isinstance(extra, str)]
+        extras = [extra for extra in extras if without_navigation(extra)]
         record["text"] = "\n".join(dict.fromkeys(snippet for snippet in [record["text"], *extras] if snippet))
         record["rank"] = rank
         results.append(record)

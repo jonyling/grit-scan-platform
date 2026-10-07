@@ -1,0 +1,21 @@
+{
+  "profileId": "ksyong",
+  "name": "KS Yong",
+  "role": "Head, URS Taiwan",
+  "aperture": "MATERIAL_APERTURE",
+  "packs": ["urs-tw"],
+  "businessScope": {"businessAreas": ["Urban Solutions"], "lobs": ["Mobility Rail"], "countries": ["Taiwan"]},
+  "reviewRole": "READER",
+  "redAlerts": {"receive": true, "packs": ["urs-tw"]},
+  "email": null,
+  "brief": {
+    "title": "GRIT-Scan: URS Taiwan",
+    "subtitle": "Weekly scan of named Taiwan projects, suppliers and customers",
+    "preparedFor": "Head, URS Taiwan",
+    "readerPack": "urs-tw",
+    "sections": ["BOTTOM_LINE", "ORDER_BOOK", "PROJECTS", "SUPPLIERS", "CUSTOMERS", "HAZARDS", "CONDITIONS", "WATCHPOINTS"],
+    "maxFindings": 6,
+    "formats": ["docx", "xlsx"]
+  },
+  "note": "Entity reader. Sees the Taiwan pack only."
+}

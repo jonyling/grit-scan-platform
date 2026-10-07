@@ -1,0 +1,13 @@
+{
+  "profileId": "group-cfo",
+  "name": null,
+  "role": "Group Chief Financial Officer",
+  "aperture": "WIDE_APERTURE",
+  "packs": ["urs-tw", "urs"],
+  "businessScope": {"businessAreas": [], "lobs": [], "countries": []},
+  "reviewRole": "READER",
+  "redAlerts": {"receive": true, "packs": ["urs-tw", "urs"]},
+  "email": null,
+  "brief": null,
+  "note": "RED alerts only. No weekly brief. The name is not recorded here."
+}

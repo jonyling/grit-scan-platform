@@ -1,0 +1,21 @@
+{
+  "profileId": "gareth",
+  "name": "Gareth",
+  "role": "Head, Urban Solutions",
+  "aperture": "MATERIAL_APERTURE",
+  "packs": ["urs", "urs-tw"],
+  "businessScope": {"businessAreas": ["Urban Solutions"], "lobs": [], "countries": []},
+  "reviewRole": "BA_HEAD",
+  "redAlerts": {"receive": true, "packs": ["urs", "urs-tw"]},
+  "email": null,
+  "brief": {
+    "title": "GRIT-Scan: Urban Solutions",
+    "subtitle": "Weekly brief for the business area head",
+    "preparedFor": "Head, Urban Solutions",
+    "readerPack": "urs-tw",
+    "sections": ["BOTTOM_LINE", "PRIORITY_FINDINGS", "CONDITIONS", "WATCHPOINTS"],
+    "maxFindings": 6,
+    "formats": ["docx", "pptx"]
+  },
+  "note": "BA head. Only signals Gareth approves are packaged for AIRIS."
+}

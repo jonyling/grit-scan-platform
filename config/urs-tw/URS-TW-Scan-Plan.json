@@ -1,0 +1,420 @@
+{
+  "registerId": "URS-TW-SCAN-PLAN",
+  "status": "DRAFT_FOR_REVIEW",
+  "note": "The Taiwan reader's weekly scan. Queries are hand-authored from each condition's watch indicators (URS-TW-Global-Baseline.json) and from the named projects, suppliers and customers (URS-TW-Exposure-Ontology.json). A keyword decides which condition a signal bears on. It never decides a trend or a link to STE. Edit this file to change the scan; no code change is needed. A watchpoint update needs one of its keywords strongly and one of its issueKeywords anywhere in the same page.",
+  "windowDays": 8,
+  "conditions": [
+    {
+      "conditionId": "TW-GLOBAL-01",
+      "queries": [
+        "US China Taiwan trade truce",
+        "US China relations Taiwan restrictions",
+        "Trump Xi Taiwan"
+      ],
+      "keywords": [
+        "US-China",
+        "Trump-Xi",
+        "trade truce",
+        "strategic competition",
+        "Busan"
+      ]
+    },
+    {
+      "conditionId": "TW-GLOBAL-02",
+      "queries": [
+        "Beijing Taiwan policy red line",
+        "China mobilization law Taiwan",
+        "China sanctions Taiwan companies"
+      ],
+      "keywords": [
+        "Defense Mobilization",
+        "red line",
+        "red-line",
+        "Taiwan Affairs Office",
+        "Taiwan-linked companies",
+        "civil-military",
+        "reunification"
+      ]
+    },
+    {
+      "conditionId": "TW-GLOBAL-03",
+      "queries": [
+        "PLA aircraft Taiwan Strait",
+        "Taiwan Ministry of National Defense Chinese military aircraft ships",
+        "China coast guard Taiwan Kinmen"
+      ],
+      "keywords": [
+        "PLA aircraft",
+        "PLA ships",
+        "sorties",
+        "median line",
+        "Taiwan Strait",
+        "coast guard",
+        "military exercise",
+        "blockade",
+        "ADIZ"
+      ]
+    },
+    {
+      "conditionId": "TW-GLOBAL-04",
+      "queries": [
+        "US arms sale Taiwan",
+        "Taiwan Relations Act Congress Taiwan bill",
+        "US Taiwan policy unchanged"
+      ],
+      "keywords": [
+        "arms sale",
+        "arms package",
+        "Taiwan policy",
+        "Taiwan Relations Act",
+        "alliance posture",
+        "Taiwan bill"
+      ]
+    },
+    {
+      "conditionId": "TW-GLOBAL-05",
+      "queries": [
+        "Federal Reserve rate decision",
+        "Taiwan dollar exchange rate central bank",
+        "Taiwan central bank interest rate"
+      ],
+      "keywords": [
+        "Federal Reserve",
+        "Fed rate",
+        "FOMC",
+        "rate cut",
+        "rate hike",
+        "borrowing cost",
+        "Taiwan dollar",
+        "forward guidance"
+      ]
+    },
+    {
+      "conditionId": "TW-GLOBAL-06",
+      "queries": [
+        "US export controls AI chips China Taiwan",
+        "chip export restrictions Taiwan semiconductor",
+        "Nvidia China export license"
+      ],
+      "keywords": [
+        "AI chip",
+        "chip export",
+        "export controls",
+        "semiconductor",
+        "Entity List",
+        "trusted origin"
+      ]
+    },
+    {
+      "conditionId": "TW-GLOBAL-07",
+      "queries": [
+        "China rare earth export controls",
+        "US sanctions China Taiwan companies",
+        "Taiwan export control list China"
+      ],
+      "keywords": [
+        "rare earth",
+        "export control",
+        "sanctions",
+        "licensing",
+        "customs delay",
+        "entity list"
+      ]
+    },
+    {
+      "conditionId": "TW-GLOBAL-08",
+      "queries": [
+        "Taiwan economy GDP forecast",
+        "Taiwan power supply Taipower",
+        "Taiwan foreign investment critical infrastructure"
+      ],
+      "keywords": [
+        "Taiwan economy",
+        "Taiwan GDP",
+        "Taipower",
+        "Taiwan dollar",
+        "payment delay",
+        "foreign investment",
+        "power outage"
+      ]
+    },
+    {
+      "conditionId": "TW-GLOBAL-09",
+      "queries": [
+        "Middle East conflict Taiwan implications",
+        "Russia Ukraine war China support Taiwan",
+        "Red Sea shipping disruption Asia"
+      ],
+      "keywords": [
+        "Middle East",
+        "Russia-Ukraine",
+        "Ukraine war",
+        "Red Sea",
+        "Iran",
+        "Israel"
+      ]
+    },
+    {
+      "conditionId": "TW-GLOBAL-10",
+      "queries": [
+        "Taiwan undersea cable damage",
+        "Taiwan cyberattack rail infrastructure",
+        "Taiwan whole-of-society resilience drill"
+      ],
+      "keywords": [
+        "undersea cable",
+        "whole-of-society",
+        "resilience",
+        "Han Kuang",
+        "radio",
+        "spoofing",
+        "cyberattack",
+        "shelter"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "itemId": "PRJ-RK",
+      "queries": [
+        "Kaohsiung MRT RK line Gangshan Luzhu"
+      ]
+    },
+    {
+      "itemId": "PRJ-YELLOW",
+      "queries": [
+        "Kaohsiung MRT Yellow Line"
+      ]
+    },
+    {
+      "itemId": "PRJ-RL",
+      "queries": [
+        "Kaohsiung MRT Red Line extension"
+      ]
+    },
+    {
+      "itemId": "PRJ-PURPLE",
+      "queries": [
+        "Kaohsiung Purple Line MRT"
+      ]
+    },
+    {
+      "itemId": "PRJ-TC-BLUE",
+      "queries": [
+        "Taichung MRT Blue Line"
+      ]
+    },
+    {
+      "itemId": "PRJ-TC-ORANGE",
+      "queries": [
+        "Taichung Orange Line MRT"
+      ]
+    },
+    {
+      "itemId": "PRJ-TY-BROWN",
+      "queries": [
+        "Taoyuan MRT Brown Line"
+      ]
+    },
+    {
+      "itemId": "PRJ-TY-GREEN-EXT",
+      "queries": [
+        "Taoyuan MRT Green Line Zhongli extension"
+      ]
+    },
+    {
+      "itemId": "PRJ-AIRPORT-MRT",
+      "queries": [
+        "Taoyuan Airport MRT"
+      ]
+    },
+    {
+      "itemId": "PRJ-TAINAN-MONORAIL",
+      "queries": [
+        "Tainan monorail"
+      ]
+    }
+  ],
+  "suppliers": [
+    {
+      "itemId": "SUP-LEONARDO",
+      "queries": [
+        "Leonardo Taiwan",
+        "Leonardo SpA"
+      ]
+    },
+    {
+      "itemId": "SUP-LS-ELECTRIC",
+      "queries": [
+        "LS Electric"
+      ]
+    },
+    {
+      "itemId": "SUP-INFOCHAMP",
+      "queries": [
+        "InfoChamp Systems"
+      ]
+    },
+    {
+      "itemId": "SUP-AGNEOVO",
+      "queries": [
+        "AG Neovo"
+      ]
+    },
+    {
+      "itemId": "SUP-TATUNG",
+      "queries": [
+        "Tatung Taiwan"
+      ]
+    },
+    {
+      "itemId": "SUP-SENYEH",
+      "queries": [
+        "Sen Yeh Construction"
+      ]
+    },
+    {
+      "itemId": "SUP-CHANCHUN",
+      "queries": [
+        "Chan Chun Taiwan"
+      ]
+    }
+  ],
+  "customers": [
+    {
+      "itemId": "CUST-KMRT",
+      "queries": [
+        "Kaohsiung Rapid Transit Corporation",
+        "Kaohsiung MRT"
+      ]
+    },
+    {
+      "itemId": "CUST-DORTS",
+      "queries": [
+        "Taoyuan Department of Rapid Transit Systems",
+        "Taoyuan Metro"
+      ]
+    },
+    {
+      "itemId": "CUST-TW-TRANSPORT",
+      "name": "Other Taiwan transport authorities",
+      "aliases": [
+        "Taiwan Railway",
+        "Taiwan High Speed Rail",
+        "THSRC",
+        "Taipei Metro",
+        "Ministry of Transportation and Communications"
+      ],
+      "queries": [
+        "Taiwan High Speed Rail",
+        "Taiwan Railway Corporation"
+      ]
+    }
+  ],
+  "hazards": [
+    {
+      "itemId": "HAZ-EARTHQUAKE",
+      "name": "Earthquakes",
+      "queries": [
+        "Taiwan earthquake"
+      ],
+      "keywords": [
+        "earthquake",
+        "magnitude",
+        "tremor",
+        "seismic"
+      ]
+    },
+    {
+      "itemId": "HAZ-TYPHOON",
+      "name": "Typhoons",
+      "queries": [
+        "Taiwan typhoon warning"
+      ],
+      "keywords": [
+        "typhoon",
+        "tropical storm",
+        "Central Weather Administration",
+        "CWA"
+      ]
+    },
+    {
+      "itemId": "HAZ-PANDEMIC",
+      "name": "Pandemic and public health",
+      "queries": [
+        "Taiwan outbreak Centers for Disease Control"
+      ],
+      "keywords": [
+        "outbreak",
+        "pandemic",
+        "epidemic",
+        "public health emergency"
+      ]
+    }
+  ],
+  "watchpoints": [
+    {
+      "watchpointId": "WP-TW-RKC02",
+      "title": "Kaohsiung RKC02 hoisting-restriction status",
+      "detail": "The hoisting-specific safety stoppage on RKC02, flagged 10 Sep 2026, is not confirmed as lifted. Ask the URS Taiwan BP to confirm.",
+      "keywords": [
+        "RKC02",
+        "Gangshan-Luzhu",
+        "Gangshan Luzhu",
+        "Gangshan-Lujhu"
+      ],
+      "openedOn": "2026-09-10",
+      "issueKeywords": [
+        "hoisting",
+        "stoppage",
+        "work suspension",
+        "suspended",
+        "halted",
+        "halt",
+        "crane",
+        "accident",
+        "collapse"
+      ]
+    },
+    {
+      "watchpointId": "WP-TW-THSRC-RADIO",
+      "title": "THSRC and Taoyuan Airport MRT radio-security item",
+      "detail": "Escalated to the Mobility Rail LOB and GISO. Waiting for an update on the radio-spoofing and frequency-overlap issue.",
+      "keywords": [
+        "THSRC",
+        "High Speed Rail",
+        "Airport MRT"
+      ],
+      "openedOn": "2026-09-03",
+      "status": "ESCALATED",
+      "issueKeywords": [
+        "radio",
+        "spoofing",
+        "frequency",
+        "interference",
+        "jamming",
+        "signal disruption"
+      ]
+    },
+    {
+      "watchpointId": "WP-TW-RARE-EARTH",
+      "title": "Rare-earth export-control suspension",
+      "detail": "The suspension was extended to 10 January 2027. It bears on the PSD-fabrication dependency in the concentration-risk deck.",
+      "keywords": [
+        "rare earth",
+        "rare-earth",
+        "rare earths"
+      ],
+      "openedOn": "2026-09-23",
+      "issueKeywords": [
+        "export control",
+        "suspension",
+        "licensing",
+        "Busan",
+        "truce",
+        "extended",
+        "extension"
+      ]
+    }
+  ]
+}

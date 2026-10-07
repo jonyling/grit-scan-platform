@@ -1,7 +1,8 @@
 """Reader ontology packs. Registers are loaded. They are not invented.
 
-``urs`` is Urban Solutions, built from URS Entity Info.xlsx.
-``urs-tw`` is the Taiwan reader pack. Taiwan is layer 5, not the whole ontology.
+``urs`` is Urban Solutions, built from the URS Entity Info workbook.
+``urs-tw`` is the Taiwan reader pack: ten standing conditions, named projects, suppliers and customers, and its scan plan.
+Taiwan is layer 5, not the whole ontology.
 """
 
 from __future__ import annotations
@@ -38,7 +39,11 @@ OPTIONAL_REGISTERS = {
         "competitors": "URS-Competitors.json",
         "management_focus": "URS-Management-Focus.json",
         "relationships": "URS-Relationships.json",
-    }
+    },
+    "urs-tw": {
+        "scan_plan": "URS-TW-Scan-Plan.json",
+        "order_book": "URS-TW-Order-Book.json",
+    },
 }
 
 
@@ -56,6 +61,8 @@ class OntologyPack:
     competitors: dict[str, Any] | None = None
     management_focus: dict[str, Any] | None = None
     relationships: dict[str, Any] | None = None
+    scan_plan: dict[str, Any] | None = None
+    order_book: dict[str, Any] | None = None
 
 
 def load_ontology_pack(config_dir: Path, pack: str = "urs-tw") -> OntologyPack:

@@ -1,0 +1,50 @@
+{
+  "profileId": "wilson",
+  "name": "Wilson",
+  "role": "Group Head, Risk & Assurance",
+  "aperture": "WIDE_APERTURE",
+  "packs": [
+    "urs-tw",
+    "urs"
+  ],
+  "businessScope": {
+    "businessAreas": [
+      "Urban Solutions"
+    ],
+    "lobs": [],
+    "countries": []
+  },
+  "reviewRole": "REVIEWER",
+  "redAlerts": {
+    "receive": true,
+    "packs": [
+      "urs-tw",
+      "urs"
+    ]
+  },
+  "email": null,
+  "brief": {
+    "title": "GRIT-Scan: URS Taiwan",
+    "subtitle": "Geopolitical Risk & Infrastructure Tracker — Weekly Scan",
+    "preparedFor": "Group Head, Risk & Assurance",
+    "readerPack": "urs-tw",
+    "sections": [
+      "BOTTOM_LINE",
+      "ORDER_BOOK",
+      "PROJECTS",
+      "SUPPLIERS",
+      "CUSTOMERS",
+      "HAZARDS",
+      "CONDITIONS",
+      "QA_LOG",
+      "WATCHPOINTS"
+    ],
+    "maxFindings": 8,
+    "formats": [
+      "docx",
+      "pptx",
+      "xlsx"
+    ]
+  },
+  "note": "Basic profile. Memory builds from Wilson's approve and reject decisions in the pool."
+}

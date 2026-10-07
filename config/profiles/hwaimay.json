@@ -1,0 +1,21 @@
+{
+  "profileId": "hwaimay",
+  "name": "Hwaimay",
+  "role": "R&A Business Partner, Urban Solutions",
+  "aperture": "MATERIAL_APERTURE",
+  "packs": ["urs", "urs-tw"],
+  "businessScope": {"businessAreas": ["Urban Solutions"], "lobs": [], "countries": []},
+  "reviewRole": "REVIEWER",
+  "redAlerts": {"receive": true, "packs": ["urs", "urs-tw"]},
+  "email": null,
+  "brief": {
+    "title": "GRIT-Scan: Urban Solutions",
+    "subtitle": "Weekly risk scan for the URS business partner",
+    "preparedFor": "R&A Business Partner, Urban Solutions",
+    "readerPack": "urs-tw",
+    "sections": ["BOTTOM_LINE", "PRIORITY_FINDINGS", "CONDITIONS", "PROJECTS", "SUPPLIERS", "CUSTOMERS", "HAZARDS", "OTHER_SIGNALS", "QA_LOG", "WATCHPOINTS"],
+    "maxFindings": 12,
+    "formats": ["docx", "pptx", "xlsx"]
+  },
+  "note": "Hwaimay reviews URS signals first. Approved signals go to the BA head for the AIRIS handoff."
+}
