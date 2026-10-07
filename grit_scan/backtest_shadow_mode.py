@@ -27,6 +27,7 @@ from .impact_scoring import (
 )
 from .registry_loader import load_transmission_registry
 from .severity_definition import parse_severity_definition
+from .workbook import workbook_path as default_workbook
 from .xlsx_reader import read_worksheet
 
 _SHEET = "GRITAuditedSignals"
@@ -108,12 +109,12 @@ def run(audited_signals: Path, entity_workbook: Path, aliases_path: Path, severi
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("audited_signals", type=Path)
-    parser.add_argument("--entity-workbook", type=Path, default=Path("secrets/URS Entity Info.xlsx"))
+    parser.add_argument("--entity-workbook", type=Path, default=None, help="Defaults to the workbook named in grit_scan/workbook.py.")
     parser.add_argument("--aliases", type=Path, default=Path("config/registry_aliases.json"))
     parser.add_argument("--severity-definition", type=Path, default=Path("specs/15_Severity_Definition.md"))
     parser.add_argument("--ebit", type=float, required=True, help="Preceding-year EBIT in S$ millions.")
     arguments = parser.parse_args()
-    run(arguments.audited_signals, arguments.entity_workbook, arguments.aliases, arguments.severity_definition, arguments.ebit)
+    run(arguments.audited_signals, arguments.entity_workbook or default_workbook(), arguments.aliases, arguments.severity_definition, arguments.ebit)
 
 
 if __name__ == "__main__":

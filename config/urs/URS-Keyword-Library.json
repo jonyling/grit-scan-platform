@@ -1,0 +1,3261 @@
+{
+  "registerId": "URS-KEYWORD-LIBRARY",
+  "workbook": "URS_Entity_Info_20261006.xlsx",
+  "absence": "The sheets are hidden in the workbook and are not validated. Their notes cite internal documents and are not copied. A row that is a sentence or an instruction is listed under dropped. No term was added or reworded. A priority appears only where the sheet states one.",
+  "libraries": [
+    {
+      "sheet": "SUI - SSU",
+      "sheetState": "hidden",
+      "canonicalLob": "Smart Sustainable Utilities",
+      "tier1": [
+        {
+          "name": "Smart Utilities",
+          "terms": [
+            "Smart Utilities",
+            "Utility Digitalisation",
+            "Utility Modernisation",
+            "Digital Utilities",
+            "Intelligent Utilities",
+            "Utility Infrastructure",
+            "Critical Utility Infrastructure",
+            "Utility Asset Management",
+            "Utility Analytics",
+            "Utility Operations"
+          ]
+        },
+        {
+          "name": "Sustainability & Resource Optimisation",
+          "terms": [
+            "Sustainability",
+            "Sustainable Infrastructure",
+            "Sustainable Cities",
+            "Resource Efficiency",
+            "Climate Resilience",
+            "Urban Resilience",
+            "Energy Resilience",
+            "Water Resilience",
+            "Circular Economy",
+            "Environmental Sustainability"
+          ]
+        }
+      ],
+      "clusters": [
+        {
+          "number": 1,
+          "name": "Smart Energy & Building Decarbonisation",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "Building Decarbonisation",
+                "Building Energy Management",
+                "Smart Energy Building",
+                "Energy Optimisation",
+                "Building Automation",
+                "Smart Buildings",
+                "Green Buildings",
+                "Net Zero Buildings",
+                "Sustainable Buildings",
+                "Building Sustainability"
+              ]
+            },
+            {
+              "name": "AGIL Smart Energy Keywords",
+              "terms": [
+                "AGIL Smart Energy Building",
+                "Smart HVAC",
+                "AI Airflow",
+                "Carbon Monitoring",
+                "Smart Metering",
+                "Smart Lighting",
+                "Energy Recovery",
+                "Building Performance Optimisation"
+              ]
+            },
+            {
+              "name": "Regulatory / Risk Themes",
+              "terms": [
+                "Carbon Tax",
+                "Carbon Reporting",
+                "Carbon Accounting",
+                "Scope 1 Emissions",
+                "Scope 2 Emissions",
+                "Scope 3 Emissions",
+                "ESG Reporting",
+                "Green Building Standards",
+                "Energy Efficiency Regulations"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 2,
+          "name": "Cooling, HVAC & Energy Recovery",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "HVAC",
+                "Smart HVAC",
+                "District Cooling",
+                "Cooling Optimisation",
+                "Indoor Air Quality",
+                "Energy Recovery",
+                "Energy Recovery Ventilator (ERV)",
+                "Dedicated Outdoor Air System (DOAS)",
+                "Sustainable Cooling",
+                "Urban Cooling"
+              ]
+            },
+            {
+              "name": "Proprietary Technologies",
+              "terms": [
+                "Airbitat",
+                "Reevac",
+                "REEVAC Deep Cooling",
+                "Evaporative Cooling"
+              ]
+            },
+            {
+              "name": "Risk Themes",
+              "terms": [
+                "Cooling Energy Demand",
+                "Energy Costs",
+                "Electricity Supply",
+                "Green Cooling Technologies",
+                "Refrigerant Regulations",
+                "Heat Stress"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "name": "Smart Water & Water Security",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "Smart Water",
+                "Water AMI",
+                "Advanced Metering Infrastructure",
+                "Smart Water Metering",
+                "Water Digitalisation",
+                "Water Infrastructure",
+                "Water Analytics",
+                "Water Management"
+              ]
+            },
+            {
+              "name": "BrightCity Water Keywords",
+              "terms": [
+                "BrightCity",
+                "Smart Water AMI",
+                "Meter Data Management System",
+                "MDMS",
+                "Meter Interface Unit",
+                "MIU",
+                "Water Telemetry"
+              ]
+            },
+            {
+              "name": "Risk & Opportunities",
+              "terms": [
+                "Water Scarcity",
+                "Drought",
+                "Water Security",
+                "Water Stress",
+                "Non-Revenue Water",
+                "Water Loss Management",
+                "Leak Detection",
+                "Aging Water Infrastructure"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 4,
+          "name": "Smart Cities & City Platforms",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "Smart City",
+                "Digital City",
+                "Urban Digitalisation",
+                "Smart Infrastructure",
+                "City Analytics",
+                "Command & Control",
+                "City Operations Platform",
+                "Digital Twin"
+              ]
+            },
+            {
+              "name": "Product Keywords",
+              "terms": [
+                "AGIL Smart City OS",
+                "CityOS",
+                "CityOS Connect",
+                "CityOS Core",
+                "CityOS Apps Enablement"
+              ]
+            },
+            {
+              "name": "Emerging Themes",
+              "terms": [
+                "Smart City Investments",
+                "Urban Technology",
+                "City Digital Platform",
+                "Integrated Operations Platform",
+                "Smart District",
+                "Smart Precinct",
+                "Digital Government"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 5,
+          "name": "Smart Lighting & Urban Infrastructure",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Smart Lighting",
+                "Smart Street Lighting",
+                "Connected Lighting",
+                "LED Street Lighting",
+                "Adaptive Lighting",
+                "Smart Poles",
+                "Lighting Automation"
+              ]
+            },
+            {
+              "name": "Smart City Extensions",
+              "terms": [
+                "Smart Traffic",
+                "Smart CCTV",
+                "Public WiFi",
+                "Edge Computing",
+                "Urban Sensors"
+              ]
+            },
+            {
+              "name": "Risk Themes",
+              "terms": [
+                "Municipal Budgets",
+                "Infrastructure Funding",
+                "Smart City Procurement"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 6,
+          "name": "IoT, Sensors & Connectivity",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "IoT",
+                "Industrial IoT",
+                "IIoT",
+                "Smart Sensors",
+                "Occupancy Sensors",
+                "Environmental Sensors",
+                "Digital Monitoring",
+                "Connected Infrastructure"
+              ]
+            },
+            {
+              "name": "Product Keywords",
+              "terms": [
+                "AGIL Sense",
+                "Microwave Sensors",
+                "Obstacle Detection Radar",
+                "Contactless Switch",
+                "Motion Sensors"
+              ]
+            },
+            {
+              "name": "Technology Risks",
+              "terms": [
+                "Semiconductor Supply Chain",
+                "Sensor Shortages",
+                "Wireless Network Security",
+                "IoT Cybersecurity"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 7,
+          "name": "Sustainability, ESG & Climate Themes",
+          "priority": "Critical for GRIT",
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "ESG",
+                "Sustainability",
+                "Decarbonisation",
+                "Net Zero",
+                "Carbon Neutrality",
+                "Resource Efficiency",
+                "Energy Transition",
+                "Climate Adaptation",
+                "Climate Resilience",
+                "Green Infrastructure"
+              ]
+            },
+            {
+              "name": "Watchlist Topics",
+              "terms": [
+                "Carbon Tax",
+                "ESG Regulations",
+                "Sustainability Reporting",
+                "Climate Regulations",
+                "Green Financing",
+                "Sustainable Cities Funding"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 8,
+          "name": "Utility Cybersecurity",
+          "priority": "High",
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Utility Cybersecurity",
+                "OT Security",
+                "Critical Infrastructure Security",
+                "Water Utility Security",
+                "Energy Utility Security",
+                "Smart City Cybersecurity",
+                "Operational Technology Security"
+              ]
+            },
+            {
+              "name": "Threat Keywords",
+              "terms": [
+                "Utility Cyber Attack",
+                "SCADA Security",
+                "Critical Infrastructure Protection",
+                "Nation State Threats",
+                "Industrial Control System Security"
+              ]
+            }
+          ]
+        }
+      ],
+      "watchlist": [],
+      "tagClusters": [
+        {
+          "name": "Smart Utilities",
+          "priority": "Critical"
+        },
+        {
+          "name": "Building Decarbonisation",
+          "priority": "Critical"
+        },
+        {
+          "name": "Smart Energy Building",
+          "priority": "Critical"
+        },
+        {
+          "name": "Smart Water & Water Security",
+          "priority": "Critical"
+        },
+        {
+          "name": "Smart City Platform",
+          "priority": "Critical"
+        },
+        {
+          "name": "Sustainability & ESG",
+          "priority": "Critical"
+        },
+        {
+          "name": "Energy Transition",
+          "priority": "Critical"
+        },
+        {
+          "name": "Climate Resilience",
+          "priority": "Critical"
+        },
+        {
+          "name": "HVAC & Sustainable Cooling",
+          "priority": "High"
+        },
+        {
+          "name": "BrightCity Smart Water",
+          "priority": "High"
+        },
+        {
+          "name": "Smart Street Lighting",
+          "priority": "High"
+        },
+        {
+          "name": "Utility Digitalisation",
+          "priority": "High"
+        },
+        {
+          "name": "IoT & Smart Sensors",
+          "priority": "High"
+        },
+        {
+          "name": "Utility Cybersecurity",
+          "priority": "High"
+        },
+        {
+          "name": "Critical Infrastructure",
+          "priority": "High"
+        }
+      ],
+      "scanKeywords": {
+        "declared": 40,
+        "terms": [
+          "Smart Utilities",
+          "Utility Digitalisation",
+          "Building Decarbonisation",
+          "Smart Energy Building",
+          "Energy Optimisation",
+          "Smart HVAC",
+          "AI Airflow",
+          "Energy Recovery",
+          "Reevac",
+          "Airbitat",
+          "Sustainable Cooling",
+          "Smart Water",
+          "Water AMI",
+          "BrightCity",
+          "Smart Metering",
+          "Water Security",
+          "Leak Detection",
+          "Non-Revenue Water",
+          "Water Infrastructure",
+          "Smart City",
+          "AGIL Smart City OS",
+          "CityOS",
+          "Urban Digitalisation",
+          "Smart Infrastructure",
+          "Smart Lighting",
+          "Smart Street Lighting",
+          "IoT",
+          "IIoT",
+          "Smart Sensors",
+          "Carbon Monitoring",
+          "ESG",
+          "Net Zero",
+          "Energy Transition",
+          "Climate Resilience",
+          "Sustainable Cities",
+          "Green Buildings",
+          "Utility Cybersecurity",
+          "Critical Infrastructure Protection",
+          "Carbon Tax",
+          "Sustainability Reporting"
+        ]
+      },
+      "emergingThemes": [
+        "Building Decarbonisation & Net-Zero Regulations",
+        "Energy Transition & Grid Resilience",
+        "Water Scarcity & Water Infrastructure Modernisation",
+        "Climate Change & Urban Resilience",
+        "Smart City Investments & Government Funding",
+        "HVAC, Cooling & Energy Efficiency Technologies",
+        "Utility Cybersecurity & OT Security",
+        "ESG & Sustainability Reporting Requirements",
+        "IoT Infrastructure & Sensor Supply Chains",
+        "Critical Infrastructure Protection"
+      ],
+      "notesSkipped": 10,
+      "dropped": []
+    },
+    {
+      "sheet": "SUI - SSA",
+      "sheetState": "hidden",
+      "canonicalLob": "Smart Security & Automation",
+      "tier1": [
+        {
+          "name": "Smart Security & Public Safety",
+          "terms": [
+            "AGIL Secure",
+            "Integrated Security Management Platform (ISMP)",
+            "Integrated Security Management System (ISMS)",
+            "Smart Security",
+            "Physical Security",
+            "Security Operations Centre (SOC)",
+            "Command & Control",
+            "Security Automation",
+            "Security Orchestration",
+            "Public Safety",
+            "Homeland Security",
+            "Critical Infrastructure Protection",
+            "Security Convergence",
+            "Unified Security Platform",
+            "Enterprise Security Management"
+          ]
+        }
+      ],
+      "clusters": [
+        {
+          "number": 2,
+          "name": "Critical Infrastructure Protection",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Industry Keywords",
+              "terms": [
+                "Critical infrastructure",
+                "National critical information infrastructure",
+                "Critical asset protection",
+                "Infrastructure resilience",
+                "Physical asset protection",
+                "Airport security",
+                "Port security",
+                "Maritime security",
+                "Aviation security",
+                "Utilities security",
+                "Government facilities security",
+                "Defence infrastructure security",
+                "Transportation security"
+              ]
+            },
+            {
+              "name": "Monitoring Keywords",
+              "terms": [
+                "Infrastructure sabotage",
+                "Terrorism threats",
+                "Insider threats",
+                "Security breaches",
+                "Physical intrusion",
+                "Infrastructure disruption",
+                "Supply chain attacks on critical infrastructure"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "name": "Security Operations & Incident Management",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Operational Keywords",
+              "terms": [
+                "Incident management",
+                "Security incident response",
+                "Integrated operations",
+                "Situation awareness",
+                "Situational awareness",
+                "Common operating picture",
+                "Security monitoring",
+                "Alert management",
+                "Threat management",
+                "Event correlation",
+                "Event monitoring",
+                "Security dashboards",
+                "Security reporting",
+                "Security analytics"
+              ]
+            },
+            {
+              "name": "Risk/Event Keywords",
+              "terms": [
+                "Security incidents",
+                "Operational disruptions",
+                "Threat escalation",
+                "Emergency response",
+                "Crisis management",
+                "Business continuity",
+                "Security operations effectiveness"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 4,
+          "name": "Access Control & Identity Management",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "Access control",
+                "Physical access control",
+                "Identity management",
+                "Digital identity",
+                "Identity lifecycle management",
+                "Security governance",
+                "User provisioning",
+                "Authentication",
+                "Authorisation",
+                "Visitor management",
+                "Credential management"
+              ]
+            },
+            {
+              "name": "Biometric Keywords",
+              "terms": [
+                "Facial recognition",
+                "Fingerprint recognition",
+                "Multi-modal biometrics",
+                "Biometric authentication",
+                "Biometric identity management",
+                "Biometric access control",
+                "Multi-factor authentication (MFA)",
+                "Identity verification"
+              ]
+            },
+            {
+              "name": "Regulatory Themes",
+              "terms": [
+                "Digital identity regulations",
+                "Privacy regulations",
+                "Personal data protection",
+                "Biometric governance",
+                "Biometric compliance"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 5,
+          "name": "Surveillance & Video Analytics",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Technology Keywords",
+              "terms": [
+                "CCTV",
+                "Video surveillance",
+                "Intelligent surveillance",
+                "Video analytics",
+                "AI video analytics",
+                "Smart surveillance",
+                "Security cameras",
+                "Remote monitoring",
+                "Centralised surveillance",
+                "Behaviour analytics",
+                "Automated threat detection"
+              ]
+            },
+            {
+              "name": "Emerging Threat Keywords",
+              "terms": [
+                "AI-powered surveillance",
+                "Facial recognition regulations",
+                "Drone surveillance",
+                "Counter-drone security",
+                "Deepfake threats",
+                "Video intelligence"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 6,
+          "name": "Perimeter Security & Intrusion Detection",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Perimeter security",
+                "Perimeter intrusion detection systems (PIDS)",
+                "Intrusion detection",
+                "Intrusion prevention",
+                "Security fencing",
+                "Border protection",
+                "Facility protection",
+                "Anti-tailgating",
+                "Electronic locks",
+                "Wireless locksets",
+                "Secure entry management"
+              ]
+            },
+            {
+              "name": "Risk Monitoring",
+              "terms": [
+                "Border incursions",
+                "Illegal crossings",
+                "Perimeter breaches",
+                "Facility intrusions",
+                "Physical attacks"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 7,
+          "name": "Airport, Border & Checkpoint Security",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Aviation security",
+                "Airport security",
+                "Border security",
+                "Immigration control",
+                "Checkpoint security",
+                "Passenger screening",
+                "Secure travel",
+                "Smart checkpoint",
+                "Airport operations centre",
+                "Airside security",
+                "Seaport security"
+              ]
+            },
+            {
+              "name": "Geopolitical Monitoring",
+              "terms": [
+                "Aviation security regulations",
+                "Cross-border movement",
+                "Immigration policy",
+                "Airport infrastructure investments",
+                "Border security modernisation"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 8,
+          "name": "Smart Security Technologies",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Technology Keywords",
+              "terms": [
+                "AI security",
+                "Intelligent security",
+                "Security automation",
+                "Workflow automation",
+                "IoT security",
+                "Physical Security Information Management (PSIM)",
+                "Cloud-native security platforms",
+                "Hybrid security architecture",
+                "Microservices architecture",
+                "Open integration platform",
+                "Security interoperability"
+              ]
+            },
+            {
+              "name": "Emerging Technology Risks",
+              "terms": [
+                "AI governance",
+                "AI security",
+                "Autonomous security systems",
+                "Cyber-physical security",
+                "OT security",
+                "Security platform interoperability"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 9,
+          "name": "Physical Security Cyber Convergence",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Physical security",
+                "Cyber-physical security",
+                "Physical-cyber convergence",
+                "OT security",
+                "Industrial security",
+                "Security integration",
+                "Converged security operations",
+                "Enterprise resilience"
+              ]
+            },
+            {
+              "name": "Threat Keywords",
+              "terms": [
+                "Cyber attacks on critical infrastructure",
+                "OT cyber threats",
+                "Industrial cyber security",
+                "Hybrid threats",
+                "Nation-state threats",
+                "Infrastructure cyber resilience"
+              ]
+            }
+          ]
+        }
+      ],
+      "watchlist": [
+        {
+          "name": "Countries/Regions",
+          "terms": [
+            "Singapore",
+            "Indonesia",
+            "ASEAN",
+            "Middle East",
+            "Qatar",
+            "Saudi Arabia",
+            "UAE",
+            "Australia",
+            "India"
+          ]
+        },
+        {
+          "name": "Themes",
+          "terms": [
+            "Critical infrastructure regulations",
+            "National security programmes",
+            "Smart city security",
+            "Public safety modernisation",
+            "Border security programmes",
+            "Airport expansion projects",
+            "Port modernisation",
+            "Defence infrastructure upgrades",
+            "Homeland security investments"
+          ]
+        }
+      ],
+      "tagClusters": [
+        {
+          "name": "Critical Infrastructure Protection",
+          "priority": "Critical"
+        },
+        {
+          "name": "Physical Security",
+          "priority": "Critical"
+        },
+        {
+          "name": "Integrated Security Management Platform",
+          "priority": "Critical"
+        },
+        {
+          "name": "Access Control & Identity Management",
+          "priority": "Critical"
+        },
+        {
+          "name": "Airport & Border Security",
+          "priority": "Critical"
+        },
+        {
+          "name": "Public Safety & Homeland Security",
+          "priority": "Critical"
+        },
+        {
+          "name": "Surveillance & Video Analytics",
+          "priority": "High"
+        },
+        {
+          "name": "Incident Management & Command Centre",
+          "priority": "High"
+        },
+        {
+          "name": "Perimeter Intrusion Detection",
+          "priority": "High"
+        },
+        {
+          "name": "Biometric Authentication",
+          "priority": "High"
+        },
+        {
+          "name": "AI Security & Automation",
+          "priority": "High"
+        },
+        {
+          "name": "OT / Cyber-Physical Security",
+          "priority": "High"
+        },
+        {
+          "name": "Smart City Security",
+          "priority": "High"
+        },
+        {
+          "name": "Security Regulations & Compliance",
+          "priority": "Medium"
+        }
+      ],
+      "scanKeywords": null,
+      "emergingThemes": [],
+      "notesSkipped": 12,
+      "dropped": []
+    },
+    {
+      "sheet": "SUI - HRA",
+      "sheetState": "hidden",
+      "canonicalLob": "Healthcare Robotics & Automation",
+      "tier1": [
+        {
+          "name": "Healthcare Automation",
+          "terms": [
+            "Healthcare Automation",
+            "Smart Healthcare",
+            "Digital Healthcare",
+            "Healthcare Technology",
+            "Healthcare Transformation",
+            "Healthcare Operations",
+            "Clinical Workflow Optimisation",
+            "Hospital Operations",
+            "Healthcare Productivity",
+            "Healthcare Efficiency",
+            "Care Delivery Optimisation",
+            "Patient-Centric Care"
+          ]
+        }
+      ],
+      "clusters": [
+        {
+          "number": 2,
+          "name": "Healthcare Robotics & Autonomous Mobile Robots",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "Healthcare Robots",
+                "Healthcare Robotics",
+                "Autonomous Mobile Robot (AMR)",
+                "Autonomous Delivery Robots",
+                "Mobile Service Robots",
+                "Hospital Logistics Robots",
+                "Clinical Logistics Automation",
+                "Autonomous Navigation",
+                "Robotics Automation",
+                "Medical Logistics"
+              ]
+            },
+            {
+              "name": "Product Keywords",
+              "terms": [
+                "Zena RX",
+                "Aethon",
+                "T3 Robot",
+                "T3 XL",
+                "Pharmacy Robot",
+                "Laboratory Logistics Robot",
+                "Hospital Delivery Robot"
+              ]
+            },
+            {
+              "name": "Emerging Topics",
+              "terms": [
+                "Service robotics",
+                "Human-robot collaboration",
+                "Robotics adoption",
+                "Autonomous healthcare systems",
+                "Robotics fleet management"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "name": "Hospital Logistics & Internal Supply Chain",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Hospital Logistics",
+                "Internal Logistics",
+                "Medication Delivery",
+                "Specimen Transport",
+                "Laboratory Logistics",
+                "Pharmacy Automation",
+                "Inventory Movement",
+                "Linen Management",
+                "Waste Transport",
+                "Materials Management",
+                "Healthcare Supply Chain"
+              ]
+            },
+            {
+              "name": "Risk Themes",
+              "terms": [
+                "Hospital staffing shortages",
+                "Logistics disruptions",
+                "Healthcare operational resilience",
+                "Healthcare labour productivity"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 4,
+          "name": "Patient Safety & Monitoring",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Patient Monitoring",
+                "Fall Detection",
+                "Fall Prevention",
+                "Elderly Care Technology",
+                "Assisted Living Technology",
+                "Patient Safety",
+                "Motion Detection",
+                "Occupancy Detection",
+                "Contactless Monitoring",
+                "Healthcare Sensors",
+                "Real-Time Alerts"
+              ]
+            },
+            {
+              "name": "Emerging Risks",
+              "terms": [
+                "Ageing population",
+                "Long-term care",
+                "Nursing shortages",
+                "Patient safety incidents"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 5,
+          "name": "Healthcare Communications & Connectivity",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Doctor-on-Call",
+                "Clinical Communications",
+                "Mobile Healthcare Communications",
+                "Hospital Communications",
+                "Fixed Mobile Integration (FMI)",
+                "Unified Communications",
+                "Care Team Collaboration",
+                "Clinical Mobility"
+              ]
+            },
+            {
+              "name": "Technology Keywords",
+              "terms": [
+                "4G Healthcare",
+                "5G Healthcare",
+                "Healthcare Messaging",
+                "Healthcare Voice Systems",
+                "PABX",
+                "Voice Logging"
+              ]
+            },
+            {
+              "name": "Market Drivers",
+              "terms": [
+                "Telehealth",
+                "Remote healthcare operations",
+                "Connected healthcare workforce"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 6,
+          "name": "AI-Enabled Healthcare",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "AI Healthcare",
+                "Healthcare AI",
+                "Clinical AI",
+                "Predictive Healthcare Analytics",
+                "Healthcare Workflow Automation",
+                "Intelligent Care Delivery",
+                "Healthcare Decision Support",
+                "Generative AI in Healthcare"
+              ]
+            },
+            {
+              "name": "Related ST Engineering Healthcare Ecosystem",
+              "terms": [
+                "AGIL Care",
+                "AGIL Genie Studio",
+                "GenieBot",
+                "Smart Assistive Platform",
+                "Virtual Care Monitoring"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 7,
+          "name": "Smart Hospitals & Digital Health Infrastructure",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Smart Hospital",
+                "Digital Hospital",
+                "Connected Hospital",
+                "Hospital Digitalisation",
+                "Integrated Hospital Systems",
+                "Healthcare Interoperability",
+                "Hospital Automation",
+                "Intelligent Healthcare Infrastructure"
+              ]
+            },
+            {
+              "name": "Infrastructure Themes",
+              "terms": [
+                "Hospital modernisation",
+                "Healthcare construction",
+                "Healthcare transformation programmes",
+                "Healthcare technology procurement"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 8,
+          "name": "Healthcare Workforce & Labour Challenges",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Nursing Shortages",
+                "Healthcare Workforce",
+                "Labour Shortages",
+                "Clinical Burnout",
+                "Caregiver Productivity",
+                "Workforce Augmentation",
+                "Healthcare Productivity"
+              ]
+            },
+            {
+              "name": "Strategic Themes",
+              "terms": [
+                "Workforce automation",
+                "Labour substitution",
+                "Staff optimisation",
+                "Productivity improvement"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 9,
+          "name": "Healthcare Cybersecurity & Digital Resilience",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Healthcare Cybersecurity",
+                "Medical Device Security",
+                "Hospital Cybersecurity",
+                "Healthcare Data Protection",
+                "Health Information Security",
+                "Connected Medical Systems",
+                "Digital Health Security"
+              ]
+            },
+            {
+              "name": "Threat Keywords",
+              "terms": [
+                "Ransomware",
+                "Hospital Cyberattack",
+                "Healthcare Data Breach",
+                "Medical Device Vulnerability"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 10,
+          "name": "PPE & Respiratory Protection",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "AIR+",
+                "Respiratory Protection",
+                "Personal Protective Equipment (PPE)",
+                "N95 Masks",
+                "KN95 Masks",
+                "Surgical Masks",
+                "Infection Prevention",
+                "Pandemic Preparedness",
+                "Occupational Safety",
+                "Healthcare Worker Protection"
+              ]
+            },
+            {
+              "name": "Risk Themes",
+              "terms": [
+                "Infectious disease outbreaks",
+                "Pandemic preparedness",
+                "Public health emergencies",
+                "PPE shortages"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 11,
+          "name": "Ageing Population & Healthcare Trends",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Ageing Population",
+                "Elder Care",
+                "Long-Term Care",
+                "Assisted Living",
+                "Community Care",
+                "Healthcare Sustainability",
+                "Population Health"
+              ]
+            },
+            {
+              "name": "Market Drivers",
+              "terms": [
+                "Elderly care demand",
+                "Chronic disease management",
+                "Healthcare resource constraints",
+                "Community healthcare services"
+              ]
+            }
+          ]
+        }
+      ],
+      "watchlist": [
+        {
+          "name": "Countries / Regions",
+          "terms": [
+            "Singapore",
+            "United States",
+            "Europe",
+            "Nordic countries",
+            "Australia",
+            "Japan",
+            "South Korea",
+            "Middle East"
+          ]
+        },
+        {
+          "name": "Strategic Themes",
+          "terms": [
+            "Healthcare modernisation",
+            "Smart hospital programmes",
+            "Healthcare funding",
+            "Public healthcare infrastructure",
+            "Digital health strategy",
+            "Healthcare workforce shortages",
+            "National healthcare resilience"
+          ]
+        }
+      ],
+      "tagClusters": [
+        {
+          "name": "Healthcare Robotics",
+          "priority": "Critical"
+        },
+        {
+          "name": "Autonomous Mobile Robots (AMR)",
+          "priority": "Critical"
+        },
+        {
+          "name": "Hospital Logistics Automation",
+          "priority": "Critical"
+        },
+        {
+          "name": "Smart Hospitals",
+          "priority": "Critical"
+        },
+        {
+          "name": "Healthcare Workforce Shortage",
+          "priority": "Critical"
+        },
+        {
+          "name": "Patient Safety & Fall Detection",
+          "priority": "High"
+        },
+        {
+          "name": "Doctor-on-Call / Clinical Communications",
+          "priority": "High"
+        },
+        {
+          "name": "AI Healthcare",
+          "priority": "High"
+        },
+        {
+          "name": "Digital Healthcare Transformation",
+          "priority": "High"
+        },
+        {
+          "name": "Pharmacy Automation",
+          "priority": "High"
+        },
+        {
+          "name": "Healthcare Cybersecurity",
+          "priority": "High"
+        },
+        {
+          "name": "Telehealth & Connected Care",
+          "priority": "Medium"
+        },
+        {
+          "name": "PPE & Respiratory Protection",
+          "priority": "Medium"
+        },
+        {
+          "name": "Ageing Population & Elder Care",
+          "priority": "Medium"
+        }
+      ],
+      "scanKeywords": {
+        "declared": 30,
+        "terms": [
+          "Healthcare Robotics",
+          "Autonomous Mobile Robots",
+          "Hospital Automation",
+          "Hospital Logistics",
+          "Clinical Workflow Optimisation",
+          "Smart Hospital",
+          "Digital Hospital",
+          "Healthcare Automation",
+          "Healthcare Workforce Shortage",
+          "Nursing Shortage",
+          "Zena RX",
+          "Aethon",
+          "T3 Robot",
+          "Pharmacy Automation",
+          "Medication Delivery",
+          "Specimen Transport",
+          "Laboratory Logistics",
+          "Patient Monitoring",
+          "Fall Detection",
+          "Elder Care Technology",
+          "Doctor-on-Call",
+          "Clinical Communications",
+          "Telehealth",
+          "AI Healthcare",
+          "Healthcare Digitalisation",
+          "Healthcare Cybersecurity",
+          "PPE",
+          "Respiratory Protection",
+          "Infection Prevention",
+          "Healthcare Resilience"
+        ]
+      },
+      "emergingThemes": [],
+      "notesSkipped": 14,
+      "dropped": []
+    },
+    {
+      "sheet": "SM - Mobility Rail",
+      "sheetState": "hidden",
+      "canonicalLob": "Mobility Rail",
+      "tier1": [
+        {
+          "name": "Smart Metro & Rail Digitalisation",
+          "terms": [
+            "Smart Metro",
+            "Smart Metro Systems",
+            "Digital Rail",
+            "Digital Railway",
+            "Intelligent Rail Systems",
+            "Railway Digitalisation",
+            "Smart Rail Operations",
+            "Metro Operations",
+            "Rail Modernisation",
+            "Urban Rail Transit",
+            "Mass Rapid Transit (MRT)",
+            "Metro Infrastructure",
+            "Railway Infrastructure",
+            "Rail Network Operations"
+          ]
+        }
+      ],
+      "clusters": [
+        {
+          "number": 2,
+          "name": "Rail Operations & Control Centres",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "Integrated Transport Operations Centre (ITOC)",
+                "AGIL Integrated Transport Operations Centre",
+                "Smart Metro Control Centre (SMCC)",
+                "AGIL Smart Metro Control Centre",
+                "Operations Control Centre (OCC)",
+                "Integrated Operations Centre",
+                "Command & Control",
+                "Situational Awareness",
+                "Rail Operations Analytics",
+                "Transport Operations Management"
+              ]
+            },
+            {
+              "name": "Risk Monitoring",
+              "terms": [
+                "Service disruptions",
+                "Metro disruptions",
+                "Rail incidents",
+                "Transit delays",
+                "Network congestion",
+                "Rail system failures",
+                "Control centre outages"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "name": "Predictive Maintenance & Asset Management",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Enterprise Asset Management System (EAMS)",
+                "Rail Asset Management",
+                "Predictive Maintenance",
+                "Asset Lifecycle Management",
+                "Condition Monitoring",
+                "Reliability Engineering",
+                "Maintenance Optimisation",
+                "Fault Prediction",
+                "Asset Analytics",
+                "Asset Performance Monitoring"
+              ]
+            },
+            {
+              "name": "Emerging Themes",
+              "terms": [
+                "AI-driven maintenance",
+                "Digital maintenance",
+                "Maintenance automation",
+                "Spare parts optimisation",
+                "Lifecycle cost management"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 4,
+          "name": "Rail Cybersecurity & OT Security",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "Rail Cybersecurity",
+                "Railway Cybersecurity",
+                "OT Security",
+                "SCADA Security",
+                "Rail Network Security",
+                "Rail Resilience",
+                "Cyber-Physical Security",
+                "Critical Infrastructure Security",
+                "Industrial Control Systems Security",
+                "Transport Cybersecurity"
+              ]
+            },
+            {
+              "name": "Threat Keywords",
+              "terms": [
+                "Rail cyberattack",
+                "Ransomware",
+                "Signalling system attack",
+                "SCADA compromise",
+                "Critical infrastructure attack",
+                "OT intrusion",
+                "Nation-state cyber threats"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 5,
+          "name": "Signalling, SCADA & Rail Communications",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "SCADA",
+                "Rail Communications",
+                "Signalling Systems",
+                "Railway Signalling",
+                "Train Control Systems",
+                "Rail Telecommunications",
+                "FRMCS",
+                "Future Railway Mobile Communication System",
+                "Rail Network Connectivity",
+                "Operational Communications"
+              ]
+            },
+            {
+              "name": "Emerging Themes",
+              "terms": [
+                "5G rail",
+                "Next-generation rail communications",
+                "Rail telecommunications upgrades",
+                "Autonomous railway operations"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 6,
+          "name": "Mobility Payments & Fare Collection",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "AGIL Pay",
+                "Mobility Payments",
+                "Automated Fare Collection (AFC)",
+                "Fare Collection",
+                "Digital Ticketing",
+                "Account-Based Ticketing",
+                "Revenue Collection",
+                "Contactless Payments",
+                "Open Loop Payments",
+                "Closed Loop Payments"
+              ]
+            },
+            {
+              "name": "Technology Keywords",
+              "terms": [
+                "NFC payments",
+                "Biometric payments",
+                "Hands-free ticketing",
+                "Contactless smart cards",
+                "Interactive Traveller Terminal (ITT)"
+              ]
+            },
+            {
+              "name": "Risk Themes",
+              "terms": [
+                "Payment fraud",
+                "Revenue leakage",
+                "Fare evasion",
+                "Payment system outages"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 7,
+          "name": "Passenger Experience & Passenger Information",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Passenger Information System (PIS)",
+                "Passenger Emergency Communication System (PECS)",
+                "Passenger Communications",
+                "Real-Time Passenger Information",
+                "Passenger Analytics",
+                "Passenger Flow Management",
+                "Crowd Management",
+                "Passenger Capacity Monitoring"
+              ]
+            },
+            {
+              "name": "Monitoring Themes",
+              "terms": [
+                "Passenger congestion",
+                "Station overcrowding",
+                "Customer experience",
+                "Public transport reliability"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 8,
+          "name": "Platform Screen Doors & Rail Safety",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Platform Screen Doors (PSD)",
+                "AGIL Platform Screen Door",
+                "Rail Safety",
+                "Station Safety",
+                "Passenger Protection",
+                "Train Detection",
+                "SIL 3",
+                "Railway Safety Systems",
+                "Platform Intrusion Prevention"
+              ]
+            },
+            {
+              "name": "Risk Themes",
+              "terms": [
+                "Rail safety incidents",
+                "Track intrusion",
+                "Station accidents",
+                "Passenger fatalities",
+                "PSD failures"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 9,
+          "name": "AI & Advanced Analytics for Rail",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "AI for Rail",
+                "Rail Analytics",
+                "Rail AI",
+                "Predictive Analytics",
+                "Operational Intelligence",
+                "Rail Data Analytics",
+                "Anomaly Detection",
+                "Incident Prediction",
+                "Decision Support Systems"
+              ]
+            },
+            {
+              "name": "Emerging Themes",
+              "terms": [
+                "Generative AI for rail",
+                "AI maintenance assistants",
+                "Autonomous operations",
+                "Intelligent rail diagnostics"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 10,
+          "name": "Smart Urban Mobility & Multimodal Transport",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Multimodal Transport",
+                "Urban Mobility",
+                "Integrated Transport Management",
+                "Mobility-as-a-Service",
+                "Public Transport Integration",
+                "Smart Cities Mobility",
+                "Transit Network Optimisation",
+                "Mobility Operations"
+              ]
+            },
+            {
+              "name": "Market Themes",
+              "terms": [
+                "Smart cities",
+                "Sustainable mobility",
+                "Urban transport planning",
+                "Transport digitalisation"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 11,
+          "name": "Rail Infrastructure Modernisation",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Metro Expansion",
+                "Rail Infrastructure Projects",
+                "Railway Upgrades",
+                "Greenfield Metro",
+                "Brownfield Metro Modernisation",
+                "Transit Infrastructure",
+                "Railway Electrification",
+                "Transportation Infrastructure"
+              ]
+            },
+            {
+              "name": "Opportunity Indicators",
+              "terms": [
+                "Government rail spending",
+                "Metro tenders",
+                "Public transport investment",
+                "Rail PPP projects",
+                "Smart transit projects"
+              ]
+            }
+          ]
+        }
+      ],
+      "watchlist": [
+        {
+          "name": "Countries / Regions",
+          "terms": [
+            "Singapore",
+            "Thailand (Bangkok)",
+            "Saudi Arabia (Riyadh)",
+            "India (Chennai)",
+            "Canada (Toronto)",
+            "Taiwan",
+            "Middle East",
+            "Europe"
+          ]
+        },
+        {
+          "name": "Strategic Themes",
+          "terms": [
+            "Rail infrastructure funding",
+            "Metro expansion programmes",
+            "Railway cybersecurity regulations",
+            "Public transport resilience",
+            "Rail decarbonisation",
+            "Smart city mobility initiatives",
+            "Critical transportation infrastructure"
+          ]
+        }
+      ],
+      "tagClusters": [
+        {
+          "name": "Smart Metro Systems",
+          "priority": "Critical"
+        },
+        {
+          "name": "Railway Cybersecurity",
+          "priority": "Critical"
+        },
+        {
+          "name": "Smart Metro Control Centre",
+          "priority": "Critical"
+        },
+        {
+          "name": "Integrated Transport Operations Centre",
+          "priority": "Critical"
+        },
+        {
+          "name": "Rail Asset Management (EAMS)",
+          "priority": "Critical"
+        },
+        {
+          "name": "Predictive Maintenance",
+          "priority": "Critical"
+        },
+        {
+          "name": "Mobility Payments & Fare Collection",
+          "priority": "High"
+        },
+        {
+          "name": "Passenger Information Systems",
+          "priority": "High"
+        },
+        {
+          "name": "Platform Screen Doors",
+          "priority": "High"
+        },
+        {
+          "name": "Rail Communications & FRMCS",
+          "priority": "High"
+        },
+        {
+          "name": "5G Rail Operations",
+          "priority": "High"
+        },
+        {
+          "name": "AI Rail Analytics",
+          "priority": "High"
+        },
+        {
+          "name": "Multimodal Transport Management",
+          "priority": "High"
+        },
+        {
+          "name": "Rail Infrastructure Modernisation",
+          "priority": "High"
+        },
+        {
+          "name": "Critical Transport Infrastructure",
+          "priority": "High"
+        }
+      ],
+      "scanKeywords": {
+        "declared": 30,
+        "terms": [
+          "Smart Metro",
+          "Metro Operations",
+          "Railway Digitalisation",
+          "Smart Rail",
+          "Rail Cybersecurity",
+          "Rail Asset Management",
+          "Predictive Maintenance",
+          "Enterprise Asset Management System",
+          "Smart Metro Control Centre",
+          "Integrated Transport Operations Centre",
+          "Passenger Information System",
+          "Platform Screen Doors",
+          "Mobility Payments",
+          "Automated Fare Collection",
+          "Contactless Ticketing",
+          "SCADA",
+          "Rail Communications",
+          "FRMCS",
+          "5G Rail",
+          "Railway Signalling",
+          "Operational Technology Security",
+          "Critical Infrastructure Protection",
+          "Passenger Safety",
+          "Crowd Management",
+          "Real-Time Passenger Information",
+          "AI Rail Analytics",
+          "Predictive Analytics",
+          "Multimodal Transport",
+          "Transit Infrastructure",
+          "Metro Expansion"
+        ]
+      },
+      "emergingThemes": [
+        "Rail Cybersecurity & OT Threats",
+        "Metro Infrastructure Expansion Projects",
+        "5G / FRMCS Railway Transformation",
+        "AI-Driven Rail Operations & Predictive Maintenance",
+        "Rail Asset Reliability & Ageing Infrastructure",
+        "Passenger Safety & Crowd Management",
+        "Critical Transport Infrastructure Resilience",
+        "Fare Collection & Digital Payment Risks",
+        "Rail Signalling / SCADA Vulnerabilities",
+        "Government Rail Investment & Public Transport Funding"
+      ],
+      "notesSkipped": 13,
+      "dropped": []
+    },
+    {
+      "sheet": "SM - Mobility Road",
+      "sheetState": "hidden",
+      "canonicalLob": "Mobility Road & Services",
+      "tier1": [
+        {
+          "name": "Smart Mobility & Intelligent Transportation Systems",
+          "terms": [
+            "Intelligent Transportation Systems (ITS)",
+            "Smart Mobility",
+            "Smart Roads",
+            "Smart Transportation",
+            "Urban Mobility",
+            "Connected Mobility",
+            "Future Mobility",
+            "Sustainable Mobility",
+            "Road Network Management",
+            "Transportation Digitalisation",
+            "Traffic Operations",
+            "Traffic Optimisation",
+            "Mobility Ecosystem"
+          ]
+        }
+      ],
+      "clusters": [
+        {
+          "number": 2,
+          "name": "Urban Traffic Management",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "AGIL Urban Traffic Management System",
+                "Urban Traffic Management System (UTMS)",
+                "Traffic Management Centre",
+                "Traffic Operations Centre",
+                "Traffic Control Centre",
+                "Integrated Traffic Management",
+                "Traffic Monitoring",
+                "Traffic Analytics",
+                "Traffic Forecasting",
+                "Traffic Flow Optimisation",
+                "Situational Awareness"
+              ]
+            },
+            {
+              "name": "AI & Analytics Keywords",
+              "terms": [
+                "AI Traffic Management",
+                "Predictive Traffic Analytics",
+                "Traffic Machine Learning",
+                "Congestion Prediction",
+                "Incident Prediction",
+                "Traffic Intelligence",
+                "Operational Intelligence"
+              ]
+            },
+            {
+              "name": "Risk Monitoring",
+              "terms": [
+                "Traffic congestion",
+                "Gridlock",
+                "Major traffic incidents",
+                "Traffic disruption",
+                "Urban mobility bottlenecks"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "name": "Smart Junctions & Traffic Signal Optimisation",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Smart Digital Junction",
+                "Adaptive Traffic Control",
+                "Smart Traffic Signals",
+                "Traffic Signal Optimisation",
+                "Junction Optimisation",
+                "Adaptive Signal Control",
+                "Intelligent Traffic Controller",
+                "Connected Junctions",
+                "Traffic Signal Coordination"
+              ]
+            },
+            {
+              "name": "Technology Keywords",
+              "terms": [
+                "AI Signal Control",
+                "Big Data Traffic Analytics",
+                "Adaptive Signal Timing",
+                "Corridor Optimisation",
+                "Traffic Demand Management"
+              ]
+            },
+            {
+              "name": "Monitoring Themes",
+              "terms": [
+                "Traffic junction congestion",
+                "Smart intersection projects",
+                "Urban traffic bottlenecks",
+                "Road safety at intersections"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 4,
+          "name": "Road Safety & Incident Management",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "Road Safety",
+                "Traffic Safety",
+                "Incident Detection",
+                "Incident Management",
+                "Road Incident Response",
+                "Traffic Surveillance",
+                "Traffic Enforcement",
+                "Travel Time Monitoring",
+                "Traffic Advisory Systems"
+              ]
+            },
+            {
+              "name": "Emerging Risk Themes",
+              "terms": [
+                "Major accidents",
+                "Road fatalities",
+                "Emergency response delays",
+                "Highway incidents",
+                "Vehicle collisions"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 5,
+          "name": "Smart Surveillance & Enforcement",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Smart Surveillance",
+                "Traffic Enforcement",
+                "Automated Enforcement",
+                "Traffic Cameras",
+                "Video Analytics",
+                "AI Video Analytics",
+                "Traffic Monitoring Sensors",
+                "Road Network Surveillance"
+              ]
+            },
+            {
+              "name": "Risk Themes",
+              "terms": [
+                "Traffic violations",
+                "Speed enforcement",
+                "Red light enforcement",
+                "Road security",
+                "Smart city surveillance"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 6,
+          "name": "Parking Technology & Smart Parking",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Smart Parking",
+                "Parking Management",
+                "Smart Car Park",
+                "Digital Parking",
+                "Parking Analytics",
+                "Parking Occupancy",
+                "Smart Parking Platform",
+                "Parking Operations"
+              ]
+            },
+            {
+              "name": "Product Keywords",
+              "terms": [
+                "GoParkin",
+                "GoParkin Mobile App",
+                "Cloud-Based Parking Platform"
+              ]
+            },
+            {
+              "name": "Risk Themes",
+              "terms": [
+                "Urban parking shortages",
+                "Parking revenue leakage",
+                "Smart parking investments"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 7,
+          "name": "ANPR & Vehicle Identification",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Automatic Number Plate Recognition (ANPR)",
+                "License Plate Recognition (LPR)",
+                "Vehicle Recognition",
+                "Vehicle Identification",
+                "Automated Parking Entry",
+                "Smart Access Control"
+              ]
+            },
+            {
+              "name": "Monitoring Themes",
+              "terms": [
+                "ANPR regulations",
+                "Privacy regulations",
+                "Smart enforcement technologies"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 8,
+          "name": "Electric Vehicle (EV) Ecosystem",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "EV Charging",
+                "Electric Vehicle Infrastructure",
+                "EV Charging Management",
+                "EV Charging Networks",
+                "EV Fleet Charging",
+                "Smart Charging",
+                "Mobility Electrification"
+              ]
+            },
+            {
+              "name": "Risk Themes",
+              "terms": [
+                "EV adoption",
+                "EV charging standards",
+                "Charging infrastructure investments",
+                "Battery supply chain"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 9,
+          "name": "Bus Rapid Transit (BRT) & Public Transport",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Bus Rapid Transit (BRT)",
+                "Transit Modernisation",
+                "Bus Operations",
+                "Public Transport Systems",
+                "Transit Operations",
+                "Sustainable Transit",
+                "Integrated Transit Systems"
+              ]
+            },
+            {
+              "name": "Opportunity Indicators",
+              "terms": [
+                "BRT projects",
+                "Public transport investment",
+                "Sustainable transportation programmes"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 10,
+          "name": "Bus Fleet Management",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Bus Fleet Management",
+                "Fleet Operations",
+                "Fleet Optimisation",
+                "Connected Fleet",
+                "Smart Bus Stops",
+                "Demand Responsive Transit",
+                "Passenger Information Systems",
+                "Automatic Fare Collection",
+                "Transport Revenue Management"
+              ]
+            },
+            {
+              "name": "Operational Risk Themes",
+              "terms": [
+                "Driver shortages",
+                "Fleet downtime",
+                "Fuel efficiency",
+                "Transit reliability"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 11,
+          "name": "V2X & Connected Transport",
+          "priority": "Emerging",
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Vehicle-to-Everything (V2X)",
+                "Vehicle-to-Infrastructure (V2I)",
+                "Connected Vehicles",
+                "Smart Corridor",
+                "Connected Road Infrastructure",
+                "Intelligent Transport Network"
+              ]
+            },
+            {
+              "name": "Emerging Themes",
+              "terms": [
+                "Autonomous mobility",
+                "Emergency vehicle prioritisation",
+                "Connected transport ecosystems"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 12,
+          "name": "Smart City & Multimodal Mobility",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Multimodal Mobility",
+                "Integrated Transport Platform",
+                "Mobility-as-a-Service (MaaS)",
+                "Smart City Mobility",
+                "Urban Transportation Planning",
+                "Transport Integration",
+                "Mobility Control Centres"
+              ]
+            },
+            {
+              "name": "Watchlist Themes",
+              "terms": [
+                "Smart city programmes",
+                "City digitalisation",
+                "Urban resilience",
+                "Urban transport integration"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 13,
+          "name": "Transportation Cybersecurity",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "ITS Cybersecurity",
+                "Smart Traffic Cybersecurity",
+                "Transportation Cybersecurity",
+                "Connected Infrastructure Security",
+                "Traffic Management Cybersecurity",
+                "Operational Technology Security"
+              ]
+            },
+            {
+              "name": "Threat Keywords",
+              "terms": [
+                "Traffic signal attacks",
+                "Smart city cyberattacks",
+                "Connected transport vulnerabilities",
+                "Critical road infrastructure attacks"
+              ]
+            }
+          ]
+        }
+      ],
+      "watchlist": [
+        {
+          "name": "Countries / Regions",
+          "terms": [
+            "UAE (Dubai, Abu Dhabi)",
+            "Singapore",
+            "Saudi Arabia (Riyadh)",
+            "China (Yunnan)",
+            "ASEAN",
+            "Middle East"
+          ]
+        },
+        {
+          "name": "Strategic Themes",
+          "terms": [
+            "Smart city investments",
+            "Urbanisation",
+            "Traffic congestion",
+            "Mobility decarbonisation",
+            "Public transport digitalisation",
+            "EV infrastructure expansion",
+            "Transport resilience programmes"
+          ]
+        }
+      ],
+      "tagClusters": [
+        {
+          "name": "Intelligent Transportation Systems (ITS)",
+          "priority": "Critical"
+        },
+        {
+          "name": "Urban Traffic Management",
+          "priority": "Critical"
+        },
+        {
+          "name": "Smart Digital Junctions",
+          "priority": "Critical"
+        },
+        {
+          "name": "Incident Detection & Response",
+          "priority": "Critical"
+        },
+        {
+          "name": "Road Safety",
+          "priority": "Critical"
+        },
+        {
+          "name": "Bus Fleet Management",
+          "priority": "High"
+        },
+        {
+          "name": "Bus Rapid Transit",
+          "priority": "High"
+        },
+        {
+          "name": "Smart Parking",
+          "priority": "High"
+        },
+        {
+          "name": "ANPR / Vehicle Recognition",
+          "priority": "High"
+        },
+        {
+          "name": "EV Charging Infrastructure",
+          "priority": "High"
+        },
+        {
+          "name": "AI Traffic Analytics",
+          "priority": "High"
+        },
+        {
+          "name": "V2X / Connected Mobility",
+          "priority": "High"
+        },
+        {
+          "name": "Smart City Mobility",
+          "priority": "High"
+        },
+        {
+          "name": "Transportation Cybersecurity",
+          "priority": "High"
+        }
+      ],
+      "scanKeywords": {
+        "declared": 30,
+        "terms": [
+          "Intelligent Transportation Systems",
+          "Urban Traffic Management",
+          "Smart Mobility",
+          "Traffic Congestion",
+          "Traffic Analytics",
+          "Smart Digital Junction",
+          "Adaptive Signal Control",
+          "Traffic Signal Optimisation",
+          "Incident Detection",
+          "Road Safety",
+          "Smart Surveillance",
+          "Automated Enforcement",
+          "ANPR",
+          "Vehicle Recognition",
+          "Smart Parking",
+          "GoParkin",
+          "EV Charging Infrastructure",
+          "Fleet Management",
+          "Bus Rapid Transit",
+          "Public Transport Digitalisation",
+          "Passenger Information Systems",
+          "Demand Responsive Transit",
+          "Mobility-as-a-Service",
+          "Multimodal Transport",
+          "V2X",
+          "Connected Vehicles",
+          "Traffic Management Centre",
+          "Smart Cities",
+          "Transportation Cybersecurity",
+          "Urban Mobility"
+        ]
+      },
+      "emergingThemes": [
+        "Urban traffic congestion & smart city investments",
+        "AI-driven traffic management",
+        "Road safety & incident response",
+        "V2X / connected vehicle adoption",
+        "EV charging infrastructure expansion",
+        "Public transport modernisation & BRT",
+        "Transportation cybersecurity",
+        "ANPR/privacy regulations",
+        "Smart parking & digital payments",
+        "Major ITS tenders and mobility infrastructure programmes"
+      ],
+      "notesSkipped": 15,
+      "dropped": []
+    },
+    {
+      "sheet": "SM - Mobility Services",
+      "sheetState": "hidden",
+      "canonicalLob": "Mobility Road & Services",
+      "tier1": [
+        {
+          "name": "Vehicle Electrification & Sustainable Transport",
+          "terms": [
+            "Vehicle Electrification",
+            "Fleet Electrification",
+            "Electric Mobility",
+            "Sustainable Transport",
+            "Green Transportation",
+            "Low Emission Vehicles",
+            "Zero Emission Vehicles",
+            "Commercial EVs",
+            "Electric Commercial Vehicles",
+            "Transport Decarbonisation",
+            "Sustainable Fleet Management",
+            "Net Zero Transport"
+          ]
+        }
+      ],
+      "clusters": [
+        {
+          "number": 2,
+          "name": "Electric Buses",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "Electric Bus",
+                "Battery Electric Bus",
+                "Public Transport Electrification",
+                "Bus Electrification",
+                "Electric Fleet",
+                "Transit Electrification",
+                "EV Bus Depot",
+                "Electric Bus Maintenance",
+                "Bus Fleet Lifecycle Management",
+                "Fleet Availability"
+              ]
+            },
+            {
+              "name": "Risk Themes",
+              "terms": [
+                "EV battery technology",
+                "EV battery safety",
+                "EV bus regulations",
+                "Battery supply chain",
+                "Charging infrastructure readiness",
+                "Public transport decarbonisation"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "name": "Electric Vans & Commercial EVs",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Electric Van",
+                "Commercial EV",
+                "Electric Logistics Fleet",
+                "Electric Delivery Vehicles",
+                "Last-Mile Delivery",
+                "Fleet Electrification",
+                "BYD",
+                "BYD eT3",
+                "Sustainable Logistics",
+                "Commercial Fleet Transition"
+              ]
+            },
+            {
+              "name": "Monitoring Themes",
+              "terms": [
+                "Commercial fleet decarbonisation",
+                "EV incentives",
+                "Fleet renewal programmes",
+                "Logistics electrification"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 4,
+          "name": "EV Charging Ecosystem",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "EV Charging",
+                "Electric Vehicle Charging",
+                "Charge Point Operators (CPO)",
+                "EV Charging Infrastructure",
+                "Charging Management Platform",
+                "EV Fleet Charging",
+                "Charging Network",
+                "Smart Charging",
+                "EV Energy Management",
+                "EV Operations Platform"
+              ]
+            },
+            {
+              "name": "GoParkin Keywords",
+              "terms": [
+                "GoParkin",
+                "GoParkin EV Charging",
+                "EV Charging Analytics",
+                "EV Charging Management",
+                "Multi-Tenant Charging Platform",
+                "Dynamic Load Management",
+                "Range Monitoring"
+              ]
+            },
+            {
+              "name": "Industry Keywords",
+              "terms": [
+                "Open Charge Point Interface (OCPI)",
+                "eMobility Service Provider (eMSP)",
+                "Fleet Charging",
+                "Charging-as-a-Service"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 5,
+          "name": "Fleet Management & Vehicle Lifecycle Services",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Fleet Management",
+                "Fleet Operations",
+                "Fleet Maintenance",
+                "Lifecycle Support",
+                "Through-Life Support",
+                "Asset Lifecycle Management",
+                "Vehicle Availability",
+                "Fleet Productivity",
+                "Maintenance, Repair & Overhaul (MRO)",
+                "Predictive Fleet Maintenance"
+              ]
+            },
+            {
+              "name": "Monitoring Themes",
+              "terms": [
+                "Fleet downtime",
+                "Maintenance optimisation",
+                "Spare parts shortages",
+                "Fleet utilisation"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 6,
+          "name": "Commercial Vehicles (MAN)",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "MAN Trucks",
+                "MAN Bus",
+                "Commercial Vehicles",
+                "Heavy Vehicles",
+                "Distribution Trucks",
+                "Construction Trucks",
+                "Long-Haul Transport",
+                "Fleet Modernisation",
+                "Fuel Efficient Trucks"
+              ]
+            },
+            {
+              "name": "Monitoring Themes",
+              "terms": [
+                "Commercial vehicle demand",
+                "Heavy vehicle regulations",
+                "Fuel standards",
+                "Logistics industry growth"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 7,
+          "name": "Road Safety Technologies",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "AGIL DriveSafe+ Keywords",
+              "terms": [
+                "AGIL DriveSafe+",
+                "Driver Assistance Systems",
+                "Advanced Driver Assistance Systems (ADAS)",
+                "Collision Warning System",
+                "Blind Spot Detection",
+                "Road Safety Technology",
+                "Driver Monitoring",
+                "Fleet Safety",
+                "Situational Awareness",
+                "AI Road Safety"
+              ]
+            },
+            {
+              "name": "Technology Keywords",
+              "terms": [
+                "Video Analytics",
+                "Computer Vision",
+                "Automotive Sensors",
+                "Collision Prevention",
+                "Hazard Detection"
+              ]
+            },
+            {
+              "name": "Risk Themes",
+              "terms": [
+                "Road accidents",
+                "Fleet safety incidents",
+                "Vulnerable road users",
+                "Driver fatigue"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 8,
+          "name": "Automotive Inspection & Regulatory Compliance",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Vehicle Inspection",
+                "Automotive Inspection",
+                "STA Inspection",
+                "Vehicle Certification",
+                "Vehicle Testing",
+                "Roadworthiness Testing",
+                "Type Approval",
+                "Compliance Testing",
+                "Vehicle Homologation"
+              ]
+            },
+            {
+              "name": "Regulatory Themes",
+              "terms": [
+                "LTA regulations",
+                "Vehicle safety standards",
+                "Emissions regulations",
+                "Commercial vehicle regulations"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 9,
+          "name": "Automotive Engineering & Aftersales",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Automotive Engineering",
+                "Vehicle Integration",
+                "Vehicle Safety Systems",
+                "Smart Vehicle Systems",
+                "Vehicle Body Design",
+                "Accident Repair",
+                "Aftersales Support",
+                "Vehicle Services",
+                "Engineering Solutions"
+              ]
+            },
+            {
+              "name": "Business Indicators",
+              "terms": [
+                "New vehicle registrations",
+                "Vehicle replacement cycles",
+                "Commercial fleet growth"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 10,
+          "name": "Sustainability & ESG",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Carbon Reduction",
+                "Decarbonisation",
+                "Sustainable Mobility",
+                "Fleet Sustainability",
+                "ESG Transport",
+                "Green Fleet",
+                "Carbon Footprint",
+                "Low Carbon Mobility"
+              ]
+            },
+            {
+              "name": "Watchlist Themes",
+              "terms": [
+                "Carbon taxes",
+                "Emission regulations",
+                "Sustainability mandates",
+                "Green transport incentives"
+              ]
+            }
+          ]
+        }
+      ],
+      "watchlist": [
+        {
+          "name": "Countries / Markets",
+          "terms": [
+            "Singapore",
+            "ASEAN",
+            "China (BYD ecosystem)",
+            "Europe (MAN ecosystem)",
+            "Middle East",
+            "Australia"
+          ]
+        },
+        {
+          "name": "Strategic Themes",
+          "terms": [
+            "EV adoption policies",
+            "Charging infrastructure funding",
+            "Commercial vehicle regulations",
+            "Fleet electrification incentives",
+            "Battery safety regulations",
+            "Carbon reporting requirements",
+            "Clean transport mandates"
+          ]
+        }
+      ],
+      "tagClusters": [
+        {
+          "name": "Fleet Electrification",
+          "priority": "Critical"
+        },
+        {
+          "name": "Electric Buses",
+          "priority": "Critical"
+        },
+        {
+          "name": "EV Charging Infrastructure",
+          "priority": "Critical"
+        },
+        {
+          "name": "Commercial EVs",
+          "priority": "Critical"
+        },
+        {
+          "name": "AGIL DriveSafe+",
+          "priority": "Critical"
+        },
+        {
+          "name": "ADAS / Collision Avoidance",
+          "priority": "High"
+        },
+        {
+          "name": "Fleet Management & Lifecycle Support",
+          "priority": "High"
+        },
+        {
+          "name": "Commercial Vehicles (MAN)",
+          "priority": "High"
+        },
+        {
+          "name": "Automotive Inspection & Compliance",
+          "priority": "High"
+        },
+        {
+          "name": "Vehicle Homologation",
+          "priority": "High"
+        },
+        {
+          "name": "Smart Fleet Safety",
+          "priority": "High"
+        },
+        {
+          "name": "Sustainable Transport",
+          "priority": "High"
+        },
+        {
+          "name": "Battery Technology & Supply Chain",
+          "priority": "High"
+        },
+        {
+          "name": "Carbon & Emissions Regulations",
+          "priority": "High"
+        }
+      ],
+      "scanKeywords": {
+        "declared": 30,
+        "terms": [
+          "Fleet Electrification",
+          "Electric Bus",
+          "Battery Electric Bus",
+          "Electric Van",
+          "Commercial EV",
+          "BYD",
+          "BYD eT3",
+          "EV Charging",
+          "Charging Infrastructure",
+          "Charge Point Operator",
+          "GoParkin",
+          "Fleet Charging",
+          "OCPI",
+          "eMobility Service Provider",
+          "Dynamic Load Management",
+          "Fleet Management",
+          "Fleet Maintenance",
+          "Lifecycle Support",
+          "MAN Bus",
+          "MAN Trucks",
+          "Commercial Vehicles",
+          "AGIL DriveSafe+",
+          "ADAS",
+          "Collision Warning System",
+          "Blind Spot Detection",
+          "Road Safety Technology",
+          "Vehicle Inspection",
+          "Vehicle Homologation",
+          "Sustainable Transport",
+          "Transport Decarbonisation"
+        ]
+      },
+      "emergingThemes": [
+        "Fleet Electrification & EV Adoption",
+        "Battery Safety & Battery Supply Chain",
+        "EV Charging Infrastructure Expansion",
+        "Commercial Vehicle Market Trends",
+        "Road Safety & ADAS Regulations",
+        "Autonomous / AI-Assisted Driving Technologies",
+        "Transport Decarbonisation Policies",
+        "Vehicle Inspection & Regulatory Changes",
+        "Fleet Maintenance & Asset Reliability",
+        "Carbon Reporting & Sustainability Requirements"
+      ],
+      "notesSkipped": 12,
+      "dropped": []
+    },
+    {
+      "sheet": "SM - TransCore",
+      "sheetState": "hidden",
+      "canonicalLob": "TransCore",
+      "tier1": [
+        {
+          "name": "Smart Mobility & Transportation",
+          "terms": [
+            "Smart Mobility",
+            "Intelligent Transportation Systems (ITS)",
+            "Transportation Technology",
+            "Transportation Infrastructure",
+            "Highway Modernisation",
+            "Road Infrastructure",
+            "Traffic Operations",
+            "Traffic Management",
+            "Mobility Solutions",
+            "Transport Digitalisation",
+            "Smart Roads",
+            "Connected Infrastructure"
+          ]
+        }
+      ],
+      "clusters": [
+        {
+          "number": 2,
+          "name": "Tolling & Revenue Management",
+          "priority": "Critical",
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "Electronic Toll Collection (ETC)",
+                "Electronic Tolling",
+                "Open Road Tolling (ORT)",
+                "All Electronic Tolling (AET)",
+                "Toll Collection",
+                "Toll Operations",
+                "Toll Processing",
+                "Toll Systems",
+                "Toll Gantries",
+                "Toll Back Office",
+                "Toll Revenue",
+                "Toll Transaction Processing",
+                "Toll Revenue Assurance",
+                "Toll Interoperability",
+                "Toll Clearinghouse"
+              ]
+            },
+            {
+              "name": "Strategic Keywords",
+              "terms": [
+                "Congestion Pricing",
+                "Dynamic Road Pricing",
+                "Road User Charging",
+                "Usage-Based Charging",
+                "Managed Lanes",
+                "Express Lanes",
+                "High Occupancy Toll (HOT) Lanes",
+                "Mobility Pricing"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "name": "Transportation Payments & Customer Services",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Mobility Payments",
+                "Digital Payments",
+                "Transportation Payments",
+                "Account-Based Ticketing",
+                "Customer Service Centers",
+                "Revenue Transaction Centers",
+                "Toll Customer Service",
+                "Automated Billing",
+                "Revenue Management",
+                "Transportation Revenue Systems"
+              ]
+            },
+            {
+              "name": "Risk Themes",
+              "terms": [
+                "Payment fraud",
+                "Revenue leakage",
+                "Toll violations",
+                "Customer data protection",
+                "Digital payment regulations"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 4,
+          "name": "Traffic Management & Traffic Operations",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Traffic Management",
+                "Traffic Monitoring",
+                "Traffic Analytics",
+                "Incident Detection",
+                "Incident Management",
+                "Traffic Signal Optimisation",
+                "Traffic Flow Optimisation",
+                "Adaptive Traffic Control",
+                "Traffic Congestion Management",
+                "Advanced Traffic Management Systems (ATMS)"
+              ]
+            },
+            {
+              "name": "Watchlist Themes",
+              "terms": [
+                "Urban congestion",
+                "Smart highway projects",
+                "Traffic safety regulations",
+                "Road network resilience"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 5,
+          "name": "Connected Vehicles & V2X (Critical Emerging Area)",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Connected Vehicles",
+                "Vehicle-to-Vehicle (V2V)",
+                "Vehicle-to-Infrastructure (V2I)",
+                "Vehicle-to-Everything (V2X)",
+                "Cooperative Intelligent Transport Systems (C-ITS)",
+                "Smart Corridors",
+                "Connected Highway",
+                "Mobility Ecosystem",
+                "Smart Transportation Networks"
+              ]
+            },
+            {
+              "name": "Emerging Risks",
+              "terms": [
+                "Autonomous vehicle regulation",
+                "Connected vehicle standards",
+                "V2X cybersecurity",
+                "Vehicle communications security"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 6,
+          "name": "RFID, AVI & Vehicle Identification",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Core Keywords",
+              "terms": [
+                "RFID",
+                "Radio Frequency Identification",
+                "Automated Vehicle Identification (AVI)",
+                "Vehicle Detection",
+                "Vehicle Classification",
+                "Vehicle Tracking",
+                "RFID Readers",
+                "RFID Tags",
+                "Mobile Identification",
+                "Toll Transponders"
+              ]
+            },
+            {
+              "name": "Market Keywords",
+              "terms": [
+                "Access Control",
+                "Parking Access",
+                "Airport Access Management",
+                "Fleet Tracking",
+                "Rail Identification",
+                "Freight Tracking"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 7,
+          "name": "SmartPass & Mobility-as-a-Service (Future Growth)",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "SmartPass",
+                "Phone-as-a-Tag",
+                "Mobility Platform",
+                "Mobility-as-a-Service (MaaS)",
+                "Multimodal Mobility",
+                "Mobile Tolling",
+                "Bluetooth Beacons",
+                "Seamless Travel",
+                "Smart Mobility Applications"
+              ]
+            },
+            {
+              "name": "Emerging Themes",
+              "terms": [
+                "Digital identity for mobility",
+                "Mobile ticketing",
+                "Integrated mobility payments",
+                "Smartphone-based tolling"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 8,
+          "name": "Express Lanes & Congestion Pricing",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Managed Lanes",
+                "Express Lanes",
+                "Dynamic Pricing",
+                "Congestion Pricing",
+                "Road Pricing",
+                "Mobility Pricing",
+                "Traffic Demand Management",
+                "Urban Road Optimisation"
+              ]
+            },
+            {
+              "name": "Risk Themes",
+              "terms": [
+                "Government transport policy",
+                "Urban mobility initiatives",
+                "Public opposition to road pricing",
+                "Infrastructure funding"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 9,
+          "name": "Transportation Cybersecurity",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Transportation Cybersecurity",
+                "ITS Cybersecurity",
+                "Critical Transportation Infrastructure",
+                "Connected Vehicle Security",
+                "Transportation Data Security",
+                "Traffic Management Cybersecurity",
+                "Infrastructure Resilience"
+              ]
+            },
+            {
+              "name": "Threat Indicators",
+              "terms": [
+                "Ransomware",
+                "Infrastructure cyberattacks",
+                "GPS spoofing",
+                "Communications disruption",
+                "Smart transportation vulnerabilities"
+              ]
+            }
+          ]
+        },
+        {
+          "number": 10,
+          "name": "Transit, Road & Infrastructure Investment",
+          "priority": null,
+          "groups": [
+            {
+              "name": "Keywords",
+              "terms": [
+                "Transportation Infrastructure",
+                "Highway Expansion",
+                "Road Modernisation",
+                "Smart Infrastructure",
+                "Infrastructure Investment",
+                "Infrastructure Funding",
+                "Toll Road Development",
+                "Highway Rehabilitation"
+              ]
+            },
+            {
+              "name": "Monitoring Themes",
+              "terms": [
+                "Infrastructure stimulus programmes",
+                "Federal transportation funding",
+                "PPP infrastructure projects",
+                "Transport budget allocations"
+              ]
+            }
+          ]
+        }
+      ],
+      "watchlist": [
+        {
+          "name": "Countries / Regions",
+          "terms": [
+            "United States",
+            "Canada",
+            "Mexico",
+            "Philippines",
+            "UAE",
+            "Dubai"
+          ]
+        },
+        {
+          "name": "Regulatory Themes",
+          "terms": [
+            "Infrastructure Investment and Jobs Act (IIJA)",
+            "Smart Mobility initiatives",
+            "Tolling regulations",
+            "Congestion pricing regulations",
+            "Transportation funding bills",
+            "Highway modernisation programmes",
+            "Border infrastructure investments"
+          ]
+        }
+      ],
+      "tagClusters": [
+        {
+          "name": "Electronic Tolling",
+          "priority": "Critical"
+        },
+        {
+          "name": "Congestion Pricing",
+          "priority": "Critical"
+        },
+        {
+          "name": "Intelligent Transportation Systems (ITS)",
+          "priority": "Critical"
+        },
+        {
+          "name": "Transportation Infrastructure",
+          "priority": "Critical"
+        },
+        {
+          "name": "Traffic Management",
+          "priority": "Critical"
+        },
+        {
+          "name": "RFID & Automated Vehicle Identification",
+          "priority": "Critical"
+        },
+        {
+          "name": "Connected Vehicles / V2X",
+          "priority": "High"
+        },
+        {
+          "name": "SmartPass & Mobility Platforms",
+          "priority": "High"
+        },
+        {
+          "name": "Transportation Payments",
+          "priority": "High"
+        },
+        {
+          "name": "Express Lanes / Managed Lanes",
+          "priority": "High"
+        },
+        {
+          "name": "Transportation Cybersecurity",
+          "priority": "High"
+        },
+        {
+          "name": "Infrastructure Funding & PPP Projects",
+          "priority": "High"
+        },
+        {
+          "name": "Fleet & Vehicle Tracking",
+          "priority": "Medium"
+        },
+        {
+          "name": "Mobility-as-a-Service",
+          "priority": "Medium"
+        }
+      ],
+      "scanKeywords": {
+        "declared": 25,
+        "terms": [
+          "Electronic Tolling",
+          "Congestion Pricing",
+          "ITS",
+          "Express Lanes",
+          "Managed Lanes",
+          "Open Road Tolling",
+          "Transportation Infrastructure",
+          "Highway Modernisation",
+          "Traffic Management",
+          "Connected Vehicles",
+          "V2X",
+          "RFID",
+          "Automated Vehicle Identification",
+          "SmartPass",
+          "Mobility Payments",
+          "Toll Revenue Assurance",
+          "Toll Interoperability",
+          "Infrastructure Funding",
+          "IIJA",
+          "Transportation Cybersecurity",
+          "Dynamic Pricing",
+          "Smart Highways",
+          "Mobility Platforms",
+          "Smart Corridors",
+          "Road User Charging"
+        ]
+      },
+      "emergingThemes": [],
+      "notesSkipped": 12,
+      "dropped": []
+    }
+  ]
+}

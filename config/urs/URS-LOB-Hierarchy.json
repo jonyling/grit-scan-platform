@@ -1,0 +1,85 @@
+{
+  "registerId": "URS-LOB-HIERARCHY",
+  "status": "TRANSCRIBED_FROM_IMAGE_PENDING_BA_VALIDATION",
+  "workbook": "URS_Entity_Info_20261006.xlsx",
+  "source": "Sheet '1. Org Chart', an embedded image. Transcribed by hand on 2026-10-06. This file records the business area, LOB grouping, and LOB names only. It records no individual.",
+  "scope": "Urban Solutions only. The Satcom and Enterprise (Digital) branches of the same chart are not part of the urs pack.",
+  "businessArea": "Urban Solutions",
+  "lobs": [
+    {
+      "lobName": "Smart Security & Automation",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "aliases": ["Smart Security and Automation", "SUI - SSA"]
+    },
+    {
+      "lobName": "Smart Sustainable Utilities",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "aliases": ["SUI - SSU"]
+    },
+    {
+      "lobName": "Healthcare Robotics & Automation",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "aliases": ["Heatlhcare Robotics & Automation", "Healthcare Robotics and Automation", "SUI - HRA"]
+    },
+    {
+      "lobName": "Mobility Rail",
+      "lobGrouping": "Smart Mobility",
+      "aliases": ["Mobility (Rail)", "SM - Mobility Rail"]
+    },
+    {
+      "lobName": "Mobility Road & Services",
+      "lobGrouping": "Smart Mobility",
+      "aliases": ["Mobility Road & Svcs", "Mobility Road", "Mobility Services", "Mobility (Road)", "SM - Mobility Road", "SM - Mobility Services"],
+      "note": "The org chart shows one LOB. Sheet 6 and the hidden SM sheets keep Road and Services as separate keyword blocks."
+    },
+    {
+      "lobName": "TransCore",
+      "lobGrouping": "Smart Mobility",
+      "aliases": ["SM - TransCore"]
+    }
+  ],
+  "unresolvedLabels": [
+    {
+      "label": "Mobility (Rail & Road)",
+      "foundOn": ["2. Entity Address"],
+      "candidates": ["Mobility Rail", "Mobility Road & Services", "TransCore"],
+      "reason": "One label that spans more than one LOB. It is not assigned to any of them."
+    },
+    {
+      "label": "Robotics",
+      "foundOn": ["2. Entity Address", "10. Management Focus", "URS"],
+      "candidates": ["Healthcare Robotics & Automation"],
+      "reason": "The label differs from the org chart LOB name. It is probably the same LOB. This is not confirmed."
+    },
+    {
+      "label": "Rail Electronics & Signalling",
+      "foundOn": ["10. Management Focus", "URS"],
+      "candidates": ["Mobility Rail"],
+      "reason": "A capability name from a research draft. It is not an org chart LOB name."
+    },
+    {
+      "label": "Road & Traffic Management",
+      "foundOn": ["10. Management Focus", "URS"],
+      "candidates": ["Mobility Road & Services"],
+      "reason": "A capability name from a research draft. It is not an org chart LOB name."
+    },
+    {
+      "label": "Digital Platforms",
+      "foundOn": ["3. Competitors"],
+      "candidates": [],
+      "reason": "Not on the org chart."
+    },
+    {
+      "label": "STEMOS",
+      "foundOn": ["3. Competitors"],
+      "candidates": [],
+      "reason": "Not on the org chart."
+    },
+    {
+      "label": "STAI",
+      "foundOn": ["3. Competitors"],
+      "candidates": [],
+      "reason": "Not on the org chart."
+    }
+  ]
+}

@@ -30,10 +30,13 @@ def _clean_keyword(value: object) -> str | None:
 
 
 def load_lob_keywords(workbook_path: str | Path) -> tuple[LobKeyword, ...]:
-    """Parse the sheet's LOB / Key-Tier-2 / Emerging columns into records."""
-    rows = read_worksheet(workbook_path, _SHEET)
-    if not rows or len(rows[0]) < 3:
-        raise ValueError(f"'{_SHEET}' sheet does not have the expected LOB/Key-Tier-2/Emerging columns.")
+    return parse_lob_keyword_rows(read_worksheet(workbook_path, _SHEET))
+
+
+def parse_lob_keyword_rows(rows: list[list[object | None]]) -> tuple[LobKeyword, ...]:
+    """Parse the sheet's LOB and Key-Tier-2 columns, and the Emerging column when present."""
+    if not rows or len(rows[0]) < 2:
+        raise ValueError(f"'{_SHEET}' sheet does not have the expected LOB and Key-Tier-2 columns.")
 
     keywords: list[LobKeyword] = []
     current_lob: str | None = None

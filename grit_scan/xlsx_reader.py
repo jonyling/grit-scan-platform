@@ -41,8 +41,19 @@ def workbook_sheet_names(path: str | Path) -> tuple[str, ...]:
         return tuple(sheet.attrib["name"] for sheet in root.findall(f".//{{{_MAIN}}}sheet"))
 
 
-def read_worksheet(path: str | Path, sheet_name: str) -> list[list[object | None]]:
-    """Read a worksheet's values, preserving empty cells needed for headers."""
+def sheet_states(path: str | Path) -> dict[str, str]:
+    """Map each sheet name to its state: visible, hidden, or veryHidden."""
+    with zipfile.ZipFile(path) as archive:
+        root = ET.fromstring(archive.read("xl/workbook.xml"))
+        return {sheet.attrib["name"]: sheet.attrib.get("state", "visible") for sheet in root.findall(f".//{{{_MAIN}}}sheet")}
+
+
+def read_worksheet(path: str | Path, sheet_name: str, *, keep_blank_rows: bool = False) -> list[list[object | None]]:
+    """Read a worksheet's values, preserving empty cells needed for headers.
+
+    Rows that hold no cells are absent from the file and are skipped by default. With
+    keep_blank_rows, each row lands at its own number minus one, so blank rows survive.
+    """
     with zipfile.ZipFile(path) as archive:
         workbook = ET.fromstring(archive.read("xl/workbook.xml"))
         relationships = ET.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
@@ -57,6 +68,9 @@ def read_worksheet(path: str | Path, sheet_name: str) -> list[list[object | None
         shared = _shared_strings(archive)
         rows: list[list[object | None]] = []
         for row in root.findall(f".//{{{_MAIN}}}sheetData/{{{_MAIN}}}row"):
+            if keep_blank_rows:
+                while len(rows) < int(row.attrib.get("r", len(rows) + 1)) - 1:
+                    rows.append([])
             output: list[object | None] = []
             for cell in row.findall(f"{{{_MAIN}}}c"):
                 index = _column_index(cell.attrib["r"])

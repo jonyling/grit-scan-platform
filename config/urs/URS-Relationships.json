@@ -1,0 +1,7 @@
+{
+  "registerId": "URS-RELATIONSHIPS",
+  "status": "NO_ROWS_YET",
+  "note": "Hand-authored. The graph never infers a relationship the workbook lacks, and the workbook lacks the ones the gaps list names. A row here is PROPOSED until a named human approves it. Then it is VALIDATED with approvedBy and approvedOn. Each row needs a basis. src and dst are node ids from the graph: ENTITY-..., CUSTOMER-..., SUPPLIER-..., LOB-..., PLACE-....",
+  "edges": [],
+  "aliases": []
+}

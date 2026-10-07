@@ -25,4 +25,9 @@ makes at most six pulls. Print the plan with
 `python -m acquisition.brave --pack urs-tw --plan-only`, and narrow a large
 pack with `--lob`. The command stores nothing.
 
+`acquisition/brave_plan.py` sends the weekly query plan from `grit_scan/query_plan.py` to the same
+News Search API. It reuses this module's mapping, logs each search as it returns, collapses the
+results to one candidate per page, and stops with a recorded reason at a monthly or rate limit. It
+stores its run under `output/brave-plan/`. It does not fetch a page or score a result.
+
 Do not copy `.env`, `secrets/`, `output/`, or credential files from GCP_Gemini.

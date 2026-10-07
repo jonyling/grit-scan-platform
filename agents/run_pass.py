@@ -17,6 +17,7 @@ from agents.tools import AgentTools
 from dataverse.client import DataverseClient, DataverseError
 from dataverse.signals import agent_log_body, execution_body
 from grit_scan.local_env import load_local_env
+from grit_scan.workbook import workbook_path
 from supervisor.service import Supervisor
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -136,7 +137,7 @@ def _latest_signal(client: DataverseClient) -> dict[str, str] | None:
 
 
 def _entity_names() -> dict[str, str]:
-    workbook = ROOT / "secrets" / "URS Entity Info.xlsx"
+    workbook = workbook_path()
     aliases = ROOT / "config" / "registry_aliases.json"
     if not workbook.is_file() or not aliases.is_file():
         return {}

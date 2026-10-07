@@ -11,30 +11,48 @@ import re
 from pathlib import Path
 from urllib.parse import urlparse
 
+from grit_scan.lob_hierarchy import resolve_lob
 from grit_scan.lob_keyword_loader import load_lob_keywords
+from grit_scan.search_inputs import load_competitors, load_keyword_library, load_management_focus
 from grit_scan.registry_loader import slugify
+from grit_scan.workbook import workbook_path as default_workbook
 from grit_scan.xlsx_reader import read_worksheet
 
-_WORKBOOK = "URS Entity Info.xlsx"
 _FILES = {
     "source_register": "URS-Source-Register.json",
     "exposure": "URS-Exposure-Ontology.json",
     "lob_profiles": "URS-LOB-Profiles.json",
     "themes": "URS-STE-Themes.json",
     "baseline": "URS-Global-Baseline.json",
+    "keyword_library": "URS-Keyword-Library.json",
+    "competitors": "URS-Competitors.json",
+    "management_focus": "URS-Management-Focus.json",
 }
 
 
-def build_urs_pack(workbook_path: str | Path, output_dir: str | Path) -> dict[str, Path]:
+_DEFAULT_HIERARCHY = Path(__file__).resolve().parent.parent / "config" / "urs" / "URS-LOB-Hierarchy.json"
+
+
+def build_urs_pack(
+    workbook_path: str | Path,
+    output_dir: str | Path,
+    lob_hierarchy: str | Path | None = None,
+) -> dict[str, Path]:
+    """Build the generated registers. The LOB hierarchy is a hand-authored input and is never overwritten."""
     workbook = Path(workbook_path)
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
+    hierarchy_file = Path(lob_hierarchy) if lob_hierarchy else _DEFAULT_HIERARCHY
+    hierarchy = json.loads(hierarchy_file.read_text(encoding="utf-8-sig")) if hierarchy_file.is_file() else None
     documents = {
         "source_register": _sources(workbook),
         "exposure": _exposure(workbook),
-        "lob_profiles": _lobs(workbook),
+        "lob_profiles": _lobs(workbook, hierarchy),
         "themes": _themes(workbook),
         "baseline": _baseline(),
+        "keyword_library": load_keyword_library(workbook, hierarchy),
+        "competitors": load_competitors(workbook, hierarchy),
+        "management_focus": load_management_focus(workbook, hierarchy),
     }
     written: dict[str, Path] = {}
     for key, name in _FILES.items():
@@ -44,43 +62,65 @@ def build_urs_pack(workbook_path: str | Path, output_dir: str | Path) -> dict[st
     return written
 
 
+# name_col is where a source's name sits. heading_col is where a section heading sits, if the sheet has them.
+_SOURCE_SHEETS = {
+    "News-Pri": {"name_col": 2, "heading_col": 1},
+    "News-Sec": {"name_col": 0, "heading_col": None},
+    "9. Specific Industry News": {"name_col": 0, "heading_col": None},
+}
+_SOURCE_HEADERS = {"source", "organisation", "organization", "link", "focus", "keyreports"}
+
+
 def _sources(workbook: Path) -> dict:
-    rows = read_worksheet(workbook, "News")
     sources: list[dict] = []
     seen: set[str] = set()
     skipped_without_url: list[str] = []
-    for row in rows[1:]:
-        name = _clean(row[0] if row else None)
-        link = _clean(row[1] if len(row) > 1 else None)
-        if not name or _key(name) in {"source", "organisation", "organization"}:
-            continue
-        domain = _domain(link)
-        if domain is None:
-            if name not in skipped_without_url:
-                skipped_without_url.append(name)
-            continue
-        if domain in seen:
-            continue
-        seen.add(domain)
-        sources.append(
-            {
+    for sheet, layout in _SOURCE_SHEETS.items():
+        name_col, heading_col = layout["name_col"], layout["heading_col"]
+        group: str | None = None
+        for row in read_worksheet(workbook, sheet):
+            cells = [_clean(cell) for cell in row]
+            filled = [index for index, cell in enumerate(cells) if cell]
+            if not filled:
+                continue
+            link = next((cell for cell in cells if _domain(cell)), None)
+            name = cells[name_col].lstrip("-").strip() if name_col < len(cells) else ""
+            if link is None:
+                if heading_col is not None and filled == [heading_col]:
+                    group = cells[heading_col]
+                elif name and _key(name) not in _SOURCE_HEADERS and (heading_col is not None or len(filled) > 1):
+                    if name not in skipped_without_url:
+                        skipped_without_url.append(name)
+                continue
+            domain = _domain(link)
+            if not name or _key(name) in _SOURCE_HEADERS or domain in seen:
+                continue
+            seen.add(domain)
+            focus = next((cells[index] for index in filled if index != name_col and cells[index] != link), None)
+            source = {
                 "sourceName": name,
                 "sourceDomain": domain,
                 "sourceUrl": link,
                 "sourceClass": None,
                 "credibilityRating": "UNRATED",
                 "active": True,
+                "workbookSheet": sheet,
             }
-        )
+            if group:
+                source["group"] = group
+            if focus:
+                source["focus"] = focus
+            sources.append(source)
     return {
         "registerId": "URS-NEWS-OUTLETS",
-        "scope": "outlets named with a URL on the News sheet",
+        "scope": "sources named with a URL on the News-Pri, News-Sec, and 9. Specific Industry News sheets",
         "ratingStatus": "UNRATED",
-        "workbook": _WORKBOOK,
-        "sheet": "News",
+        "workbook": workbook.name,
+        "sheets": list(_SOURCE_SHEETS),
         "absence": (
-            "The News sheet names outlets. It does not assign credibility ratings, "
+            "These sheets name sources. They do not assign credibility ratings, "
             "and rows without a URL were not given an invented domain. "
+            "A source listed on more than one sheet appears once, under the first sheet read. "
             "This is not the company source-credibility register."
         ),
         "skippedWithoutUrl": skipped_without_url,
@@ -108,11 +148,15 @@ def _exposure(workbook: Path) -> dict:
         entities.append(
             {
                 "entityId": f"ENTITY-{slugify(name)}",
+                "sourceEntityId": _value(row, "EntityId"),
                 "entityName": name,
+                "cluster": _value(row, "Cluster"),
                 "businessArea": _value(row, "BusinessArea"),
                 "lobGrouping": _value(row, "LOBGrouping1"),
                 "lob": lob,
                 "countryOfIncorporation": _value(row, "CountryOfIncorporation"),
+                "natureOfShareholding": _value(row, "NatureOfShareholding"),
+                "reportingSegment": _value(row, "Reporting Segment"),
                 "aliases": [name],
             }
         )
@@ -161,14 +205,20 @@ def _exposure(workbook: Path) -> dict:
         raise ValueError("Exposure pack is missing entities, customers, or suppliers from the workbook.")
     return {
         "registerId": "URS-EXPOSURE",
-        "workbook": _WORKBOOK,
+        "workbook": workbook.name,
         "absence": {
-            "projects": "URS Entity Info.xlsx has no project sheet. No project was invented.",
+            "projects": f"{workbook.name} has no project sheet. No project was invented.",
             "sites": "Registered addresses were not promoted to site aliases. A repeated legal name was not split into a second site.",
         },
-        "nameColumnNote": (
-            f"{shifted_names} rows leave NameOfEntity blank and put the legal name in LOB1. "
-            "Those names are entities, not lines of business."
+        **(
+            {
+                "nameColumnNote": (
+                    f"{shifted_names} rows leave NameOfEntity blank and put the legal name in LOB1. "
+                    "Those names are entities, not lines of business."
+                )
+            }
+            if shifted_names
+            else {}
         ),
         "entities": entities,
         "projects": [],
@@ -178,7 +228,7 @@ def _exposure(workbook: Path) -> dict:
     }
 
 
-def _lobs(workbook: Path) -> dict:
+def _lobs(workbook: Path, hierarchy: dict | None = None) -> dict:
     entity_lobs: dict[str, dict[str, str | None]] = {}
     for row in _sheet_dicts(workbook, "2. Entity Address"):
         lob = _value(row, "LOB1")
@@ -198,12 +248,14 @@ def _lobs(workbook: Path) -> dict:
     for name, tiers in grouped.items():
         spelled = name.replace("Heatlhcare", "Healthcare")
         entity = entity_lobs.get(name) or entity_lobs.get(spelled) or {}
+        resolved = resolve_lob(name, hierarchy)
         keywords = [*tiers["KEY_TIER_2"], *tiers["EMERGING"]]
         record = {
             "lobId": f"LOB-{slugify(name)}",
             "lobName": name,
-            "baName": entity.get("businessArea"),
-            "lobGrouping": entity.get("lobGrouping"),
+            "canonicalLob": resolved["lobName"] if resolved else None,
+            "baName": hierarchy["businessArea"] if resolved else entity.get("businessArea"),
+            "lobGrouping": resolved["lobGrouping"] if resolved else entity.get("lobGrouping"),
             "active": True,
             "keywords": keywords,
             "keywordTiers": tiers,
@@ -217,9 +269,10 @@ def _lobs(workbook: Path) -> dict:
         raise ValueError("No LOB profiles could be built from sheet 6.")
     return {
         "registerId": "URS-LOB-PROFILES",
-        "workbook": _WORKBOOK,
+        "workbook": workbook.name,
         "sheet": "6. LOB_Keywords",
         "absence": "priorityCountries is empty. Country of incorporation is not a priority country, and none was invented.",
+        "lobHierarchy": None if hierarchy is None else {"registerId": hierarchy["registerId"], "status": hierarchy["status"]},
         "lobs": lobs,
     }
 
@@ -302,7 +355,7 @@ def _themes(workbook: Path) -> dict:
             )
     return {
         "registerId": "URS-STE-THEMES",
-        "workbook": _WORKBOOK,
+        "workbook": workbook.name,
         "sheet": "7. Annual Risks",
         "absence": (
             "Keywords beyond the governed risk title are generic business-risk vocabulary "
@@ -411,7 +464,7 @@ def _domain(link: str) -> str | None:
 
 def _main() -> None:
     root = Path(__file__).resolve().parent.parent
-    written = build_urs_pack(root / "secrets" / _WORKBOOK, root / "config" / "urs")
+    written = build_urs_pack(default_workbook(), root / "config" / "urs")
     for key, path in written.items():
         print(f"{key}: {path}")
 

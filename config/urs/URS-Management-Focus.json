@@ -1,0 +1,243 @@
+{
+  "registerId": "URS-MANAGEMENT-FOCUS",
+  "workbook": "URS_Entity_Info_20261006.xlsx",
+  "sheet": "10. Management Focus",
+  "absence": "The status text is copied unchanged. A status that says research draft means a business area has not validated the item.",
+  "requests": [
+    {
+      "number": 1,
+      "scope": "Smart Sustainable Utilities",
+      "entity": "STE URS QFC Branch",
+      "text": "Workforce risk – critical skills shortage / visa changes",
+      "countries": [],
+      "topics": [],
+      "notes": []
+    },
+    {
+      "number": 2,
+      "scope": "Smart Sustainable Utilities",
+      "entity": "STE URS QFC Branch",
+      "text": "Government funding - changes in government funding programs / public sector budget reallocations",
+      "countries": [],
+      "topics": [],
+      "notes": []
+    },
+    {
+      "number": 3,
+      "scope": "Smart Sustainable Utilities",
+      "entity": "STE URS QFC Branch",
+      "text": "Financial - exchange rate risk against US dollar (Israel) and exchange rate risk against Singapore dollar (Qatar)",
+      "countries": [],
+      "topics": [],
+      "notes": []
+    },
+    {
+      "number": 4,
+      "scope": "Rail, Road & Airport markets for the following countries",
+      "entity": null,
+      "text": "Analyse the Rail, Road and Airport sectors in Thailand, Malaysia, India, Vietnam and Australia. Identify:",
+      "countries": [
+        "Thailand",
+        "Malaysia",
+        "India",
+        "Vietnam",
+        "Australia"
+      ],
+      "topics": [
+        {
+          "name": "Opportunities",
+          "items": [
+            "Major infrastructure projects",
+            "Government funding programmes",
+            "Transport master plans",
+            "Airport, rail and road expansion initiatives",
+            "Smart mobility and digitalisation opportunities",
+            "PPPs and upcoming tenders"
+          ]
+        },
+        {
+          "name": "Challenges",
+          "items": [
+            "Competitive landscape",
+            "Funding constraints",
+            "Regulatory hurdles",
+            "Labour shortages",
+            "Cost escalation and project delays"
+          ]
+        },
+        {
+          "name": "Key Risks",
+          "items": [
+            "Geopolitical developments",
+            "Regulatory changes",
+            "Supply chain disruption",
+            "Cybersecurity threats",
+            "Talent shortages",
+            "Currency and inflation risks",
+            "Climate and ESG risks"
+          ]
+        },
+        {
+          "name": "Assess",
+          "items": [
+            "Impact on ST Engineering Urban Solutions",
+            "Potential customers",
+            "Potential partners",
+            "Potential competitors",
+            "Recommended market entry or growth actions",
+            "Early warning indicators to monitor"
+          ]
+        }
+      ],
+      "notes": [
+        "Updates can be provided on a quarterly basis."
+      ]
+    }
+  ],
+  "focusItems": [
+    {
+      "scope": "Rail Electronics & Signalling",
+      "allLobs": false,
+      "focus": "Rail signalling and CBTC project delivery",
+      "whyItMatters": "Large fixed-price rail resignalling and new-line projects (Singapore, Taiwan, Australia, Middle East) carry schedule, integration and cost-overrun risk.",
+      "indicators": [
+        "Milestone adherence",
+        "cost-to-complete variance",
+        "testing/commissioning defects",
+        "LDs",
+        "delivered vs plan"
+      ],
+      "status": "Management priority — validate project list",
+      "canonicalLob": null
+    },
+    {
+      "scope": "Rail Electronics & Signalling",
+      "allLobs": false,
+      "focus": "Rail system reliability and safety",
+      "whyItMatters": "Signalling and platform-screen-door failures directly affect commuter service and public confidence.",
+      "indicators": [
+        "MKBF / mean distance between failures",
+        "service-disruption incidents",
+        "safety-case approvals",
+        "warranty claims"
+      ],
+      "status": "Core control focus — validate KPI definitions",
+      "canonicalLob": null
+    },
+    {
+      "scope": "Road & Traffic Management",
+      "allLobs": false,
+      "focus": "ERP 2.0 / tolling and ITS programme delivery",
+      "whyItMatters": "Road-pricing, tolling and tunnel-management systems are high-visibility government contracts with strict go-live dates.",
+      "indicators": [
+        "Go-live milestones",
+        "system availability",
+        "transaction accuracy",
+        "customer complaints",
+        "change orders"
+      ],
+      "status": "Management priority — validate programme list",
+      "canonicalLob": null
+    },
+    {
+      "scope": "Mobility Services",
+      "allLobs": false,
+      "focus": "Operations & maintenance contract performance",
+      "whyItMatters": "Rail and road O&M and autonomous mobility services are judged on availability KPIs with penalty regimes.",
+      "indicators": [
+        "Contract KPIs met",
+        "availability %",
+        "penalties incurred",
+        "renewal win rate"
+      ],
+      "status": "Research draft — BA validation required",
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "scope": "Smart Sustainable Utilities",
+      "allLobs": false,
+      "focus": "Energy, district cooling and EV-charging growth",
+      "whyItMatters": "Decarbonisation drives demand for smart metering, energy management and EV charging, requiring capital and scale.",
+      "indicators": [
+        "Order intake",
+        "installed base",
+        "recurring revenue",
+        "project IRR",
+        "capex vs budget"
+      ],
+      "status": "Research draft — BA validation required",
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "scope": "Robotics",
+      "allLobs": false,
+      "focus": "Robotics commercialisation and scale-up",
+      "whyItMatters": "Autonomous mobile robots must move from pilots to profitable deployments across logistics, healthcare and facilities.",
+      "indicators": [
+        "Units deployed",
+        "pilot-to-contract conversion",
+        "gross margin",
+        "product incident rate"
+      ],
+      "status": "Research draft — BA validation required",
+      "canonicalLob": null
+    },
+    {
+      "scope": "Smart Security & Automation",
+      "allLobs": false,
+      "focus": "Integrated security project execution",
+      "whyItMatters": "Security and surveillance systems for critical sites must meet stringent performance and compliance requirements.",
+      "indicators": [
+        "Project margin",
+        "system uptime",
+        "acceptance-test results",
+        "customer audits"
+      ],
+      "status": "Research draft — BA validation required",
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Overseas expansion and acquisition integration",
+      "whyItMatters": "Growth in US, Europe and Asia (e.g. Amtech/TransCore-related entities) requires integration of systems, controls and culture.",
+      "indicators": [
+        "Synergy delivery",
+        "overseas revenue share",
+        "integration milestones",
+        "control deficiencies"
+      ],
+      "status": "Management priority — validate integration plan",
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Cybersecurity of OT/IT systems",
+      "whyItMatters": "Transport and utility systems are critical infrastructure and attractive cyber-attack targets.",
+      "indicators": [
+        "Cyber incidents",
+        "vulnerability remediation time",
+        "CII compliance findings",
+        "pen-test results"
+      ],
+      "status": "Core control focus — validate KPI definitions",
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Supply chain and component availability",
+      "whyItMatters": "Electronics, semiconductors and rolling-stock interfaces have long lead times that can delay projects.",
+      "indicators": [
+        "Supplier OTIF",
+        "critical shortages",
+        "long-lead items",
+        "schedule impact days"
+      ],
+      "status": "Research draft — BA validation required",
+      "canonicalLob": null
+    }
+  ],
+  "dropped": []
+}

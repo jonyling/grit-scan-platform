@@ -6,3 +6,6 @@ __pycache__/
 output/
 secrets/
 ~$*
+
+# Confidential workbooks stay in secrets/ and out of Git.
+*.xlsx

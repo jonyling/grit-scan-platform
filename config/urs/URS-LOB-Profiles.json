@@ -1,12 +1,17 @@
 {
   "registerId": "URS-LOB-PROFILES",
-  "workbook": "URS Entity Info.xlsx",
+  "workbook": "URS_Entity_Info_20261006.xlsx",
   "sheet": "6. LOB_Keywords",
   "absence": "priorityCountries is empty. Country of incorporation is not a priority country, and none was invented.",
+  "lobHierarchy": {
+    "registerId": "URS-LOB-HIERARCHY",
+    "status": "TRANSCRIBED_FROM_IMAGE_PENDING_BA_VALIDATION"
+  },
   "lobs": [
     {
       "lobId": "LOB-smart-sustainable-utilities",
       "lobName": "Smart Sustainable Utilities",
+      "canonicalLob": "Smart Sustainable Utilities",
       "baName": "Urban Solutions",
       "lobGrouping": "Smart Utilities & Infrastructure",
       "active": true,
@@ -53,9 +58,7 @@
           "Utility Digitalisation",
           "IoT & Smart Sensors",
           "Utility Cybersecurity",
-          "Critical Infrastructure"
-        ],
-        "EMERGING": [
+          "Critical Infrastructure",
           "Building Decarbonisation & Net-Zero Regulations",
           "Energy Transition & Grid Resilience",
           "Water Scarcity & Water Infrastructure Modernisation",
@@ -66,13 +69,15 @@
           "ESG & Sustainability Reporting Requirements",
           "IoT Infrastructure & Sensor Supply Chains",
           "Critical Infrastructure Protection"
-        ]
+        ],
+        "EMERGING": []
       },
       "priorityCountries": []
     },
     {
       "lobId": "LOB-smart-security-automation",
       "lobName": "Smart Security & Automation",
+      "canonicalLob": "Smart Security & Automation",
       "baName": "Urban Solutions",
       "lobGrouping": "Smart Utilities & Infrastructure",
       "active": true,
@@ -91,7 +96,6 @@
         "OT / Cyber-Physical Security",
         "Smart City Security",
         "Security Regulations & Compliance",
-        "Critical Infrastructure Protection",
         "Airport/Border Security",
         "Physical Security & Surveillance",
         "Identity & Biometric Management",
@@ -112,21 +116,20 @@
           "AI Security & Automation",
           "OT / Cyber-Physical Security",
           "Smart City Security",
-          "Security Regulations & Compliance"
-        ],
-        "EMERGING": [
-          "Critical Infrastructure Protection",
+          "Security Regulations & Compliance",
           "Airport/Border Security",
           "Physical Security & Surveillance",
           "Identity & Biometric Management",
           "OT/Cyber-Physical Security"
-        ]
+        ],
+        "EMERGING": []
       },
       "priorityCountries": []
     },
     {
       "lobId": "LOB-heatlhcare-robotics-automation",
       "lobName": "Heatlhcare Robotics & Automation",
+      "canonicalLob": "Healthcare Robotics & Automation",
       "baName": "Urban Solutions",
       "lobGrouping": "Smart Utilities & Infrastructure",
       "active": true,
@@ -145,14 +148,13 @@
         "Telehealth & Connected Care",
         "PPE & Respiratory Protection",
         "Ageing Population & Elder Care",
-        "healthcare workforce shortages",
-        "smart hospital investments",
-        "healthcare AI adoption",
-        "healthcare robotics adoption",
-        "ageing population",
-        "patient safety technologies",
-        "healthcare cybersecurity",
-        "Healthcare Robotics & Automation"
+        "Healthcare workforce shortages",
+        "Smart hospital investments",
+        "Healthcare AI adoption",
+        "Healthcare robotics adoption",
+        "Ageing population",
+        "Patient safety technologies",
+        "Healthcare cybersecurity"
       ],
       "keywordTiers": {
         "KEY_TIER_2": [
@@ -169,24 +171,23 @@
           "Healthcare Cybersecurity",
           "Telehealth & Connected Care",
           "PPE & Respiratory Protection",
-          "Ageing Population & Elder Care"
+          "Ageing Population & Elder Care",
+          "Healthcare workforce shortages",
+          "Smart hospital investments",
+          "Healthcare AI adoption",
+          "Healthcare robotics adoption",
+          "Ageing population",
+          "Patient safety technologies",
+          "Healthcare cybersecurity"
         ],
-        "EMERGING": [
-          "healthcare workforce shortages",
-          "smart hospital investments",
-          "healthcare AI adoption",
-          "healthcare robotics adoption",
-          "ageing population",
-          "patient safety technologies",
-          "healthcare cybersecurity"
-        ]
+        "EMERGING": []
       },
-      "priorityCountries": [],
-      "spellingNote": "Sheet 6 spells this LOB 'Heatlhcare Robotics & Automation'. Sheet 2 spells it 'Healthcare Robotics & Automation'."
+      "priorityCountries": []
     },
     {
       "lobId": "LOB-mobility-rail",
       "lobName": "Mobility Rail",
+      "canonicalLob": "Mobility Rail",
       "baName": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
       "active": true,
@@ -208,7 +209,7 @@
         "Critical Transport Infrastructure",
         "Rail Cybersecurity & OT Threats",
         "Metro Infrastructure Expansion Projects",
-        "5G / FRMCS Railway Transformation",
+        "G / FRMCS Railway Transformation",
         "AI-Driven Rail Operations & Predictive Maintenance",
         "Rail Asset Reliability & Ageing Infrastructure",
         "Passenger Safety & Crowd Management",
@@ -233,12 +234,10 @@
           "AI Rail Analytics",
           "Multimodal Transport Management",
           "Rail Infrastructure Modernisation",
-          "Critical Transport Infrastructure"
-        ],
-        "EMERGING": [
+          "Critical Transport Infrastructure",
           "Rail Cybersecurity & OT Threats",
           "Metro Infrastructure Expansion Projects",
-          "5G / FRMCS Railway Transformation",
+          "G / FRMCS Railway Transformation",
           "AI-Driven Rail Operations & Predictive Maintenance",
           "Rail Asset Reliability & Ageing Infrastructure",
           "Passenger Safety & Crowd Management",
@@ -246,13 +245,15 @@
           "Fare Collection & Digital Payment Risks",
           "Rail Signalling / SCADA Vulnerabilities",
           "Government Rail Investment & Public Transport Funding"
-        ]
+        ],
+        "EMERGING": []
       },
       "priorityCountries": []
     },
     {
       "lobId": "LOB-mobility-road",
       "lobName": "Mobility Road",
+      "canonicalLob": "Mobility Road & Services",
       "baName": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
       "active": true,
@@ -297,9 +298,7 @@
           "AI Traffic Analytics",
           "V2X / Connected Mobility",
           "Smart City Mobility",
-          "Transportation Cybersecurity"
-        ],
-        "EMERGING": [
+          "Transportation Cybersecurity",
           "Urban traffic congestion & smart city investments",
           "AI-driven traffic management",
           "Road safety & incident response",
@@ -310,13 +309,15 @@
           "ANPR/privacy regulations",
           "Smart parking & digital payments",
           "Major ITS tenders and mobility infrastructure programmes"
-        ]
+        ],
+        "EMERGING": []
       },
       "priorityCountries": []
     },
     {
       "lobId": "LOB-mobility-services",
       "lobName": "Mobility Services",
+      "canonicalLob": "Mobility Road & Services",
       "baName": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
       "active": true,
@@ -361,9 +362,7 @@
           "Smart Fleet Safety",
           "Sustainable Transport",
           "Battery Technology & Supply Chain",
-          "Carbon & Emissions Regulations"
-        ],
-        "EMERGING": [
+          "Carbon & Emissions Regulations",
           "Fleet Electrification & EV Adoption",
           "Battery Safety & Battery Supply Chain",
           "EV Charging Infrastructure Expansion",
@@ -374,15 +373,17 @@
           "Vehicle Inspection & Regulatory Changes",
           "Fleet Maintenance & Asset Reliability",
           "Carbon Reporting & Sustainability Requirements"
-        ]
+        ],
+        "EMERGING": []
       },
       "priorityCountries": []
     },
     {
       "lobId": "LOB-transcore",
       "lobName": "TransCore",
-      "baName": null,
-      "lobGrouping": null,
+      "canonicalLob": "TransCore",
+      "baName": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
       "active": true,
       "keywords": [
         "Electronic Tolling",
@@ -424,9 +425,7 @@
           "Transportation Cybersecurity",
           "Infrastructure Funding & PPP Projects",
           "Fleet & Vehicle Tracking",
-          "Mobility-as-a-Service"
-        ],
-        "EMERGING": [
+          "Mobility-as-a-Service",
           "Open Road Tolling",
           "Highway Modernisation",
           "Automated Vehicle Identification",
@@ -436,7 +435,8 @@
           "Mobility Platforms",
           "Smart Corridors",
           "Road User Charging"
-        ]
+        ],
+        "EMERGING": []
       },
       "priorityCountries": []
     }

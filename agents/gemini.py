@@ -37,6 +37,11 @@ def gemini_proposer(
     return _proposal(client, agent_name, prompt, task, model)
 
 
+def gemini_client(env: Mapping[str, str] | None = None) -> Any:
+    """A Vertex client for callers outside the agent layer. It applies the same credential checks as the proposer."""
+    return _client(_settings(env))
+
+
 def configured_mode(env: Mapping[str, str] | None = None) -> str:
     values = _settings(env)
     if _service_account_ready(values):

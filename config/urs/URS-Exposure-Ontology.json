@@ -1,362 +1,624 @@
 {
   "registerId": "URS-EXPOSURE",
-  "workbook": "URS Entity Info.xlsx",
+  "workbook": "URS_Entity_Info_20261006.xlsx",
   "absence": {
-    "projects": "URS Entity Info.xlsx has no project sheet. No project was invented.",
+    "projects": "URS_Entity_Info_20261006.xlsx has no project sheet. No project was invented.",
     "sites": "Registered addresses were not promoted to site aliases. A repeated legal name was not split into a second site."
   },
-  "nameColumnNote": "10 rows leave NameOfEntity blank and put the legal name in LOB1. Those names are entities, not lines of business.",
   "entities": [
     {
-      "entityId": "ENTITY-seel-electronic-engineering-sdn-bhd",
-      "entityName": "SEEL Electronic & Engineering Sdn. Bhd.",
+      "entityId": "ENTITY-amtech-systems-hong-kong-limited",
+      "sourceEntityId": "688",
+      "entityName": "Amtech Systems (Hong Kong) Limited",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": "Mobility Rail",
+      "lob": "Mobility (Rail & Road)",
+      "countryOfIncorporation": "Hong Kong",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
+      "aliases": [
+        "Amtech Systems (Hong Kong) Limited"
+      ]
+    },
+    {
+      "entityId": "ENTITY-amtech-systems-llc",
+      "sourceEntityId": "682",
+      "entityName": "Amtech Systems, LLC",
+      "cluster": "Commercial",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility (Rail & Road)",
+      "countryOfIncorporation": "USA",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
+      "aliases": [
+        "Amtech Systems, LLC"
+      ]
+    },
+    {
+      "entityId": "ENTITY-amtech-world-llc",
+      "sourceEntityId": "685",
+      "entityName": "Amtech World LLC",
+      "cluster": "Commercial",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility (Rail & Road)",
+      "countryOfIncorporation": "USA",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
+      "aliases": [
+        "Amtech World LLC"
+      ]
+    },
+    {
+      "entityId": "ENTITY-seel-electronic-engineering-sdn-bhd",
+      "sourceEntityId": "522",
+      "entityName": "SEEL Electronic & Engineering Sdn. Bhd.",
+      "cluster": "Commercial",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "Malaysia",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "SEEL Electronic & Engineering Sdn. Bhd."
       ]
     },
     {
+      "entityId": "ENTITY-sptel-pte-ltd",
+      "sourceEntityId": "533",
+      "entityName": "SPTel Pte. Ltd.",
+      "cluster": "Commercial",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "lob": "Smart Sustainable Utilities",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Joint Venture (Non-Controlling)",
+      "reportingSegment": "Urban Solutions & Satcom",
+      "aliases": [
+        "SPTel Pte. Ltd."
+      ]
+    },
+    {
       "entityId": "ENTITY-st-engineering-chongqing-co-ltd",
+      "sourceEntityId": "690",
       "entityName": "ST Engineering (Chongqing) Co., Ltd",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": "Mobility Rail",
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "China",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering (Chongqing) Co., Ltd"
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-latin-america-ltda",
+      "sourceEntityId": "540",
       "entityName": "ST Engineering (Latin America) Ltda.",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Utilities & Infrastructure",
       "lob": "Smart Sustainable Utilities",
       "countryOfIncorporation": "Brazil",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering (Latin America) Ltda."
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-shanghai-co-ltd",
+      "sourceEntityId": "523",
       "entityName": "ST Engineering (Shanghai) Co., Ltd.",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": "Mobility Rail",
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "China",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering (Shanghai) Co., Ltd."
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-taiwan-ltd",
+      "sourceEntityId": "521",
       "entityName": "ST Engineering (Taiwan) Ltd.",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": "Mobility Rail",
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "Taiwan",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering (Taiwan) Ltd."
       ]
     },
     {
-      "entityId": "ENTITY-st-engineering-wuxi-co-ltd",
-      "entityName": "ST Engineering (Wuxi) Co., Ltd",
+      "entityId": "ENTITY-st-engineering-tianjin-co-ltd",
+      "sourceEntityId": "691",
+      "entityName": "ST Engineering (Tianjin) Co., Ltd",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": "Mobility Rail",
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "China",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
+      "aliases": [
+        "ST Engineering (Tianjin) Co., Ltd"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-wuxi-co-ltd",
+      "sourceEntityId": "524",
+      "entityName": "ST Engineering (Wuxi) Co., Ltd",
+      "cluster": "Commercial",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility (Rail & Road)",
+      "countryOfIncorporation": "China",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering (Wuxi) Co., Ltd"
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-aethon-inc",
+      "sourceEntityId": "594",
       "entityName": "ST Engineering Aethon, Inc.",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Utilities & Infrastructure",
-      "lob": "Healthcare Robotics & Automation",
+      "lob": "Robotics",
       "countryOfIncorporation": "USA",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Aethon, Inc."
       ]
     },
     {
+      "entityId": "ENTITY-st-engineering-autonomous-solutions-pte-ltd",
+      "sourceEntityId": "531",
+      "entityName": "ST Engineering Autonomous Solutions Pte. Ltd.",
+      "cluster": "Commercial",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "lob": "Robotics",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
+      "aliases": [
+        "ST Engineering Autonomous Solutions Pte. Ltd."
+      ]
+    },
+    {
       "entityId": "ENTITY-st-engineering-infa-systems-limited",
+      "sourceEntityId": "519",
       "entityName": "ST Engineering Infa Systems Limited",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Utilities & Infrastructure",
       "lob": "Smart Security & Automation",
       "countryOfIncorporation": "Hong Kong",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Infa Systems Limited"
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-innosparks-pte-ltd",
+      "sourceEntityId": "530",
       "entityName": "ST Engineering InnoSparks Pte. Ltd.",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Utilities & Infrastructure",
-      "lob": "Smart Security & Automation",
+      "lob": "Smart Sustainable Utilities",
       "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering InnoSparks Pte. Ltd."
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-mobility-services-pte-ltd",
+      "sourceEntityId": "534",
       "entityName": "ST Engineering Mobility Services Pte. Ltd.",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
       "lob": "Mobility Services",
       "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Mobility Services Pte. Ltd."
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-saudi-limited",
+      "sourceEntityId": "537",
       "entityName": "ST Engineering Saudi Limited",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": "Mobility Rail",
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "Saudi Arabia",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Saudi Limited"
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-telematics-wireless-ltd",
+      "sourceEntityId": "635",
       "entityName": "ST Engineering Telematics Wireless Ltd",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Utilities & Infrastructure",
       "lob": "Smart Sustainable Utilities",
       "countryOfIncorporation": "Israel",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Telematics Wireless Ltd"
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-telematics-wireless-u-s-a-corp",
+      "sourceEntityId": "673",
       "entityName": "ST Engineering Telematics Wireless U.S.A. Corp.",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Utilities & Infrastructure",
       "lob": "Smart Sustainable Utilities",
       "countryOfIncorporation": "USA",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Telematics Wireless U.S.A. Corp."
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-urban-solutions-ltd-taiwan-branch",
+      "sourceEntityId": "527",
       "entityName": "ST Engineering Urban Solutions Ltd. - Taiwan Branch",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": "Mobility Rail",
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "Taiwan",
+      "natureOfShareholding": "Branch/Office",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Urban Solutions Ltd. - Taiwan Branch"
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-urban-solutions-thailand-ltd",
+      "sourceEntityId": "520",
       "entityName": "ST Engineering Urban Solutions (Thailand) Ltd",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": "Mobility Rail",
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "Thailand",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Urban Solutions (Thailand) Ltd"
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-urban-solutions-ltd-abu-dhabi-branch",
+      "sourceEntityId": "538",
       "entityName": "ST Engineering Urban Solutions Ltd - Abu Dhabi Branch",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": "Mobility Road",
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "Abu Dhabi",
+      "natureOfShareholding": "Branch/Office",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Urban Solutions Ltd - Abu Dhabi Branch"
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-urban-solutions-ltd-dubai-branch",
+      "sourceEntityId": "539",
       "entityName": "ST Engineering Urban Solutions Ltd - Dubai Branch",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": "Mobility Road",
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "Dubai",
+      "natureOfShareholding": "Branch/Office",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Urban Solutions Ltd - Dubai Branch"
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-urban-solutions-ltd",
+      "sourceEntityId": "501",
       "entityName": "ST Engineering Urban Solutions Ltd.",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Utilities & Infrastructure",
       "lob": "Smart Security & Automation",
       "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Urban Solutions Ltd."
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-urban-solutions-ltd-australia-branch",
+      "sourceEntityId": "529",
       "entityName": "ST Engineering Urban Solutions Ltd. - Australia Branch",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": "Mobility Rail",
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "Australia",
+      "natureOfShareholding": "Branch/Office",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Urban Solutions Ltd. - Australia Branch"
       ]
     },
     {
       "entityId": "ENTITY-st-engineering-urban-solutions-ltd-canada-branch",
+      "sourceEntityId": "728",
       "entityName": "ST Engineering Urban Solutions Ltd. - Canada Branch",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": "Mobility Rail",
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "Canada",
+      "natureOfShareholding": "Branch/Office",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Urban Solutions Ltd. - Canada Branch"
       ]
     },
     {
-      "entityId": "ENTITY-st-engineering-urban-solutions-ltd-india-office",
-      "entityName": "ST Engineering Urban Solutions Ltd. - India Office",
+      "entityId": "ENTITY-st-engineering-urban-solutions-ltd-hong-kong-branch",
+      "sourceEntityId": "525",
+      "entityName": "ST Engineering Urban Solutions Ltd. - Hong Kong Branch",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": "Mobility Rail",
+      "lob": "Mobility (Rail & Road)",
+      "countryOfIncorporation": "Hong Kong",
+      "natureOfShareholding": "Branch/Office",
+      "reportingSegment": "Urban Solutions & Satcom",
+      "aliases": [
+        "ST Engineering Urban Solutions Ltd. - Hong Kong Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-urban-solutions-ltd-india-office",
+      "sourceEntityId": "526",
+      "entityName": "ST Engineering Urban Solutions Ltd. - India Office",
+      "cluster": "Commercial",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "India",
+      "natureOfShareholding": "Branch/Office",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "ST Engineering Urban Solutions Ltd. - India Office"
       ]
     },
     {
+      "entityId": "ENTITY-st-engineering-urs-partnership-co-pte-ltd",
+      "sourceEntityId": "535",
+      "entityName": "ST Engineering URS Partnership Co. Pte. Ltd.",
+      "cluster": "Commercial",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Utilities & Infrastructure",
+      "lob": "Smart Sustainable Utilities",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
+      "aliases": [
+        "ST Engineering URS Partnership Co. Pte. Ltd."
+      ]
+    },
+    {
       "entityId": "ENTITY-sta-inspection-pte-ltd",
+      "sourceEntityId": "536",
       "entityName": "STA Inspection Pte Ltd",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
       "lob": "Mobility Services",
       "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "STA Inspection Pte Ltd"
       ]
     },
     {
       "entityId": "ENTITY-ste-transcore-holdings-inc",
+      "sourceEntityId": "517",
       "entityName": "STE TransCore Holdings, Inc.",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": null,
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "USA",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "STE TransCore Holdings, Inc."
       ]
     },
     {
       "entityId": "ENTITY-ste-urs-qfc-branch",
+      "sourceEntityId": "713",
       "entityName": "STE URS QFC Branch",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Utilities & Infrastructure",
       "lob": "Smart Sustainable Utilities",
       "countryOfIncorporation": "Qatar",
+      "natureOfShareholding": "Branch/Office",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "STE URS QFC Branch"
       ]
     },
     {
-      "entityId": "ENTITY-tlp-holdings-llc",
-      "entityName": "TLP Holdings, LLC",
+      "entityId": "ENTITY-ste-urs-inc",
+      "sourceEntityId": "516",
+      "entityName": "STE URS, INC.",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": null,
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "USA",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
+      "aliases": [
+        "STE URS, INC."
+      ]
+    },
+    {
+      "entityId": "ENTITY-the-autopass-company-ltd",
+      "sourceEntityId": "689",
+      "entityName": "The AutoPass Company Ltd",
+      "cluster": "Commercial",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility (Rail & Road)",
+      "countryOfIncorporation": "Hong Kong",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
+      "aliases": [
+        "The AutoPass Company Ltd"
+      ]
+    },
+    {
+      "entityId": "ENTITY-tlp-holdings-llc",
+      "sourceEntityId": "604",
+      "entityName": "TLP Holdings, LLC",
+      "cluster": "Commercial",
+      "businessArea": "Urban Solutions",
+      "lobGrouping": "Smart Mobility",
+      "lob": "Mobility (Rail & Road)",
+      "countryOfIncorporation": "USA",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "TLP Holdings, LLC"
       ]
     },
     {
       "entityId": "ENTITY-transcore-asia-pte-ltd",
+      "sourceEntityId": "709",
       "entityName": "Transcore Asia Pte. Ltd.",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": null,
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "Transcore Asia Pte. Ltd."
       ]
     },
     {
       "entityId": "ENTITY-transcore-atlantic-llc",
+      "sourceEntityId": "683",
       "entityName": "TransCore Atlantic, LLC",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": null,
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "USA",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "TransCore Atlantic, LLC"
       ]
     },
     {
       "entityId": "ENTITY-transcore-its-llc",
+      "sourceEntityId": "684",
       "entityName": "TransCore ITS, LLC",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": null,
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "USA",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "TransCore ITS, LLC"
       ]
     },
     {
       "entityId": "ENTITY-transcore-its-llc-saudi-branch",
+      "sourceEntityId": "726",
       "entityName": "TransCore ITS, LLC Saudi Branch",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": null,
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "Saudi Arabia",
+      "natureOfShareholding": "Branch/Office",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "TransCore ITS, LLC Saudi Branch"
       ]
     },
     {
       "entityId": "ENTITY-transcore-partners-llc",
+      "sourceEntityId": "603",
       "entityName": "TransCore Partners, LLC",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": null,
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "USA",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "TransCore Partners, LLC"
       ]
     },
     {
       "entityId": "ENTITY-transcore-lp",
+      "sourceEntityId": "656",
       "entityName": "TransCore, LP",
+      "cluster": "Commercial",
       "businessArea": "Urban Solutions",
       "lobGrouping": "Smart Mobility",
-      "lob": null,
+      "lob": "Mobility (Rail & Road)",
       "countryOfIncorporation": "USA",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": "Urban Solutions & Satcom",
       "aliases": [
         "TransCore, LP"
-      ]
-    },
-    {
-      "entityId": "ENTITY-transcore-lp-dubai",
-      "entityName": "TransCore, LP - Dubai",
-      "businessArea": "Urban Solutions",
-      "lobGrouping": "Smart Mobility",
-      "lob": null,
-      "countryOfIncorporation": "United Arab Emirates",
-      "aliases": [
-        "TransCore, LP - Dubai"
       ]
     }
   ],
@@ -419,10 +681,10 @@
       ]
     },
     {
-      "customerId": "CUSTOMER-defence-science-and-technology-agency",
-      "customerName": "DEFENCE SCIENCE AND TECHNOLOGY AGENCY",
+      "customerId": "CUSTOMER-defence-science-and-technology",
+      "customerName": "DEFENCE SCIENCE AND TECHNOLOGY",
       "aliases": [
-        "DEFENCE SCIENCE AND TECHNOLOGY AGENCY"
+        "DEFENCE SCIENCE AND TECHNOLOGY"
       ]
     },
     {

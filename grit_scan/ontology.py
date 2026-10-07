@@ -29,6 +29,16 @@ PACKS = {
     },
 }
 REGISTER_FILES = PACKS["urs-tw"]
+# Hand-authored registers. A pack without one loads with the field set to None.
+OPTIONAL_REGISTERS = {
+    "urs": {
+        "lob_hierarchy": "URS-LOB-Hierarchy.json",
+        "keyword_library": "URS-Keyword-Library.json",
+        "competitors": "URS-Competitors.json",
+        "management_focus": "URS-Management-Focus.json",
+        "relationships": "URS-Relationships.json",
+    }
+}
 
 
 @dataclass(frozen=True)
@@ -40,6 +50,11 @@ class OntologyPack:
     baseline: dict[str, Any]
     config_dir: Path
     pack: str = "urs-tw"
+    lob_hierarchy: dict[str, Any] | None = None
+    keyword_library: dict[str, Any] | None = None
+    competitors: dict[str, Any] | None = None
+    management_focus: dict[str, Any] | None = None
+    relationships: dict[str, Any] | None = None
 
 
 def load_ontology_pack(config_dir: Path, pack: str = "urs-tw") -> OntologyPack:
@@ -64,6 +79,9 @@ def load_ontology_pack(config_dir: Path, pack: str = "urs-tw") -> OntologyPack:
             f"Ontology pack '{pack}' is incomplete. Place the governed registers in "
             f"{root}: {', '.join(missing)}"
         )
+    for key, name in OPTIONAL_REGISTERS.get(pack, {}).items():
+        path = root / name
+        loaded[key] = json.loads(path.read_text(encoding="utf-8-sig")) if path.is_file() else None
     return OntologyPack(config_dir=root, pack=pack, **loaded)
 
 
@@ -87,6 +105,18 @@ def _main() -> None:
         f"{len(exposure.get('sites') or [])} sites"
     )
     print(f"LOBs: {len(loaded.lob_profiles.get('lobs') or [])}")
+    if loaded.lob_hierarchy:
+        print(f"LOB hierarchy: {len(loaded.lob_hierarchy.get('lobs') or [])} LOBs, status {loaded.lob_hierarchy.get('status')}")
+    if loaded.keyword_library:
+        libraries = loaded.keyword_library.get("libraries") or []
+        print(f"Keyword libraries: {len(libraries)} sheets, {sum(len(item['clusters']) for item in libraries)} clusters")
+    if loaded.competitors:
+        print(f"Competitors: {len(loaded.competitors.get('competitors') or [])} rows")
+    if loaded.management_focus:
+        print(
+            f"Management focus: {len(loaded.management_focus.get('requests') or [])} requests, "
+            f"{len(loaded.management_focus.get('focusItems') or [])} focus items"
+        )
     print(f"Themes: {len(loaded.themes.get('themes') or [])}")
     print(f"Baseline conditions: {len(loaded.baseline.get('conditions') or [])}")
     if loaded.baseline.get("absence"):

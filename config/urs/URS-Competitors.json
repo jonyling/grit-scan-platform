@@ -1,0 +1,1839 @@
+{
+  "registerId": "URS-COMPETITORS",
+  "workbook": "URS_Entity_Info_20261006.xlsx",
+  "sheet": "3. Competitors",
+  "absence": "A LOB label that is not on the org chart has no canonicalLob. The same competitor can appear under more than one LOB.",
+  "competitors": [
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Diligent Robotics",
+      "workscope": "Healthcare Robot",
+      "note": null,
+      "category": null,
+      "row": 4,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Formant",
+      "workscope": "Fleet data management",
+      "note": null,
+      "category": null,
+      "row": 5,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "HIT Robot Group",
+      "workscope": "Healthcare Robot",
+      "note": null,
+      "category": null,
+      "row": 6,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "JBT Corporation",
+      "workscope": "Healthcare Robot",
+      "note": null,
+      "category": null,
+      "row": 7,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Keenon Robotics",
+      "workscope": "Hotel Robot",
+      "note": null,
+      "category": null,
+      "row": 8,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Omron",
+      "workscope": "Healthcare Robot",
+      "note": null,
+      "category": null,
+      "row": 9,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Oppent",
+      "workscope": "Healthcare Robot",
+      "note": null,
+      "category": null,
+      "row": 10,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Otto (Rockwell Automation)",
+      "workscope": "Fleet management software",
+      "note": null,
+      "category": null,
+      "row": 11,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Relay Robotics (Savioke)",
+      "workscope": "Hotel Robot",
+      "note": null,
+      "category": null,
+      "row": 12,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "RichTech Robotics",
+      "workscope": "Hotel Robot",
+      "note": null,
+      "category": null,
+      "row": 13,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Sesto Robotics",
+      "workscope": "Healthcare Robot",
+      "note": null,
+      "category": null,
+      "row": 14,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Swisslog",
+      "workscope": "Healthcare Robot",
+      "note": null,
+      "category": null,
+      "row": 15,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Urbot Robotics",
+      "workscope": "Hotel Robot",
+      "note": null,
+      "category": null,
+      "row": 16,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "3M",
+      "workscope": "Respiratory Masks",
+      "note": null,
+      "category": null,
+      "row": 17,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Honeywell",
+      "workscope": "Respiratory Masks",
+      "note": null,
+      "category": null,
+      "row": 18,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Makrite Industries",
+      "workscope": "Respiratory Masks",
+      "note": null,
+      "category": null,
+      "row": 19,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Novita",
+      "workscope": "Respiratory Masks",
+      "note": null,
+      "category": null,
+      "row": 20,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Uvex",
+      "workscope": "Respiratory Masks",
+      "note": null,
+      "category": null,
+      "row": 21,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Northrock Safety",
+      "workscope": "Respiratory Masks",
+      "note": null,
+      "category": null,
+      "row": 22,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Halyard",
+      "workscope": "Respiratory Masks",
+      "note": null,
+      "category": null,
+      "row": 23,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Medicom",
+      "workscope": "Respiratory Masks",
+      "note": null,
+      "category": null,
+      "row": 24,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Carrier",
+      "workscope": "Sustainable Cooling",
+      "note": null,
+      "category": null,
+      "row": 25,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Healthcare Robotics and Automation",
+      "competitor": "Trane",
+      "workscope": "Sustainable Cooling",
+      "note": null,
+      "category": null,
+      "row": 26,
+      "canonicalLob": "Healthcare Robotics & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Amadeus",
+      "workscope": "Provides turnkey system integration solution, including biometric security in the vertical of aviation",
+      "note": null,
+      "category": null,
+      "row": 29,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Bosch Security Systems",
+      "workscope": "Offers a wide range of security solutions, including video surveillance, intrusion detection, and access control systems.",
+      "note": null,
+      "category": null,
+      "row": 30,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Johnson Controls",
+      "workscope": "Provides intelligent building solutions, including HVAC systems, building management, and smart building technologies.",
+      "note": null,
+      "category": null,
+      "row": 31,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "NCS",
+      "workscope": "Provides turnkey system integration solution including video surveillance, and access control systems.",
+      "note": null,
+      "category": null,
+      "row": 32,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Quantum Automation",
+      "workscope": "Provides turnkey system integration solution including video surveillance, and access control systems.",
+      "note": null,
+      "category": null,
+      "row": 33,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Toppan",
+      "workscope": "Provides turnkey system integration solution, including biometric security, AI, and IoT applications.",
+      "note": null,
+      "category": null,
+      "row": 34,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "VisionBox",
+      "workscope": "Provides turnkey system integration solution, including biometric security in the vertical of aviation",
+      "note": null,
+      "category": null,
+      "row": 35,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Willowglen",
+      "workscope": "Provides turnkey system integration solution including video surveillance, and access control systems.",
+      "note": null,
+      "category": null,
+      "row": 36,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "NEC Asia Pacific",
+      "workscope": "Provides turnkey system integration solution, including biometric security, AI, and IoT applications.",
+      "note": null,
+      "category": null,
+      "row": 37,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Idemia",
+      "workscope": "Specializes in augmented identity solutions, including biometric identification and secure digital transactions.",
+      "note": null,
+      "category": null,
+      "row": 38,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Thales Group",
+      "workscope": "Provides advanced security solutions, including biometrics, cybersecurity, and smart identification systems.",
+      "note": null,
+      "category": null,
+      "row": 39,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "SITA",
+      "workscope": "Provides advanced security solutions, including biometrics, cybersecurity, and smart identification systems.",
+      "note": null,
+      "category": null,
+      "row": 40,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Hikvision",
+      "workscope": "Provides low cost security solutions, including access control, biometrics, video surveilance systems",
+      "note": null,
+      "category": null,
+      "row": 41,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Honeywell",
+      "workscope": "Provides turnkey system integration solution including video surveillance, and access control systems.",
+      "note": null,
+      "category": null,
+      "row": 42,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "ASIS Technologies",
+      "workscope": "Provides low cost security solutions, including access control, biometrics, video surveilance systems",
+      "note": null,
+      "category": null,
+      "row": 43,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Fonda",
+      "workscope": "Provides low cost security solutions, partnering companies like HIK, and also with their team of in-house installers, pricing is mostly competitive.",
+      "note": null,
+      "category": null,
+      "row": 44,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "O-conners",
+      "workscope": "Provides low cost security solutions",
+      "note": null,
+      "category": null,
+      "row": 45,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Certis Cisco",
+      "workscope": "Provides turnkey system integration, including ISMP, biometrics, AI and IOT applications",
+      "note": null,
+      "category": null,
+      "row": 46,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "One Berry",
+      "workscope": "Provides low cost security solutions, partnering companies like HIK, and also with their team of in-house installers, pricing is mostly competitive.",
+      "note": null,
+      "category": null,
+      "row": 47,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Securitas",
+      "workscope": "Provides low cost security solutions, partnering companies like HIK, and also with their team of in-house installers, pricing is mostly competitive.",
+      "note": null,
+      "category": null,
+      "row": 48,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Security and Automation",
+      "competitor": "Prosegur",
+      "workscope": "Provides low cost security solutions, partnering companies like HIK, leveraging on their guarding",
+      "note": null,
+      "category": null,
+      "row": 49,
+      "canonicalLob": "Smart Security & Automation"
+    },
+    {
+      "lobLabel": "Smart Sustainable Utilities",
+      "competitor": "Barghest Building Performance Pte Ltd",
+      "workscope": "Provides Smart Energy Building services",
+      "note": null,
+      "category": null,
+      "row": 53,
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "lobLabel": "Smart Sustainable Utilities",
+      "competitor": "SP Digital",
+      "workscope": "Provides turnkey smart metering (Water & Electricity) as a service",
+      "note": null,
+      "category": null,
+      "row": 54,
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "lobLabel": "Smart Sustainable Utilities",
+      "competitor": "SP Group",
+      "workscope": "Provides turnkey smart metering (Water & Electricity) as a service",
+      "note": null,
+      "category": null,
+      "row": 55,
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "lobLabel": "Smart Sustainable Utilities",
+      "competitor": "Schneider Electric SE",
+      "workscope": "Provides Iot Platform (Ecostruxure) to integrate with their field end devices",
+      "note": null,
+      "category": null,
+      "row": 56,
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "lobLabel": "Smart Sustainable Utilities",
+      "competitor": "Honeywell",
+      "workscope": "Provides BMS to integrate with their field end devices",
+      "note": null,
+      "category": null,
+      "row": 57,
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "lobLabel": "Smart Sustainable Utilities",
+      "competitor": "Quantum Automation",
+      "workscope": "Provides BMS to integrate with their field end devices",
+      "note": null,
+      "category": null,
+      "row": 58,
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "lobLabel": "Smart Sustainable Utilities",
+      "competitor": "Primus Tech",
+      "workscope": "Provides BMS to integrate with their field end devices",
+      "note": null,
+      "category": null,
+      "row": 59,
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "lobLabel": "Smart Sustainable Utilities",
+      "competitor": "ABB Ltd.",
+      "workscope": "Provides integrated smart meter with communications module. Also provides Meter Data Management System",
+      "note": null,
+      "category": null,
+      "row": 60,
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "lobLabel": "Smart Sustainable Utilities",
+      "competitor": "Sensus",
+      "workscope": "Provides integrated smart meter with communications module. Also provides Meter Data Management System",
+      "note": null,
+      "category": null,
+      "row": 61,
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "lobLabel": "Smart Sustainable Utilities",
+      "competitor": "Diehl",
+      "workscope": "Provides integrated smart meter with communications module. Also provides Meter Data Management System",
+      "note": null,
+      "category": null,
+      "row": 62,
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "lobLabel": "Smart Sustainable Utilities",
+      "competitor": "Itron",
+      "workscope": "Provides integrated smart meter with communications module. Also provides Meter Data Management System",
+      "note": null,
+      "category": null,
+      "row": 64,
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "lobLabel": "Smart Sustainable Utilities",
+      "competitor": "Signify",
+      "workscope": "Provides end-to-end lighting and smart lighting control",
+      "note": null,
+      "category": null,
+      "row": 65,
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "lobLabel": "Smart Sustainable Utilities",
+      "competitor": "Schreder",
+      "workscope": "Provides end-to-end lighting and smart lighting control",
+      "note": null,
+      "category": null,
+      "row": 66,
+      "canonicalLob": "Smart Sustainable Utilities"
+    },
+    {
+      "lobLabel": "Digital Platforms",
+      "competitor": "Saudi Telecom Company",
+      "workscope": "MSI",
+      "note": null,
+      "category": null,
+      "row": 71,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Digital Platforms",
+      "competitor": "Giza Systems",
+      "workscope": "SI",
+      "note": null,
+      "category": null,
+      "row": 72,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Digital Platforms",
+      "competitor": "Honeywell",
+      "workscope": "Smart City Integration Platform",
+      "note": null,
+      "category": null,
+      "row": 73,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Digital Platforms",
+      "competitor": "Schneider Electric SE",
+      "workscope": "Smart City Integration Platform (Aveva)",
+      "note": null,
+      "category": null,
+      "row": 74,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Digital Platforms",
+      "competitor": "Mannai Corporation (ICT Division)",
+      "workscope": "MSI",
+      "note": null,
+      "category": null,
+      "row": 75,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Digital Platforms",
+      "competitor": "Avanceon",
+      "workscope": "Smart City SI",
+      "note": null,
+      "category": null,
+      "row": 76,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Digital Platforms",
+      "competitor": "Espina IT",
+      "workscope": "Smart City SI",
+      "note": null,
+      "category": null,
+      "row": 77,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Digital Platforms",
+      "competitor": "Huawei",
+      "workscope": "Smart City Integration Platform",
+      "note": null,
+      "category": null,
+      "row": 78,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Digital Platforms",
+      "competitor": "Presight",
+      "workscope": "Smart City Integration Platform",
+      "note": null,
+      "category": null,
+      "row": 79,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "CBM Company",
+      "workscope": "Parts distribution centre for coaches and buses",
+      "note": null,
+      "category": null,
+      "row": 83,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Chop Hock Hong",
+      "workscope": "Automotive electrical parts",
+      "note": null,
+      "category": null,
+      "row": 84,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Comfortdelgro Corporation Limited",
+      "workscope": "Bus and Light Goods Vehicles supplier",
+      "note": null,
+      "category": null,
+      "row": 85,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "ComfortDelGro Engineering Pte. Ltd.",
+      "workscope": "Fleet maintenance of taxis, electric vans",
+      "note": null,
+      "category": null,
+      "row": 86,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "KDY Automotive Pte. Ltd.",
+      "workscope": "Fleet maintenance of taxis, electric vans, trucks and buses",
+      "note": null,
+      "category": null,
+      "row": 87,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Indeco Engineers (Pte) Ltd",
+      "workscope": "Fleet maintenance (STEMOS) / OBU migration exercise (STAI)",
+      "note": null,
+      "category": null,
+      "row": 88,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Beng Hock Mechanical Engineering Pte. Ltd.",
+      "workscope": "Truck fleet maintenance",
+      "note": null,
+      "category": null,
+      "row": 89,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Kian Chue Hwa (Industries) Pte. Ltd.",
+      "workscope": "Parts distribution centre for coaches and buses. Commercial vehicle parts distributor",
+      "note": null,
+      "category": null,
+      "row": 90,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Scantruck Pte. Ltd.",
+      "workscope": "Trucks supplier (including spare parts)",
+      "note": null,
+      "category": null,
+      "row": 91,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "SML Automotive Pte Ltd",
+      "workscope": "Spare parts trading house, Engg design and Consultancy activities",
+      "note": null,
+      "category": null,
+      "row": 92,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Volvo Group Singapore (Pte.) Ltd.",
+      "workscope": "Bus and Truck supplier",
+      "note": null,
+      "category": null,
+      "row": 93,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Yutong International Trade Pte. Ltd.",
+      "workscope": "Bus and Truck supplier",
+      "note": null,
+      "category": null,
+      "row": 94,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Zhongtong Bus Singapore Pte. Ltd.",
+      "workscope": "Bus and Truck supplier",
+      "note": null,
+      "category": null,
+      "row": 95,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Zhongtong Logistics And Transportation",
+      "workscope": "Bus and Truck supplier",
+      "note": null,
+      "category": null,
+      "row": 96,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "BYD (Singapore) Pte. Ltd.",
+      "workscope": "Bus, Trucks and Light Goods Vehicles supplier",
+      "note": null,
+      "category": null,
+      "row": 97,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Cycle & Carriage Automotive Pte Limited",
+      "workscope": "Distribution of Mercedes-Benz, Zhongtong and Sinotruk Commercial Vehicles (Trucks, Buses & Vans)",
+      "note": null,
+      "category": null,
+      "row": 98,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Scania Singapore Pte. Ltd.",
+      "workscope": "Distribution of Commercial Vehicles (Trucks & Buses)",
+      "note": null,
+      "category": null,
+      "row": 99,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Strides Automotive Services Pte. Ltd.",
+      "workscope": "MRO services for both commercial and passengers vehicles",
+      "note": null,
+      "category": null,
+      "row": 100,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Trans-Flex Engineering Pte. Ltd.",
+      "workscope": "Knorr Bremse , Bendix distributor (spare parts on brake pads)",
+      "note": null,
+      "category": null,
+      "row": 101,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Lecip (Singapore) Pte. Ltd.",
+      "workscope": "Passenger Information Display Systems, Electronic Display Signs Competitor",
+      "note": null,
+      "category": null,
+      "row": 102,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Luminator Technology Pte. Ltd.",
+      "workscope": "Passenger Information Display Systems, Electronic Display Signs Competitor",
+      "note": null,
+      "category": null,
+      "row": 103,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Schneider Electric Singapore Pte. Ltd.",
+      "workscope": "Supply of EV Charging System and O&M services",
+      "note": null,
+      "category": null,
+      "row": 104,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Autel Digital Power (Singapore) Pte. Ltd",
+      "workscope": "Supply of EV Charging System and O&M services",
+      "note": "Local distributor is Hai Khim Engineering Pte. Ltd.",
+      "category": null,
+      "row": 105,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Starcharge Energy Pte. Ltd.",
+      "workscope": "Supply of EV Charging System and O&M services",
+      "note": null,
+      "category": null,
+      "row": 106,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "XJ Electric Corporation",
+      "workscope": "Supply of EV Charging System and O&M services",
+      "note": "Local distributor is Terasol",
+      "category": null,
+      "row": 107,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Gresgying Digital Technology Co., Ltd.",
+      "workscope": "Supply of EV Charging System and O&M services",
+      "note": null,
+      "category": null,
+      "row": 108,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Hici Digital Power Technology Co Ltd",
+      "workscope": "Supply of EV Charging System, leasing and O&M services",
+      "note": "Local distributor is EVOne Charging Pte. Ltd.",
+      "category": null,
+      "row": 109,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Electric Pte. Ltd.",
+      "workscope": "Supply of EV Charging System and O&M services",
+      "note": null,
+      "category": null,
+      "row": 110,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Hitachi Energy Singapore Pte. Ltd.",
+      "workscope": "Supply of EV Charging System and O&M services",
+      "note": null,
+      "category": null,
+      "row": 111,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Delta Electronics Int'l (Singapore) Pte. Ltd.",
+      "workscope": "Supply of EV Charging System and O&M services",
+      "note": null,
+      "category": null,
+      "row": 112,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "WALLBOX PTE. LTD",
+      "workscope": "Supply of EV Charging System and O&M services",
+      "note": null,
+      "category": null,
+      "row": 113,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "ABB E-Mobility Pte. Ltd.",
+      "workscope": "Supply of EV Charging System and O&M services",
+      "note": null,
+      "category": null,
+      "row": 114,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "HUAWEI INTERNATIONAL PTE. LTD.",
+      "workscope": "Supply of EV Charging System and O&M services",
+      "note": null,
+      "category": null,
+      "row": 115,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "NEG POWER PTE. LTD.",
+      "workscope": "Supply of EV Charging System and O&M services",
+      "note": null,
+      "category": null,
+      "row": 116,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Interwell Pte. Ltd.",
+      "workscope": "Supply of EV Charging System and O&M services",
+      "note": null,
+      "category": null,
+      "row": 117,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Ecoswift Pte Ltd",
+      "workscope": "Supply of eTruck, SANY",
+      "note": null,
+      "category": null,
+      "row": 118,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Hong Seh Evolution Pte Ltd",
+      "workscope": "Supply of eTruck, Chenglong",
+      "note": null,
+      "category": null,
+      "row": 119,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Qingling (S) Pte Ltd",
+      "workscope": "Supply of eTruck, Qingling",
+      "note": null,
+      "category": null,
+      "row": 120,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Horizon Automotive",
+      "workscope": "Supply of eTruck, Foton",
+      "note": null,
+      "category": null,
+      "row": 121,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Legend Motors & Leasing Pte Ltd",
+      "workscope": "Supply of eTruck, JAC",
+      "note": null,
+      "category": null,
+      "row": 122,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Alexander Dennis (Singapore) Services Pte. Ltd",
+      "workscope": "Supply of e-bus (ADL)",
+      "note": null,
+      "category": null,
+      "row": 123,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Alpine Motors Pte. Ltd.",
+      "workscope": "Supply of e-bus (Ankai)",
+      "note": null,
+      "category": null,
+      "row": 124,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Asia EVM Pte. Ltd.",
+      "workscope": "Supply of e-bus (Wisdom)",
+      "note": null,
+      "category": null,
+      "row": 125,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Beiqi Foton Motor Co., Ltd.",
+      "workscope": "Supply of e-bus (Foton)",
+      "note": null,
+      "category": null,
+      "row": 126,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Constructions Industrielles De La Mediterranee – CNIM Singapore Private Limited",
+      "workscope": "Supply of e-bus (Ikarus)",
+      "note": null,
+      "category": null,
+      "row": 127,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "EuroKars CV Pte. Ltd.",
+      "workscope": "Supply of e-bus (Sunwin)",
+      "note": null,
+      "category": null,
+      "row": 128,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Higer Bus Company Limited",
+      "workscope": "Supply of e-bus (Higer)",
+      "note": null,
+      "category": null,
+      "row": 129,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "JBM Electric Vehicles International Pte. Ltd.",
+      "workscope": "Supply of e-bus (JBM)",
+      "note": null,
+      "category": null,
+      "row": 130,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Jeti Industries Ltd",
+      "workscope": "Supply of e-bus (Jeti)",
+      "note": null,
+      "category": null,
+      "row": 131,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Liannex Corporation (S) Pte Ltd",
+      "workscope": "Supply of e-bus (King Long)",
+      "note": null,
+      "category": null,
+      "row": 132,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Singpilot Pte. Ltd.",
+      "workscope": "Supply of e-bus (Zonson)",
+      "note": null,
+      "category": null,
+      "row": 133,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Weichai Singapore Pte. Ltd.",
+      "workscope": "Supply of e-bus (FTBCI)",
+      "note": null,
+      "category": null,
+      "row": 135,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Wisdom Motor Group Pte. Ltd.",
+      "workscope": "Supply of e-bus (Wisdom Motors)",
+      "note": null,
+      "category": null,
+      "row": 136,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Xiangyang Tenglong Automobile Company Limited",
+      "workscope": "Supply of e-bus (similar “CRRC”)",
+      "note": null,
+      "category": null,
+      "row": 137,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "ABS Bus Pte. Ltd.",
+      "workscope": "Supply of e-bus (Golden Dragon)",
+      "note": null,
+      "category": null,
+      "row": 138,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STEMOS",
+      "competitor": "Bamford Bus Company Limited",
+      "workscope": "Supply of e-bus (WrightBus)",
+      "note": null,
+      "category": null,
+      "row": 139,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "STAI",
+      "competitor": "Vicom",
+      "workscope": "Vehicle Inspection",
+      "note": null,
+      "category": null,
+      "row": 140,
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Faiveley Transport",
+      "workscope": "Platform Screen Doors",
+      "note": null,
+      "category": null,
+      "row": 144,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "China Fangda Group",
+      "workscope": "Platform Screen Doors",
+      "note": null,
+      "category": null,
+      "row": 145,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Knorr-Bremse",
+      "workscope": "Platform Screen Doors",
+      "note": null,
+      "category": null,
+      "row": 146,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Nabtesco",
+      "workscope": "Platform Screen Doors (Gilgen Door Systems)",
+      "note": "Develops automatic door systems and brake systems for rail vehicles, contributing to smart rail infrastructure.",
+      "category": null,
+      "row": 147,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Panasonic China",
+      "workscope": "Platform Screen Doors",
+      "note": null,
+      "category": null,
+      "row": 148,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Wabtec Corporation",
+      "workscope": "Platform Screen Doors, Passenger Information System (ANNAX)",
+      "note": null,
+      "category": null,
+      "row": 149,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Stanley Access Technologies",
+      "workscope": "Platform Screen Doors",
+      "note": null,
+      "category": null,
+      "row": 150,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Horton Automatics Inc",
+      "workscope": "Platform Screen Doors",
+      "note": null,
+      "category": null,
+      "row": 151,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Kangni Mechanical & Electrical Co., Ltd.",
+      "workscope": "Platform Screen Doors",
+      "note": null,
+      "category": null,
+      "row": 152,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "KTK Group Co,. Ltd",
+      "workscope": "Platform Screen Doors",
+      "note": null,
+      "category": null,
+      "row": 153,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Cubic Corporation",
+      "workscope": "Fare Payment Systems",
+      "note": "Develops integrated systems for fare collection, traffic management, and smart rail solutions.",
+      "category": null,
+      "row": 154,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Masabi",
+      "workscope": "Fare Payment Systems",
+      "note": null,
+      "category": null,
+      "row": 155,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Conduent",
+      "workscope": "Fare Payment Systems",
+      "note": "Offers transportation solutions including public transit fare collection systems, road usage charging, and mobility management services.",
+      "category": null,
+      "row": 156,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Hitachi Rail",
+      "workscope": "Fare Payment Systems, Rail Operations Control Centre",
+      "note": null,
+      "category": null,
+      "row": 157,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "INIT",
+      "workscope": "Fare Payment Systems",
+      "note": "Offers integrated planning, dispatching, telematics, and ticketing solutions for public transportation, including rail.",
+      "category": null,
+      "row": 158,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Indra Sistemas S.A.",
+      "workscope": "Fare Payment Systems",
+      "note": null,
+      "category": null,
+      "row": 159,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "STraffic",
+      "workscope": "Fare Payment Systems",
+      "note": null,
+      "category": null,
+      "row": 160,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "MSI Global",
+      "workscope": "Fare Payment Systems",
+      "note": null,
+      "category": null,
+      "row": 161,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "MainTrans",
+      "workscope": "Passenger Information System",
+      "note": null,
+      "category": null,
+      "row": 162,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Jiangsu Jianhu Science &Technology Co.,Ltd.",
+      "workscope": "Passenger Information System",
+      "note": null,
+      "category": null,
+      "row": 163,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Questar Tangent",
+      "workscope": "Passenger Information System (TrainWise® Train Passenger Information System)",
+      "note": null,
+      "category": null,
+      "row": 164,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "r2p Group",
+      "workscope": "Passenger Information System",
+      "note": null,
+      "category": null,
+      "row": 165,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Suzhou Huaqi Intelligent Technology Co., Ltd.",
+      "workscope": "Passenger Information System",
+      "note": null,
+      "category": null,
+      "row": 166,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "BPD Zenith (Singapore) Pte Ltd",
+      "workscope": "Enterprise Asset Management System",
+      "note": null,
+      "category": null,
+      "row": 167,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Bahwan Cybertek Pte Ltd",
+      "workscope": "Enterprise Asset Management System, System Integration",
+      "note": null,
+      "category": null,
+      "row": 168,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Cohesive Group",
+      "workscope": "Enterprise Asset Management System",
+      "note": null,
+      "category": null,
+      "row": 169,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Tech Mahindra",
+      "workscope": "Enterprise Asset Management System",
+      "note": null,
+      "category": null,
+      "row": 170,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Siemens Mobility",
+      "workscope": "Rail Operations Control Centre, Train Communications Systems",
+      "note": "Provides intelligent traffic systems for urban traffic control, highway management, and rail automation.",
+      "category": null,
+      "row": 171,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Alstom",
+      "workscope": "Rail Operations Control Centre",
+      "note": null,
+      "category": null,
+      "row": 172,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "HollySys",
+      "workscope": "Rail Operations Control Centre",
+      "note": null,
+      "category": null,
+      "row": 173,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "L&T Metro Rail Limited",
+      "workscope": "Train Communications Systems",
+      "note": null,
+      "category": null,
+      "row": 174,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "NCS",
+      "workscope": "Train Communications Systems",
+      "note": null,
+      "category": null,
+      "row": 175,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "Guthrie Engineering",
+      "workscope": "Train Communications Systems, System Integration",
+      "note": null,
+      "category": null,
+      "row": 176,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "CRRC NANJING PUZHEN CO., LTD",
+      "workscope": "Cloud Architecture",
+      "note": null,
+      "category": null,
+      "row": 177,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Rail)",
+      "competitor": "China Railway Electrification Engineering Group Co., Ltd.",
+      "workscope": "Power Supply MRL – Power Scada related opportunities.",
+      "note": null,
+      "category": null,
+      "row": 179,
+      "canonicalLob": "Mobility Rail"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Yunex Traffic",
+      "workscope": "Road traffic management, tunnel management, supply, ICIT & maintenance of road junction control systems",
+      "note": null,
+      "category": "Traffic Management",
+      "row": 183,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "NCS",
+      "workscope": "ITS Enterprise Platform, Video Hub Platform.",
+      "note": null,
+      "category": "Traffic Management",
+      "row": 184,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Willowglen",
+      "workscope": "Tunnel management systems, plant management system/SCADA",
+      "note": null,
+      "category": "Traffic Management",
+      "row": 185,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "ATT Systems",
+      "workscope": "Supply, ICIT & maintenance of road traffic equipment, road tunnel equipment, central command centre equipment",
+      "note": null,
+      "category": "Traffic Management",
+      "row": 186,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Guthrie Engineering",
+      "workscope": "Supply, ICIT & maintenance of road traffic equipment, Carpark Operator",
+      "note": null,
+      "category": "Traffic Management",
+      "row": 187,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Fonda Global Engineering",
+      "workscope": "Supply, ICIT & maintenance of road traffic equipment",
+      "note": null,
+      "category": "Traffic Management",
+      "row": 188,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Kapsch",
+      "workscope": "Road traffic management, tunnel management and road junction control solutions",
+      "note": null,
+      "category": "Traffic Management",
+      "row": 189,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Indra / Mova Traffic",
+      "workscope": "Road traffic management and tunnel management solutions",
+      "note": null,
+      "category": "Traffic Management",
+      "row": 190,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Parsons",
+      "workscope": "Road traffic management consultancy & enterprise software",
+      "note": null,
+      "category": "Traffic Management",
+      "row": 191,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "ATS Traffic",
+      "workscope": "Supply, ICIT & maintenance of road junction control systems",
+      "note": null,
+      "category": "Smart Junction",
+      "row": 193,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Eng Hup Engineering",
+      "workscope": "Supply, ICIT & maintenance of road junction control systems, Quick Turn Circuits (QTC) Traffic Controller",
+      "note": null,
+      "category": "Smart Junction",
+      "row": 194,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Umovity",
+      "workscope": "Supply, ICIT & maintenance of road junction control systems",
+      "note": null,
+      "category": "Smart Junction",
+      "row": 195,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Outsight",
+      "workscope": "Supply, ICIT & maintenance of road junction control systems",
+      "note": null,
+      "category": "Smart Junction",
+      "row": 196,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Cubic / Trafficware",
+      "workscope": "Intelligent Transportation Solutions. Supply,maintenance of road junction control systems",
+      "note": null,
+      "category": "Smart Junction",
+      "row": 197,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Q-free",
+      "workscope": "Intelligent Traffic Management Solutions. Supply,maintenance of road junction control systems",
+      "note": null,
+      "category": "Smart Junction",
+      "row": 198,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "INIT",
+      "workscope": "Supply of public bus fleet management sofware & on-board equipment",
+      "note": null,
+      "category": "Fleet Management",
+      "row": 201,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Ineo Systrans",
+      "workscope": "Supply of public bus fleet management sofware & on-board equipment",
+      "note": null,
+      "category": "Fleet Management",
+      "row": 202,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "LeCIP",
+      "workscope": "Supply of public bus fleet management sofware & on-board equipment",
+      "note": null,
+      "category": "Fleet Management",
+      "row": 203,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "KentKart",
+      "workscope": "Supply of public bus fleet management sofware & on-board equipment, ticketing",
+      "note": null,
+      "category": "Fleet Management",
+      "row": 204,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "NEC",
+      "workscope": "Supply of public bus fleet management sofware & on-board equipment, ticketing",
+      "note": null,
+      "category": "Fleet Management",
+      "row": 205,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Wei Long Electronics Engineering Pte Ltd",
+      "workscope": "Supply of parking systems and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 208,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Sun Singapore Systems Pte. Ltd.",
+      "workscope": "Supply of parking systems and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 209,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Alphawave Technology (S) Pte Ltd",
+      "workscope": "Supply of parking systems and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 210,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Softech Global Pte Ltd",
+      "workscope": "Supply of parking systems and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 211,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "VHF Technologies Pte Ltd",
+      "workscope": "Supply of parking systems and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 212,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Wilson Parking",
+      "workscope": "Carpark Operator",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 213,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Times24 Parking",
+      "workscope": "Carpark Operator",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 214,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Resustainability Singapore",
+      "workscope": "Carpark Operator",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 215,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "P-Parking",
+      "workscope": "Carpark Operator",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 216,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Top Parking",
+      "workscope": "Carpark Operator",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 217,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Mack Parking",
+      "workscope": "Carpark Operator",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 218,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "G-Tech",
+      "workscope": "Carpark Operator",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 219,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Metro Parking",
+      "workscope": "Carpark Operator",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 220,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "AXS Drive",
+      "workscope": "Parking Mobile App",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 221,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Charge+ Pte Ltd",
+      "workscope": "Supply of EV Charging System, leasing and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 222,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "SP Mobility",
+      "workscope": "Supply of EV Charging System, leasing and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 223,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Keppel Volt",
+      "workscope": "Supply of EV Charging System, leasing and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 224,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "MNL Solutions",
+      "workscope": "Supply of EV Charging System, leasing and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 225,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "City Energy Go Pte Ltd",
+      "workscope": "Supply of EV Charging System, leasing and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 226,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "ChargEco",
+      "workscope": "Supply of EV Charging System, leasing and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 227,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "CDG Engie",
+      "workscope": "Supply of EV Charging System, leasing and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 228,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "Shell",
+      "workscope": "Supply of EV Charging System, leasing and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 229,
+      "canonicalLob": "Mobility Road & Services"
+    },
+    {
+      "lobLabel": "Mobility (Road)",
+      "competitor": "BlueCharge (Total)",
+      "workscope": "Supply of EV Charging System, leasing and O&M services",
+      "note": null,
+      "category": "Smart Car Park & EV Charging",
+      "row": 230,
+      "canonicalLob": "Mobility Road & Services"
+    }
+  ],
+  "dropped": [
+    {
+      "row": 182,
+      "text": "Traffic Management",
+      "reason": "SUBHEADING"
+    },
+    {
+      "row": 192,
+      "text": "Smart Junction",
+      "reason": "SUBHEADING"
+    },
+    {
+      "row": 200,
+      "text": "Fleet Management",
+      "reason": "SUBHEADING"
+    },
+    {
+      "row": 207,
+      "text": "Smart Car Park & EV Charging",
+      "reason": "SUBHEADING"
+    }
+  ]
+}
