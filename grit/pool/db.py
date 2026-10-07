@@ -18,6 +18,8 @@ from typing import Any, Iterable, Iterator, Mapping, Sequence
 from grit.settings import db_path
 
 SCHEMA = Path(__file__).with_name("schema.sql")
+# Columns added after a table was first created. CREATE TABLE IF NOT EXISTS does not add them to an existing pool.
+MIGRATIONS = {"watchpoint_updates": {"cycles_before": "INTEGER NOT NULL DEFAULT 0"}}
 _JSON_SUFFIX = "_json"
 
 
@@ -65,6 +67,12 @@ class Pool:
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.conn.executescript(SCHEMA.read_text(encoding="utf-8"))
+        for table, columns in MIGRATIONS.items():
+            present = {row[1] for row in self.conn.execute(f"PRAGMA table_info({table})")}
+            for column, definition in columns.items():
+                if column not in present:
+                    self.conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+        self.conn.commit()
 
     def close(self) -> None:
         self.conn.close()
@@ -284,6 +292,21 @@ class Pool:
         for row in self.feedback(profile_id):
             latest[(row["profile_id"], row["signal_id"])] = row["decision"]
         return latest
+
+    def latest_assessments(self, signal_ids: Iterable[str]) -> dict[str, dict[str, Any]]:
+        """The most recent assessment of each signal, across runs. Memory needs the features of signals from earlier weeks."""
+        found: dict[str, dict[str, Any]] = {}
+        ids = list(dict.fromkeys(signal_ids))
+        for start in range(0, len(ids), 500):
+            chunk = ids[start : start + 500]
+            marks = ", ".join("?" for _ in chunk)
+            for row in self.rows(
+                f"""SELECT a.*, s.title, s.url, s.publisher, s.published_at FROM assessments a JOIN signals s ON s.signal_id = a.signal_id
+                    WHERE a.signal_id IN ({marks}) ORDER BY a.assessed_at""",
+                tuple(chunk),
+            ):
+                found[row["signal_id"]] = row
+        return found
 
     def management_requests(self, *, active_only: bool = False) -> list[dict[str, Any]]:
         where = "WHERE status = 'ACTIVE'" if active_only else ""

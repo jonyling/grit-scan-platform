@@ -14,6 +14,7 @@ from openpyxl import Workbook
 
 from grit.core.canonical import canonical_hash
 from grit.pool import Pool, utc_now
+from grit.report.office import cell_text
 from grit.profiles import Profile
 from grit.settings import OUTPUT_DIR
 from grit.workflow.packages import airis_ready, hand_off
@@ -54,7 +55,7 @@ def export_to_airis(pool: Pool, ba_head: Profile, *, folder: Path | None = None)
     sheet.title = "AIRIS import"
     sheet.append(list(FIELDS))
     for record in records:
-        sheet.append([", ".join(value) if isinstance(value, list) else value for value in (record[field] for field in FIELDS)])
+        sheet.append([cell_text(", ".join(value) if isinstance(value, list) else value) for value in (record[field] for field in FIELDS)])
     workbook.save(str(path.with_suffix(".xlsx")))
     pool.insert("airis_exports", {"export_id": export_id, "created_at": utc_now(), "approved_by": ba_head.profile_id, "signal_ids_json": [r["signal_id"] for r in records], "path": str(path), "content_hash": digest})
     denied = [result for result in results if result["signal_id"] not in allowed]

@@ -145,6 +145,7 @@ CREATE TABLE IF NOT EXISTS watchpoint_updates (
     run_id          TEXT NOT NULL,
     signal_ids_json TEXT NOT NULL DEFAULT '[]',
     note            TEXT NOT NULL,
+    cycles_before   INTEGER NOT NULL DEFAULT 0,  -- the quiet count before this run, so a rerun of the week recomputes from it
     PRIMARY KEY (watchpoint_id, run_id)
 );
 

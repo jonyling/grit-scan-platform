@@ -64,7 +64,8 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
         run.text, run.font.size, run.font.color.rgb = line, Pt(14), RGBColor(0, 0, 0)
     _text(slide, [f"Draft for review. Not approved. Run {meta['run_id']}."], top=5.5, size=10, height=0.5)
 
-    if brief.get("conditions"):
+    sections = set(meta.get("sections") or [])
+    if brief.get("conditions") and "CONDITIONS" in sections:
         slide = deck.slides.add_slide(blank)
         prior = meta.get("prior_run_date")
         _title(slide, "Ten standing conditions", f"Trend vs {prior}" if prior else "First weekly assessment")
@@ -90,13 +91,13 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
 
     named = [item for group in brief.get("projects") or [] for item in group["items"] if item["text"]]
     named += [item for item in (brief.get("suppliers") or []) + (brief.get("customers") or []) + (brief.get("hazards") or []) if item["text"]]
-    if brief.get("projects") or brief.get("suppliers"):
+    if (brief.get("projects") or brief.get("suppliers")) and sections & {"PROJECTS", "SUPPLIERS", "CUSTOMERS", "HAZARDS"}:
         slide = deck.slides.add_slide(blank)
         _title(slide, "Named projects, suppliers, customers and hazards", "Every named item is checked each week; silence is reported as such")
         lines = [f"{item['name']}: {item['text']['plain']}" for item in named[:8]] or ["No item this week names a URS Taiwan project, supplier, customer, or hazard near a site."]
         _text(slide, lines, size=12)
 
-    if brief.get("findings"):
+    if brief.get("findings") and "PRIORITY_FINDINGS" in sections:
         slide = deck.slides.add_slide(blank)
         _title(slide, "Priority findings", "Ordered by news priority (P1 to P4), then briefing tier")
         lines = [f"[{item['priority'] + ' · ' if item['priority'] else ''}tier {item['tier']}] {item['title']} ({item['outlet']}, {item['date'] or 'n.d.'})" for item in brief["findings"][:8]]
@@ -117,13 +118,20 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
 _HEADER = PatternFill("solid", fgColor="1F3864")
 
 
+def cell_text(value: Any) -> Any:
+    """Web text that starts like a formula is stored as text, so a hostile headline cannot run in Excel."""
+    if isinstance(value, str) and value[:1] in {"=", "+", "-", "@", "\t", "\r"}:
+        return "'" + value
+    return value
+
+
 def _sheet(workbook: Workbook, title: str, headers: Sequence[str], rows: Sequence[Sequence[Any]], widths: Sequence[int]) -> None:
     sheet = workbook.create_sheet(title)
     sheet.append(list(headers))
     for cell in sheet[1]:
         cell.font, cell.fill = Font(bold=True, color="FFFFFF"), _HEADER
     for row in rows:
-        sheet.append([value if not isinstance(value, (list, dict)) else str(value) for value in row])
+        sheet.append([cell_text(value if not isinstance(value, (list, dict)) else str(value)) for value in row])
     for number, width in enumerate(widths, start=1):
         sheet.column_dimensions[get_column_letter(number)].width = width
     for row in sheet.iter_rows(min_row=2):

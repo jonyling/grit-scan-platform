@@ -480,8 +480,9 @@ def _renumber(text: str, source_back: Mapping[str, str], target_back: Mapping[st
     reverse = {signal: key for key, signal in target_back.items()}
 
     def swap(match: re.Match[str]) -> str:
-        parts = [reverse.get(source_back.get(part.strip(), ""), part.strip()) for part in match.group(1).split(",")]
-        return "[" + ", ".join(parts) + "]"
+        # A mark with no source in the target numbering is dropped: its old number may name a different source there.
+        parts = [reverse[source_back[part.strip()]] for part in match.group(1).split(",") if source_back.get(part.strip()) in reverse]
+        return "[" + ", ".join(parts) + "]" if parts else ""
 
     return re.sub(r"\[(S\d{1,3}(?:\s*,\s*S\d{1,3})*)\]", swap, text)
 
@@ -558,10 +559,9 @@ def update_watchpoints(pool: Pool, run: ReaderRun, rows: Sequence[Mapping[str, A
     """By rule: a kept signal that strongly names a watchpoint's keywords is an update. Otherwise the count of quiet cycles grows."""
     updated = quiet = 0
     for watchpoint in pool.watchpoints(run.pack):
-        if watchpoint.get("last_checked_run") == run.run_id:
-            # A rerun of the same week recomputes from the earlier count, so the quiet cycles do not double.
-            earlier = pool.one("SELECT signal_ids_json FROM watchpoint_updates WHERE watchpoint_id = ? AND run_id = ?", (watchpoint["watchpoint_id"], run.run_id))
-            watchpoint = {**watchpoint, "cycles_without_update": max(0, int(watchpoint["cycles_without_update"] or 0) - (0 if earlier and earlier["signal_ids"] else 1))}
+        earlier = pool.one("SELECT cycles_before FROM watchpoint_updates WHERE watchpoint_id = ? AND run_id = ?", (watchpoint["watchpoint_id"], run.run_id))
+        # A rerun of the same week starts from the count before that week, so the quiet cycles neither double nor reset.
+        before = int(earlier["cycles_before"]) if earlier else int(watchpoint["cycles_without_update"] or 0)
         hits = [row for row in rows if any(hit["item_id"] == watchpoint["watchpoint_id"] for hit in row["link"].get("watchpoints") or [])]
         hits = _recent_first(hits)[:3]
         if hits:
@@ -570,11 +570,11 @@ def update_watchpoints(pool: Pool, run: ReaderRun, rows: Sequence[Mapping[str, A
             pool.conn.execute("UPDATE watchpoints SET last_evidence_on = ?, last_checked_run = ?, cycles_without_update = 0 WHERE watchpoint_id = ?", (run.run_date.isoformat(), run.run_id, watchpoint["watchpoint_id"]))
         else:
             quiet += 1
-            cycles = int(watchpoint["cycles_without_update"] or 0) + 1
+            cycles = before + 1
             note = f"No new item this week. Unconfirmed for {cycles} consecutive weekly cycle(s)."
             pool.conn.execute("UPDATE watchpoints SET last_checked_run = ?, cycles_without_update = ? WHERE watchpoint_id = ?", (run.run_id, cycles, watchpoint["watchpoint_id"]))
         pool.conn.commit()
-        pool.insert("watchpoint_updates", {"watchpoint_id": watchpoint["watchpoint_id"], "run_id": run.run_id, "signal_ids_json": [row["signal_id"] for row in hits], "note": note}, replace=True)
+        pool.insert("watchpoint_updates", {"watchpoint_id": watchpoint["watchpoint_id"], "run_id": run.run_id, "signal_ids_json": [row["signal_id"] for row in hits], "note": note, "cycles_before": before}, replace=True)
     return {"updated": updated, "quiet": quiet}
 
 

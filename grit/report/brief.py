@@ -97,8 +97,8 @@ def _cited_ids(*texts: str | None) -> set[str]:
 def routed_signals(pool: Pool, run_id: str, profile: Profile) -> list[dict[str, Any]]:
     """Every kept signal with this reader's route and memory effect. Excluded signals stay in the list with the reason."""
     rows = pool.assessments(run_id, kept_only=True)
-    every = {row["signal_id"]: row for row in pool.assessments(run_id)}
-    memory = build_memory(profile.profile_id, pool.feedback(profile.profile_id), every)
+    feedback = pool.feedback(profile.profile_id)
+    memory = build_memory(profile.profile_id, feedback, pool.latest_assessments(row["signal_id"] for row in feedback))
     requests = pool.management_requests(active_only=True)
     out = []
     for row in rows:
@@ -117,7 +117,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
     pack_name = brief_config.get("readerPack") or run["pack"]
     pack = load_ontology_pack(CONFIG_DIR, pack_name)
     run_date = date.fromisoformat(run["run_date"])
-    window = int((pack.scan_plan or {}).get("windowDays") or 8) - 1
+    window = int((pack.scan_plan or {}).get("windowDays") or 8)
     previous = pool.latest_run(pack_name, before=run["run_date"], kind="READER_SCAN")
 
     conditions = pool.conditions(run_id)
@@ -174,7 +174,9 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
 
     shown = [row for row in routed if row["shown"]]
     max_findings = int(brief_config.get("maxFindings") or 8)
-    priority_rows = [row for row in shown if (row.get("tier") or 9) <= 2][:max_findings]
+    sections = set(brief_config.get("sections") or [])
+    # The package holds what the reader receives, so a section the profile leaves out adds no member.
+    priority_rows = [row for row in shown if (row.get("tier") or 9) <= 2][:max_findings] if "PRIORITY_FINDINGS" in sections else []
     findings = []
     for row in priority_rows:
         card = (cards.get(row["signal_id"]) or {}).get("card")
@@ -185,7 +187,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             "corroboration": row.get("corroboration"), "red": bool(row.get("red")), "harm": _harm_line(row), "memory": row["memory"]["reasons"],
             "card": _card_summary(card) if card else None,
         })
-    others = [row for row in shown if row not in priority_rows][:25]
+    others = [row for row in shown if row not in priority_rows][:25] if "OTHER_SIGNALS" in sections else []
     other_signals = [
         {"signal_id": row["signal_id"], "title": row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"], "priority": row["route"]["priority"], "tier": row.get("tier"), "rung": row.get("rung")}
         for row in others

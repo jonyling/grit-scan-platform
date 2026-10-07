@@ -23,7 +23,7 @@ def _record(**fields):
 
 
 def test_priority_takes_the_lowest_number_and_records_every_match() -> None:
-    record = _record(rung="COUNTERPARTY", link={"involves": [{"cls": "Customer", "strong": True}]}, exposure=[{"item_type": "PROJECT", "item_name": "Taichung Blue Line"}])
+    record = _record(rung="COUNTERPARTY", link={"involves": [{"cls": "Customer", "strong": True}]}, exposure=[{"item_type": "PROJECT", "item_name": "Taichung Blue Line", "strong": True}])
     route = aperture_routing(record, aperture="MATERIAL_APERTURE", packs=["urs-tw"])
     assert route.priority == "P2"
     assert any(line.startswith("P4") for line in route.matched), "the customer match is still recorded"
@@ -105,3 +105,32 @@ def test_every_profile_loads_and_one_ba_head_approves_for_airis() -> None:
     assert {"wilson", "hwaimay", "gareth", "ksyong", "group-cfo"} <= set(profiles)
     assert [profile.profile_id for profile in profiles.values() if profile.review_role == "BA_HEAD"] == ["gareth"]
     assert profiles["wilson"].brief["readerPack"] == "urs-tw"
+
+
+def test_a_passing_mention_sets_no_priority() -> None:
+    weak = _record(rung=None, exposure=[{"item_type": "PROJECT", "item_name": "Kaohsiung Purple Line", "strong": False}], condition_ids=[])
+    route = aperture_routing(weak, aperture="MATERIAL_APERTURE", packs=["urs-tw"])
+    assert route.priority is None and not route.include
+
+
+def test_renumbering_drops_a_mark_with_no_source_in_the_target() -> None:
+    from grit.pipeline.reader_scan import _renumber
+
+    combined = {"S1": "sigP", "S2": "sigQ", "S3": "sigR"}
+    local = {"S1": "sigQ", "S2": "sigR"}
+    assert _renumber("Fact [S3]; see also [S1].", combined, local) == "Fact [S2]; see also ."
+
+
+def test_spreadsheet_text_never_starts_a_formula() -> None:
+    from grit.report.office import cell_text
+
+    assert cell_text('=HYPERLINK("https://evil")') == '\'=HYPERLINK("https://evil")'
+    assert cell_text("Plain headline") == "Plain headline" and cell_text(3) == 3
+
+
+def test_the_printed_window_matches_the_keep_rule() -> None:
+    from datetime import date
+
+    from grit.report.brief import window_label
+
+    assert window_label(date(2026, 10, 7), 8) == "29 September – 7 October 2026"

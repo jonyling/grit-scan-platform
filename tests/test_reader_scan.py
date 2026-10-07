@@ -173,3 +173,79 @@ def test_reader_pack_review_and_airis_handoff(tmp_path: Path, monkeypatch) -> No
     assert pool.current_states()[(chosen, execution)] == "AIRIS_HANDOFF_READY"
     payload = json.loads(Path(exported["path"]).read_text())
     assert payload["signals"][0]["package_hash"] == package["content_hash"]
+
+
+def _scanned(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    pool, run, specs = _scan(tmp_path)
+    reader_scan.acquire(pool, run, specs, getter=_getter, usage_path=tmp_path / "usage.json", sleep=lambda _s: None, log=lambda _m: None)
+    reader_scan.embed(pool, run, embedder=_Embedder())
+    reader_scan.assess(pool, run, score_harm_fn=lambda *a, **k: {"status": "NOT_RUN", "reason": "test"})
+    reader_scan.run_agents(pool, run, client=reader_scan.stub_client(_model), model="stub", log=lambda _m: None)
+    pool.finish_run(run.run_id)
+    return pool, run
+
+
+def test_review_acts_on_the_exact_pending_version(tmp_path: Path, monkeypatch) -> None:
+    import pytest
+
+    from grit.profiles import load_profiles
+    from grit.report.package import write_pack
+    from grit.workflow.packages import review_package
+
+    pool, run = _scanned(tmp_path, monkeypatch)
+    profiles = load_profiles()
+    first = write_pack(pool, run.run_id, profiles["wilson"], folder=tmp_path / "v1")["package"]
+    review_package(pool, package_id=first["package_id"], version=1, reviewer=profiles["wilson"], intent="REQUEST_REWORK")
+    pool.add_feedback("wilson", first["members"][0], "WATCH")  # any change gives v2 a different brief
+    with pool.transaction() as conn:
+        conn.execute("UPDATE runs SET config_json = json_set(config_json, '$.bottom_line.bottom_line', 'Changed.') WHERE run_id = ?", (run.run_id,))
+    second = write_pack(pool, run.run_id, profiles["wilson"], folder=tmp_path / "v2")["package"]
+    assert second["version"] == 2
+    with pytest.raises(ValueError):
+        review_package(pool, package_id=first["package_id"], version=1, reviewer=profiles["gareth"], intent="APPROVE")
+    assert review_package(pool, package_id=first["package_id"], version=2, reviewer=profiles["gareth"], intent="APPROVE")["status"] == "APPROVED"
+    statuses = {row["version"]: row["status"] for row in pool.rows("SELECT version, status FROM packages")}
+    assert statuses == {1: "RETURNED_FOR_REWORK", 2: "APPROVED"}
+
+
+def test_a_signal_goes_to_airis_once_under_its_own_approval(tmp_path: Path, monkeypatch) -> None:
+    from grit.profiles import load_profiles
+    from grit.report.airis import export_to_airis
+    from grit.report.package import write_pack
+    from grit.workflow.packages import review_package
+
+    pool, run = _scanned(tmp_path, monkeypatch)
+    profiles = load_profiles()
+    wilson = write_pack(pool, run.run_id, profiles["wilson"], folder=tmp_path / "w")["package"]
+    hwaimay = write_pack(pool, run.run_id, profiles["hwaimay"], folder=tmp_path / "h")["package"]
+    shared = sorted(set(wilson["members"]) & set(hwaimay["members"]))[0]
+    pool.add_feedback("gareth", shared, "APPROVE")
+    review_package(pool, package_id=wilson["package_id"], version=1, reviewer=profiles["gareth"], intent="APPROVE")
+    assert export_to_airis(pool, profiles["gareth"], folder=tmp_path / "a")["exported"] == 1
+    review_package(pool, package_id=hwaimay["package_id"], version=1, reviewer=profiles["gareth"], intent="APPROVE")
+    assert export_to_airis(pool, profiles["gareth"], folder=tmp_path / "a")["exported"] == 0
+    rows = [row["row"] for row in pool.rows("SELECT row_json FROM workflow_states WHERE state = 'AIRIS_HANDOFF_READY'")]
+    assert len(rows) == 1 and rows[0]["trigger_record_id"] == wilson["package_id"]
+
+
+def test_memory_carries_across_weeks_and_watchpoint_reruns_keep_their_count(tmp_path: Path, monkeypatch) -> None:
+    from grit.profiles import load_profiles
+    from grit.report.brief import routed_signals
+
+    pool, run = _scanned(tmp_path, monkeypatch)
+    kept = pool.assessments(run.run_id, kept_only=True)
+    pool.add_feedback("wilson", kept[0]["signal_id"], "REJECT")
+    later = reader_scan.new_run(pool, date(2026, 10, 14), "urs-tw")
+    for row in kept:
+        pool.add_sighting(row["signal_id"], later.run_id, query_id="q", query="q", lane="CONDITION", target_id=None, rank=1)
+        pool.save_assessment({"signal_id": row["signal_id"], "run_id": later.run_id, "pack": "urs-tw", "decision": "KEEP", "tier": row["tier"], "link_json": row["link"], "themes_json": row["themes"]})
+    routed = {row["signal_id"]: row for row in routed_signals(pool, later.run_id, load_profiles()["wilson"])}
+    assert routed[kept[0]["signal_id"]]["memory"]["hidden"], "a rejection in week 1 still applies in week 2"
+
+    before = {row["watchpoint_id"]: row["cycles_without_update"] for row in pool.watchpoints("urs-tw")}
+    rows = pool.assessments(run.run_id, kept_only=True)
+    reader_scan.update_watchpoints(pool, run, rows)
+    reader_scan.update_watchpoints(pool, run, rows)
+    after = {row["watchpoint_id"]: row["cycles_without_update"] for row in pool.watchpoints("urs-tw")}
+    assert after == before, "rerunning the same week leaves the quiet-cycle count where the first pass put it"

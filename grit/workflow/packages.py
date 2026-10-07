@@ -25,15 +25,17 @@ ACTOR = "grit-supervisor"
 def supervisor_for(pool: Pool) -> Supervisor:
     rows = [WorkflowRow(**row) for row in pool.workflow_rows()]
     supervisor = Supervisor(actor_id=ACTOR, ledger_rows=rows, ledger_sink=pool.append_workflow_row)
-    for row in pool.rows("SELECT * FROM packages ORDER BY created_at"):
-        membership = row["membership"]
-        package = Package(
-            package_id=row["package_id"], version=row["version"], content_hash=row["content_hash"], membership_hash=membership["membership_hash"],
-            member_signal_ids=tuple(membership["members"]), status=row["status"], execution_id=execution_for(row["run_id"], row["profile_id"]),
-        )
-        approval = membership.get("approval") if row["status"] == "APPROVED" else None
-        supervisor.restore_package(package, approval)
+    for row in pool.rows("SELECT * FROM packages ORDER BY package_id, version"):
+        supervisor.restore_package(_package(row), row["membership"].get("approval") if row["status"] == "APPROVED" else None)
     return supervisor
+
+
+def _package(row: Mapping[str, Any]) -> Package:
+    membership = row["membership"]
+    return Package(
+            package_id=row["package_id"], version=row["version"], content_hash=row["content_hash"], membership_hash=membership["membership_hash"],
+        member_signal_ids=tuple(membership["members"]), status=row["status"], execution_id=execution_for(row["run_id"], row["profile_id"]),
+    )
 
 
 def execution_for(run_id: str, profile_id: str) -> str:
@@ -105,7 +107,10 @@ def review_package(pool: Pool, *, package_id: str, version: int, reviewer: Profi
     row = pool.one("SELECT * FROM packages WHERE package_id = ? AND version = ?", (package_id, version))
     if row is None:
         raise KeyError(f"No package {package_id} v{version}")
+    if row["status"] != "PENDING_REVIEW":
+        raise ValueError(f"{package_id} v{version} is {row['status']}. Only a pending version can be reviewed.")
     supervisor = supervisor_for(pool)
+    supervisor.restore_package(_package(row))  # the exact version under review, not whichever version was loaded last
     at = utc_now()
     decision = supervisor.submit_review(
         package_id, reviewer_id=reviewer.profile_id, reviewer_intent=intent, findings=[dict(item) for item in findings], correlation_id=f"{package_id}-v{version}-review",
@@ -132,7 +137,9 @@ def airis_ready(pool: Pool, ba_head: Profile) -> list[dict[str, Any]]:
         raise PermissionError(f"{ba_head.label} is not a BA head. Only a BA head's approvals go to AIRIS.")
     approved = {signal_id for (profile_id, signal_id), decision in pool.latest_decisions(ba_head.profile_id).items() if decision == "APPROVE"}
     states = pool.current_states()
-    ready, seen = [], set()
+    # A signal goes to AIRIS once, whichever reader's package carried it.
+    seen = {signal_id for (signal_id, _execution), state in states.items() if state == "AIRIS_HANDOFF_READY"}
+    ready = []
     for row in pool.rows("SELECT * FROM packages WHERE status = 'APPROVED' ORDER BY created_at"):
         execution_id = execution_for(row["run_id"], row["profile_id"])
         for signal_id in row["membership"]["members"]:
@@ -147,7 +154,7 @@ def hand_off(pool: Pool, ba_head: Profile, items: Sequence[Mapping[str, Any]]) -
     at = utc_now()
     done = []
     for item in items:
-        result = supervisor.handoff_to_airis(item["signal_id"], execution_for(item["run_id"], item["profile_id"]), payload_valid=True, correlation_id=f"airis-{item['package_id']}", accepted_at=at)
+        result = supervisor.handoff_to_airis(item["signal_id"], execution_for(item["run_id"], item["profile_id"]), package_id=item["package_id"], version=item["version"], payload_valid=True, correlation_id=f"airis-{item['package_id']}", accepted_at=at)
         done.append({**item, "decision": result.get("decision"), "reason_code": result.get("reason_code")})
     return done
 

@@ -59,8 +59,8 @@ def main() -> None:
             return
         run_id = st.selectbox("Run", [row["run_id"] for row in runs])
         st.caption(f"Aperture: {profile.aperture.replace('_', ' ').lower()}. Packs: {', '.join(profile.packs)}. Review role: {profile.review_role.replace('_', ' ').lower()}.")
-        every = {row["signal_id"]: row for row in db.assessments(run_id)}
-        memory = build_memory(profile.profile_id, db.feedback(profile.profile_id), every)
+        feedback = db.feedback(profile.profile_id)
+        memory = build_memory(profile.profile_id, feedback, db.latest_assessments(row["signal_id"] for row in feedback))
         st.subheader("Memory")
         st.caption(f"{memory.size} decision(s) recorded. Memory reorders within a tier and hides what you rejected. It never hides P1 or RED, and never edits a shared fact.")
         summary = memory.summary()

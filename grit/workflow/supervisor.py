@@ -558,9 +558,17 @@ class Supervisor:
         if approval is not None and not any(item["approval_id"] == approval["approval_id"] for item in self.approvals):
             self.approvals.append(approval)
 
-    def handoff_to_airis(self, signal_id: str, execution_id: str, *, payload_valid: bool, correlation_id: str, accepted_at: str) -> dict[str, Any]:
+    def handoff_to_airis(
+        self, signal_id: str, execution_id: str, *, payload_valid: bool, correlation_id: str, accepted_at: str, package_id: str | None = None, version: int | None = None
+    ) -> dict[str, Any]:
         """APPROVED to AIRIS_HANDOFF_READY. The handoff must name the exact approved package version and hash."""
-        approval = next((item for item in self.approvals if signal_id in item["member_signal_ids"]), None)
+        approval = next(
+            (
+                item for item in self.approvals
+                if signal_id in item["member_signal_ids"] and (package_id is None or item["package_id"] == package_id) and (version is None or item["package_version"] == version)
+            ),
+            None,
+        )
         evidence: dict[str, Any] = {"airis_handoff_payload_valid": payload_valid}
         if approval is not None:
             evidence |= {
