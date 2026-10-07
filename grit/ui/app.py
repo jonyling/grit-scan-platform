@@ -1,10 +1,12 @@
-"""Streamlit review screen.
+"""GRIT-Scan dashboard with the chat beneath it.
 
 Run from the repository root:
 
-    streamlit run grit/ui/app.py
+    .venv/bin/python -m grit ui
 
-The screen calls ReviewGate through grit.ui.actions. It does not write the ledger.
+The screen reads the signal pool. Its buttons call governed functions: feedback goes to the reader's memory, a package
+decision goes through ReviewGate(), and a management request waits for a reviewer to activate it. The screen never writes
+a workflow row itself.
 """
 
 from __future__ import annotations
@@ -12,174 +14,238 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parents[1]
+_ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from grit.ui.actions import submit_from_screen
-from grit.ui.seed import ACCEPTED_AT, CORRELATION_ID, seed_pending_package
-from grit.ui.view_model import acquired_detail, package_view, signal_detail, signal_list
+import os  # noqa: E402
+
+from grit.settings import load_local_env  # noqa: E402
+
+BOX = {"WATCHPOINT": "#FFF2CC", "STABLE": "#E2EFDA", "RED": "#F8CBAD"}
 
 
 def main() -> None:
-    from grit.settings import load_local_env
-
-    load_local_env()
+    import pandas as pd
     import streamlit as st
 
-    st.set_page_config(page_title="GRIT-Scan review", layout="wide")
-    if "supervisor" not in st.session_state:
-        supervisor, package_id, assessments = seed_pending_package()
-        st.session_state.supervisor = supervisor
-        st.session_state.package_id = package_id
-        st.session_state.assessments = assessments
-        st.session_state.weekly_delta = "Draft for senior-management review. No loss is asserted."
+    from grit.agents.chat import add_request, parse_command
+    from grit.pool import Pool, utc_now
+    from grit.profiles import load_profiles
+    from grit.profiles.memory import build_memory
+    from grit.report.brief import build_brief, routed_signals
+    from grit.report.markdown import render_markdown
+    from grit.ui import actions
+    from grit.ui.view_model import kpis, signal_detail, signal_rows
 
-    supervisor = st.session_state.supervisor
-    package_id = st.session_state.package_id
-    st.title("GRIT-Scan review")
-    st.caption("A missing fact reads as not established. This screen does not write state.")
-    _show_acquired(st)
+    load_local_env()
+    st.set_page_config(page_title="GRIT-Scan", layout="wide")
+
+    @st.cache_resource
+    def pool() -> Pool:
+        return Pool()
+
+    db = pool()
+    profiles = load_profiles()
+    readers = {profile.label: profile for profile in profiles.values() if profile.brief}
+    labels = list(readers)
+    default = next((number for number, label in enumerate(labels) if readers[label].profile_id == "wilson"), 0)
+    with st.sidebar:
+        st.title("GRIT-Scan")
+        profile = readers[st.selectbox("Reader", labels, index=default)]
+        runs = db.rows("SELECT run_id FROM runs ORDER BY run_date DESC, started_at DESC")
+        if not runs:
+            st.info("The pool has no run yet. Start one with: .venv/bin/python -m grit weekly --dry-run")
+            return
+        run_id = st.selectbox("Run", [row["run_id"] for row in runs])
+        st.caption(f"Aperture: {profile.aperture.replace('_', ' ').lower()}. Packs: {', '.join(profile.packs)}. Review role: {profile.review_role.replace('_', ' ').lower()}.")
+        every = {row["signal_id"]: row for row in db.assessments(run_id)}
+        memory = build_memory(profile.profile_id, db.feedback(profile.profile_id), every)
+        st.subheader("Memory")
+        st.caption(f"{memory.size} decision(s) recorded. Memory reorders within a tier and hides what you rejected. It never hides P1 or RED, and never edits a shared fact.")
+        summary = memory.summary()
+        if summary["prefers"]:
+            st.write("Prefers: " + ", ".join(f"{name} ({weight:+d})" for name, weight in summary["prefers"]))
+        if summary["avoids"]:
+            st.write("Avoids: " + ", ".join(f"{name} ({weight:+d})" for name, weight in summary["avoids"]))
+
+    brief = build_brief(db, run_id, profile)
+    routed = routed_signals(db, run_id, profile)
+    packages = db.rows("SELECT * FROM packages WHERE run_id = ? AND profile_id = ? ORDER BY version DESC", (run_id, profile.profile_id))
+    decisions = {signal_id: decision for (_profile, signal_id), decision in db.latest_decisions(profile.profile_id).items()}
+
+    meta, bottom = brief["meta"], brief["bottom_line"]
+    st.header(meta["title"])
+    st.caption(f"{meta['subtitle']} | Scan window {meta['window']} | Prepared for {meta['prepared_for']} | Draft for review, not approved")
+    st.markdown(
+        f"<div style='background:{BOX.get(bottom['label'], '#FFF2CC')};padding:14px 18px;border-radius:6px;border:1px solid #1F3864'>"
+        f"<b style='color:#1F3864'>{bottom['label']} — Bottom line</b><br>{bottom['text']} {bottom.get('escalation') or ''}</div>",
+        unsafe_allow_html=True,
+    )
+    for column, (label, value) in zip(st.columns(6), kpis(routed, brief, packages).items()):
+        column.metric(label, value)
+
+    dashboard, signals_tab, packs_tab, requests_tab, alerts_tab = st.tabs(["Dashboard", "Signals", "Packs and review", "Management requests", "RED and AIRIS"])
+
+    with dashboard:
+        st.subheader("Ten standing conditions")
+        st.dataframe(
+            pd.DataFrame([{"#": row["number"], "Condition": row["name"], "Trend": row["trend"], "Confidence": row["confidence"], "Basis": row["basis"]["plain"]} for row in brief["conditions"]]),
+            hide_index=True, width="stretch",
+        )
+        left, right = st.columns(2)
+        with left:
+            st.subheader("Named projects, suppliers, customers and hazards")
+            named = [item for group in brief["projects"] for item in group["items"]] + brief["suppliers"] + brief["customers"] + brief["hazards"]
+            st.dataframe(pd.DataFrame([{"Item": item["name"], "This week": item["text"]["plain"] if item["text"] else "Nothing found"} for item in named]), hide_index=True, width="stretch")
+        with right:
+            st.subheader("Watchpoints")
+            for row in brief["watchpoints"]:
+                st.markdown(f"**{row['title']}** ({row['status'].lower()}, quiet for {row['cycles']} cycle(s))  \n{row['update']['plain'] if row['update'] else row['detail']}")
+            if brief["qa"]:
+                st.subheader("QA and correction log")
+                for row in brief["qa"]:
+                    st.markdown(f"- **{row['item']}**: {row['correction']['plain']}")
+
+    with signals_tab:
+        only_shown = st.toggle("Only what your profile shows", value=True)
+        rows = [row for row in routed if row["shown"] or not only_shown]
+        table = pd.DataFrame(signal_rows(rows, decisions))
+        picked = st.dataframe(table.drop(columns=["signal_id"]) if not table.empty else table, hide_index=True, width="stretch", on_select="rerun", selection_mode="single-row")
+        chosen = list(picked.selection.rows) if picked is not None and picked.selection else []
+        if chosen:
+            row = rows[chosen[0]]
+            st.markdown(f"### [{row['title']}]({row['url']})")
+            st.caption(f"{row.get('publisher')} | {(row.get('published_at') or 'date not stated')[:10]} | {row['signal_id']}")
+            st.write(row.get("text") or "")
+            for label, value in signal_detail(row):
+                st.markdown(f"**{label}.** {value}")
+            rationale = st.text_input("Why (optional)", key=f"why-{row['signal_id']}")
+            for column, decision in zip(st.columns(3), ("APPROVE", "REJECT", "WATCH")):
+                if column.button(decision.title(), key=f"{decision}-{row['signal_id']}"):
+                    actions.record_feedback(db, profile, row["signal_id"], decision, rationale)
+                    st.rerun()
+
+    with packs_tab:
+        if st.toggle("Preview this week's brief", value=False):
+            st.markdown(render_markdown(brief))
+        if st.button("Write this week's pack and submit it for review"):
+            from grit.report.package import write_pack
+
+            st.json(write_pack(db, run_id, profile))
+        for row in packages:
+            st.markdown(f"**{row['package_id']} v{row['version']}**: {row['status']}. Content hash `{row['content_hash'][:16]}`. Decided by {row['decided_by'] or 'nobody yet'}.")
+            files = row["files"] or {}
+            for column, kind in zip(st.columns(4), ("docx", "pptx", "xlsx", "md")):
+                path = files.get(kind)
+                if path and Path(path).is_file():
+                    column.download_button(f"Download {kind}", Path(path).read_bytes(), file_name=Path(path).name, key=f"dl-{row['package_id']}-{row['version']}-{kind}")
+            if row["status"] == "PENDING_REVIEW" and profile.review_role in {"REVIEWER", "BA_HEAD"}:
+                for column, intent in zip(st.columns(4), ("APPROVE", "REQUEST_REWORK", "HOLD", "REJECT")):
+                    if column.button(intent.replace("_", " ").title(), key=f"{intent}-{row['package_id']}-{row['version']}"):
+                        result = actions.review(db, profile, row["package_id"], row["version"], intent)
+                        st.info(f"ReviewGate: {result['outcome']}. The package is now {result['status']}.")
+        if not packages:
+            st.caption("No pack is written for this reader and run yet.")
+
+    with requests_tab:
+        requests = db.management_requests()
+        if requests:
+            st.dataframe(pd.DataFrame([{key: row[key] for key in ("request_id", "status", "kind", "title", "keywords", "requested_by", "origin")} for row in requests]), hide_index=True, width="stretch")
+        with st.form("request"):
+            title = st.text_input("Concern, topic, trend or keyword")
+            keywords = st.text_input("Search keywords, comma-separated (6 or more characters, or two words)")
+            kind = st.selectbox("Kind", ["CONCERN", "TOPIC", "TREND", "KEYWORD"])
+            if st.form_submit_button("Propose") and title:
+                draft = {"kind": kind, "title": title, "keywords": [item.strip() for item in (keywords or title).split(",") if item.strip()]}
+                request_id = add_request(db, draft, profile_id=profile.profile_id, requested_by=profile.label)
+                st.success(f"{request_id} proposed. When a reviewer activates it, it adds queries to the next scan and sets P1.")
+        if profile.review_role in {"REVIEWER", "BA_HEAD"}:
+            for row in [item for item in requests if item["status"] in {"PROPOSED", "ACTIVE"}]:
+                cols = st.columns([4, 1, 1])
+                cols[0].write(f"{row['request_id']} {row['title']} ({row['status']})")
+                if row["status"] == "PROPOSED" and cols[1].button("Activate", key=f"act-{row['request_id']}"):
+                    actions.set_request_status(db, profile, row["request_id"], "ACTIVE")
+                    st.rerun()
+                if cols[2].button("Close", key=f"close-{row['request_id']}"):
+                    actions.set_request_status(db, profile, row["request_id"], "CLOSED")
+                    st.rerun()
+
+    with alerts_tab:
+        alerts = db.rows("SELECT * FROM alerts WHERE run_id = ? ORDER BY created_at", (run_id,))
+        st.subheader("RED alert drafts")
+        if not alerts:
+            st.caption("No RED pattern fired this week.")
+        for row in alerts:
+            st.markdown(f"**{row['alert_id']}**: {row['status']}. Rule {row['rule'].get('rule_id')}. Recipients: {', '.join(row['recipients'])}.")
+            if row["draft_path"] and Path(row["draft_path"]).is_file():
+                st.download_button("Download the draft email", Path(row["draft_path"]).read_bytes(), file_name=Path(row["draft_path"]).name, key=f"eml-{row['alert_id']}")
+            if row["status"] == "DRAFT":
+                sent, dismissed = st.columns(2)
+                if sent.button("I sent it", key=f"sent-{row['alert_id']}"):
+                    actions.decide_alert(db, profile, row["alert_id"], "SENT_BY_HUMAN")
+                    st.rerun()
+                if dismissed.button("Dismiss", key=f"dismiss-{row['alert_id']}"):
+                    actions.decide_alert(db, profile, row["alert_id"], "DISMISSED")
+                    st.rerun()
+        st.subheader("AIRIS handoff")
+        if profile.review_role == "BA_HEAD":
+            from grit.report.airis import export_to_airis, preview
+
+            ready = preview(db, profile)
+            st.caption(f"{len(ready)} signal(s) you approved sit in an approved package.")
+            if ready:
+                st.dataframe(pd.DataFrame(ready), hide_index=True, width="stretch")
+                if st.button("Export to AIRIS"):
+                    st.json(export_to_airis(db, profile))
+        else:
+            st.caption("Only the BA head's approvals go to AIRIS.")
 
     st.divider()
-    st.subheader("Sample review package")
-    st.caption("SIG-1 is a sample. It is not one of the Currents rows written to Dataverse.")
-    signals = signal_list(supervisor)
-    selected = st.sidebar.radio("Sample signals", [item["signal_id"] for item in signals])
-    chosen = next(item for item in signals if item["signal_id"] == selected)
-    record = dict(st.session_state.assessments.get(selected, {}))
-    record["state"] = chosen["state"]
-    record["signal_id"] = selected
+    st.subheader("Ask GRIT-Scan")
+    st.caption("Ask about this run's signals, or type /concern TITLE: keyword, keyword (also /topic, /trend, /keyword) to propose a management request.")
+    for message in db.rows("SELECT * FROM chat_messages WHERE profile_id = ? ORDER BY message_id DESC LIMIT 12", (profile.profile_id,))[::-1]:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+    question = st.chat_input("Ask about this week's signals")
+    if question:
+        db.insert("chat_messages", {"profile_id": profile.profile_id, "role": "user", "content": question, "created_at": utc_now()})
+        command = parse_command(question)
+        if command:
+            request_id = add_request(db, command, profile_id=profile.profile_id, requested_by=profile.label)
+            reply, citations = f"Proposed {request_id}: {command['title']} (keywords: {', '.join(command['keywords'])}). A reviewer activates it on the Management requests tab.", []
+        else:
+            reply, citations = answer(db, question, routed, run_id, profile)
+        db.insert("chat_messages", {"profile_id": profile.profile_id, "role": "assistant", "content": reply, "citations_json": citations, "created_at": utc_now()})
+        st.rerun()
 
-    detail, package = st.columns(2)
-    with detail:
-        st.subheader("Signal")
-        for label, value in signal_detail(record):
-            st.write(f"**{label}:** {value}")
-    with package:
-        st.subheader("Weekly package")
-        for label, value in package_view(supervisor, package_id, st.session_state.weekly_delta):
-            st.write(f"**{label}:** {value}")
 
-    reviewer_id = st.text_input("Reviewer", value="reviewer-01")
-    note = st.text_area("Rework note", value="")
-    columns = st.columns(4)
-    intents = (
-        ("Approve", "APPROVE", []),
-        ("Return for rework", "REQUEST_REWORK", [_finding(note)]),
-        ("Reject", "REJECT", []),
-        ("Hold", "HOLD", []),
+def answer(db, question, routed, run_id, profile):  # noqa: ANN001, ANN201
+    """Answer from the reader's shown signals. Citations become links to the source pages."""
+    from grit.agents.chat import answer_question
+    from grit.agents.gemini import gemini_client
+    from grit.pipeline.reader_scan import ReaderRun, run_vectors
+    from grit.retrieval.embedder import Embedder
+
+    rows = [row for row in routed if row["shown"]]
+    run = db.run(run_id)
+    vectors = run_vectors(db, ReaderRun(run_id, None, run["pack"])) if run else {}
+    try:
+        client = gemini_client()
+    except RuntimeError as exc:
+        return f"The model is not configured: {exc}", []
+    embedder = Embedder(client=client)
+    result = answer_question(
+        question, rows, client=client, model=os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash", profile_label=profile.label, vectors=vectors,
+        embed=lambda text: embedder.embed([text], task="RETRIEVAL_QUERY")[0],
     )
-    for column, (label, intent, findings) in zip(columns, intents):
-        if column.button(label) and reviewer_id.strip():
-            result = submit_from_screen(
-                supervisor,
-                package_id=package_id,
-                reviewer_id=reviewer_id.strip(),
-                reviewer_intent=intent,
-                findings=findings,
-                correlation_id=CORRELATION_ID,
-                accepted_at=ACCEPTED_AT,
-            )
-            decision = result["decision"]
-            st.session_state.last_decision = decision["review_outcome"]
-            if result["approval"] is not None:
-                st.session_state.last_approval = (
-                    f"{result['approval']['package_id']} version {result['approval']['package_version']} "
-                    f"hash {result['approval']['package_hash']}"
-                )
-    if st.session_state.get("last_decision"):
-        st.success(f"ReviewGate: {st.session_state.last_decision}")
-    if st.session_state.get("last_approval"):
-        st.write(st.session_state.last_approval)
-
-
-def _show_acquired(st) -> None:
-    rows, note = _acquired_rows()
-    st.subheader(f"Acquired signals ({len(rows)})")
-    st.caption(note)
-    if not rows:
-        st.write("No acquired signal is on this screen yet.")
-        return
-    for index, row in enumerate(rows, start=1):
-        title = row.get("title") or row.get("url") or "untitled"
-        with st.expander(f"{index}. {title}", expanded=index == 1):
-            for label, value in acquired_detail(row):
-                st.write(f"**{label}:** {value}")
-
-
-def _acquired_rows() -> tuple[list[dict], str]:
-    saved = _snapshot_rows()
-    live = _dataverse_rows()
-    rows = _merge_rows(saved, live or [])
-    if live is not None and saved:
-        return rows, f"Dataverse returned {len(live)}. The last write saved {len(saved)}. No score is asserted."
-    if live is not None:
-        return rows, "Read from Dataverse. No score is asserted."
-    if saved:
-        return rows, "Local snapshot from the last Currents write. No score is asserted."
-    return [], "No Dataverse credentials in this process, and no local snapshot yet."
-
-
-def _snapshot_rows() -> list[dict]:
-    import json
-
-    snapshot = _ROOT / "output" / "currents-latest.json"
-    if not snapshot.is_file():
-        return []
-    payload = json.loads(snapshot.read_text(encoding="utf-8"))
-    return list(payload.get("signals") or [])
-
-
-def _merge_rows(saved: list[dict], live: list[dict]) -> list[dict]:
-    merged: list[dict] = []
-    seen: set[str] = set()
-    for row in [*saved, *live]:
-        key = str(row.get("url") or row.get("title") or "")
-        if not key or key in seen:
-            continue
-        seen.add(key)
-        merged.append(row)
-    return merged
-
-
-def _dataverse_rows() -> list[dict] | None:
-    import os
-
-    if not os.environ.get("DATAVERSE_ORG_URL"):
-        return None
-    from grit.dataverse.client import DataverseClient
-    from grit.dataverse.choices import EVIDENCE_LOW
-
-    client = DataverseClient.from_env()
-    payload = client.get(
-        "grit_signals?$select=grit_signalname,grit_headline,grit_sourcename,grit_sourceurl,grit_evidenceconfidence,grit_correlationid,createdon"
-        "&$orderby=createdon desc&$top=20"
-    )
-    rows = []
-    for row in payload.get("value") or []:
-        if not str(row.get("grit_correlationid") or "").startswith("CURRENTS-"):
-            continue
-        evidence = row.get("grit_evidenceconfidence")
-        rows.append(
-            {
-                "title": row.get("grit_headline") or row.get("grit_signalname"),
-                "publisher": row.get("grit_sourcename"),
-                "url": row.get("grit_sourceurl"),
-                "evidence": "LOW" if evidence == EVIDENCE_LOW else evidence,
-            }
-        )
-    return rows
-
-
-def _finding(note: str) -> dict[str, object]:
-    return {
-        "finding_id": "F-UI-1",
-        "finding_type": "MISSING_EVIDENCE",
-        "severity": "MATERIAL",
-        "description": note.strip() or "Returned from the review screen",
-        "resolution_required": True,
-    }
+    log = result["log"]
+    db.log(actor_type="AGENT", run_id=run_id, actor="Chat", version=log.get("version"), model=log.get("model"), input_hash=log.get("input_hash"),
+           output_hash=log.get("output_hash"), status=log.get("status", result["status"]), subject=profile.profile_id, detail=log.get("detail") or {})
+    text = result["answer"]
+    for item in result["citations"]:
+        text = text.replace(f"[{item['ref']}]", f"([{item['outlet']}]({item['url']}))")
+    return text, result["citations"]
 
 
 if __name__ == "__main__":
