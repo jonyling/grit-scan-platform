@@ -105,7 +105,8 @@ def routed_signals(pool: Pool, run_id: str, profile: Profile) -> list[dict[str, 
         route = aperture_routing(row, aperture=profile.aperture, packs=profile.packs, requests=requests)
         effect = apply_memory(row, memory, protected=bool(row.get("red")) or route.priority == "P1")
         out.append({**row, "route": route.as_record(), "memory": effect.as_record(), "shown": route.include and not effect.hidden})
-    out.sort(key=lambda row: (not row["shown"], row["route"]["priority"] or "P9", row.get("tier") or 9, -row["memory"]["affinity"], -(row.get("corroboration") or 1), str(row.get("published_at") or "")))
+    out.sort(key=lambda row: str(row.get("published_at") or ""), reverse=True)
+    out.sort(key=lambda row: (not row["shown"], row["route"]["priority"] or "P9", row.get("tier") or 9, not row.get("condition_ids"), -row["memory"]["affinity"], -(row.get("corroboration") or 1)))
     return out
 
 
@@ -113,14 +114,20 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
     run = pool.run(run_id)
     if run is None:
         raise KeyError(f"No run {run_id} in the pool.")
-    brief_config = profile.brief or {}
-    pack_name = brief_config.get("readerPack") or run["pack"]
+    pack_name = run["pack"]
+    brief_config = profile.brief_for(pack_name)
+    if brief_config is None:
+        raise ValueError(f"{profile.label} receives no brief for the {pack_name} pack.")
     pack = load_ontology_pack(CONFIG_DIR, pack_name)
+    plan_config = pack.scan_plan or {}
     run_date = date.fromisoformat(run["run_date"])
     window = int((pack.scan_plan or {}).get("windowDays") or 8)
     previous = pool.latest_run(pack_name, before=run["run_date"], kind="READER_SCAN")
 
-    conditions = pool.conditions(run_id)
+    from grit.pipeline.reader_scan import standing_items
+
+    register_order = {item["id"]: number for number, item in enumerate(standing_items(pack))}
+    conditions = sorted(pool.conditions(run_id), key=lambda row: (register_order.get(row["condition_id"], 999), row["condition_id"]))
     checks = pool.exposure_checks(run_id)
     watchpoints = pool.watchpoints(pack_name, open_only=False)
     updates = {row["watchpoint_id"]: row for row in pool.watchpoint_updates(run_id)}
@@ -140,8 +147,10 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         return {"runs": runs, "plain": plain(runs), "sources": cited}
 
     projects_by_id = {row["projectId"]: row for row in pack.exposure.get("projects") or []}
+    entity_lobs = {row["entityId"]: (row.get("lobGrouping") or "Other", row.get("lob")) for row in pack.exposure.get("entities") or []}
     project_groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    suppliers, customers, hazards = [], [], []
+    entity_groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    suppliers, customers, hazards, competitors = [], [], [], []
     for row in checks:
         entry = {"item_id": row["item_id"], "name": row["item_name"], "status": row["status"], "text": render(row["summary"]) if row["summary"] else None}
         if row["item_type"] == "PROJECT":
@@ -155,6 +164,12 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             customers.append(entry)
         elif row["item_type"] == "HAZARD":
             hazards.append(entry)
+        elif row["item_type"] == "ENTITY":
+            grouping, lob = entity_lobs.get(row["item_id"], (f"{pack.label} and the Group", None))
+            entry["lob"] = lob
+            entity_groups[grouping].append(entry)
+        elif row["item_type"] == "COMPETITOR":
+            competitors.append(entry)
     order = {row["projectId"]: number for number, row in enumerate(pack.exposure.get("projects") or [])}
     for items in project_groups.values():
         items.sort(key=lambda item: order.get(item["item_id"], 99))
@@ -163,11 +178,14 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         names = [re.sub(rf"^{re.escape(city)}\s+", "", item["name"]) for item in items]
         groups.append({"heading": f"{city}: {', '.join(names)}", "items": items})
 
+    entities = [{"heading": grouping, "items": items} for grouping, items in sorted(entity_groups.items(), key=lambda pair: (pair[0].startswith(pack.label), pair[0]))]
+
     condition_rows = []
     for number, row in enumerate(conditions, start=1):
         ranking = row.get("ranking") or {}
         condition_rows.append({
-            "number": number, "condition_id": row["condition_id"], "name": row["condition_name"], "trend": row["trend_label"], "confidence": row["confidence"] or "Not established",
+            "number": number, "condition_id": row["condition_id"], "name": row["condition_name"], "group": ranking.get("domain") if ranking.get("kind") == "THEME" else None,
+            "covered_by": ranking.get("coveredBy"), "trend": row["trend_label"], "confidence": (row["confidence"] or "").title() or "Not established",
             "status": row["status"], "basis": render(row["summary"]) if row["summary"] else {"runs": [{"text": "Withheld: the draft failed its checks. See the QA log."}], "plain": "Withheld: the draft failed its checks. See the QA log.", "sources": []},
             "themes": ranking.get("steThemes") or [], "risk_level": ranking.get("riskLevel"), "priority_label": ranking.get("priorityLabel"),
         })
@@ -193,6 +211,29 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         for row in others
     ]
 
+    request_rows = []
+    if "MANAGEMENT_REQUESTS" in sections:
+        matched: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+        for row in shown:
+            if row["route"].get("request_id"):
+                matched[row["route"]["request_id"]].append(row)
+        for request in pool.management_requests():
+            if request.get("pack") not in (None, pack_name) or request["status"] not in {"ACTIVE", "PROPOSED"}:
+                continue
+            hits = matched.get(request["request_id"], [])[:5]
+            request_rows.append({
+                "request_id": request["request_id"], "title": request["title"], "status": request["status"], "requested_by": request["requested_by"], "source": request.get("source"),
+                "signals": [{"signal_id": row["signal_id"], "title": row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"]} for row in hits],
+            })
+        request_rows.sort(key=lambda row: (row["status"] != "ACTIVE", not row["signals"], row["request_id"]))
+    request_ids = {item["signal_id"] for row in request_rows for item in row["signals"]}
+
+    entity_packs = []
+    if "ENTITY_PACKS" in sections:
+        from grit.pipeline.reader_scan import ReaderRun, child_summaries
+
+        entity_packs = child_summaries(pool, ReaderRun(run_id, run_date, pack_name), pack)
+
     watch_rows = []
     for row in watchpoints:
         update = updates.get(row["watchpoint_id"])
@@ -217,10 +258,10 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
     bottom = ((run.get("config") or {}).get("bottom_line") or {})
     escalating = [row for row in condition_rows if row["trend"] == "Escalating"]
     label = "RED" if red else "WATCHPOINT" if escalating or any(row["status"] != "CLOSED" for row in watch_rows) else "STABLE"
-    bottom_text = bottom.get("bottom_line") if bottom.get("status") == "VALIDATED" else fallback_bottom_line(condition_rows, checks, watch_rows, red)
+    bottom_text = bottom.get("bottom_line") if bottom.get("status") == "VALIDATED" else fallback_bottom_line(condition_rows, checks, watch_rows, red, pack.label)
     escalation = bottom.get("escalation") if bottom.get("status") == "VALIDATED" else ("RED drafts are waiting for a named sender." if red else "Nothing new this week independently warrants escalation before the next weekly cycle.")
 
-    membership = sorted({*ids, *(row["signal_id"] for row in priority_rows), *(row["signal_id"] for row in others)})
+    membership = sorted({*ids, *request_ids, *(row["signal_id"] for row in priority_rows), *(row["signal_id"] for row in others)})
     counts = pool.one("SELECT COUNT(*) AS signals, SUM(decision = 'KEEP') AS kept FROM assessments WHERE run_id = ?", (run_id,)) or {}
     queries = pool.one("SELECT COUNT(DISTINCT query_id) AS queries FROM sightings WHERE run_id = ?", (run_id,)) or {}
     agents = pool.rows("SELECT actor, version, model, status, COUNT(*) AS calls FROM execution_log WHERE run_id = ? AND actor_type = 'AGENT' GROUP BY actor, version, model, status ORDER BY actor", (run_id,))
@@ -230,13 +271,16 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             "prepared_for": brief_config.get("preparedFor") or profile.role, "reader": profile.label, "profile_id": profile.profile_id, "aperture": profile.aperture,
             "run_id": run_id, "run_date": run["run_date"], "window": window_label(run_date, window), "prior_run_date": fmt_date(previous["run_date"]) if previous else None,
             "grounded_in": _grounded_in(pack), "status": STATUS, "sections": list(brief_config.get("sections") or []),
+            "pack": pack_name, "pack_label": pack.label, "level": pack.level, "section_titles": dict(plan_config.get("sectionTitles") or {}),
+            "standing_label": "risk theme" if any(row.get("group") for row in condition_rows) else "condition",
         },
         "bottom_line": {"label": label, "text": bottom_text, "escalation": escalation, "drafted_by": "Reporter (validated)" if bottom.get("status") == "VALIDATED" else "rule (the Reporter's draft was withheld or absent)"},
         "order_book": pack.order_book,
-        "projects": groups, "suppliers": suppliers, "customers": customers, "hazards": hazards,
+        "projects": groups, "suppliers": suppliers, "customers": customers, "hazards": hazards, "entities": entities, "competitors": competitors,
+        "management_requests": request_rows, "entity_packs": entity_packs,
         "conditions": condition_rows, "findings": findings, "other_signals": other_signals, "qa": qa_rows, "watchpoints": watch_rows, "red": red,
         "method": {
-            "queries": queries.get("queries") or 0, "signals": counts.get("signals") or 0, "kept": counts.get("kept") or 0, "shown_to_reader": len(shown),
+            "queries": queries.get("queries") or 0, "queries_label": "queries returned pages", "signals": counts.get("signals") or 0, "kept": counts.get("kept") or 0, "shown_to_reader": len(shown),
             "hidden_by_routing": sum(1 for row in routed if not row["route"]["include"]), "hidden_by_memory": sum(1 for row in routed if row["route"]["include"] and row["memory"]["hidden"]),
             "memory_size": len(pool.latest_decisions(profile.profile_id)), "agents": agents,
         },
@@ -269,19 +313,22 @@ def _card_summary(card: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _grounded_in(pack: Any) -> list[str]:
+    if pack.level == "BA":
+        names = [(pack.exposure or {}).get("workbook"), (pack.themes or {}).get("registerId"), (pack.management_focus or {}).get("registerId"), (pack.scan_plan or {}).get("registerId")]
+        return [name for name in names if name]
     names = [pack.baseline.get("baselineId"), (pack.exposure or {}).get("registerVersion"), (pack.scan_plan or {}).get("registerId")]
     if pack.order_book:
         names.append(pack.order_book.get("source"))
     return [name for name in names if name]
 
 
-def fallback_bottom_line(conditions: Sequence[Mapping[str, Any]], checks: Sequence[Mapping[str, Any]], watchpoints: Sequence[Mapping[str, Any]], red: Sequence[Any]) -> str:
+def fallback_bottom_line(conditions: Sequence[Mapping[str, Any]], checks: Sequence[Mapping[str, Any]], watchpoints: Sequence[Mapping[str, Any]], red: Sequence[Any], label: str = "the reader pack") -> str:
     """A rule-written bottom line, used when the Reporter's draft is withheld."""
-    found = [row["item_name"] for row in checks if row["status"] == "FOUND" and row["item_type"] != "HAZARD"]
+    found = [row["item_name"] for row in checks if row["status"] == "FOUND" and row["item_type"] not in {"HAZARD", "COMPETITOR"}]
     moved = [f"{row['name']} ({row['trend'].lower()})" for row in conditions if row["trend"] in {"Escalating", "Easing"}]
     parts = [
-        f"Items name {', '.join(found[:4])} this week; see sections 1 to 3." if found else "No item this week names a URS Taiwan project, supplier or customer.",
-        f"Conditions that moved: {'; '.join(moved)}." if moved else "No standing condition moved on the evidence found.",
+        f"Items this week name {', '.join(found[:4])}." if found else f"No item this week names a {label} entity, project, supplier or customer.",
+        f"Standing items that moved: {'; '.join(moved)}." if moved else "No standing item moved on the evidence found.",
     ]
     open_items = [row["title"] for row in watchpoints if row["status"] != "CLOSED"]
     if open_items:

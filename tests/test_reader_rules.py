@@ -104,7 +104,10 @@ def test_every_profile_loads_and_one_ba_head_approves_for_airis() -> None:
     profiles = load_profiles()
     assert {"wilson", "hwaimay", "gareth", "ksyong", "group-cfo"} <= set(profiles)
     assert [profile.profile_id for profile in profiles.values() if profile.review_role == "BA_HEAD"] == ["gareth"]
-    assert profiles["wilson"].brief["readerPack"] == "urs-tw"
+    for name in ("wilson", "hwaimay", "gareth"):
+        assert set(profiles[name].briefs) == {"urs", "urs-tw"}, "BA readers get the business-area and the entity brief"
+    assert set(profiles["ksyong"].briefs) == {"urs-tw"}, "the entity head gets the entity brief only"
+    assert profiles["group-cfo"].briefs == {}
 
 
 def test_a_passing_mention_sets_no_priority() -> None:
@@ -134,3 +137,20 @@ def test_the_printed_window_matches_the_keep_rule() -> None:
     from grit.report.brief import window_label
 
     assert window_label(date(2026, 10, 7), 8) == "29 September – 7 October 2026"
+
+
+def test_a_demoted_generic_name_falls_down_the_link_ladder() -> None:
+    import json as _json
+
+    from grit.ontology.graph import build_graph
+    from grit.ontology.link import LinkIndex, link_candidate
+    from grit.pipeline.reader_scan import generic_name_rule
+
+    pack = load_ontology_pack(CONFIG_DIR, "urs")
+    graph = build_graph(pack, reviewed_aliases=_json.loads((CONFIG_DIR / "registry_aliases.json").read_text(encoding="utf-8-sig")))
+    index = LinkIndex(graph, pack.lob_profiles)
+    rule = (pack.scan_plan.get("namedItems") or {}).get("genericNames")
+    candidate = {"title": "MINISTRY OF HOME AFFAIRS awards hospital robot deal to Diligent Robotics", "text": "The healthcare robotics contract covers autonomous mobile robots."}
+    link = generic_name_rule(link_candidate(candidate, index, pack.lob_profiles), f"{candidate['title']}\n{candidate['text']}", rule, graph)
+    assert link.rung == "COMPETITOR", link.reasons
+    assert not any(item.strong and item.cls == "Customer" for item in link.involves)

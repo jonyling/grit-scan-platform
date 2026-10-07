@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from grit.report.docx_brief import SECTION_TITLES
+from grit.report.docx_brief import SECTION_TITLES, section_title
 
 
 def _md(rendered: Mapping[str, Any] | None, fallback: str = "No new item found this week in the checked sources.") -> str:
@@ -41,11 +41,26 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
             for group in brief.get("projects") or []:
                 body.append(f"**{group['heading']}**")
                 body += [f"- {item['name']}: {_md(item['text'])}" for item in group["items"]]
+        elif key == "MANAGEMENT_REQUESTS":
+            for row in [item for item in brief.get("management_requests") or [] if item["status"] == "ACTIVE"]:
+                body.append(f"- **{row['title']}** ({row['source'] or row['requested_by']}): " + ("; ".join(f"[{item['title']}]({item['url']}) ({item['outlet']}, {item['date'] or 'n.d.'})" for item in row["signals"]) or "no signal matched this week."))
+        elif key == "ENTITY_PACKS":
+            for row in brief.get("entity_packs") or []:
+                body.append(f"- **{row['label']}**: {row['bottom_line'] or 'no validated bottom line on this date.'}" + (f" Moved: {'; '.join(row['moved'])}." if row.get("moved") else ""))
+        elif key == "ENTITIES":
+            for group in brief.get("entities") or []:
+                body.append(f"**{group['heading']}**")
+                body += [f"- {item['name']}: {_md(item['text'])}" for item in group["items"] if item["text"]]
+                quiet = [item["name"] for item in group["items"] if not item["text"]]
+                if quiet:
+                    body.append(f"- No new item found: {', '.join(quiet)}.")
+        elif key == "COMPETITORS":
+            body += [f"- {item['name']}: {_md(item['text'])}" for item in brief.get("competitors") or [] if item["status"] == "FOUND"] or ["- No registered competitor was named this week."]
         elif key in {"SUPPLIERS", "CUSTOMERS", "HAZARDS"}:
             body += [f"- {item['name']}: {_md(item['text'])}" for item in brief.get(key.lower()) or []]
         elif key == "CONDITIONS" and brief.get("conditions"):
             body += ["| # | Condition | Trend | Confidence | Basis |", "|---|---|---|---|---|"]
-            body += [f"| {row['number']} | {row['name']} | {row['trend']} | {row['confidence']} | {_md(row['basis'])} |" for row in brief["conditions"]]
+            body += [f"| {row['number']} | {row['name']}{' (' + row['group'] + ')' if row.get('group') else ''} | {row['trend']} | {row['confidence']} | {_md(row['basis'])} |" for row in brief["conditions"]]
         elif key == "PRIORITY_FINDINGS":
             body += [f"- [{item['priority'] + ' · ' if item['priority'] else ''}tier {item['tier']}] [{item['title']}]({item['url']}) ({item['outlet']}, {item['date'] or 'n.d.'}). {' '.join(line for line in item['why'] if line)}" for item in brief.get("findings") or []]
         elif key == "OTHER_SIGNALS":
@@ -56,7 +71,7 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
             body += [f"- **{row['title']}** ({row['status'].lower()}): {row['detail']} {_md(row['update'], '')}" for row in brief.get("watchpoints") or [] if row["status"] != "CLOSED"]
             body.append(f"\nEscalation assessment: {bottom.get('escalation') or ''}")
         if body:
-            lines += [f"## {number}. {SECTION_TITLES[key]}", "", *body, ""]
+            lines += [f"## {number}. {section_title(meta, key)}", "", *body, ""]
             number += 1
     lines.append(f"*Content hash {brief['content_hash'][:16]}. Run {meta['run_id']}.*")
     return "\n".join(lines) + "\n"

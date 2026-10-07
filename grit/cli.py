@@ -36,10 +36,31 @@ def _client() -> Any:
     return gemini_client()
 
 
-def _run(pool: Any, args: argparse.Namespace) -> Any:
+def _packs(args: argparse.Namespace) -> list[str]:
+    """The packs named with --pack, or every pack with a scan plan, entity packs first."""
+    from grit.ontology.pack import scanned_packs
+
+    return list(args.pack) if args.pack else scanned_packs()
+
+
+def _run(pool: Any, args: argparse.Namespace, pack: str) -> Any:
     from grit.pipeline.reader_scan import new_run
 
-    return new_run(pool, args.date, args.pack)
+    return new_run(pool, args.date, pack)
+
+
+def _for_each_pack(step: Callable[[Any, argparse.Namespace, str], int]) -> Callable[[argparse.Namespace], int]:
+    def run(args: argparse.Namespace) -> int:
+        pool = _pool()
+        for pack in _packs(args):
+            print(f"== {pack}")
+            code = step(pool, args, pack)
+            if code:
+                return code
+        return 0
+
+    run.__doc__ = step.__doc__
+    return run
 
 
 def _profiles(names: list[str] | None) -> list[Any]:
@@ -57,27 +78,39 @@ def _profiles(names: list[str] | None) -> list[Any]:
 # Reader pipeline -------------------------------------------------------------------------------------------------
 
 
-def cmd_plan(args: argparse.Namespace) -> int:
-    from grit.pipeline.reader_scan import plan
+def _sweep(pool: Any, run: Any, count: int) -> list[Any]:
+    """Due queries from the business-area 12-week plan, folded into this run so their pages go through the same rules."""
+    from grit.ontology.pack import load_ontology_pack
+    from grit.ontology.query_plan import QuerySpec, build_query_plan, select_queries
+    from grit.pipeline.reader_scan import _aliases
+    from grit.settings import CONFIG_DIR
 
-    pool = _pool()
-    specs = plan(pool, _run(pool, args))
+    pack = load_ontology_pack(CONFIG_DIR, run.pack)
+    if count <= 0 or pack.level != "BA" or not pack.keyword_library:
+        return []
+    selection = select_queries(build_query_plan(pack, _aliases()), run.run_date, count)
+    return [QuerySpec(**{**record, "sources": tuple(record["sources"])}) for record in selection["selected"]]
+
+
+def plan_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
+    from grit.pipeline.reader_scan import ReaderRun, plan, run_id_for
+
+    specs = plan(pool, ReaderRun(run_id_for(args.date, pack), args.date, pack))  # a preview registers no run
     lanes: dict[str, int] = {}
     for spec in specs:
         lanes[spec.lane] = lanes.get(spec.lane, 0) + 1
-    print(f"Reader plan for {args.pack}: {len(specs)} queries. " + ", ".join(f"{lane} {count}" for lane, count in lanes.items()))
+    print(f"Reader plan for {pack}: {len(specs)} queries this week. " + ", ".join(f"{lane} {count}" for lane, count in lanes.items()))
     for spec in specs[: args.list]:
-        print(f"  {spec.lane:10} {spec.sources[0].get('target'):18} {spec.query}")
+        print(f"  {spec.lane:10} {str(spec.sources[0].get('target')):24} {spec.query}")
     return 0
 
 
-def cmd_scan(args: argparse.Namespace) -> int:
+def scan_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
     """Researcher, embed, and the deterministic assessment."""
     from grit.pipeline import reader_scan
 
-    pool = _pool()
-    run = _run(pool, args)
-    specs = reader_scan.plan(pool, run)
+    run = _run(pool, args, pack)
+    specs = reader_scan.plan(pool, run) + _sweep(pool, run, getattr(args, "sweep", 0) or 0)
     if args.dry_run:
         chosen = reader_scan._balanced(specs, args.limit_queries) if args.limit_queries else specs
         print(f"Dry run. {len(chosen)} of {len(specs)} queries would be sent to Brave News for run {run.run_id}. Nothing was sent.")
@@ -93,19 +126,17 @@ def cmd_scan(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_assess(args: argparse.Namespace) -> int:
+def assess_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
     from grit.pipeline import reader_scan
 
-    pool = _pool()
-    print(reader_scan.assess(pool, _run(pool, args)))
+    print(reader_scan.assess(pool, _run(pool, args, pack)))
     return 0
 
 
-def cmd_agents(args: argparse.Namespace) -> int:
+def agents_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
     from grit.pipeline import reader_scan
 
-    pool = _pool()
-    run = _run(pool, args)
+    run = _run(pool, args, pack)
     client, model = _client(), _model(args.model)
     print(f"Run {run.run_id}: agents on {model}.")
     print(reader_scan.run_agents(pool, run, client=client, model=model))
@@ -120,31 +151,41 @@ def cmd_agents(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_report(args: argparse.Namespace) -> int:
+def report_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
     from grit.profiles import load_profiles
     from grit.report.package import write_pack
     from grit.report.red import draft_red_alerts
 
-    pool = _pool()
-    run = _run(pool, args)
+    run = _run(pool, args, pack)
     if (pool.run(run.run_id) or {}).get("status") != "COMPLETE":
         pool.finish_run(run.run_id)
     for profile in _profiles(args.profile):
         result = write_pack(pool, run.run_id, profile, submit=not args.no_submit)
-        print(json.dumps(result, indent=2, default=str))
-    drafts = draft_red_alerts(pool, run.run_id, args.pack, list(load_profiles().values()), run.folder / "alerts")
+        print(json.dumps({key: value for key, value in result.items() if key != "package"} | {"package": {k: v for k, v in (result.get("package") or {}).items() if k != "members"}}, indent=2, default=str))
+    drafts = draft_red_alerts(pool, run.run_id, pack, list(load_profiles().values()), run.folder / "alerts")
     print(f"RED drafts written: {len(drafts)}")
     return 0
 
 
+cmd_plan = _for_each_pack(plan_step)
+cmd_scan = _for_each_pack(scan_step)
+cmd_assess = _for_each_pack(assess_step)
+cmd_agents = _for_each_pack(agents_step)
+cmd_report = _for_each_pack(report_step)
+
+
 def cmd_weekly(args: argparse.Namespace) -> int:
-    """Everything for one reader pack and one week: scan, agents, findings, packs, and RED drafts."""
+    """Everything for each reader pack and one week: scan, agents, findings, packs, and RED drafts. Entity packs run first,
+    so a business-area brief can summarise them."""
     if args.dry_run:
         return cmd_scan(args)
-    for step in (cmd_scan, cmd_agents, cmd_report):
-        code = step(args)
-        if code:
-            return code
+    pool = _pool()
+    for pack in _packs(args):
+        print(f"== {pack}")
+        for step in (scan_step, agents_step, report_step):
+            code = step(pool, args, pack)
+            if code:
+                return code
     return 0
 
 
@@ -211,14 +252,14 @@ def cmd_airis(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_dataverse(args: argparse.Namespace) -> int:
+def dataverse_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
     from grit.dataverse.sync import plan_sync, push
     from grit.ontology.pack import load_ontology_pack
+    from grit.pipeline.reader_scan import standing_items
     from grit.settings import CONFIG_DIR
 
-    pool = _pool()
-    run_id = f"{args.date.isoformat()}-{args.pack}"
-    names = {row["id"]: row["name"] for row in load_ontology_pack(CONFIG_DIR, args.pack).baseline.get("conditions") or []}
+    run_id = f"{args.date.isoformat()}-{pack}"
+    names = {item["id"]: item["name"] for item in standing_items(load_ontology_pack(CONFIG_DIR, pack))}
     bodies = plan_sync(pool, run_id, names)
     if not args.push:
         print(f"Dry run. {len(bodies)} kept signal(s) from {run_id} would be created or patched in grit_signals. Add --push to write.")
@@ -229,6 +270,9 @@ def cmd_dataverse(args: argparse.Namespace) -> int:
 
     print(push(pool, run_id, bodies, client=DataverseClient.from_env()))
     return 0
+
+
+cmd_dataverse = _for_each_pack(dataverse_step)
 
 
 def cmd_db(args: argparse.Namespace) -> int:
@@ -267,7 +311,7 @@ def _takes_argv(target: Callable[..., Any]) -> bool:
 
 def _delegates() -> dict[str, tuple[str, Callable[[], Callable[..., Any]], str]]:
     return {
-        "pack-build": ("Rebuild the urs pack registers from the workbook.", lambda: __import__("grit.ontology.build_urs_pack", fromlist=["_main"])._main, "grit pack-build"),
+        "pack-build": ("Rebuild a business-area pack's registers from its workbook.", lambda: __import__("grit.ontology.build_pack", fromlist=["_main"])._main, "grit pack-build"),
         "pack-show": ("Print what a reader pack contains.", lambda: __import__("grit.ontology.pack", fromlist=["_main"])._main, "grit pack-show"),
         "gaps": ("Export or import the BA relationship and alias questions.", lambda: __import__("grit.ontology.relationship_gaps", fromlist=["main"]).main, "grit gaps"),
         "digest-plan": ("Print the business-area query plan for a date.", lambda: __import__("grit.ontology.query_plan", fromlist=["_main"])._main, "grit digest-plan"),
@@ -285,7 +329,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     def reader(name: str, handler: Callable[[argparse.Namespace], int], help_text: str) -> argparse.ArgumentParser:
         sub = commands.add_parser(name, help=help_text, description=help_text)
-        sub.add_argument("--pack", default="urs-tw", help="Reader pack. Default urs-tw.")
+        sub.add_argument("--pack", nargs="+", help="Reader packs. Default: every pack with a scan plan, entity packs first.")
         sub.add_argument("--date", type=date.fromisoformat, default=date.today(), help="Run date, YYYY-MM-DD. Default today.")
         sub.set_defaults(handler=handler)
         return sub
@@ -298,6 +342,7 @@ def build_parser() -> argparse.ArgumentParser:
         sub.add_argument("--currents", nargs="*", help="Up to two Currents queries to add to the pool.")
         sub.add_argument("--no-embed", action="store_true", help="Skip embeddings. Duplicates then merge by identical title only.")
         sub.add_argument("--dry-run", action="store_true", help="Print the queries and stop. Spends nothing.")
+        sub.add_argument("--sweep", type=int, default=0, help="Add up to N due queries from a business-area pack's 12-week digest plan. Default 0.")
         if name == "weekly":
             sub.add_argument("--model")
             sub.add_argument("--findings", type=int, default=6, help="Finding cards to write. 0 skips the loop.")

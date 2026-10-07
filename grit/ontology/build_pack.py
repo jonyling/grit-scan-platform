@@ -1,7 +1,11 @@
-"""Build the Urban Solutions reader pack from URS Entity Info.xlsx.
+"""Build a business-area reader pack from its Entity Info workbook.
 
-The workbook is the source. A missing rating, domain, project, site, or
-Layer 1 condition stays absent. The Taiwan baseline is not copied.
+The workbook follows the BA Entity Info template (sheets 2 to 10, News-Pri, News-Sec, and hidden LOB keyword sheets). What
+differs per business area sits in the pack's pack.json under "build": the id prefix, the keyword sheet names, and the
+hand-authored LOB hierarchy file. The register file names come from the manifest's registers.
+
+The workbook is the source. A missing rating, domain, project, site, or Layer 1 condition stays absent. An entity pack's
+conditions are not copied.
 """
 
 from __future__ import annotations
@@ -19,48 +23,50 @@ from grit.ontology.workbook import workbook_path as default_workbook
 from grit.ontology.xlsx_reader import read_worksheet
 from grit.settings import CONFIG_DIR, ROOT
 
-_FILES = {
-    "source_register": "URS-Source-Register.json",
-    "exposure": "URS-Exposure-Ontology.json",
-    "lob_profiles": "URS-LOB-Profiles.json",
-    "themes": "URS-STE-Themes.json",
-    "baseline": "URS-Global-Baseline.json",
-    "keyword_library": "URS-Keyword-Library.json",
-    "competitors": "URS-Competitors.json",
-    "management_focus": "URS-Management-Focus.json",
-}
+GENERATED = ("source_register", "exposure", "lob_profiles", "themes", "baseline", "keyword_library", "competitors", "management_focus")
 
 
-_DEFAULT_HIERARCHY = CONFIG_DIR / "urs" / "URS-LOB-Hierarchy.json"
-
-
-def build_urs_pack(
+def build_pack(
     workbook_path: str | Path,
     output_dir: str | Path,
+    manifest: dict,
     lob_hierarchy: str | Path | None = None,
 ) -> dict[str, Path]:
-    """Build the generated registers. The LOB hierarchy is a hand-authored input and is never overwritten."""
+    """Build the generated registers named in the manifest. The LOB hierarchy is a hand-authored input and is never overwritten."""
+    build = manifest.get("build") or {}
+    prefix = str(build.get("prefix") or manifest.get("shortLabel") or manifest["pack"].upper())
+    ba_name = str(manifest.get("businessArea") or manifest.get("label") or prefix)
+    files = {**manifest["registers"], **(manifest.get("optional") or {})}
     workbook = Path(workbook_path)
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
-    hierarchy_file = Path(lob_hierarchy) if lob_hierarchy else _DEFAULT_HIERARCHY
+    hierarchy_file = Path(lob_hierarchy) if lob_hierarchy else CONFIG_DIR / manifest["pack"] / str(build.get("lobHierarchy") or "-")
     hierarchy = json.loads(hierarchy_file.read_text(encoding="utf-8-sig")) if hierarchy_file.is_file() else None
+    sheets = tuple(build.get("keywordSheets") or ())
     documents = {
-        "source_register": _sources(workbook),
-        "exposure": _exposure(workbook),
-        "lob_profiles": _lobs(workbook, hierarchy),
-        "themes": _themes(workbook),
-        "baseline": _baseline(),
-        "keyword_library": load_keyword_library(workbook, hierarchy),
-        "competitors": load_competitors(workbook, hierarchy),
-        "management_focus": load_management_focus(workbook, hierarchy),
+        "source_register": _sources(workbook, prefix),
+        "exposure": _exposure(workbook, prefix),
+        "lob_profiles": _lobs(workbook, hierarchy, prefix),
+        "themes": _themes(workbook, prefix),
+        "baseline": _baseline(prefix, ba_name, list(manifest.get("children") or [])),
+        "keyword_library": load_keyword_library(workbook, hierarchy, sheets=sheets, prefix=prefix),
+        "competitors": load_competitors(workbook, hierarchy, prefix=prefix),
+        "management_focus": load_management_focus(workbook, hierarchy, prefix=prefix),
     }
     written: dict[str, Path] = {}
-    for key, name in _FILES.items():
+    for key in GENERATED:
+        name = files[key]
         path = output / name
         path.write_text(json.dumps(documents[key], indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         written[key] = path
     return written
+
+
+def build_urs_pack(workbook_path: str | Path, output_dir: str | Path, lob_hierarchy: str | Path | None = None) -> dict[str, Path]:
+    """The Urban Solutions pack, from config/urs/pack.json."""
+    from grit.ontology.pack import manifests
+
+    return build_pack(workbook_path, output_dir, manifests()["urs"], lob_hierarchy)
 
 
 # name_col is where a source's name sits. heading_col is where a section heading sits, if the sheet has them.
@@ -72,7 +78,7 @@ _SOURCE_SHEETS = {
 _SOURCE_HEADERS = {"source", "organisation", "organization", "link", "focus", "keyreports"}
 
 
-def _sources(workbook: Path) -> dict:
+def _sources(workbook: Path, prefix: str = "URS") -> dict:
     sources: list[dict] = []
     seen: set[str] = set()
     skipped_without_url: list[str] = []
@@ -113,7 +119,7 @@ def _sources(workbook: Path) -> dict:
                 source["focus"] = focus
             sources.append(source)
     return {
-        "registerId": "URS-NEWS-OUTLETS",
+        "registerId": f"{prefix}-NEWS-OUTLETS",
         "scope": "sources named with a URL on the News-Pri, News-Sec, and 9. Specific Industry News sheets",
         "ratingStatus": "UNRATED",
         "workbook": workbook.name,
@@ -129,7 +135,7 @@ def _sources(workbook: Path) -> dict:
     }
 
 
-def _exposure(workbook: Path) -> dict:
+def _exposure(workbook: Path, prefix: str = "URS") -> dict:
     sheet_rows = _sheet_dicts(workbook, "2. Entity Address")
     lob_names = {keyword.lob for keyword in load_lob_keywords(workbook)}
     lob_names.update(_value(row, "LOB1") for row in sheet_rows if _value(row, "NameOfEntity") and _value(row, "LOB1"))
@@ -205,7 +211,7 @@ def _exposure(workbook: Path) -> dict:
     if not entities or not customers or not suppliers:
         raise ValueError("Exposure pack is missing entities, customers, or suppliers from the workbook.")
     return {
-        "registerId": "URS-EXPOSURE",
+        "registerId": f"{prefix}-EXPOSURE",
         "workbook": workbook.name,
         "absence": {
             "projects": f"{workbook.name} has no project sheet. No project was invented.",
@@ -229,7 +235,7 @@ def _exposure(workbook: Path) -> dict:
     }
 
 
-def _lobs(workbook: Path, hierarchy: dict | None = None) -> dict:
+def _lobs(workbook: Path, hierarchy: dict | None = None, prefix: str = "URS") -> dict:
     entity_lobs: dict[str, dict[str, str | None]] = {}
     for row in _sheet_dicts(workbook, "2. Entity Address"):
         lob = _value(row, "LOB1")
@@ -269,7 +275,7 @@ def _lobs(workbook: Path, hierarchy: dict | None = None) -> dict:
     if not lobs:
         raise ValueError("No LOB profiles could be built from sheet 6.")
     return {
-        "registerId": "URS-LOB-PROFILES",
+        "registerId": f"{prefix}-LOB-PROFILES",
         "workbook": workbook.name,
         "sheet": "6. LOB_Keywords",
         "absence": "priorityCountries is empty. Country of incorporation is not a priority country, and none was invented.",
@@ -278,6 +284,8 @@ def _lobs(workbook: Path, hierarchy: dict | None = None) -> dict:
     }
 
 
+# Keyed by the start of the theme's own name, so a business area whose sheet 7 orders its themes differently still gets
+# the vocabulary for the right theme. A theme whose name starts with none of these keeps its title only.
 # Entity-wide STE Annual Risk vocabulary, not a Taiwan baseline. Sheet 7 of
 # URS Entity Info.xlsx is a single, entity-wide risk register: the same 14
 # themes were reused for the Taiwan reader pack's own keyword list, which is
@@ -289,41 +297,46 @@ def _lobs(workbook: Path, hierarchy: dict | None = None) -> dict:
 # compliance, ...) that describe the governed theme itself, independent of
 # any one reader's geography.
 _GENERAL_RISK_KEYWORDS: dict[str, list[str]] = {
-    "URS-KEY-01": ["competition", "competitor", "pricing pressure", "technology differentiation", "market access"],
-    "URS-KEY-02": [
+    "competition": ["competition", "competitor", "pricing pressure", "technology differentiation", "market access"],
+    "financial volatility": [
         "financial volatility", "interest rate", "inflation", "forex", "foreign exchange",
         "credit risk", "tariff", "financing cost", "borrowing cost", "recessionary",
     ],
-    "URS-KEY-03": [
+    "escalating costs": [
         "escalating cost", "project cost", "margin", "cost overrun", "labour cost",
         "material cost", "contractual requirement", "project risk management",
     ],
-    "URS-KEY-04": [
+    "cybersecurity": [
         "cybersecurity", "cyber attack", "data exfiltration", "IT outage", "ransomware",
         "network security", "data privacy",
     ],
-    "URS-KEY-05": [
+    "geopolitical impact": [
         "geopolitical", "sanctions", "export control", "regulatory scrutiny", "reputational exposure",
         "strategic competition",
     ],
-    "URS-KEY-06": ["fraud", "bribery", "corruption", "code of conduct", "conflict of interest"],
-    "URS-TIER_2-02": ["natural disaster", "typhoon", "earthquake", "pandemic", "supply chain disruption", "flood"],
-    "URS-TIER_2-03": ["regulatory compliance", "regulation", "licensing", "compliance requirement"],
-    "URS-TIER_2-04": ["workplace safety", "health and safety", "occupational safety"],
-    "URS-TIER_2-05": ["climate change", "climate adaptation", "esg", "green practices", "carbon", "sustainability reporting"],
-    "URS-EMERGING-01": [
+    "fraud": ["fraud", "bribery", "corruption", "code of conduct", "conflict of interest"],
+    "business & supply chain disruptions": ["natural disaster", "typhoon", "earthquake", "pandemic", "supply chain disruption", "flood"],
+    "regulatory compliance": ["regulatory compliance", "regulation", "licensing", "compliance requirement"],
+    "workplace health": ["workplace safety", "health and safety", "occupational safety"],
+    "climate change": ["climate change", "climate adaptation", "esg", "green practices", "carbon", "sustainability reporting"],
+    "geopolitical volatility": [
         "staff safety", "evacuation", "crisis escalation", "wartime", "act of war", "conflict zone",
         "military exercise", "civil-military",
     ],
-    "URS-EMERGING-02": [
+    "emerging technologies": [
         "genai", "artificial intelligence", "smart city os", "edge ai", "emerging technology",
         "semiconductor", "ai chip", "ai-enabled", "chip export",
     ],
-    "URS-EMERGING-03": ["talent scarcity", "workforce planning", "talent mapping", "skills shortage", "hiring", "labour shortage"],
+    "talent scarcity": ["talent scarcity", "workforce planning", "talent mapping", "skills shortage", "hiring", "labour shortage"],
 }
 
 
-def _themes(workbook: Path) -> dict:
+def _general_keywords(name: str) -> list[str]:
+    lowered = name.casefold()
+    return next((words for start, words in _GENERAL_RISK_KEYWORDS.items() if lowered.startswith(start)), [])
+
+
+def _themes(workbook: Path, prefix: str = "URS") -> dict:
     rows = read_worksheet(workbook, "7. Annual Risks")
     sections = (
         ("KEY", "ref", "keyrisk", 6),
@@ -336,11 +349,11 @@ def _themes(workbook: Path) -> dict:
         if len(found) != expected:
             raise ValueError(f"Sheet 7 {tier} section has {len(found)} rows; expected {expected}.")
         for ref, name, detail, extra in found:
-            theme_id = f"URS-{tier}-{int(ref):02d}"
+            theme_id = f"{prefix}-{tier}-{int(ref):02d}"
             short = name.split("(", 1)[0].strip()
             keywords = [short] if short and short != name and len(short) >= 6 else []
             seen_lower = {k.lower() for k in keywords}
-            for keyword in _GENERAL_RISK_KEYWORDS.get(theme_id, []):
+            for keyword in _general_keywords(name):
                 if keyword.lower() not in seen_lower:
                     keywords.append(keyword)
                     seen_lower.add(keyword.lower())
@@ -355,7 +368,7 @@ def _themes(workbook: Path) -> dict:
                 }
             )
     return {
-        "registerId": "URS-STE-THEMES",
+        "registerId": f"{prefix}-STE-THEMES",
         "workbook": workbook.name,
         "sheet": "7. Annual Risks",
         "absence": (
@@ -368,25 +381,22 @@ def _themes(workbook: Path) -> dict:
     }
 
 
-def _baseline() -> dict:
+def _baseline(prefix: str = "URS", ba_name: str = "Urban Solutions", children: list[str] | None = None) -> dict:
+    kept_apart = f" The entity packs' conditions ({', '.join(children)}) belong to those packs and are not copied here." if children else ""
     return {
-        "baselineId": "URS-LAYER1-ABSENT",
-        "readerId": "URS",
-        "readerName": "Urban Solutions",
-        "revisionPrefix": "URS",
-        "deltaTitle": "URS WEEKLY STRATEGIC DELTA",
+        "baselineId": f"{prefix}-LAYER1-ABSENT",
+        "readerId": prefix,
+        "readerName": ba_name,
+        "revisionPrefix": prefix,
+        "deltaTitle": f"{prefix} WEEKLY STRATEGIC DELTA",
         "effectiveDate": None,
         "conditions": [],
-        "absence": (
-            "No governed Layer 1 condition set exists for Urban Solutions. "
-            "The ten Taiwan conditions belong to the urs-tw reader pack and are not copied here."
-        ),
+        "absence": f"No governed Layer 1 condition set exists for {ba_name}. Its weekly brief stands on the business area's risk themes.{kept_apart}",
         "posture": (
-            "Urban Solutions has no governed Layer 1 condition set yet. "
-            "Do not treat the Taiwan baseline as the Urban Solutions picture. "
+            f"{ba_name} has no governed Layer 1 condition set yet. Do not treat an entity pack's conditions as the {ba_name} picture. "
             "Entity-level action stays evidence-led."
         ),
-        "idleLine": "No material change was recorded. Urban Solutions has no governed Layer 1 condition set to revise.",
+        "idleLine": f"No material change was recorded. {ba_name} has no governed Layer 1 condition set to revise.",
     }
 
 
@@ -464,8 +474,18 @@ def _domain(link: str) -> str | None:
 
 
 def _main() -> None:
-    root = ROOT
-    written = build_urs_pack(default_workbook(), root / "config" / "urs")
+    import argparse
+
+    from grit.ontology.pack import manifests
+
+    known = {name: manifest for name, manifest in manifests().items() if manifest.get("build")}
+    parser = argparse.ArgumentParser(description="Rebuild a business-area pack's generated registers from its Entity Info workbook.")
+    parser.add_argument("--pack", default="urs", choices=sorted(known))
+    parser.add_argument("--workbook", type=Path, help="Defaults to GRIT_WORKBOOK, then secrets/ and the manifest's defaultWorkbook.")
+    args = parser.parse_args()
+    manifest = known[args.pack]
+    workbook = args.workbook or default_workbook(str((manifest.get("build") or {}).get("defaultWorkbook") or ""))
+    written = build_pack(workbook, ROOT / "config" / args.pack, manifest)
     for key, path in written.items():
         print(f"{key}: {path}")
 

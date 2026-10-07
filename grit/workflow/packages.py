@@ -117,6 +117,11 @@ def review_package(pool: Pool, *, package_id: str, version: int, reviewer: Profi
         accepted_at=at, reviewer_is_eligible=True, separation_of_duties_passed=True,
     )
     package = supervisor.package(package_id)
+    expected = {"APPROVE": "APPROVED", "RETURN_FOR_REWORK": "RETURNED_FOR_REWORK", "REJECT": "REJECTED", "HOLD": "HELD"}.get(decision["review_outcome"])
+    if expected and package.status != expected:
+        denied = [item["decision"] for item in supervisor.guard_log if item["decision"].get("decision") != "ALLOW"]
+        reason = denied[-1].get("reason_code") if denied else "UNKNOWN"
+        raise RuntimeError(f"ReviewGate returned {decision['review_outcome']}, but TransitionGuard refused to move the members ({reason}). Nothing was written.")
     membership = dict(row["membership"])
     approval = next((item for item in supervisor.approvals if item["package_id"] == package_id and item["package_version"] == version), None)
     if approval:

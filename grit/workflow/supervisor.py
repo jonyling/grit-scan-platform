@@ -616,7 +616,7 @@ class Supervisor:
                 trigger_record_id=trigger_record_id,
                 correlation_id=correlation_id,
                 reason_code="REVIEW_DECISION",
-                idempotency_key=f"{package.package_id}:{signal_id}:{requested_state}",
+                idempotency_key=f"{package.package_id}:v{package.version}:{signal_id}:{requested_state}",
                 expected_sequence=latest.sequence + 1,
                 evidence=evidence | {"current_package_membership_contains_signal": signal_id in package.member_signal_ids},
             )
@@ -636,7 +636,7 @@ class Supervisor:
                 correlation_id=correlation_id,
                 accepted_at=accepted_at,
                 reason_code="REVIEW_DECISION",
-                idempotency_key=f"{package.package_id}:{signal_id}:{requested_state}",
+                idempotency_key=f"{package.package_id}:v{package.version}:{signal_id}:{requested_state}",
                 evidence=evidence | {"current_package_membership_contains_signal": True},
             )
             if persisted["decision"] != "ALLOW":

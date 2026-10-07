@@ -252,10 +252,10 @@ def parse_management_focus_rows(rows: list[list[str]]) -> dict[str, Any]:
     return {"requests": requests, "focusItems": items, "dropped": dropped}
 
 
-def load_keyword_library(workbook: Path, hierarchy: dict[str, Any] | None) -> dict[str, Any]:
+def load_keyword_library(workbook: Path, hierarchy: dict[str, Any] | None, *, sheets: tuple[str, ...] = (), prefix: str = "URS") -> dict[str, Any]:
     states = sheet_states(workbook)
     libraries = []
-    for sheet in LIBRARY_SHEETS:
+    for sheet in sheets or LIBRARY_SHEETS:
         rows = [
             (_clean(row[0]) if row else "", _clean(row[1]) if len(row) > 1 else "")
             for row in read_worksheet(workbook, sheet, keep_blank_rows=True)
@@ -265,7 +265,7 @@ def load_keyword_library(workbook: Path, hierarchy: dict[str, Any] | None) -> di
             {"sheet": sheet, "sheetState": states.get(sheet), "canonicalLob": lob["lobName"] if lob else None, **parse_keyword_library_rows(rows)}
         )
     return {
-        "registerId": "URS-KEYWORD-LIBRARY",
+        "registerId": f"{prefix}-KEYWORD-LIBRARY",
         "workbook": workbook.name,
         "absence": (
             "The sheets are hidden in the workbook and are not validated. Their notes cite internal documents and are not copied. "
@@ -276,13 +276,13 @@ def load_keyword_library(workbook: Path, hierarchy: dict[str, Any] | None) -> di
     }
 
 
-def load_competitors(workbook: Path, hierarchy: dict[str, Any] | None) -> dict[str, Any]:
+def load_competitors(workbook: Path, hierarchy: dict[str, Any] | None, *, prefix: str = "URS") -> dict[str, Any]:
     parsed = parse_competitor_rows(_cells(read_worksheet(workbook, COMPETITOR_SHEET, keep_blank_rows=True), 4))
     for item in parsed["competitors"]:
         lob = resolve_lob(item["lobLabel"], hierarchy)
         item["canonicalLob"] = lob["lobName"] if lob else None
     return {
-        "registerId": "URS-COMPETITORS",
+        "registerId": f"{prefix}-COMPETITORS",
         "workbook": workbook.name,
         "sheet": COMPETITOR_SHEET,
         "absence": "A LOB label that is not on the org chart has no canonicalLob. The same competitor can appear under more than one LOB.",
@@ -290,13 +290,13 @@ def load_competitors(workbook: Path, hierarchy: dict[str, Any] | None) -> dict[s
     }
 
 
-def load_management_focus(workbook: Path, hierarchy: dict[str, Any] | None) -> dict[str, Any]:
+def load_management_focus(workbook: Path, hierarchy: dict[str, Any] | None, *, prefix: str = "URS") -> dict[str, Any]:
     parsed = parse_management_focus_rows(_cells(read_worksheet(workbook, MANAGEMENT_SHEET, keep_blank_rows=True), 5))
     for item in parsed["focusItems"]:
         lob = resolve_lob(item["scope"], hierarchy)
         item["canonicalLob"] = lob["lobName"] if lob else None
     return {
-        "registerId": "URS-MANAGEMENT-FOCUS",
+        "registerId": f"{prefix}-MANAGEMENT-FOCUS",
         "workbook": workbook.name,
         "sheet": MANAGEMENT_SHEET,
         "absence": "The status text is copied unchanged. A status that says research draft means a business area has not validated the item.",

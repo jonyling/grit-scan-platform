@@ -1,0 +1,413 @@
+{
+  "registerId": "URS-SCAN-PLAN",
+  "status": "DRAFT_FOR_REVIEW",
+  "note": "The Urban Solutions business-area scan. Standing items are the 14 STE themes from workbook sheet 7. Theme queries are hand-authored and anchored to URS sectors (rail, road and tolling, utilities, security, healthcare robotics), because a bare theme word such as 'competition' returns news about everything. Named items (entities, customers, suppliers, competitors) come from the typed graph, so names bind with the link ladder and the reviewed aliases. Management requests come from workbook sheet 10: a numbered request, and a focus item whose status says 'Management priority' or 'Core control focus', start ACTIVE; a focus item marked 'Research draft' starts PROPOSED until a reviewer activates it. Only an ACTIVE request runs its queries and assigns P1. Edit this file to change the scan; no code change is needed. A request keyword 'A + B' needs every part in the title or lead, so 'Qatar + work visa' does not match tourist-visa stories.",
+  "standingSet": "themes",
+  "windowDays": 8,
+  "audience": "Head, Urban Solutions (Gareth); R&A Business Partner, Urban Solutions (Hwaimay); Group Head, Risk & Assurance (Wilson)",
+  "themes": [
+    {
+      "themeId": "URS-KEY-01",
+      "queries": [
+        "rail signalling contract awarded",
+        "intelligent transport systems contract awarded"
+      ]
+    },
+    {
+      "themeId": "URS-KEY-02",
+      "queries": [
+        "Singapore dollar outlook MAS",
+        "infrastructure contractors inflation costs Asia"
+      ]
+    },
+    {
+      "themeId": "URS-KEY-03",
+      "queries": [
+        "metro rail project cost overrun",
+        "rail project delay liquidated damages"
+      ]
+    },
+    {
+      "themeId": "URS-KEY-04",
+      "queries": [
+        "rail cyberattack",
+        "transport operator ransomware attack",
+        "operational technology cybersecurity critical infrastructure"
+      ]
+    },
+    {
+      "themeId": "URS-KEY-05",
+      "queries": [
+        "export controls Chinese rail suppliers",
+        "geopolitical risk infrastructure contractors Asia"
+      ]
+    },
+    {
+      "themeId": "URS-KEY-06",
+      "queries": [
+        "transport contract bribery probe",
+        "rail procurement corruption charges"
+      ]
+    },
+    {
+      "themeId": "URS-TIER_2-01",
+      "queries": [],
+      "coveredBy": "urs-tw"
+    },
+    {
+      "themeId": "URS-TIER_2-02",
+      "queries": [
+        "earthquake flood rail service disruption Asia",
+        "supply chain disruption electronics components"
+      ]
+    },
+    {
+      "themeId": "URS-TIER_2-03",
+      "queries": [
+        "rail safety regulator new rules",
+        "land transport regulation Singapore"
+      ]
+    },
+    {
+      "themeId": "URS-TIER_2-04",
+      "queries": [
+        "rail worker killed accident",
+        "metro construction site safety accident"
+      ]
+    },
+    {
+      "themeId": "URS-TIER_2-05",
+      "queries": [
+        "climate adaptation transport infrastructure",
+        "carbon tax Singapore"
+      ]
+    },
+    {
+      "themeId": "URS-EMERGING-01",
+      "queries": [
+        "Middle East conflict staff evacuation companies",
+        "Red Sea shipping disruption Asia"
+      ]
+    },
+    {
+      "themeId": "URS-EMERGING-02",
+      "queries": [
+        "autonomous vehicle public transport trial",
+        "AI traffic management system"
+      ]
+    },
+    {
+      "themeId": "URS-EMERGING-03",
+      "queries": [
+        "engineering skills shortage Singapore",
+        "rail engineers talent shortage"
+      ]
+    }
+  ],
+  "managementRequests": [
+    {
+      "requestId": "MR-URS-WB-R1",
+      "source": "Workbook sheet 10, request 1",
+      "title": "Workforce risk: critical skills shortage and visa changes (STE URS QFC Branch, Qatar)",
+      "kind": "CONCERN",
+      "status": "ACTIVE",
+      "lob": "Smart Sustainable Utilities",
+      "country": "Qatar",
+      "queries": [
+        "Qatar work visa rules change",
+        "Qatar skilled labour shortage"
+      ],
+      "keywords": [
+        "Qatar + work visa",
+        "Qatar + work permit",
+        "Qatar + labour shortage",
+        "Qatar + skills shortage",
+        "Qatar + expatriate workers",
+        "Qatar + labour law"
+      ]
+    },
+    {
+      "requestId": "MR-URS-WB-R2",
+      "source": "Workbook sheet 10, request 2",
+      "title": "Government funding: changes to government programmes and public budgets (STE URS QFC Branch, Qatar)",
+      "kind": "CONCERN",
+      "status": "ACTIVE",
+      "lob": "Smart Sustainable Utilities",
+      "country": "Qatar",
+      "queries": [
+        "Qatar government budget infrastructure spending"
+      ],
+      "keywords": [
+        "Qatar + government budget",
+        "Qatar + state budget",
+        "Qatar + public spending",
+        "Qatar + budget deficit",
+        "Qatar + infrastructure spending"
+      ]
+    },
+    {
+      "requestId": "MR-URS-WB-R3",
+      "source": "Workbook sheet 10, request 3",
+      "title": "Exchange rate risk: US dollar against the Israeli shekel, and Singapore dollar against the Qatari riyal",
+      "kind": "CONCERN",
+      "status": "ACTIVE",
+      "lob": "Smart Sustainable Utilities",
+      "queries": [
+        "Israeli shekel dollar exchange rate",
+        "Qatari riyal exchange rate"
+      ],
+      "keywords": [
+        "shekel + dollar",
+        "shekel + exchange rate",
+        "Qatari riyal + Singapore dollar"
+      ]
+    },
+    {
+      "requestId": "MR-URS-WB-R4",
+      "source": "Workbook sheet 10, request 4",
+      "title": "Rail, road and airport markets in Thailand, Malaysia, India, Vietnam and Australia: opportunities, challenges and risks",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "queries": [
+        "Thailand rail project tender",
+        "Malaysia rail airport project contract",
+        "India metro rail project contract",
+        "Vietnam railway airport project",
+        "Australia rail infrastructure project"
+      ],
+      "keywords": [
+        "Thailand + rail + project",
+        "Thailand + railway + project",
+        "Thailand + airport + project",
+        "Thailand + metro + contract",
+        "Thailand + rail + tender",
+        "Malaysia + rail + project",
+        "Malaysia + railway + project",
+        "Malaysia + airport + project",
+        "Malaysia + metro + contract",
+        "Malaysia + rail + tender",
+        "India + rail + project",
+        "India + railway + project",
+        "India + airport + project",
+        "India + metro + contract",
+        "India + rail + tender",
+        "Vietnam + rail + project",
+        "Vietnam + railway + project",
+        "Vietnam + airport + project",
+        "Vietnam + metro + contract",
+        "Vietnam + rail + tender",
+        "Australia + rail + project",
+        "Australia + railway + project",
+        "Australia + airport + project",
+        "Australia + metro + contract",
+        "Australia + rail + tender"
+      ]
+    },
+    {
+      "requestId": "MR-URS-WB-F01",
+      "source": "Workbook sheet 10, focus item 1 (Management priority)",
+      "title": "Rail signalling and CBTC project delivery",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "lob": "Mobility Rail",
+      "queries": [
+        "CBTC resignalling project delay"
+      ],
+      "keywords": [
+        "CBTC",
+        "resignalling",
+        "signalling contract",
+        "signalling system + contract"
+      ]
+    },
+    {
+      "requestId": "MR-URS-WB-F02",
+      "source": "Workbook sheet 10, focus item 2 (Core control focus)",
+      "title": "Rail system reliability and safety",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "lob": "Mobility Rail",
+      "queries": [
+        "MRT signalling fault disruption",
+        "platform screen door fault"
+      ],
+      "keywords": [
+        "platform screen door",
+        "MRT + fault",
+        "MRT + disruption",
+        "LRT + disruption",
+        "MRT + breakdown"
+      ]
+    },
+    {
+      "requestId": "MR-URS-WB-F03",
+      "source": "Workbook sheet 10, focus item 3 (Management priority)",
+      "title": "ERP 2.0, tolling and ITS programme delivery",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "lob": "Mobility Road & Services",
+      "queries": [
+        "ERP 2.0 Singapore",
+        "electronic toll collection system contract"
+      ],
+      "keywords": [
+        "ERP 2.0",
+        "Electronic Road Pricing",
+        "tolling system + contract",
+        "toll collection + contract"
+      ]
+    },
+    {
+      "requestId": "MR-URS-WB-F04",
+      "source": "Workbook sheet 10, focus item 4 (Research draft)",
+      "title": "Operations and maintenance contract performance",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "lob": "Mobility Road & Services",
+      "queries": [
+        "transit operations and maintenance contract"
+      ],
+      "keywords": [
+        "operations and maintenance contract"
+      ]
+    },
+    {
+      "requestId": "MR-URS-WB-F05",
+      "source": "Workbook sheet 10, focus item 5 (Research draft)",
+      "title": "Energy, district cooling and EV-charging growth",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "lob": "Smart Sustainable Utilities",
+      "queries": [
+        "district cooling contract",
+        "EV charging network Singapore"
+      ],
+      "keywords": [
+        "district cooling",
+        "EV charging"
+      ]
+    },
+    {
+      "requestId": "MR-URS-WB-F06",
+      "source": "Workbook sheet 10, focus item 6 (Research draft)",
+      "title": "Robotics commercialisation and scale-up",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "lob": "Healthcare Robotics & Automation",
+      "queries": [
+        "hospital robots deployment"
+      ],
+      "keywords": [
+        "hospital robot",
+        "healthcare robotics"
+      ]
+    },
+    {
+      "requestId": "MR-URS-WB-F07",
+      "source": "Workbook sheet 10, focus item 7 (Research draft)",
+      "title": "Integrated security project execution",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "lob": "Smart Security & Automation",
+      "queries": [
+        "integrated security system contract"
+      ],
+      "keywords": [
+        "integrated security system"
+      ]
+    },
+    {
+      "requestId": "MR-URS-WB-F08",
+      "source": "Workbook sheet 10, focus item 8 (Management priority)",
+      "title": "Overseas expansion and acquisition integration",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "queries": [
+        "ST Engineering acquisition"
+      ],
+      "keywords": [
+        "ST Engineering + acquisition",
+        "ST Engineering + acquires",
+        "ST Engineering + merger"
+      ]
+    },
+    {
+      "requestId": "MR-URS-WB-F09",
+      "source": "Workbook sheet 10, focus item 9 (Core control focus)",
+      "title": "Cybersecurity of OT and IT systems",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "queries": [
+        "SCADA cyberattack infrastructure"
+      ],
+      "keywords": [
+        "SCADA + attack",
+        "SCADA + cyber",
+        "OT security + rail",
+        "OT security + utility",
+        "operational technology + attack"
+      ]
+    },
+    {
+      "requestId": "MR-URS-WB-F10",
+      "source": "Workbook sheet 10, focus item 10 (Research draft)",
+      "title": "Supply chain and component availability",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "queries": [
+        "chip shortage transport equipment"
+      ],
+      "keywords": [
+        "component shortage",
+        "chip shortage"
+      ]
+    }
+  ],
+  "namedItems": {
+    "source": "graph",
+    "lanes": {
+      "SUPPLIER": {
+        "cadenceWeeks": 1
+      },
+      "CUSTOMER": {
+        "cadenceWeeks": 1
+      },
+      "ENTITY": {
+        "cadenceWeeks": 2
+      },
+      "COMPETITOR": {
+        "cadenceWeeks": 8
+      }
+    },
+    "listQuiet": [
+      "ENTITY",
+      "CUSTOMER",
+      "SUPPLIER"
+    ],
+    "genericNames": {
+      "note": "A customer or supplier whose register name is a generic public-body title matches ministries in every country. It counts only when the page also names one of these places.",
+      "pattern": "^(ministry|department|bureau|public utilities|land transport)\\b",
+      "cues": [
+        "Singapore",
+        "Singaporean",
+        "MINDEF",
+        "LTA",
+        "PUB"
+      ]
+    }
+  },
+  "watchpoints": [],
+  "sectionTitles": {
+    "CONDITIONS": "Standing risk themes (URS annual risks)",
+    "MANAGEMENT_REQUESTS": "Management-requested topics",
+    "ENTITY_PACKS": "Entity reader packs",
+    "ENTITIES": "STE entities by line of business",
+    "CUSTOMERS": "Customer watch",
+    "SUPPLIERS": "Supplier watch",
+    "COMPETITORS": "Competitor and industry watch",
+    "PRIORITY_FINDINGS": "Priority findings",
+    "OTHER_SIGNALS": "Other signals in this reader's scope",
+    "QA_LOG": "QA and correction log",
+    "WATCHPOINTS": "Bottom line and watchpoints"
+  }
+}

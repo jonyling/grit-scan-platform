@@ -3,19 +3,62 @@
   "name": "Gareth",
   "role": "Head, Urban Solutions",
   "aperture": "MATERIAL_APERTURE",
-  "packs": ["urs", "urs-tw"],
-  "businessScope": {"businessAreas": ["Urban Solutions"], "lobs": [], "countries": []},
-  "reviewRole": "BA_HEAD",
-  "redAlerts": {"receive": true, "packs": ["urs", "urs-tw"]},
-  "email": null,
-  "brief": {
-    "title": "GRIT-Scan: Urban Solutions",
-    "subtitle": "Weekly brief for the business area head",
-    "preparedFor": "Head, Urban Solutions",
-    "readerPack": "urs-tw",
-    "sections": ["BOTTOM_LINE", "PRIORITY_FINDINGS", "CONDITIONS", "WATCHPOINTS"],
-    "maxFindings": 6,
-    "formats": ["docx", "pptx"]
+  "packs": [
+    "urs",
+    "urs-tw"
+  ],
+  "businessScope": {
+    "businessAreas": [
+      "Urban Solutions"
+    ],
+    "lobs": [],
+    "countries": []
   },
-  "note": "BA head. Only signals Gareth approves are packaged for AIRIS."
+  "reviewRole": "BA_HEAD",
+  "redAlerts": {
+    "receive": true,
+    "packs": [
+      "urs",
+      "urs-tw"
+    ]
+  },
+  "email": null,
+  "briefs": {
+    "urs": {
+      "title": "GRIT-Scan: Urban Solutions",
+      "subtitle": "Business Area Weekly Risk Scan",
+      "preparedFor": "Head, Urban Solutions",
+      "sections": [
+        "BOTTOM_LINE",
+        "CONDITIONS",
+        "MANAGEMENT_REQUESTS",
+        "ENTITY_PACKS",
+        "PRIORITY_FINDINGS",
+        "WATCHPOINTS"
+      ],
+      "maxFindings": 6,
+      "formats": [
+        "docx",
+        "pptx"
+      ]
+    },
+    "urs-tw": {
+      "title": "GRIT-Scan: URS Taiwan",
+      "subtitle": "Geopolitical Risk & Infrastructure Tracker — Weekly Scan",
+      "preparedFor": "Head, Urban Solutions",
+      "sections": [
+        "BOTTOM_LINE",
+        "ORDER_BOOK",
+        "PROJECTS",
+        "CONDITIONS",
+        "WATCHPOINTS"
+      ],
+      "maxFindings": 6,
+      "formats": [
+        "docx",
+        "pptx"
+      ]
+    }
+  },
+  "note": "BA head. Only signals Gareth approves are packaged for AIRIS. Receives the Urban Solutions business-area brief and the URS Taiwan entity brief."
 }

@@ -47,15 +47,15 @@ def main() -> None:
 
     db = pool()
     profiles = load_profiles()
-    readers = {profile.label: profile for profile in profiles.values() if profile.brief}
+    readers = {profile.label: profile for profile in profiles.values() if profile.briefs}
     labels = list(readers)
     default = next((number for number, label in enumerate(labels) if readers[label].profile_id == "wilson"), 0)
     with st.sidebar:
         st.title("GRIT-Scan")
         profile = readers[st.selectbox("Reader", labels, index=default)]
-        runs = db.rows("SELECT run_id FROM runs ORDER BY run_date DESC, started_at DESC")
+        runs = [row for row in db.rows("SELECT run_id, pack FROM runs WHERE status = 'COMPLETE' ORDER BY run_date DESC, pack, started_at DESC") if profile.brief_for(row["pack"])]
         if not runs:
-            st.info("The pool has no run yet. Start one with: .venv/bin/python -m grit weekly --dry-run")
+            st.info("No run yet for this reader's packs. Start one with: .venv/bin/python -m grit weekly --dry-run")
             return
         run_id = st.selectbox("Run", [row["run_id"] for row in runs])
         st.caption(f"Aperture: {profile.aperture.replace('_', ' ').lower()}. Packs: {', '.join(profile.packs)}. Review role: {profile.review_role.replace('_', ' ').lower()}.")
@@ -88,17 +88,25 @@ def main() -> None:
     dashboard, signals_tab, packs_tab, requests_tab, alerts_tab = st.tabs(["Dashboard", "Signals", "Packs and review", "Management requests", "RED and AIRIS"])
 
     with dashboard:
-        st.subheader("Ten standing conditions")
+        st.subheader("Standing risk themes" if meta.get("standing_label") == "risk theme" else "Standing conditions")
         st.dataframe(
-            pd.DataFrame([{"#": row["number"], "Condition": row["name"], "Trend": row["trend"], "Confidence": row["confidence"], "Basis": row["basis"]["plain"]} for row in brief["conditions"]]),
+            pd.DataFrame([{"#": row["number"], "Item": row["name"] + (f" ({row['group']})" if row.get("group") else ""), "Trend": row["trend"], "Confidence": row["confidence"], "Basis": row["basis"]["plain"]} for row in brief["conditions"]]),
             hide_index=True, width="stretch",
         )
         left, right = st.columns(2)
         with left:
-            st.subheader("Named projects, suppliers, customers and hazards")
-            named = [item for group in brief["projects"] for item in group["items"]] + brief["suppliers"] + brief["customers"] + brief["hazards"]
+            st.subheader("Named items")
+            named = [item for group in brief["projects"] + brief["entities"] for item in group["items"]] + brief["suppliers"] + brief["customers"] + brief["hazards"] + brief["competitors"]
             st.dataframe(pd.DataFrame([{"Item": item["name"], "This week": item["text"]["plain"] if item["text"] else "Nothing found"} for item in named]), hide_index=True, width="stretch")
         with right:
+            if brief["management_requests"]:
+                st.subheader("Management-requested topics")
+                for row in brief["management_requests"]:
+                    if row["status"] == "ACTIVE":
+                        st.markdown(f"**{row['title']}**: " + ("; ".join(f"[{item['title']}]({item['url']})" for item in row["signals"][:3]) or "no signal matched this week."))
+            for row in brief["entity_packs"]:
+                st.subheader(row["label"])
+                st.write(row["bottom_line"] or "No validated bottom line on this date.")
             st.subheader("Watchpoints")
             for row in brief["watchpoints"]:
                 st.markdown(f"**{row['title']}** ({row['status'].lower()}, quiet for {row['cycles']} cycle(s))  \n{row['update']['plain'] if row['update'] else row['detail']}")

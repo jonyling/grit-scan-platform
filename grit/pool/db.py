@@ -19,7 +19,10 @@ from grit.settings import db_path
 
 SCHEMA = Path(__file__).with_name("schema.sql")
 # Columns added after a table was first created. CREATE TABLE IF NOT EXISTS does not add them to an existing pool.
-MIGRATIONS = {"watchpoint_updates": {"cycles_before": "INTEGER NOT NULL DEFAULT 0"}}
+MIGRATIONS = {
+    "watchpoint_updates": {"cycles_before": "INTEGER NOT NULL DEFAULT 0"},
+    "management_requests": {"pack": "TEXT", "queries_json": "TEXT NOT NULL DEFAULT '[]'", "source": "TEXT"},
+}
 _JSON_SUFFIX = "_json"
 
 

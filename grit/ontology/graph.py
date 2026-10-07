@@ -311,7 +311,7 @@ def build_graph(pack: Any, *, reviewed_aliases: Mapping[str, Any] | None = None,
             if label not in unit_ids:
                 unit = add_node(Node(f"STE-UNIT-{slugify(label)}", "STE", "UNIT", label))
                 unit_ids[label] = unit.id
-                add_edge(unit.id, "part_of", ba_id, DERIVED, "the unit label starts with URS, the business area's abbreviation")
+                add_edge(unit.id, "part_of", ba_id, DERIVED, "the supplier sheet's business-area column names this unit of the business area")
             add_edge(row["supplierId"], "supplies", unit_ids[label], SOURCE_STATED, f"{SHEET_SUPPLIERS}: business area column")
     if exposure.get("suppliers"):
         gaps.append({"kind": "SUPPLIER_ENTITY_UNKNOWN", "count": len(exposure["suppliers"]), "needs": "For each supplier, the entity it supplies. The register names a unit such as 'URS Singapore'."})

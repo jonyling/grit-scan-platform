@@ -1,0 +1,20 @@
+{
+  "pack": "urs-tw",
+  "level": "ENTITY",
+  "label": "URS Taiwan",
+  "shortLabel": "URS-TW",
+  "businessArea": "Urban Solutions",
+  "parent": "urs",
+  "children": [],
+  "registers": {
+    "source_register": "URS-TW-Source-Register.json",
+    "exposure": "URS-TW-Exposure-Ontology.json",
+    "lob_profiles": "URS-TW-LOB-Profiles.json",
+    "themes": "URS-TW-STE-Annual-Risks.json",
+    "baseline": "URS-TW-Global-Baseline.json"
+  },
+  "optional": {
+    "scan_plan": "URS-TW-Scan-Plan.json",
+    "order_book": "URS-TW-Order-Book.json"
+  }
+}

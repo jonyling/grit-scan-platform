@@ -17,18 +17,27 @@ NAVY = RGBColor(0x1F, 0x38, 0x64)
 GREY = RGBColor(0x55, 0x55, 0x55)
 LIGHT = RGBColor(0x77, 0x77, 0x77)
 BOX_FILL = {"WATCHPOINT": "FFF2CC", "STABLE": "E2EFDA", "RED": "F8CBAD"}
+# Defaults. A pack's scan plan can rename any section through sectionTitles.
 SECTION_TITLES = {
     "ORDER_BOOK": "Order-book baseline and context",
-    "PROJECTS": "Direct disruption to named Taiwan rail projects",
+    "PROJECTS": "Direct disruption to named projects",
+    "MANAGEMENT_REQUESTS": "Management-requested topics",
+    "ENTITY_PACKS": "Entity reader packs",
+    "ENTITIES": "STE entities",
     "SUPPLIERS": "Disruption to named suppliers",
     "CUSTOMERS": "Customer relationships and upcoming award decisions",
-    "HAZARDS": "Natural disasters and public health (Taiwan)",
-    "CONDITIONS": "Findings mapped to the ten standing conditions",
+    "COMPETITORS": "Competitor and industry watch",
+    "HAZARDS": "Natural disasters and public health",
+    "CONDITIONS": "Findings mapped to the standing items",
     "PRIORITY_FINDINGS": "Priority findings for this reader",
     "OTHER_SIGNALS": "Other signals in this reader's scope",
     "QA_LOG": "QA and correction log",
     "WATCHPOINTS": "Bottom line and watchpoints",
 }
+
+
+def section_title(meta: Mapping[str, Any], key: str) -> str:
+    return (meta.get("section_titles") or {}).get(key) or SECTION_TITLES[key]
 NOTHING = "No new item found this week in the checked sources."
 
 
@@ -183,9 +192,10 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
         renderer = _SECTIONS.get(key)
         if renderer is None:
             continue
-        if not renderer(document, brief, f"{number}. {SECTION_TITLES[key]}", dry=True):
+        title = f"{number}. {section_title(meta, key)}"
+        if not renderer(document, brief, title, dry=True):
             continue
-        renderer(document, brief, f"{number}. {SECTION_TITLES[key]}", dry=False)
+        renderer(document, brief, title, dry=False)
         number += 1
     _method(document, brief)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -279,12 +289,98 @@ def _conditions(document: Any, brief: Mapping[str, Any], title: str, *, dry: boo
     _heading(document, title)
     prior = brief["meta"].get("prior_run_date")
     widths = (0.8, 3.6, 2.2, 2.0, 8.6)
-    table = _table(document, ("#", "Condition", f"Trend vs {prior}" if prior else "Trend", "Confidence", "Basis / source and date"), widths)
+    label = "Risk theme" if brief["meta"].get("standing_label") == "risk theme" else "Condition"
+    table = _table(document, ("#", label, f"Trend vs {prior}" if prior else "Trend", "Confidence", "Basis / source and date"), widths)
     for row in brief["conditions"]:
-        _row(table, (row["number"], row["name"], row["trend"], row["confidence"].title() if row["confidence"] else "", row["basis"]), widths)
+        name = f"{row['name']} ({row['group']})" if row.get("group") else row["name"]
+        if row.get("covered_by"):
+            name += f". Draws on the {row['covered_by']} entity pack."
+        _row(table, (row["number"], name, row["trend"], row["confidence"], row["basis"]), widths)
     note = document.add_paragraph()
     run = note.add_run("Trend is the Assessor's proposal, validated against the cited sources. Confidence is computed by rule from the cited outlets and their register ratings.")
     run.font.size, run.font.color.rgb = Pt(8), LIGHT
+    return True
+
+
+def _requests(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    rows = brief.get("management_requests") or []
+    if dry:
+        return bool(rows)
+    _heading(document, title)
+    document.add_paragraph("A signal matches a request by its approved keywords in the title or lead. A match is news priority P1 (spec 29).")
+    for row in [item for item in rows if item["status"] == "ACTIVE"]:
+        paragraph = document.add_paragraph(style="List Bullet")
+        paragraph.add_run(row["title"]).bold = True
+        paragraph.add_run(f" ({row['source'] or row['requested_by']})")
+        if not row["signals"]:
+            paragraph.add_run(": no signal matched this week.")
+            continue
+        for item in row["signals"]:
+            line = document.add_paragraph()
+            line.paragraph_format.left_indent = Cm(1.0)
+            if item["url"]:
+                _hyperlink(line, item["title"], item["url"], size=10)
+            else:
+                line.add_run(item["title"]).font.size = Pt(10)
+            line.add_run(f" ({item['outlet']}, {item['date'] or 'date not stated'})").font.size = Pt(10)
+    proposed = [row["title"] for row in rows if row["status"] == "PROPOSED"]
+    if proposed:
+        note = document.add_paragraph()
+        run = note.add_run("Proposed and not yet active, so not searched and no P1: " + "; ".join(proposed) + ". A reviewer activates a request on the dashboard.")
+        run.font.size = Pt(9)
+    return True
+
+
+def _entity_packs(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    rows = brief.get("entity_packs") or []
+    if dry:
+        return bool(rows)
+    _heading(document, title)
+    for row in rows:
+        _heading(document, row["label"], level=3)
+        if not row["run_id"]:
+            document.add_paragraph(f"No {row['label']} run on this date.")
+            continue
+        document.add_paragraph(row["bottom_line"] or "The entity pack's bottom line was withheld this week. See its brief.")
+        if row.get("moved"):
+            document.add_paragraph("Moved this week: " + "; ".join(row["moved"]) + ".", style="List Bullet")
+        note = document.add_paragraph()
+        run = note.add_run(f"The full detail is in the {row['label']} weekly scan, run {row['run_id']}.")
+        run.font.size = Pt(9)
+    return True
+
+
+def _entities(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    groups = brief.get("entities") or []
+    if dry:
+        return bool(groups)
+    _heading(document, title)
+    for group in groups:
+        _heading(document, group["heading"], level=3)
+        for item in [entry for entry in group["items"] if entry["text"]]:
+            _bullet(document, f"{item['name']}" + (f" ({item['lob']})" if item.get("lob") else ""), item["text"])
+        quiet = [entry["name"] for entry in group["items"] if not entry["text"]]
+        if quiet:
+            paragraph = document.add_paragraph(style="List Bullet")
+            run = paragraph.add_run(f"No new item found this week: {', '.join(quiet)}.")
+            run.font.size = Pt(10)
+    return True
+
+
+def _competitors(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    rows = brief.get("competitors") or []
+    if dry:
+        return True
+    _heading(document, title)
+    found = [row for row in rows if row["status"] == "FOUND"]
+    if not rows:
+        document.add_paragraph("No registered competitor was named in this week's signals. Competitor names are searched on an eight-week rotation.")
+        return True
+    for row in found:
+        _bullet(document, row["name"], row["text"])
+    passing = [row["name"] for row in rows if row["status"] != "FOUND"]
+    if passing:
+        document.add_paragraph(f"Named in passing only: {', '.join(passing)}.")
     return True
 
 
@@ -371,7 +467,7 @@ def _method(document: Any, brief: Mapping[str, Any]) -> None:
     method = brief["method"]
     _heading(document, "How this brief was produced", level=2)
     lines = [
-        f"{method['queries']} queries, {method['signals']} pages, {method['kept']} kept by the deterministic keep rule, {method['shown_to_reader']} in this reader's view "
+        f"{method['queries']} {method.get('queries_label') or 'queries'}, {method['signals']} pages, {method['kept']} kept by the deterministic keep rule, {method['shown_to_reader']} in this reader's view "
         f"({method['hidden_by_routing']} outside the aperture, {method['hidden_by_memory']} hidden by the reader's memory of {method['memory_size']} decisions).",
         "Agents proposed the text. Deterministic checks rejected any sentence with an unquoted claim, a number not in its source, or a governed score word. "
         "Trend labels, confidence, priority, the harm verdict and RED status are computed by rule. Nothing here is approved or published.",
@@ -390,6 +486,10 @@ def _method(document: Any, brief: Mapping[str, Any]) -> None:
 
 _SECTIONS = {
     "ORDER_BOOK": _order_book,
+    "MANAGEMENT_REQUESTS": _requests,
+    "ENTITY_PACKS": _entity_packs,
+    "ENTITIES": _entities,
+    "COMPETITORS": _competitors,
     "PROJECTS": _projects,
     "SUPPLIERS": _suppliers,
     "CUSTOMERS": _customers,

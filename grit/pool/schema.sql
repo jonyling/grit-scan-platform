@@ -184,7 +184,10 @@ CREATE TABLE IF NOT EXISTS management_requests (
     lob             TEXT,
     status          TEXT NOT NULL,            -- PROPOSED, ACTIVE, ON_HOLD, FULFILLED, CLOSED
     origin          TEXT NOT NULL,            -- WORKBOOK, DASHBOARD, CHAT
-    profile_id      TEXT
+    profile_id      TEXT,
+    pack            TEXT,                     -- the reader pack it scopes to; NULL applies to every pack
+    queries_json    TEXT NOT NULL DEFAULT '[]',
+    source          TEXT                      -- where it came from, e.g. "Workbook sheet 10, request 1"
 );
 
 -- Spec 18. Append-only. The Supervisor is the only writer.

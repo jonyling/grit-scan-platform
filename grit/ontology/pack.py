@@ -1,8 +1,9 @@
 """Reader ontology packs. Registers are loaded. They are not invented.
 
-``urs`` is Urban Solutions, built from the URS Entity Info workbook.
-``urs-tw`` is the Taiwan reader pack: ten standing conditions, named projects, suppliers and customers, and its scan plan.
-Taiwan is layer 5, not the whole ontology.
+A pack is a folder under config/ with a pack.json manifest: its level (GROUP, BA, or ENTITY), its parent and children,
+and the register files it loads. ``urs`` is Urban Solutions, a business-area pack built from the URS Entity Info workbook.
+``urs-tw`` is URS Taiwan, an entity pack with ten standing conditions and named projects. Taiwan is layer 5, not the whole
+ontology.
 """
 
 from __future__ import annotations
@@ -14,37 +15,25 @@ from pathlib import Path
 from typing import Any
 from grit.settings import CONFIG_DIR
 
-PACKS = {
-    "urs-tw": {
-        "source_register": "URS-TW-Source-Register.json",
-        "exposure": "URS-TW-Exposure-Ontology.json",
-        "lob_profiles": "URS-TW-LOB-Profiles.json",
-        "themes": "URS-TW-STE-Annual-Risks.json",
-        "baseline": "URS-TW-Global-Baseline.json",
-    },
-    "urs": {
-        "source_register": "URS-Source-Register.json",
-        "exposure": "URS-Exposure-Ontology.json",
-        "lob_profiles": "URS-LOB-Profiles.json",
-        "themes": "URS-STE-Themes.json",
-        "baseline": "URS-Global-Baseline.json",
-    },
-}
-REGISTER_FILES = PACKS["urs-tw"]
-# Hand-authored registers. A pack without one loads with the field set to None.
-OPTIONAL_REGISTERS = {
-    "urs": {
-        "lob_hierarchy": "URS-LOB-Hierarchy.json",
-        "keyword_library": "URS-Keyword-Library.json",
-        "competitors": "URS-Competitors.json",
-        "management_focus": "URS-Management-Focus.json",
-        "relationships": "URS-Relationships.json",
-    },
-    "urs-tw": {
-        "scan_plan": "URS-TW-Scan-Plan.json",
-        "order_book": "URS-TW-Order-Book.json",
-    },
-}
+MANIFEST = "pack.json"
+LEVELS = ("ENTITY", "BA", "GROUP")
+
+
+def manifests(config_dir: Path = CONFIG_DIR) -> dict[str, dict[str, Any]]:
+    """Every pack under config/ that has a pack.json. A pack is a folder of registers plus this manifest, so adding a
+    business area or an entity is a data change."""
+    found: dict[str, dict[str, Any]] = {}
+    for path in sorted(Path(config_dir).glob(f"*/{MANIFEST}")):
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        if manifest.get("level") not in LEVELS:
+            raise ValueError(f"{path}: level must be one of {', '.join(LEVELS)}")
+        if manifest["pack"] != path.parent.name:
+            raise ValueError(f"{path}: pack '{manifest['pack']}' must match its folder name '{path.parent.name}'")
+        found[manifest["pack"]] = manifest
+    return found
+
+
+PACKS = {name: manifest["registers"] for name, manifest in manifests().items()}
 
 
 @dataclass(frozen=True)
@@ -63,45 +52,58 @@ class OntologyPack:
     relationships: dict[str, Any] | None = None
     scan_plan: dict[str, Any] | None = None
     order_book: dict[str, Any] | None = None
+    manifest: dict[str, Any] | None = None
+
+    @property
+    def level(self) -> str:
+        return (self.manifest or {}).get("level") or "BA"
+
+    @property
+    def label(self) -> str:
+        return (self.manifest or {}).get("label") or self.pack
+
+    @property
+    def children(self) -> list[str]:
+        return list((self.manifest or {}).get("children") or [])
 
 
 def load_ontology_pack(config_dir: Path, pack: str = "urs-tw") -> OntologyPack:
-    try:
-        files = PACKS[pack]
-    except KeyError:
-        known = ", ".join(sorted(PACKS))
-        raise ValueError(f"Unknown ontology pack '{pack}'. Known packs: {known}") from None
+    known = manifests(config_dir)
+    if pack not in known:
+        raise ValueError(f"Unknown ontology pack '{pack}'. Known packs: {', '.join(sorted(known))}")
+    manifest = known[pack]
     root = Path(config_dir) / pack
-    if not root.is_dir():
-        root = Path(config_dir)
     loaded: dict[str, Any] = {}
     missing: list[str] = []
-    for key, name in files.items():
+    for key, name in manifest["registers"].items():
         path = root / name
         if not path.is_file():
             missing.append(name)
             continue
         loaded[key] = json.loads(path.read_text(encoding="utf-8-sig"))
     if missing:
-        raise FileNotFoundError(
-            f"Ontology pack '{pack}' is incomplete. Place the governed registers in "
-            f"{root}: {', '.join(missing)}"
-        )
-    for key, name in OPTIONAL_REGISTERS.get(pack, {}).items():
+        raise FileNotFoundError(f"Ontology pack '{pack}' is incomplete. Place the governed registers in {root}: {', '.join(missing)}")
+    for key, name in (manifest.get("optional") or {}).items():
         path = root / name
         loaded[key] = json.loads(path.read_text(encoding="utf-8-sig")) if path.is_file() else None
-    return OntologyPack(config_dir=root, pack=pack, **loaded)
+    return OntologyPack(config_dir=root, pack=pack, manifest=manifest, **loaded)
+
+
+def scanned_packs(config_dir: Path = CONFIG_DIR) -> list[str]:
+    """Packs with a scan plan, entity packs first, so a business-area brief can summarise its entity packs' runs."""
+    found = [name for name, manifest in manifests(config_dir).items() if (Path(config_dir) / name / (manifest.get("optional") or {}).get("scan_plan", "-")).is_file()]
+    return sorted(found, key=lambda name: (LEVELS.index(manifests(config_dir)[name]["level"]), name))
 
 
 def _main() -> None:
     parser = argparse.ArgumentParser(description="Load one reader ontology pack and print what it actually contains.")
-    parser.add_argument("--pack", default="urs", choices=sorted(PACKS))
+    parser.add_argument("--pack", default="urs", choices=sorted(manifests()))
     parser.add_argument("--config", type=Path, default=CONFIG_DIR)
     args = parser.parse_args()
     loaded = load_ontology_pack(args.config, args.pack)
     sources = list(loaded.source_register.get("sources") or [])
     exposure = loaded.exposure
-    print(f"Pack: {loaded.pack}")
+    print(f"Pack: {loaded.pack} ({loaded.label}, {loaded.level} level; children: {', '.join(loaded.children) or 'none'})")
     print(f"Dir: {loaded.config_dir}")
     print(f"Sources: {len(sources)} (rated: {sum(1 for row in sources if row.get('credibilityRating') not in {None, 'UNRATED'})})")
     print(

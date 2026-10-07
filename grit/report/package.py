@@ -23,8 +23,10 @@ from grit.workflow.packages import submit_package
 
 
 def write_pack(pool: Pool, run_id: str, profile: Profile, *, folder: Path | None = None, submit: bool = True) -> dict[str, Any]:
-    if not profile.brief:
-        return {"profile": profile.profile_id, "skipped": "This profile receives RED alerts only."}
+    run = pool.run(run_id) or {}
+    brief_config = profile.brief_for(str(run.get("pack")))
+    if brief_config is None:
+        return {"profile": profile.profile_id, "skipped": f"This profile receives no brief for the {run.get('pack')} pack."}
     brief = build_brief(pool, run_id, profile)
     package_id = f"PKG-{run_id}-{profile.profile_id}"
     latest = pool.one("SELECT * FROM packages WHERE package_id = ? ORDER BY version DESC LIMIT 1", (package_id,))
@@ -35,9 +37,9 @@ def write_pack(pool: Pool, run_id: str, profile: Profile, *, folder: Path | None
     version = (latest["version"] + 1) if latest else 1
     folder = folder or OUTPUT_DIR / "runs" / run_id / profile.profile_id / f"v{version}"
     folder.mkdir(parents=True, exist_ok=True)
-    stem = f"GRIT-Scan_{profile.profile_id}_{brief['meta']['run_date']}"
+    stem = f"GRIT-Scan_{brief['meta']['pack']}_{profile.profile_id}_{brief['meta']['run_date']}"
     files: dict[str, str] = {}
-    formats = set(profile.brief.get("formats") or ["docx"])
+    formats = set(brief_config.get("formats") or ["docx"])
     if "docx" in formats:
         files["docx"] = str(render_docx(brief, folder / f"{stem}.docx"))
     if "pptx" in formats:

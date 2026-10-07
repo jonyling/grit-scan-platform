@@ -68,10 +68,11 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
     if brief.get("conditions") and "CONDITIONS" in sections:
         slide = deck.slides.add_slide(blank)
         prior = meta.get("prior_run_date")
-        _title(slide, "Ten standing conditions", f"Trend vs {prior}" if prior else "First weekly assessment")
+        heading = "Standing risk themes" if meta.get("standing_label") == "risk theme" else "Standing conditions"
+        _title(slide, heading, f"Trend vs {prior}" if prior else "First weekly assessment")
         rows = brief["conditions"]
         table = slide.shapes.add_table(len(rows) + 1, 4, Inches(0.5), Inches(1.3), Inches(12.3), Inches(5.4)).table
-        for column, (header, width) in enumerate((("Condition", 4.2), ("Trend", 1.5), ("Confidence", 1.5), ("This week", 5.1))):
+        for column, (header, width) in enumerate(((heading.split()[-1][:-1].title(), 4.2), ("Trend", 1.5), ("Confidence", 1.5), ("This week", 5.1))):
             table.columns[column].width = Inches(width)
             cell = table.cell(0, column)
             cell.text = header
@@ -81,7 +82,7 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
             cell.text_frame.paragraphs[0].runs[0].font.size = Pt(11)
         for number, row in enumerate(rows, start=1):
             basis = row["basis"]["plain"]
-            values = (f"{row['number']}. {row['name']}", row["trend"], (row["confidence"] or "").title(), basis[:220] + ("…" if len(basis) > 220 else ""))
+            values = (f"{row['number']}. {row['name']}" + (f" ({row['group']})" if row.get("group") else ""), row["trend"], row["confidence"], basis[:220] + ("…" if len(basis) > 220 else ""))
             for column, value in enumerate(values):
                 cell = table.cell(number, column)
                 cell.text = value
@@ -89,12 +90,13 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
                     for item in paragraph.runs:
                         item.font.size = Pt(9)
 
-    named = [item for group in brief.get("projects") or [] for item in group["items"] if item["text"]]
+    named = [item for group in (brief.get("projects") or []) + (brief.get("entities") or []) for item in group["items"] if item["text"]]
     named += [item for item in (brief.get("suppliers") or []) + (brief.get("customers") or []) + (brief.get("hazards") or []) if item["text"]]
-    if (brief.get("projects") or brief.get("suppliers")) and sections & {"PROJECTS", "SUPPLIERS", "CUSTOMERS", "HAZARDS"}:
+    named += [item for item in brief.get("competitors") or [] if item["status"] == "FOUND"]
+    if sections & {"PROJECTS", "ENTITIES", "SUPPLIERS", "CUSTOMERS", "HAZARDS", "COMPETITORS"}:
         slide = deck.slides.add_slide(blank)
-        _title(slide, "Named projects, suppliers, customers and hazards", "Every named item is checked each week; silence is reported as such")
-        lines = [f"{item['name']}: {item['text']['plain']}" for item in named[:8]] or ["No item this week names a URS Taiwan project, supplier, customer, or hazard near a site."]
+        _title(slide, "Named items with news this week", "Every named item is checked; silence is reported as such")
+        lines = [f"{item['name']}: {item['text']['plain']}" for item in named[:8]] or [f"No item this week names a {meta.get('pack_label')} entity, project, supplier or customer."]
         _text(slide, lines, size=12)
 
     if brief.get("findings") and "PRIORITY_FINDINGS" in sections:
@@ -102,6 +104,16 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
         _title(slide, "Priority findings", "Ordered by news priority (P1 to P4), then briefing tier")
         lines = [f"[{item['priority'] + ' · ' if item['priority'] else ''}tier {item['tier']}] {item['title']} ({item['outlet']}, {item['date'] or 'n.d.'})" for item in brief["findings"][:8]]
         _text(slide, lines, size=12)
+
+    if brief.get("management_requests") and "MANAGEMENT_REQUESTS" in sections:
+        slide = deck.slides.add_slide(blank)
+        _title(slide, "Management-requested topics", "Signals matching an active request (P1)")
+        lines = [f"{row['title']}: " + ("; ".join(f"{item['title']} ({item['outlet']}, {item['date'] or 'n.d.'})" for item in row["signals"][:2]) or "no signal matched this week.") for row in brief["management_requests"] if row["status"] == "ACTIVE"]
+        _text(slide, lines[:9], size=11)
+    if brief.get("entity_packs") and "ENTITY_PACKS" in sections:
+        slide = deck.slides.add_slide(blank)
+        _title(slide, "Entity reader packs", None)
+        _text(slide, [f"{row['label']}: {row['bottom_line'] or 'no validated bottom line on this date.'}" for row in brief["entity_packs"]], size=13)
 
     slide = deck.slides.add_slide(blank)
     _title(slide, "Watchpoints and QA", None)
@@ -161,10 +173,17 @@ def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], 
         (7, 8, 6, 13, 6, 60, 22, 20, 8, 16, 24, 40, 18, 10, 50, 30, 40, 22),
     )
     _sheet(
-        workbook, "Conditions", ("#", "Condition", "Trend", "Confidence", "Status", "Basis"),
-        [(row["number"], row["name"], row["trend"], row["confidence"], row["status"], row["basis"]["plain"]) for row in brief.get("conditions") or []], (4, 40, 12, 12, 14, 100),
+        workbook, "Standing items", ("#", "Item", "Tier", "Trend", "Confidence", "Status", "Basis"),
+        [(row["number"], row["name"], row.get("group") or "", row["trend"], row["confidence"], row["status"], row["basis"]["plain"]) for row in brief.get("conditions") or []], (4, 40, 14, 12, 12, 14, 100),
     )
+    if brief.get("management_requests"):
+        _sheet(
+            workbook, "Management requests", ("Request", "Status", "Source", "Signals this week"),
+            [(row["title"], row["status"], row["source"] or row["requested_by"], "; ".join(f"{item['title']} ({item['url']})" for item in row["signals"])) for row in brief["management_requests"]], (50, 12, 30, 100),
+        )
     named = [("Project", item) for group in brief.get("projects") or [] for item in group["items"]]
+    named += [("Entity", item) for group in brief.get("entities") or [] for item in group["items"]]
+    named += [("Competitor", item) for item in brief.get("competitors") or []]
     named += [("Supplier", item) for item in brief.get("suppliers") or []] + [("Customer", item) for item in brief.get("customers") or []] + [("Hazard", item) for item in brief.get("hazards") or []]
     _sheet(workbook, "Named items", ("Type", "Item", "Status", "This week"), [(kind, item["name"], item["status"], item["text"]["plain"] if item["text"] else "No new item found") for kind, item in named], (10, 40, 16, 100))
     _sheet(workbook, "Watchpoints", ("Watchpoint", "Status", "Quiet cycles", "Detail", "This week"), [(row["title"], row["status"], row["cycles"], row["detail"], row["update"]["plain"] if row["update"] else "") for row in brief.get("watchpoints") or []], (40, 12, 12, 60, 60))

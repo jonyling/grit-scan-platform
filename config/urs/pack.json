@@ -1,0 +1,42 @@
+{
+  "pack": "urs",
+  "level": "BA",
+  "label": "Urban Solutions",
+  "shortLabel": "URS",
+  "businessArea": "Urban Solutions",
+  "parent": null,
+  "children": [
+    "urs-tw"
+  ],
+  "registers": {
+    "source_register": "URS-Source-Register.json",
+    "exposure": "URS-Exposure-Ontology.json",
+    "lob_profiles": "URS-LOB-Profiles.json",
+    "themes": "URS-STE-Themes.json",
+    "baseline": "URS-Global-Baseline.json"
+  },
+  "optional": {
+    "lob_hierarchy": "URS-LOB-Hierarchy.json",
+    "keyword_library": "URS-Keyword-Library.json",
+    "competitors": "URS-Competitors.json",
+    "management_focus": "URS-Management-Focus.json",
+    "relationships": "URS-Relationships.json",
+    "scan_plan": "URS-Scan-Plan.json"
+  },
+  "build": {
+    "note": "Inputs for grit pack-build. The workbook follows the BA Entity Info template; these name what differs per business area.",
+    "prefix": "URS",
+    "workbookEnv": "GRIT_WORKBOOK",
+    "defaultWorkbook": "URS_Entity_Info_20261006.xlsx",
+    "lobHierarchy": "URS-LOB-Hierarchy.json",
+    "keywordSheets": [
+      "SUI - SSU",
+      "SUI - SSA",
+      "SUI - HRA",
+      "SM - Mobility Rail",
+      "SM - Mobility Road",
+      "SM - Mobility Services",
+      "SM - TransCore"
+    ]
+  }
+}

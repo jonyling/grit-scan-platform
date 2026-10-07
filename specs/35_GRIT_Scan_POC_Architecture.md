@@ -5,7 +5,7 @@
 
 ## 1. Purpose
 
-GRIT-Scan scans the external environment for risks that could affect ST Engineering's business performance, and briefs each executive in the form they need. The proof of concept serves the Group Head of Risk & Assurance (Wilson) and the Urban Solutions (URS) business partner (Hwaimay). The first reader pack is URS Taiwan.
+GRIT-Scan scans the external environment for risks that could affect ST Engineering's business performance, and briefs each executive in the form they need. The proof of concept serves the Group Head of Risk & Assurance (Wilson) and the Urban Solutions (URS) business partner (Hwaimay). It runs two reader packs: Urban Solutions, the first business-area (BA) pack, and URS Taiwan, an entity pack under it. The other six business areas follow the Urban Solutions pattern ([Add a business area](../docs/add-a-business-area.md)).
 
 The method follows the M365 Copilot ontology pattern, inverted. Copilot asks, then retrieves from a graph. GRIT-Scan pulls the web with keywords, then binds what it pulled to the STE register. Keywords decide what is fetched. The register decides what belongs to STE.
 
@@ -32,12 +32,12 @@ A deterministic layer sits under six agent roles.
 
 ## 4. Data flow
 
-1. **Ontology.** Each reader pack is a set of JSON registers under `config/`. The `urs` pack is built from the BA workbook. The `urs-tw` pack adds ten standing conditions, named projects, suppliers, customers, sites, a scan plan, watchpoints, and order-book anchors. The risk cascade orders entity, BA, and Group risk registers by weight.
-2. **Plan.** The reader plan writes one query per condition watch-indicator group, project, supplier, customer, hazard, watchpoint, and active management request. Each query names its target register row.
+1. **Ontology.** Each reader pack is a folder of JSON registers under `config/` with a `pack.json` manifest: its level (GROUP, BA, or ENTITY), parent, children, register files, and, for a BA, the inputs its builder needs. `grit pack-build` builds a BA pack from its Entity Info workbook. The `urs-tw` entity pack adds ten standing conditions, named projects, suppliers, customers, sites, watchpoints, and order-book anchors. The risk cascade orders entity, BA, and Group risk registers by weight.
+2. **Plan.** Each pack's scan plan becomes the week's queries. An entity pack queries its standing conditions and named items. A BA pack queries its 14 risk themes with sector-anchored phrases, its active management requests, and its entities, customers, suppliers, and competitors from the typed graph, rotating the long lists by cadence. Each query names its target register row.
 3. **Acquire.** Brave News returns pages. Currents can add two pulls. Each page becomes one signal in the pool, keyed by its canonical URL, with a sighting per query.
 4. **Embed.** Gemini embeddings go into the pool, through a text-hash cache.
-5. **Assess.** Deterministic functions run on every signal: document type, the business-area link ladder, reader-pack hits, the keep rule, briefing priority, the risk cascade, the harm scorer, relevance labels, and the RED rule. Results are stored per signal, run, and pack.
-6. **Agents.** The Assessor drafts each condition. The Critic reviews all drafts. Accepted issues go back to the Assessor once and are logged as QA corrections. The Reporter writes item entries and the bottom line. Watchpoints update by rule. The finding loop writes six-question cards for the strongest register-linked signals.
+5. **Assess.** Deterministic functions run on every signal: document type, the business-area link ladder, reader-pack hits, management-request matches, the keep rule, briefing priority, the risk cascade, the harm scorer, relevance labels, and the RED rule. Results are stored per signal, run, and pack.
+6. **Agents.** The Assessor drafts each standing condition or theme. A theme an entity pack covers draws on that pack's signals for the same date. The Critic reviews all drafts. Accepted issues go back to the Assessor once and are logged as QA corrections. The Reporter writes item entries and the bottom line; a BA bottom line also reads its entity packs' bottom lines. Watchpoints update by rule. The finding loop writes six-question cards, taking management-request matches first, then theme-bound signals.
 7. **Route.** For each reader, `ApertureRouting()` assigns P1 to P4 and includes or suppresses each signal. Memory reorders within a tier.
 8. **Report.** One brief model per reader renders to Word, PowerPoint, Excel, and Markdown. RED patterns write draft emails. Nothing is sent.
 9. **Review.** Each reader's package runs `NEW` to `PENDING_REVIEW` through the guard. A reviewer's decision goes through `ReviewGate()`. Signals the BA head approved, inside an approved package, move to `AIRIS_HANDOFF_READY` and are exported.
@@ -78,8 +78,10 @@ These hold on 2026-10-07 and are covered by `tests/`:
 - A P1 needs an active request. A proposed request assigns nothing.
 - A RED pattern in a forecast sentence is not RED. One unrated outlet is not enough.
 - A draft with an unquoted claim, a number not in its source, or a score word is withheld.
+- A BA run binds names through the typed graph, assesses 14 themes, lists every entity, customer, and supplier, and carries its entity pack's bottom line. The entity head receives no BA brief.
+- Each package version can be returned for rework and replaced; a guard refusal is reported, not hidden.
 
-The live run `2026-10-07-urs-tw` searched 60 queries, kept 240 of 793 pages, validated all ten conditions, and produced a brief whose structure matches the 2 Oct 2026 reference.
+The live run `2026-10-07-urs-tw` searched 60 queries, kept 240 of 793 pages, validated all ten conditions, and produced a brief whose structure matches the 2 Oct 2026 reference. The live run `2026-10-07-urs` searched 118 queries, kept 324 of 1,096 pages, assessed all 14 themes (10 with evidence, 4 with nothing found), and listed P1 matches for eight of nine active management requests.
 
 ## 8. Open for the MVP
 
@@ -91,4 +93,5 @@ Write each item as trigger, deterministic decision, who signs off, and what is l
 4. Order-book anchors are copied from the reference brief and need a named BA owner's confirmation.
 5. The BA relationship gaps (spec 34 section 5 and the README) still limit entity-level reasoning.
 6. Scheduling, mail delivery, authentication, and the Dataverse ledger write path are not built.
-7. A second reader pack (another BA or entity) has not been added. Adding one is a data change: a pack folder and a scan plan.
+7. The six other business areas have no packs yet. Adding one is a data change: a manifest, the workbook build, a scan plan, and profile briefs. `grit gaps`, the digest commands, and the harm scorer's transmission registry still read the URS pack or workbook.
+8. No URS-wide standing conditions exist. The BA brief stands on the 14 risk themes until R&A approves a condition set.

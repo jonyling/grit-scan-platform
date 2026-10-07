@@ -1,0 +1,113 @@
+"""The business-area reader scan, offline: URS-TW runs first, then URS on the same date. No network."""
+
+from __future__ import annotations
+
+from datetime import date
+from pathlib import Path
+
+from grit.acquisition.brave_plan import BraveResponse
+from grit.agents.reader_prompts import ASSESSOR_SYSTEM, CRITIC_SYSTEM, REPORTER_BOTTOM_LINE_SYSTEM, REPORTER_ITEMS_SYSTEM
+from grit.pipeline import reader_scan
+from grit.pool import Pool
+from tests.test_reader_scan import ARTICLES, _Embedder
+
+RUN_DATE = date(2026, 10, 7)
+BA_ARTICLES = {
+    "CBTC resignalling project delay": [
+        {"title": "CBTC resignalling of the North-South line delayed again", "url": "https://www.straitstimes.com/singapore/cbtc-resignalling-delay",
+         "description": "The CBTC resignalling works on the line will finish later than planned, the operator said.", "page_age": "2026-10-05T03:00:00"},
+    ],
+    "LAND TRANSPORT AUTHORITY": [
+        {"title": "Land Transport Authority awards new rail contract in Singapore", "url": "https://www.channelnewsasia.com/singapore/lta-awards-rail-contract",
+         "description": "The Land Transport Authority awarded a railway signalling contract for the Cross Island Line.", "page_age": "2026-10-06T03:00:00"},
+    ],
+    "rail cyberattack": [
+        {"title": "European rail operator hit by ransomware cyberattack", "url": "https://www.reuters.com/technology/rail-ransomware-2026-10-04",
+         "description": "A ransomware cyberattack disrupted ticketing systems at a European rail operator.", "page_age": "2026-10-04T03:00:00"},
+    ],
+    "Thailand rail project tender": [
+        {"title": "Thailand opens tender for Bangkok rail extension", "url": "https://www.bangkokpost.com/business/rail-extension-tender",
+         "description": "Thailand opened bidding for a new rail extension in Bangkok worth 40 billion baht.", "page_age": "2026-10-03T03:00:00"},
+    ],
+}
+
+
+def _getter(url: str, params: dict[str, str]) -> BraveResponse:
+    query = params["q"].strip('"')
+    found = BA_ARTICLES.get(query) or ARTICLES.get(query) or []
+    return BraveResponse(200, {"results": [dict(item, meta_url={"hostname": item["url"].split("/")[2]}) for item in found]}, {"x-ratelimit-limit": "50"})
+
+
+def _model(system: str, payload: dict) -> dict:
+    if system == ASSESSOR_SYSTEM:
+        sources = payload["sources"]
+        if payload["item"]["id"] == "URS-KEY-04" and sources:
+            return {"movement": "ESCALATING", "summary": "A ransomware cyberattack disrupted ticketing at a European rail operator. [S1]", "source_ids": ["S1"],
+                    "quotes": [{"source_id": "S1", "quote": "A ransomware cyberattack disrupted ticketing systems"}], "change_from_prior": "First assessment."}
+        return {"movement": "NO_MATERIAL_CHANGE", "summary": "No new development was found this week in the checked sources.", "source_ids": [], "quotes": []}
+    if system == CRITIC_SYSTEM:
+        return {"issues": []}
+    if system == REPORTER_ITEMS_SYSTEM:
+        items = []
+        for item in payload["items"]:
+            source = payload["sources"][item["source_ids"][0]]
+            items.append({"item_id": item["item_id"], "summary": f"{source['title']}. [{item['source_ids'][0]}]", "source_ids": [item["source_ids"][0]],
+                          "quotes": [{"source_id": item["source_ids"][0], "quote": source["title"]}]})
+        return {"items": items}
+    if system == REPORTER_BOTTOM_LINE_SYSTEM:
+        return {"bottom_line": f"Bottom line for {payload['facts']['brief']}.", "escalation": "Nothing warrants escalation."}
+    raise AssertionError(system[:40])
+
+
+def _run(pool: Pool, pack: str) -> reader_scan.ReaderRun:
+    run = reader_scan.new_run(pool, RUN_DATE, pack)
+    specs = reader_scan.plan(pool, run)
+    reader_scan.acquire(pool, run, specs, getter=_getter, usage_path=run.folder.parent / "usage.json", sleep=lambda _s: None, log=lambda _m: None)
+    reader_scan.embed(pool, run, embedder=_Embedder())
+    reader_scan.assess(pool, run, score_harm_fn=lambda *a, **k: {"status": "NOT_RUN", "reason": "test"})
+    reader_scan.run_agents(pool, run, client=reader_scan.stub_client(_model), model="stub", log=lambda _m: None)
+    pool.finish_run(run.run_id)
+    return run
+
+
+def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
+    from docx import Document
+
+    from grit.profiles import load_profiles
+    from grit.report.package import write_pack
+
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    pool = Pool(tmp_path / "grit.sqlite")
+    _run(pool, "urs-tw")
+    run = _run(pool, "urs")
+
+    requests = {row["request_id"]: row for row in pool.management_requests()}
+    assert requests["MR-URS-WB-R1"]["status"] == "ACTIVE" and requests["MR-URS-WB-F04"]["status"] == "PROPOSED", "status follows the workbook's own wording"
+    rows = {row["title"]: row for row in pool.assessments(run.run_id, kept_only=True)}
+    lta = rows["Land Transport Authority awards new rail contract in Singapore"]
+    assert any(hit["item_type"] == "CUSTOMER" and hit["strong"] for hit in lta["exposure"]), "a BA pack names customers through the typed graph"
+    cyber = rows["European rail operator hit by ransomware cyberattack"]
+    assert "URS-KEY-04" in cyber["condition_ids"], "a theme keyword counts on a page that theme's own query found"
+    cbtc = rows["CBTC resignalling of the North-South line delayed again"]
+    assert any(hit["item_type"] == "REQUEST" for hit in cbtc["link"]["reader_hits"])
+
+    themes = {row["condition_id"]: row for row in pool.conditions(run.run_id)}
+    assert len(themes) == 14
+    assert themes["URS-KEY-04"]["trend_label"] == "Escalating"
+    assert themes["URS-TIER_2-01"]["ranking"]["coveredBy"] == "urs-tw"
+    checks = {row["item_id"]: row for row in pool.exposure_checks(run.run_id)}
+    assert checks["CUSTOMER-land-transport-authority"]["status"] == "FOUND"
+    assert sum(1 for row in checks.values() if row["item_type"] == "ENTITY") >= 41, "every STE entity is listed, quiet or not"
+
+    profiles = load_profiles()
+    wilson = write_pack(pool, run.run_id, profiles["wilson"], folder=tmp_path / "wilson")
+    document = Document(wilson["files"]["docx"])
+    text = "\n".join([paragraph.text for paragraph in document.paragraphs] + [cell.text for table in document.tables for row in table.rows for cell in row.cells])
+    assert "GRIT-Scan: Urban Solutions" in text
+    for heading in ("Standing risk themes (URS annual risks)", "Management-requested topics", "Entity reader packs", "STE entities by line of business", "Customer watch"):
+        assert heading in text, heading
+    assert "CBTC resignalling of the North-South line delayed again" in text, "a P1 request match is listed under its request"
+    assert "Bottom line for URS Taiwan weekly risk scan" in text, "the BA brief carries the entity pack's bottom line"
+    assert "Rail signalling and CBTC project delivery" in text
+    assert write_pack(pool, run.run_id, profiles["ksyong"], folder=tmp_path / "ksyong").get("skipped"), "the URS Taiwan head receives no business-area brief"
+    assert write_pack(pool, run.run_id, profiles["gareth"], folder=tmp_path / "gareth")["package"]["package_id"] == f"PKG-{run.run_id}-gareth"

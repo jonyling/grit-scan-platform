@@ -4,8 +4,8 @@
   "role": "Group Head, Risk & Assurance",
   "aperture": "WIDE_APERTURE",
   "packs": [
-    "urs-tw",
-    "urs"
+    "urs",
+    "urs-tw"
   ],
   "businessScope": {
     "businessAreas": [
@@ -23,28 +23,53 @@
     ]
   },
   "email": null,
-  "brief": {
-    "title": "GRIT-Scan: URS Taiwan",
-    "subtitle": "Geopolitical Risk & Infrastructure Tracker — Weekly Scan",
-    "preparedFor": "Group Head, Risk & Assurance",
-    "readerPack": "urs-tw",
-    "sections": [
-      "BOTTOM_LINE",
-      "ORDER_BOOK",
-      "PROJECTS",
-      "SUPPLIERS",
-      "CUSTOMERS",
-      "HAZARDS",
-      "CONDITIONS",
-      "QA_LOG",
-      "WATCHPOINTS"
-    ],
-    "maxFindings": 8,
-    "formats": [
-      "docx",
-      "pptx",
-      "xlsx"
-    ]
+  "briefs": {
+    "urs": {
+      "title": "GRIT-Scan: Urban Solutions",
+      "subtitle": "Business Area Weekly Risk Scan",
+      "preparedFor": "Group Head, Risk & Assurance",
+      "sections": [
+        "BOTTOM_LINE",
+        "CONDITIONS",
+        "MANAGEMENT_REQUESTS",
+        "ENTITY_PACKS",
+        "ENTITIES",
+        "CUSTOMERS",
+        "SUPPLIERS",
+        "COMPETITORS",
+        "PRIORITY_FINDINGS",
+        "QA_LOG",
+        "WATCHPOINTS"
+      ],
+      "maxFindings": 8,
+      "formats": [
+        "docx",
+        "pptx",
+        "xlsx"
+      ]
+    },
+    "urs-tw": {
+      "title": "GRIT-Scan: URS Taiwan",
+      "subtitle": "Geopolitical Risk & Infrastructure Tracker — Weekly Scan",
+      "preparedFor": "Group Head, Risk & Assurance",
+      "sections": [
+        "BOTTOM_LINE",
+        "ORDER_BOOK",
+        "PROJECTS",
+        "SUPPLIERS",
+        "CUSTOMERS",
+        "HAZARDS",
+        "CONDITIONS",
+        "QA_LOG",
+        "WATCHPOINTS"
+      ],
+      "maxFindings": 8,
+      "formats": [
+        "docx",
+        "pptx",
+        "xlsx"
+      ]
+    }
   },
-  "note": "Basic profile. Memory builds from Wilson's approve and reject decisions in the pool."
+  "note": "Basic profile. Receives the Urban Solutions business-area brief and the URS Taiwan entity brief. Memory builds from Wilson's approve and reject decisions in the pool."
 }

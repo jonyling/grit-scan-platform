@@ -4,7 +4,7 @@ Priority is reader-scoped. It is assigned here and never written to a shared sig
 
   P1  an ACTIVE management request in the reader's scope matches the signal.
   P2  a governed exposure path reaches the reader's business: an STE name, a registered supplier, a perimeter link, or a
-      strong mention of a named project, supplier or site in the reader pack. A passing mention sets no priority.
+      strong mention of a named project, entity, supplier or site in the reader pack. A passing mention sets no priority.
   P3  a competitor, sector, or theme-level match with no direct path.
   P4  a registered customer with no direct path.
 The lowest number wins, and every condition that matched is recorded.
@@ -38,23 +38,30 @@ class Route:
 
 
 def _usable(keyword: str) -> bool:
-    return len(keyword) >= MIN_KEYWORD or " " in keyword.strip()
+    keyword = keyword.strip()
+    return len(keyword) >= MIN_KEYWORD or " " in keyword or (keyword.isupper() and len(keyword) >= 3)
 
 
 def _hit(keyword: str, text: str) -> bool:
-    body = r"\s+".join(re.escape(part) for part in keyword.split())
-    return re.search(rf"(?<![\w]){body}(?![\w])", text, re.IGNORECASE) is not None
+    """'Qatar + visa' needs every part. A part also matches its plural. An acronym such as 'CBTC' matches in its own case only."""
+    for part in (piece.strip() for piece in keyword.split(" + ")):
+        body = r"\s+".join(re.escape(word) for word in part.split())
+        flags = 0 if part.isupper() else re.IGNORECASE
+        if re.search(rf"(?<![\w]){body}(?:s|es)?(?![\w])", text, flags) is None:
+            return False
+    return True
 
 
 def match_request(record: Mapping[str, Any], requests: Iterable[Mapping[str, Any]], packs: Sequence[str]) -> tuple[str, str] | None:
-    """The first active request whose keyword appears in the title or lead. Returns (request_id, keyword)."""
+    """The first active request in scope whose keyword appears in the title or lead. Returns (request_id, keyword).
+    A keyword 'A + B' needs every part in the title or lead."""
     title = str(record.get("title") or "")
     text = f"{title}\n{str(record.get('text') or '')[:LEAD_CHARS]}"
     for request in requests:
         if request.get("status") != "ACTIVE":
             continue
         scope = request.get("pack")
-        if scope and scope not in packs:
+        if scope and (scope not in packs or (record.get("pack") and scope != record["pack"])):
             continue
         for keyword in request.get("keywords") or []:
             keyword = str(keyword).strip()
@@ -89,7 +96,7 @@ def aperture_routing(
         matched.append("P2: names a registered supplier.")
         priorities.append("P2")
     for hit in exposure:
-        if hit.get("strong") and hit.get("item_type") in {"PROJECT", "SUPPLIER", "SITE"}:
+        if hit.get("strong") and hit.get("item_type") in {"PROJECT", "SUPPLIER", "SITE", "ENTITY"}:
             matched.append(f"P2: names reader-pack {hit['item_type'].lower()} {hit.get('item_name')}.")
             priorities.append("P2")
     if rung in {"COMPETITOR", "SECTOR", "THEME"}:

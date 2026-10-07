@@ -118,7 +118,7 @@ def assess_condition(
 ) -> tuple[dict[str, Any], CallLog]:
     """Returns {status, movement, summary, source_ids, change_from_prior, violations}. status is VALIDATED, NO_EVIDENCE, or WITHHELD."""
     payload: dict[str, Any] = {
-        "condition": {key: condition.get(key) for key in ("id", "name", "domain", "currentAssessment", "taiwanTransmission", "watchIndicators")},
+        "item": {key: condition.get(key) for key in ("id", "name", "kind", "domain", "currentAssessment", "transmission", "watchIndicators") if condition.get(key) is not None},
         "last_week": dict(prior) if prior else "No prior weekly assessment is recorded.",
         "sources": sources,
     }

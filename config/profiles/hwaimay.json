@@ -3,19 +3,75 @@
   "name": "Hwaimay",
   "role": "R&A Business Partner, Urban Solutions",
   "aperture": "MATERIAL_APERTURE",
-  "packs": ["urs", "urs-tw"],
-  "businessScope": {"businessAreas": ["Urban Solutions"], "lobs": [], "countries": []},
-  "reviewRole": "REVIEWER",
-  "redAlerts": {"receive": true, "packs": ["urs", "urs-tw"]},
-  "email": null,
-  "brief": {
-    "title": "GRIT-Scan: Urban Solutions",
-    "subtitle": "Weekly risk scan for the URS business partner",
-    "preparedFor": "R&A Business Partner, Urban Solutions",
-    "readerPack": "urs-tw",
-    "sections": ["BOTTOM_LINE", "PRIORITY_FINDINGS", "CONDITIONS", "PROJECTS", "SUPPLIERS", "CUSTOMERS", "HAZARDS", "OTHER_SIGNALS", "QA_LOG", "WATCHPOINTS"],
-    "maxFindings": 12,
-    "formats": ["docx", "pptx", "xlsx"]
+  "packs": [
+    "urs",
+    "urs-tw"
+  ],
+  "businessScope": {
+    "businessAreas": [
+      "Urban Solutions"
+    ],
+    "lobs": [],
+    "countries": []
   },
-  "note": "Hwaimay reviews URS signals first. Approved signals go to the BA head for the AIRIS handoff."
+  "reviewRole": "REVIEWER",
+  "redAlerts": {
+    "receive": true,
+    "packs": [
+      "urs",
+      "urs-tw"
+    ]
+  },
+  "email": null,
+  "briefs": {
+    "urs": {
+      "title": "GRIT-Scan: Urban Solutions",
+      "subtitle": "Business Area Weekly Risk Scan",
+      "preparedFor": "R&A Business Partner, Urban Solutions",
+      "sections": [
+        "BOTTOM_LINE",
+        "CONDITIONS",
+        "MANAGEMENT_REQUESTS",
+        "ENTITY_PACKS",
+        "ENTITIES",
+        "CUSTOMERS",
+        "SUPPLIERS",
+        "COMPETITORS",
+        "PRIORITY_FINDINGS",
+        "OTHER_SIGNALS",
+        "QA_LOG",
+        "WATCHPOINTS"
+      ],
+      "maxFindings": 12,
+      "formats": [
+        "docx",
+        "pptx",
+        "xlsx"
+      ]
+    },
+    "urs-tw": {
+      "title": "GRIT-Scan: URS Taiwan",
+      "subtitle": "Geopolitical Risk & Infrastructure Tracker — Weekly Scan",
+      "preparedFor": "R&A Business Partner, Urban Solutions",
+      "sections": [
+        "BOTTOM_LINE",
+        "ORDER_BOOK",
+        "PROJECTS",
+        "SUPPLIERS",
+        "CUSTOMERS",
+        "HAZARDS",
+        "CONDITIONS",
+        "PRIORITY_FINDINGS",
+        "QA_LOG",
+        "WATCHPOINTS"
+      ],
+      "maxFindings": 12,
+      "formats": [
+        "docx",
+        "pptx",
+        "xlsx"
+      ]
+    }
+  },
+  "note": "Hwaimay reviews URS signals first. Approved signals go to the BA head for the AIRIS handoff. Receives the Urban Solutions business-area brief and the URS Taiwan entity brief."
 }

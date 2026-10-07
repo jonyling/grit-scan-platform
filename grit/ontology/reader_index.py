@@ -6,15 +6,17 @@ and open watchpoints. This index finds those names in a signal with the link lad
 - a name counts when it is strong: in the title, in the lead, or named twice;
 - a name followed by another capitalised word is a different, longer name: ``Chan Chun Sing`` is not the supplier ``Chan Chun``,
   and ``Leonardo DiCaprio`` is not ``Leonardo``. A corporate word (``Corp``, ``Electric``) or an acronym (``Leonardo DRS``) continues it;
-- a supplier, customer, or site counts only when the text also has a Taiwan or rail cue. Without one, global news about the
-  company is recorded as a passing mention, so the brief can say "normal-course global press only";
+- a supplier, customer, or site counts only when the text also has one of the scan plan's context cues (for URS Taiwan, a
+  Taiwan place or a rail word). Without one, global news about the company is recorded as a passing mention, so the brief
+  can say "normal-course global press only". A plan with no cues sets no such requirement;
 - a project alias that leaves out the city (``Purple Line``) needs the city in the text, so Maryland's Purple Line is not
   Kaohsiung's;
 - an alias marked ``matchable: false`` in the register is never searched;
 - a keyword shorter than six characters matches only as a standalone word, and only in its own case when it is an acronym.
 
-A condition keyword says which standing condition a signal bears on. It never sets a trend. A hazard keyword needs a Taiwan cue.
-A watchpoint needs one of its subject keywords strongly and one of its issue keywords anywhere in the page.
+A condition keyword says which standing condition a signal bears on. It never sets a trend.
+A watchpoint needs one of its subject keywords strongly and one of its issue keywords anywhere in the page. A hazard needs a
+place cue.
 """
 
 from __future__ import annotations
@@ -24,8 +26,6 @@ from dataclasses import asdict, dataclass
 from typing import Any, Iterable, Mapping
 
 LEAD_CHARS = 600
-TAIWAN_CUES = ("Taiwan", "Taiwanese", "Taipei", "Kaohsiung", "Taichung", "Taoyuan", "Tainan", "Hsinchu", "Hualien", "Yilan", "Keelung")
-RAIL_CUES = ("MRT", "metro", "rail", "railway", "train", "transit", "signalling", "signaling")
 
 CORPORATE_WORDS = frozenset({
     "Co", "Co.", "Corp", "Corp.", "Corporation", "Company", "Ltd", "Ltd.", "Limited", "Inc", "Inc.", "Group", "Holdings", "Electric", "Technology", "Technologies",
@@ -101,6 +101,9 @@ class ReaderIndex:
         for row in exposure.get("sites") or []:
             self.items.append((SITE, row["siteId"], row["siteName"], _aliases(row, "siteName")[1:], None))
         plan = scan_plan or {}
+        cues = plan.get("contextCues") or {}
+        self.place_cues = [re.compile(rf"(?<![\w]){re.escape(cue)}(?![\w])") for cue in cues.get("place") or []]
+        self.sector_cues = [re.compile(rf"(?<![\w]){re.escape(cue)}(?![\w])", 0 if cue.isupper() else re.IGNORECASE) for cue in cues.get("sector") or []]
         for row in plan.get("customers") or []:
             if row.get("aliases"):
                 self.items.append((CUSTOMER, row["itemId"], row.get("name") or row["itemId"], [str(a) for a in row["aliases"]], None))
@@ -134,8 +137,10 @@ class ReaderIndex:
     def hits(self, title: str, text: str) -> list[ReaderHit]:
         whole = f"{title}\n{text}"
         title_end = len(title)
-        taiwan = any(re.search(rf"(?<![\w]){cue}(?![\w])", whole) for cue in TAIWAN_CUES)
-        rail = any(re.search(rf"(?<![\w]){re.escape(cue)}(?![\w])", whole, 0 if cue.isupper() else re.IGNORECASE) for cue in RAIL_CUES)
+        any_cues = bool(self.place_cues or self.sector_cues)
+        place = any(cue.search(whole) for cue in self.place_cues) if self.place_cues else True
+        sector = any(cue.search(whole) for cue in self.sector_cues)
+        in_context = (any(cue.search(whole) for cue in self.place_cues) or sector) if any_cues else True
         found: list[ReaderHit] = []
         for item_type, item_id, name, aliases, city in self.items:
             best: ReaderHit | None = None
@@ -148,7 +153,7 @@ class ReaderIndex:
                 strong = where != "BODY" or count >= 2
                 if item_type == PROJECT and city and city.casefold() not in alias.casefold() and not re.search(rf"(?<![\w]){re.escape(city)}(?![\w])", whole, re.IGNORECASE):
                     strong = False
-                if item_type in {SUPPLIER, CUSTOMER, SITE} and not (taiwan or rail):
+                if item_type in {SUPPLIER, CUSTOMER, SITE} and not in_context:
                     strong = False
                 hit = ReaderHit(item_type, item_id, name, alias, where, count, strong)
                 if best is None or (hit.strong, -("TITLE", "LEAD", "BODY").index(hit.where)) > (best.strong, -("TITLE", "LEAD", "BODY").index(best.where)):
@@ -166,7 +171,7 @@ class ReaderIndex:
             matched.sort(key=lambda item: ("TITLE", "LEAD", "BODY").index(item[1]))
             keyword, where, count = matched[0]
             strong = where != "BODY" or count >= 2 or len(matched) >= 2
-            if item_type == HAZARD and not taiwan:
+            if item_type == HAZARD and not place:
                 strong = False
             if item_type == WATCHPOINT and self.issue_words.get(item_id):
                 issue = next((word for word in self.issue_words[item_id] if self._find(word, whole, title_end) is not None), None)

@@ -1,11 +1,12 @@
 """The reader scan: one reader pack, one week. Every stage reads and writes the pool, so a stage can be rerun alone.
 
-  plan      the reader pack's queries (conditions, projects, suppliers, customers, hazards, watchpoints).
+  plan      the reader pack's queries: standing items (conditions or themes), management requests, named items, hazards,
+            and watchpoints. A business-area pack takes its named items from the typed graph and rotates them.
   acquire   Researcher: Brave News, plus up to two Currents pulls. A query already answered in this run is not sent again.
   embed     Gemini embeddings into the pool, through the shared vector cache.
   assess    deterministic: document type, link ladder, reader-pack hits, keep rule, priority, risk cascade, harm scorer,
             relevance labels, and the RED rule. No model.
-  agents    Assessor drafts each standing condition, Critic argues, Reporter writes item entries and the bottom line.
+  agents    Assessor drafts each standing item, Critic argues, Reporter writes item entries and the bottom line.
             Checks decide what is valid. Watchpoints are updated by rule.
   findings  the six-question finding loop for the strongest register-linked signals.
 """
@@ -31,14 +32,18 @@ from grit.ontology.graph import build_graph
 from grit.ontology.link import LinkIndex, link_candidate
 from grit.ontology.matchers.credibility_lookup import credibility_lookup
 from grit.ontology.pack import OntologyPack, load_ontology_pack
-from grit.ontology.reader_index import CONDITION, CUSTOMER, HAZARD, PROJECT, SITE, SUPPLIER, WATCHPOINT, ReaderIndex
+from grit.core.routing import match_request
+from grit.ontology.reader_index import CONDITION, CUSTOMER, HAZARD, PROJECT, SITE, SUPPLIER, WATCHPOINT, ReaderHit, ReaderIndex
 from grit.ontology.reader_plan import reader_queries, target_of
 from grit.ontology.risk_cascade import load_risk_cascade
 from grit.pipeline.harm import harm_verdict, opportunity_status, score_harm
 from grit.pool import Pool
 from grit.settings import CONFIG_DIR, OUTPUT_DIR
 
-EXPOSURE_TYPES = (PROJECT, SUPPLIER, CUSTOMER, SITE)
+ENTITY, COMPETITOR, REQUEST = "ENTITY", "COMPETITOR", "REQUEST"
+EXPOSURE_TYPES = (PROJECT, SUPPLIER, CUSTOMER, SITE, ENTITY, COMPETITOR)
+_GRAPH_TYPES = {"Customer": CUSTOMER, "Supplier": SUPPLIER, "Org": COMPETITOR, "Site": SITE, "STE": ENTITY}
+TIER_LABELS = {"KEY": "Key risk", "TIER_2": "Tier-2 risk", "EMERGING": "Emerging risk", "KEY_RISK": "Key risk", "TIER2_RISK": "Tier-2 risk", "EMERGING_RISK": "Emerging risk"}
 MAX_CONDITION_SOURCES = 12
 MAX_ITEM_SOURCES = 4
 
@@ -64,6 +69,61 @@ def _load_pack(pack: str) -> OntologyPack:
 
 def _aliases() -> dict[str, Any]:
     return json.loads((CONFIG_DIR / "registry_aliases.json").read_text(encoding="utf-8-sig"))
+
+
+def graph_pack(pack: OntologyPack) -> OntologyPack:
+    """The business-area pack whose typed graph binds names: the pack itself at BA level, else its parent."""
+    if pack.level == "BA":
+        return pack
+    parent = (pack.manifest or {}).get("parent")
+    if not parent:
+        raise ValueError(f"Pack {pack.pack} is {pack.level} level and names no parent business-area pack in pack.json.")
+    return _load_pack(parent)
+
+
+def standing_set(pack: OntologyPack) -> str:
+    return str((pack.scan_plan or {}).get("standingSet") or ("conditions" if (pack.baseline or {}).get("conditions") else "themes"))
+
+
+def standing_items(pack: OntologyPack) -> list[dict[str, Any]]:
+    """What the Assessor drafts each week. An entity pack's standing conditions, or a business-area pack's risk themes."""
+    if standing_set(pack) == "conditions":
+        return [
+            {"id": row["id"], "name": row["name"], "kind": "CONDITION", "domain": row.get("domain"), "currentAssessment": row.get("currentAssessment"),
+             "transmission": row.get("taiwanTransmission") or row.get("transmission"), "watchIndicators": row.get("watchIndicators") or [], "coveredBy": None}
+            for row in pack.baseline.get("conditions") or []
+        ]
+    plan = {row["themeId"]: row for row in (pack.scan_plan or {}).get("themes") or []}
+    return [
+        {"id": row["themeId"], "name": row["themeName"], "kind": "THEME", "domain": TIER_LABELS.get(row.get("tier"), row.get("tier")), "tier": row.get("tier"),
+         "currentAssessment": row.get("sheetDetail"), "transmission": row.get("sheetExtra"), "watchIndicators": row.get("keywords") or [],
+         "coveredBy": (plan.get(row["themeId"]) or {}).get("coveredBy")}
+        for row in (pack.themes or {}).get("themes") or []
+    ]
+
+
+def seed_requests(pool: Pool, pack: OntologyPack) -> int:
+    """Copy the scan plan's management requests into the pool. Wording, keywords and queries follow the config. Status is
+    state: the config sets it once, and after that only a reviewer changes it."""
+    added = 0
+    for row in (pack.scan_plan or {}).get("managementRequests") or []:
+        values = {
+            "title": row["title"], "kind": row.get("kind") or "TOPIC", "keywords_json": json.dumps(row.get("keywords") or []), "queries_json": json.dumps(row.get("queries") or []),
+            "country": row.get("country"), "lob": row.get("lob"), "pack": pack.pack, "source": row.get("source"),
+        }
+        if pool.one("SELECT 1 FROM management_requests WHERE request_id = ?", (row["requestId"],)):
+            with pool.transaction() as conn:
+                conn.execute(
+                    "UPDATE management_requests SET title = ?, kind = ?, keywords_json = ?, queries_json = ?, country = ?, lob = ?, pack = ?, source = ? WHERE request_id = ?",
+                    (*values.values(), row["requestId"]),
+                )
+            continue
+        pool.insert("management_requests", {
+            "request_id": row["requestId"], "description": None, "requested_by": row.get("requestedBy") or f"{pack.label} management", "request_date": row.get("requestDate") or "2026-10-06",
+            "status": row.get("status") or "PROPOSED", "origin": "WORKBOOK", "profile_id": None, **values,
+        })
+        added += 1
+    return added
 
 
 # Plan ------------------------------------------------------------------------------------------------------------
@@ -95,7 +155,9 @@ def plan(pool: Pool, run: ReaderRun) -> list[Any]:
     if not pack.scan_plan:
         raise ValueError(f"Pack {run.pack} has no scan plan. Add the pack's *-Scan-Plan.json register.")
     seed_watchpoints(pool, pack)
-    return reader_queries(pack.scan_plan, pool.watchpoints(run.pack), pool.management_requests(active_only=True))
+    seed_requests(pool, pack)
+    requests = [row for row in pool.management_requests(active_only=True) if row.get("pack") in (None, run.pack)]
+    return reader_queries(pack.scan_plan, pool.watchpoints(run.pack), requests, pack=pack, reviewed_aliases=_aliases(), run_date=run.run_date)
 
 
 # Acquire ---------------------------------------------------------------------------------------------------------
@@ -245,11 +307,15 @@ def _credibility(url: str, outlet: str | None, registers: Sequence[Mapping[str, 
 def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None = None, score_harm_fn: Callable[..., dict[str, Any]] = score_harm) -> dict[str, Any]:
     """Deterministic only. Writes one assessment row per signal in the run."""
     reader = _load_pack(run.pack)
-    business = _load_pack("urs")
+    business = graph_pack(reader)
     graph = build_graph(business, reviewed_aliases=_aliases())
     index = LinkIndex(graph, business.lob_profiles)
     seed_watchpoints(pool, reader)
-    readers = ReaderIndex(reader.exposure, reader.scan_plan, reader.baseline, pool.watchpoints(run.pack))
+    seed_requests(pool, reader)
+    from_graph = ((reader.scan_plan or {}).get("namedItems") or {}).get("source") == "graph"
+    readers = ReaderIndex({} if from_graph else reader.exposure, reader.scan_plan, reader.baseline, pool.watchpoints(run.pack))
+    requests = [row for row in pool.management_requests(active_only=True) if row.get("pack") in (None, run.pack)]
+    themes_in_plan = {item["id"] for item in standing_items(reader)} if standing_set(reader) == "themes" else set()
     cascade = load_risk_cascade()
     patterns = red_patterns if red_patterns is not None else json.loads((CONFIG_DIR / "red-patterns.json").read_text(encoding="utf-8"))
     conditions = {condition["id"]: condition for condition in reader.baseline.get("conditions") or []}
@@ -258,19 +324,34 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
 
     signals = pool.signals_for_run(run.run_id)
     records: list[dict[str, Any]] = []
+    sightings = defaultdict(set)
+    for row in pool.sightings(run.run_id):
+        if row.get("target_id"):
+            sightings[row["signal_id"]].add(row["target_id"])
     for signal in signals:
         signal = {**signal, "text": without_navigation(signal["text"])}
         candidate = {"title": signal["title"], "text": signal["text"], "publisher": signal["publisher"], "url": signal["url"], "published_at": signal["published_at"]}
         doc = classify(candidate)
         pool.set_doc_type(signal["signal_id"], doc.doc_type)
-        records.append({
-            **signal, "doc_type": doc, "link": link_candidate(candidate, index, business.lob_profiles), "hits": readers.hits(signal["title"], signal["text"]), "scale": scale_cues(candidate),
-        })
+        link = link_candidate(candidate, index, business.lob_profiles)
+        if from_graph:
+            link = generic_name_rule(link, f"{signal['title']}\n{signal['text']}", (reader.scan_plan.get("namedItems") or {}).get("genericNames"), graph)
+        hits = readers.hits(signal["title"], signal["text"])
+        if from_graph:
+            hits += graph_hits(link, graph)
+        if themes_in_plan:
+            # A theme keyword is common prose. It counts for a theme only on a page that theme's own query found, or on a page
+            # that already links to the register.
+            hits += [
+                ReaderHit(CONDITION, theme.theme_id, theme.theme_id, ", ".join(theme.matched), theme.where, len(theme.matched), True)
+                for theme in link.themes
+                if theme.strong and theme.theme_id in themes_in_plan and (theme.theme_id in sightings[signal["signal_id"]] or link.rung)
+            ]
+        request = match_request({**candidate, "pack": run.pack}, requests, [run.pack])
+        if request:
+            hits.append(ReaderHit(REQUEST, request[0], request[0], request[1], "LEAD", 1, True))
+        records.append({**signal, "doc_type": doc, "link": link, "hits": hits, "scale": scale_cues(candidate)})
     decisions = filter_reader(records, run_date=run.run_date, vectors=run_vectors(pool, run), config=ReaderFilterConfig(window_days=window))
-    sightings = defaultdict(set)
-    for row in pool.sightings(run.run_id):
-        if row.get("target_id"):
-            sightings[row["signal_id"]].add(row["target_id"])
 
     kept = red = 0
     for record in records:
@@ -298,7 +379,7 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
             credibility = [_credibility(item["url"], item.get("publisher"), registers) for item in outlets]
             harm = score_harm_fn(record, run_date=run.run_date, credibility=credibility, lob=link.canonical_lob)
             risks = cascade.hits(record["title"], record["text"], [theme.theme_id for theme in link.themes if theme.strong])
-            entity_themes = [{"themeId": hit.risk_id, "themeName": hit.name, "tier": hit.tier} for hit in risks if hit.level == "ENTITY"]
+            own_level = [{"themeId": hit.risk_id, "themeName": hit.name, "tier": hit.tier} for hit in risks if hit.level == reader.level]
             condition = conditions.get(condition_ids[0]) if condition_ids else None
             high_rated = any(item.get("credibilityRating") == "HIGH" for item in credibility)
             verdict = harm_verdict(harm)
@@ -306,7 +387,7 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
             red += int(red_result.red)
             row |= {
                 "risk_cascade_json": [hit.as_record() for hit in risks], "harm_json": harm, "harm_verdict": verdict, "opportunity_cost": opportunity_status(harm),
-                "trend": "NO_MATERIAL_CHANGE", "risk_level": classify_wild_scan_risk_level(entity_themes),
+                "trend": "NO_MATERIAL_CHANGE", "risk_level": classify_wild_scan_risk_level(own_level),
                 "relevance_basis": compose_wild_scan_basis(condition, publisher=record["publisher"]) if condition else _basis(decision, link, exposure),
                 "evidence_confidence": evidence_confidence(credibility)[0], "red_rule_json": red_result.as_record(), "red": int(red_result.red),
             }
@@ -314,6 +395,43 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
     result = {"signals": len(records), "kept": kept, "red": red, "dropped": _count(decisions)}
     pool.log(actor_type="FUNCTION", actor="ReaderAssess", status="SUCCEEDED", run_id=run.run_id, version="reader-assess-1", detail=result)
     return result
+
+
+def generic_name_rule(link: Any, text: str, rule: Mapping[str, Any] | None, graph: Any = None) -> Any:
+    """A generic public-body name ('MINISTRY OF DEFENCE') counts only when the page names one of the pack's places. Without
+    one, the name stays recorded as a passing mention, and the rung falls back down the link ladder: a registered competitor,
+    then a LOB keyword with a place where that LOB has an entity, then a LOB keyword alone."""
+    import dataclasses
+    import re
+
+    if not rule:
+        return link
+    generic = re.compile(rule["pattern"], re.IGNORECASE)
+    cued = any(re.search(rf"(?<![\w]){re.escape(cue)}(?![\w])", text, 0 if cue.isupper() else re.IGNORECASE) for cue in rule.get("cues") or [])
+    if cued:
+        return link
+    changed = [item for item in link.involves if item.strong and item.cls in {"Customer", "Supplier"} and generic.search(item.name)]
+    if not changed:
+        return link
+    involves = tuple(dataclasses.replace(item, strong=False) if item in changed else item for item in link.involves)
+    reasons = [*link.reasons, *(f"Not a link: '{item.matched}' is a generic public-body name, and the page names none of the pack's places." for item in changed)]
+    rung = link.rung
+    if rung == "COUNTERPARTY" and not any(item.strong and item.cls in {"Customer", "Supplier"} for item in involves):
+        near = [place for place in link.place_ids if graph is not None and graph.entities_in_place(place) & graph.entities_in_lob(link.lob_id)] if link.lob_id else []
+        rung = "COMPETITOR" if any(item.strong and item.cls == "Org" for item in involves) else "PERIMETER" if near else "SECTOR" if link.lob_id else None
+        reasons.append(f"Rung falls back to {rung or 'no link'}.")
+    return dataclasses.replace(link, involves=involves, rung=rung, reasons=tuple(reasons))
+
+
+def graph_hits(link: Any, graph: Any) -> list[ReaderHit]:
+    """A business-area pack's named items are the register names the link ladder found, with its strength rules."""
+    found = []
+    for item in link.involves:
+        item_type = _GRAPH_TYPES.get(item.cls)
+        if item_type is None:
+            continue
+        found.append(ReaderHit(item_type, item.node_id, item.name, item.matched, item.where, item.count, bool(item.strong)))
+    return found
 
 
 def _basis(decision: Mapping[str, Any], link: Any, exposure: Sequence[Mapping[str, Any]]) -> str:
@@ -347,9 +465,31 @@ def _recent_first(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
     return rows
 
 
+def material_order(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
+    """Briefing order for findings: a management-request match first, then a signal bound to a standing item, then the
+    rest, each by tier, outlets and recency. Deterministic; it decides what the reader sees first, never a fact."""
+    rows = list(rows)
+    rows.sort(key=lambda row: str(row.get("published_at") or ""), reverse=True)
+    rows.sort(key=lambda row: (
+        not any(hit.get("item_type") == REQUEST for hit in (row.get("link") or {}).get("reader_hits") or []),
+        row.get("tier") or 9,
+        not row.get("condition_ids"),
+        -(row.get("corroboration") or 1),
+    ))
+    return rows
+
+
 def condition_sources(rows: Sequence[Mapping[str, Any]], condition_id: str) -> list[Mapping[str, Any]]:
-    """Kept signals that bear on a condition: a strong keyword hit, or found by one of the condition's own queries."""
+    """Kept signals that bear on a standing item: a strong keyword hit, or found by one of the item's own queries."""
     chosen = [row for row in rows if condition_id in (row.get("condition_ids") or []) or condition_id in (row["link"].get("sighting_targets") or [])]
+    return _recent_first(chosen)[:MAX_CONDITION_SOURCES]
+
+
+def child_sources(pool: Pool, run: ReaderRun, child: str) -> list[Mapping[str, Any]]:
+    """For a theme an entity pack covers: that pack's kept signals on the same date that name its projects, suppliers or
+    customers, or reach briefing tier 2."""
+    rows = pool.assessments(run_id_for(run.run_date, child), kept_only=True)
+    chosen = [row for row in rows if any(hit.get("strong") for hit in row.get("exposure") or []) or (row.get("tier") or 9) <= 2]
     return _recent_first(chosen)[:MAX_CONDITION_SOURCES]
 
 
@@ -365,35 +505,39 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
     from grit.core.conditions import import_scan, rank, revise
 
     pack = _load_pack(run.pack)
+    items = standing_items(pack)
+    by_id = {item["id"]: item for item in items}
     rows = _kept(pool, run)
     previous_run, priors = _prior(pool, run)
     with pool.transaction() as conn:
         conn.execute("DELETE FROM qa_log WHERE run_id = ?", (run.run_id,))  # derived per run; a rerun of the agents writes it again
-    registers = [pack.source_register, _load_pack("urs").source_register]
+    registers = [pack.source_register, graph_pack(pack).source_register]
     by_signal = {row["signal_id"]: row for row in rows}
 
     def write_log(entry: agents.CallLog) -> None:
-        record = entry.as_record()
-        pool.log(actor_type="AGENT", run_id=run.run_id, **record)
+        pool.log(actor_type="AGENT", run_id=run.run_id, **entry.as_record())
 
-    # Assessor: one draft per standing condition.
+    def prior_view(key: str) -> dict[str, Any] | None:
+        prior = priors.get(key)
+        return {"trend": prior.get("trend_label"), "summary": prior.get("summary"), "run_date": previous_run["run_date"]} if prior and previous_run else None
+
+    # Assessor: one draft per standing item. A theme an entity pack covers draws on that pack's signals for the same date.
     drafts: dict[str, dict[str, Any]] = {}
     tables: dict[str, tuple[dict[str, dict[str, Any]], dict[str, str]]] = {}
-    for condition in pack.baseline.get("conditions") or []:
-        sources = condition_sources(rows, condition["id"])
+    for item in items:
+        sources = child_sources(pool, run, item["coveredBy"]) if item.get("coveredBy") else condition_sources(rows, item["id"])
+        by_signal.update({row["signal_id"]: row for row in sources})
         table, back = agents.source_table(sources)
-        tables[condition["id"]] = (table, back)
-        prior = priors.get(condition["id"])
-        prior_view = {"trend": prior.get("trend_label"), "summary": prior.get("summary"), "run_date": previous_run["run_date"]} if prior else None
-        draft, call = agents.assess_condition(client, model, condition=condition, prior=prior_view, sources=table)
+        tables[item["id"]] = (table, back)
+        draft, call = agents.assess_condition(client, model, condition=item, prior=prior_view(item["id"]), sources=table)
         write_log(call)
-        drafts[condition["id"]] = draft
-        log(f"  Assessor {condition['id']} {draft['status']:12} {draft.get('movement') or '-':20} sources {len(table)}")
+        drafts[item["id"]] = draft
+        log(f"  Assessor {item['id']:16} {draft['status']:12} {draft.get('movement') or '-':20} sources {len(table)}")
 
     # Critic: one pass over every validated draft, against last week's text and the same sources.
     combined, combined_back = _combined_table(tables, drafts)
     critic_view = [
-        {"item_id": key, "name": next(c["name"] for c in pack.baseline["conditions"] if c["id"] == key), "movement": draft.get("movement"), "summary": _renumber(draft.get("summary") or "", tables[key][1], combined_back)}
+        {"item_id": key, "name": by_id[key]["name"], "movement": draft.get("movement"), "summary": _renumber(draft.get("summary") or "", tables[key][1], combined_back)}
         for key, draft in drafts.items() if draft["status"] == "VALIDATED"
     ]
     accepted: list[dict[str, Any]] = []
@@ -411,51 +555,54 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
             table[local] = combined[str(issue["source_id"])]
             back[local] = str(source_signal)
         fixed_issue = dict(issue) | {"source_id": local, "correction": _renumber(str(issue.get("correction") or ""), combined_back, back)}
-        condition = next(c for c in pack.baseline["conditions"] if c["id"] == key)
-        prior = priors.get(key)
-        prior_view = {"trend": prior.get("trend_label"), "summary": prior.get("summary"), "run_date": previous_run["run_date"]} if prior else None
-        refined, call = agents.assess_condition(client, model, condition=condition, prior=prior_view, sources=table, issues=[fixed_issue], previous=drafts[key])
+        item = by_id[key]
+        refined, call = agents.assess_condition(client, model, condition=item, prior=prior_view(key), sources=table, issues=[fixed_issue], previous=drafts[key])
         write_log(call)
         before = drafts[key].get("summary")
         if refined["status"] in {"VALIDATED", "NO_EVIDENCE"}:
             drafts[key] = refined
-            pool.add_qa(run.run_id, item=f"{key}: {condition['name']}", prior=str(issue.get("problem") or before), correction=agents.strip_marks(fixed_issue["correction"]), source_ids=[str(source_signal)], origin="CRITIC")
+            pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=str(issue.get("problem") or before), correction=agents.strip_marks(fixed_issue["correction"]), source_ids=[str(source_signal)], origin="CRITIC")
         else:
-            pool.add_qa(run.run_id, item=f"{key}: {condition['name']}", prior=str(issue.get("problem")), correction="Raised by the Critic. The redraft failed its checks, so the earlier draft stands.", source_ids=[str(source_signal)], origin="CRITIC")
+            pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=str(issue.get("problem")), correction="Raised by the Critic. The redraft failed its checks, so the earlier draft stands.", source_ids=[str(source_signal)], origin="CRITIC")
 
-    # Persist the conditions, then run the governed weekly cascade over them for themes, descent and priority.
+    # Persist the standing items. For conditions, run the governed weekly cascade for themes, descent and priority.
     scan: list[dict[str, Any]] = []
-    for condition in pack.baseline.get("conditions") or []:
-        key = condition["id"]
+    for item in items:
+        key = item["id"]
         draft = drafts[key]
         table, back = tables[key]
-        cited = [back[item] for item in draft.get("source_ids") or [] if item in back]
+        cited = [back[ref] for ref in draft.get("source_ids") or [] if ref in back]
         credibility = [_credibility(by_signal[sid]["url"], by_signal[sid]["publisher"], registers) for sid in cited if sid in by_signal]
         level, _reason = evidence_confidence(credibility)
         summary = _cite(draft.get("summary") or "", back) if draft.get("summary") else None
         status = draft["status"]
         if status == "WITHHELD":
-            pool.add_qa(run.run_id, item=f"{key}: {condition['name']}", prior=None, correction="Withheld: the Assessor's draft failed its checks twice. " + "; ".join(draft["violations"][:2]), origin="CHECK")
+            pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=None, correction="Withheld: the Assessor's draft failed its checks twice. " + "; ".join(draft["violations"][:2]), origin="CHECK")
         pool.save_condition({
-            "run_id": run.run_id, "pack": run.pack, "condition_id": key, "condition_name": condition["name"], "movement": draft.get("movement"),
+            "run_id": run.run_id, "pack": run.pack, "condition_id": key, "condition_name": item["name"], "movement": draft.get("movement"),
             "trend_label": trend_label(draft.get("movement")) if status != "WITHHELD" else "Not established", "confidence": level,
             "summary": summary, "source_ids_json": cited, "status": status, "violations_json": draft.get("violations") or [],
+            "ranking_json": {"kind": item["kind"], "tier": item.get("tier"), "domain": item.get("domain"), "coveredBy": item.get("coveredBy")},
         })
-        if status == "VALIDATED":
+        if status == "VALIDATED" and item["kind"] == "CONDITION":
             scan.append({
                 "conditionHint": key, "movement": draft["movement"], "evidenceConfidence": level or "LOW", "summary": agents.strip_marks(draft["summary"]),
                 "sources": [{"url": by_signal[sid]["url"]} for sid in cited if sid in by_signal],
             })
-    revision = revise(import_scan(json.dumps(scan), pack.baseline, revision_id=run.run_id, revision_date=run.run_date.isoformat()), pack)
-    ranking = {item["conditionId"]: item for item in rank(revision, pack)["rankedItems"]}
-    for item in revision["revisions"]:
-        pool.conn.execute("UPDATE condition_assessments SET ranking_json = ? WHERE run_id = ? AND condition_id = ?", (json.dumps({**item, **ranking.get(item["conditionId"], {})}, default=str), run.run_id, item["conditionId"]))
-    pool.conn.commit()
+    if standing_set(pack) == "conditions":
+        revision = revise(import_scan(json.dumps(scan), pack.baseline, revision_id=run.run_id, revision_date=run.run_date.isoformat()), pack)
+        ranking = {item["conditionId"]: item for item in rank(revision, pack)["rankedItems"]}
+        for item in revision["revisions"]:
+            pool.conn.execute(
+                "UPDATE condition_assessments SET ranking_json = ? WHERE run_id = ? AND condition_id = ?",
+                (json.dumps({"kind": "CONDITION", **item, **ranking.get(item["conditionId"], {})}, default=str), run.run_id, item["conditionId"]),
+            )
+        pool.conn.commit()
 
-    items = _item_checks(pool, run, pack, rows, client=client, model=model, write_log=write_log, log=log)
+    checks = _item_checks(pool, run, pack, rows, client=client, model=model, write_log=write_log, log=log)
     watch = update_watchpoints(pool, run, rows)
     bottom = _bottom_line(pool, run, client=client, model=model, write_log=write_log)
-    return {"conditions": {key: draft["status"] for key, draft in drafts.items()}, "critic_accepted": len(accepted), "items": items, "watchpoints": watch, "bottom_line": bottom["status"]}
+    return {"standing": {key: draft["status"] for key, draft in drafts.items()}, "critic_accepted": len(accepted), "items": checks, "watchpoints": watch, "bottom_line": bottom["status"]}
 
 
 def _combined_table(tables: Mapping[str, tuple[dict[str, Any], dict[str, str]]], drafts: Mapping[str, Mapping[str, Any]]) -> tuple[dict[str, Any], dict[str, str]]:
@@ -497,9 +644,22 @@ def _cite(text: str, back: Mapping[str, str]) -> str:
     return re.sub(r"\[(S\d{1,3}(?:\s*,\s*S\d{1,3})*)\]", swap, text)
 
 
-def _item_rows(pack: OntologyPack) -> list[tuple[str, str, str]]:
-    exposure = pack.exposure
+ITEM_BATCH = 15
+
+
+def _item_rows(pack: OntologyPack, rows: Sequence[Mapping[str, Any]] = ()) -> list[tuple[str, str, str]]:
+    """Every named item the pack checks each week. A graph-sourced pack lists its STE nodes, customers and suppliers, and
+    only the competitors that this week's signals name: 191 quiet competitors are not news."""
     plan = pack.scan_plan or {}
+    if (plan.get("namedItems") or {}).get("source") == "graph":
+        graph = build_graph(graph_pack(pack), reviewed_aliases=_aliases())
+        found = [(ENTITY, node.id, node.name) for node in graph.of_class("STE")]
+        found += [(CUSTOMER, node.id, node.name) for node in graph.of_class("Customer")]
+        found += [(SUPPLIER, node.id, node.name) for node in graph.of_class("Supplier")]
+        named = {hit["item_id"]: hit["item_name"] for row in rows for hit in row.get("exposure") or [] if hit.get("item_type") == COMPETITOR}
+        found += [(COMPETITOR, node_id, name) for node_id, name in sorted(named.items(), key=lambda pair: pair[1])]
+        return found
+    exposure = pack.exposure
     found = [(PROJECT, row["projectId"], row["projectName"]) for row in exposure.get("projects") or []]
     found += [(SUPPLIER, row["supplierId"], row["supplierName"]) for row in exposure.get("suppliers") or []]
     found += [(CUSTOMER, row["customerId"], row["customerName"]) for row in exposure.get("customers") or []]
@@ -509,7 +669,7 @@ def _item_rows(pack: OntologyPack) -> list[tuple[str, str, str]]:
 
 
 def _item_checks(pool: Pool, run: ReaderRun, pack: OntologyPack, rows: Sequence[Mapping[str, Any]], *, client: Any, model: str, write_log: Callable[[Any], None], log: Callable[[str], None]) -> dict[str, int]:
-    """Every named item gets a row. Strong hits go to the Reporter. Passing mentions are listed by rule. None is NOTHING_FOUND."""
+    """Every named item gets a row. Strong hits go to the Reporter, in batches. Passing mentions are listed by rule. None is NOTHING_FOUND."""
     from grit.agents import reader as agents
 
     strong_by_item: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
@@ -519,34 +679,42 @@ def _item_checks(pool: Pool, run: ReaderRun, pack: OntologyPack, rows: Sequence[
             (strong_by_item if hit.get("strong") else weak_by_item)[hit["item_id"]].append(row)
         for hit in row["link"].get("hazards") or []:
             strong_by_item[hit["item_id"]].append(row)
-    sources: list[Mapping[str, Any]] = []
-    index: dict[str, str] = {}
-    requests: list[dict[str, Any]] = []
-    for item_type, item_id, name in _item_rows(pack):
-        chosen = _recent_first(strong_by_item.get(item_id, []))[:MAX_ITEM_SOURCES]
-        ids = []
-        for row in chosen:
-            if row["signal_id"] not in index:
-                sources.append(row)
-                index[row["signal_id"]] = f"S{len(sources)}"
-            ids.append(index[row["signal_id"]])
-        if ids:
+    item_rows = _item_rows(pack, rows)
+    with pool.transaction() as conn:
+        conn.execute("DELETE FROM exposure_checks WHERE run_id = ?", (run.run_id,))  # derived per run; the item list can change
+    pending = [(item_type, item_id, name) for item_type, item_id, name in item_rows if strong_by_item.get(item_id)]
+    results: dict[str, dict[str, Any]] = {}
+    backs: dict[str, dict[str, str]] = {}
+    for start in range(0, len(pending), ITEM_BATCH):
+        sources: list[Mapping[str, Any]] = []
+        index: dict[str, str] = {}
+        requests: list[dict[str, Any]] = []
+        for item_type, item_id, name in pending[start : start + ITEM_BATCH]:
+            ids = []
+            for row in _recent_first(strong_by_item[item_id])[:MAX_ITEM_SOURCES]:
+                if row["signal_id"] not in index:
+                    sources.append(row)
+                    index[row["signal_id"]] = f"S{len(sources)}"
+                ids.append(index[row["signal_id"]])
             requests.append({"item_id": item_id, "item_type": item_type, "name": name, "source_ids": ids})
-    table, back = agents.source_table(sources)
-    results, call = agents.report_items(client, model, items=requests, sources=table)
-    write_log(call)
+        table, back = agents.source_table(sources)
+        batch, call = agents.report_items(client, model, items=requests, sources=table)
+        write_log(call)
+        results.update(batch)
+        backs.update({item_id: back for item_id in batch})
     counts: dict[str, int] = defaultdict(int)
-    for item_type, item_id, name in _item_rows(pack):
+    for item_type, item_id, name in item_rows:
         result = results.get(item_id)
         weak = weak_by_item.get(item_id, [])
         if result and result["status"] == "VALIDATED":
+            back = backs[item_id]
             status, summary, cited = "FOUND", _cite(result["summary"], back), [back[s] for s in result["source_ids"] if s in back]
         elif result:
             status, summary, cited = "WITHHELD", None, []
             pool.add_qa(run.run_id, item=f"{item_type.title()}: {name}", correction="Withheld: the Reporter's entry failed its checks. " + "; ".join(result["violations"][:2]), origin="CHECK")
         elif weak:
             titles = "; ".join(f"\u201c{row['title']}\u201d [{row['signal_id']}]" for row in _recent_first(weak)[:2])
-            status, summary, cited = "NOTHING_FOUND", f"Passing mention only, with nothing specific to URS Taiwan: {titles}.", [row["signal_id"] for row in weak[:2]]
+            status, summary, cited = "NOTHING_FOUND", f"Passing mention only, with nothing specific to {pack.label}: {titles}.", [row["signal_id"] for row in weak[:2]]
         else:
             status, summary, cited = "NOTHING_FOUND", None, []
         counts[status] += 1
@@ -578,20 +746,60 @@ def update_watchpoints(pool: Pool, run: ReaderRun, rows: Sequence[Mapping[str, A
     return {"updated": updated, "quiet": quiet}
 
 
+def request_matches(rows: Sequence[Mapping[str, Any]]) -> dict[str, list[Mapping[str, Any]]]:
+    """Kept signals per management request, by the deterministic keyword rule recorded at assessment."""
+    found: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    for row in rows:
+        for hit in row["link"].get("reader_hits") or []:
+            if hit.get("item_type") == REQUEST:
+                found[hit["item_id"]].append(row)
+    return found
+
+
+def child_summaries(pool: Pool, run: ReaderRun, pack: OntologyPack) -> list[dict[str, Any]]:
+    """The entity packs under a business area, as run on the same date: their bottom line and what moved."""
+    found = []
+    for child in pack.children:
+        child_run = pool.run(run_id_for(run.run_date, child))
+        if child_run is None:
+            found.append({"pack": child, "label": _load_pack(child).label, "run_id": None, "bottom_line": None, "moved": []})
+            continue
+        bottom = (child_run.get("config") or {}).get("bottom_line") or {}
+        moved = [f"{row['condition_name']}: {row['trend_label'].lower()}" for row in pool.conditions(child_run["run_id"]) if row["trend_label"] in {"Escalating", "Easing"}]
+        found.append({
+            "pack": child, "label": _load_pack(child).label, "run_id": child_run["run_id"], "moved": moved,
+            "bottom_line": bottom.get("bottom_line") if bottom.get("status") == "VALIDATED" else None, "escalation": bottom.get("escalation") if bottom.get("status") == "VALIDATED" else None,
+        })
+    return found
+
+
 def bottom_line_facts(pool: Pool, run: ReaderRun) -> dict[str, Any]:
     from grit.agents.checks import strip_marks
 
+    pack = _load_pack(run.pack)
+    rows = _kept(pool, run)
+    requests = {row["request_id"]: row for row in pool.management_requests() if row.get("pack") in (None, run.pack)}
+    matches = request_matches(rows)
     return {
-        "reader": "Group Head, Risk & Assurance (Wilson); the brief is also read by the URS R&A business partner and the URS Taiwan head",
-        "conditions": [{"condition": row["condition_name"], "trend": row["trend_label"], "confidence": row["confidence"], "summary": strip_marks(row["summary"] or "") or None} for row in pool.conditions(run.run_id)],
+        "brief": f"{pack.label} weekly risk scan ({pack.level.lower()} level)",
+        "reader": (pack.scan_plan or {}).get("audience") or pack.label,
+        "standing_items": [
+            {"name": row["condition_name"], "kind": (row.get("ranking") or {}).get("kind") or "CONDITION", "trend": row["trend_label"], "confidence": row["confidence"], "summary": strip_marks(row["summary"] or "") or None}
+            for row in pool.conditions(run.run_id)
+        ],
+        "management_requests": [
+            {"title": requests[key]["title"], "status": requests[key]["status"], "signals_this_week": [item["title"] for item in matches.get(key, [])[:3]]}
+            for key in requests if requests[key]["status"] == "ACTIVE"
+        ],
+        "entity_packs": child_summaries(pool, run, pack),
         "named_items": [{"type": row["item_type"], "name": row["item_name"], "status": row["status"], "summary": strip_marks(row["summary"] or "") or None} for row in pool.exposure_checks(run.run_id) if row["status"] != "NOTHING_FOUND" or row["summary"]],
-        "named_items_with_nothing_found": [row["item_name"] for row in pool.exposure_checks(run.run_id) if row["status"] == "NOTHING_FOUND" and not row["summary"]],
+        "named_items_with_nothing_found": [row["item_name"] for row in pool.exposure_checks(run.run_id) if row["status"] == "NOTHING_FOUND" and not row["summary"]][:60],
         "watchpoints": [
             {"title": row["title"], "status": row["status"], "detail": row["detail"], "quiet_cycles": row["cycles_without_update"],
              "this_week": (pool.one("SELECT note FROM watchpoint_updates WHERE watchpoint_id = ? AND run_id = ?", (row["watchpoint_id"], run.run_id)) or {}).get("note")}
             for row in pool.watchpoints(run.pack)
         ],
-        "red_alert_drafts": [row["title"] for row in pool.assessments(run.run_id, kept_only=True) if row["red"]],
+        "red_alert_drafts": [row["title"] for row in rows if row["red"]],
         "qa_corrections": [row["correction"] for row in pool.qa_log(run.run_id) if row["origin"] == "CRITIC"],
     }
 
@@ -614,10 +822,10 @@ def findings(pool: Pool, run: ReaderRun, *, client: Any, model: str, top: int = 
     from grit.agents.loop.engine import FindingLoop, LoopConfig
     from grit.agents.loop.tools import FollowUpTool
 
-    business = _load_pack("urs")
+    business = graph_pack(_load_pack(run.pack))
     graph = build_graph(business, reviewed_aliases=_aliases())
     index = LinkIndex(graph, business.lob_profiles)
-    rows = [row for row in _kept(pool, run) if row["link"].get("rung") and (row.get("tier") or 9) <= max_tier][:top]
+    rows = material_order(row for row in _kept(pool, run) if row["link"].get("rung") and (row.get("tier") or 9) <= max_tier)[:top]
     vectors_by_id = run_vectors(pool, run)
     every = pool.signals_for_run(run.run_id)
     by_url = {signal["url"]: signal for signal in every}

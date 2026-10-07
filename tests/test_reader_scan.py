@@ -49,7 +49,7 @@ class _Embedder:
 
 def _model(system: str, payload: dict) -> dict:
     if system == ASSESSOR_SYSTEM:
-        if payload["condition"]["id"] == "TW-GLOBAL-03" and payload["sources"]:
+        if payload["item"]["id"] == "TW-GLOBAL-03" and payload["sources"]:
             return {"movement": "EASING", "summary": "Taiwan's defence ministry counted 25 PLA aircraft and 11 ships this week, below the weekly median. [S1]",
                     "source_ids": ["S1"], "quotes": [{"source_id": "S1", "quote": "25 PLA aircraft and 11 ships operated around Taiwan"}], "change_from_prior": "Activity eased against last week."}
         return {"movement": "NO_MATERIAL_CHANGE", "summary": "No new development was found this week in the checked sources.", "source_ids": [], "quotes": []}
@@ -249,3 +249,21 @@ def test_memory_carries_across_weeks_and_watchpoint_reruns_keep_their_count(tmp_
     reader_scan.update_watchpoints(pool, run, rows)
     after = {row["watchpoint_id"]: row["cycles_without_update"] for row in pool.watchpoints("urs-tw")}
     assert after == before, "rerunning the same week leaves the quiet-cycle count where the first pass put it"
+
+
+def test_each_version_can_be_returned_for_rework(tmp_path: Path, monkeypatch) -> None:
+    from grit.profiles import load_profiles
+    from grit.report.package import write_pack
+    from grit.workflow.packages import review_package
+
+    pool, run = _scanned(tmp_path, monkeypatch)
+    wilson = load_profiles()["wilson"]
+    for version in (1, 2, 3):
+        with pool.transaction() as conn:
+            conn.execute("UPDATE runs SET config_json = json_set(config_json, '$.bottom_line.bottom_line', ?) WHERE run_id = ?", (f"Draft {version}.", run.run_id))
+        package = write_pack(pool, run.run_id, wilson, folder=tmp_path / f"v{version}")["package"]
+        assert package["version"] == version
+        if version < 3:
+            result = review_package(pool, package_id=package["package_id"], version=version, reviewer=wilson, intent="REQUEST_REWORK")
+            assert result["status"] == "RETURNED_FOR_REWORK", "a later version's rework must not collide with an earlier one"
+    assert review_package(pool, package_id=package["package_id"], version=3, reviewer=wilson, intent="APPROVE")["status"] == "APPROVED"

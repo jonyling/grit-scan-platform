@@ -24,7 +24,7 @@ class Profile:
     review_role: str
     red_alerts: dict[str, Any]
     email: str | None
-    brief: dict[str, Any] | None
+    briefs: dict[str, dict[str, Any]]
     note: str = ""
     raw: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
 
@@ -37,6 +37,10 @@ class Profile:
     def receives_red(self) -> bool:
         return bool(self.red_alerts.get("receive"))
 
+    def brief_for(self, pack: str) -> dict[str, Any] | None:
+        """The brief this reader receives for a pack, or None when they receive no brief for it."""
+        return self.briefs.get(pack)
+
 
 def _profile(raw: dict[str, Any], source: Path) -> Profile:
     aperture = raw.get("aperture")
@@ -48,6 +52,9 @@ def _profile(raw: dict[str, Any], source: Path) -> Profile:
     packs = tuple(raw.get("packs") or ())
     if not packs:
         raise ValueError(f"{source.name}: a profile needs at least one pack")
+    stray = sorted(set(raw.get("briefs") or {}) - set(packs))
+    if stray:
+        raise ValueError(f"{source.name}: a brief for {', '.join(stray)} needs that pack in packs")
     return Profile(
         profile_id=str(raw["profileId"]),
         name=raw.get("name"),
@@ -58,7 +65,7 @@ def _profile(raw: dict[str, Any], source: Path) -> Profile:
         review_role=role,
         red_alerts=dict(raw.get("redAlerts") or {}),
         email=raw.get("email"),
-        brief=raw.get("brief"),
+        briefs=dict(raw.get("briefs") or {}),
         note=str(raw.get("note") or ""),
         raw=raw,
     )

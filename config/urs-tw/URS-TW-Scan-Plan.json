@@ -2,7 +2,34 @@
   "registerId": "URS-TW-SCAN-PLAN",
   "status": "DRAFT_FOR_REVIEW",
   "note": "The Taiwan reader's weekly scan. Queries are hand-authored from each condition's watch indicators (URS-TW-Global-Baseline.json) and from the named projects, suppliers and customers (URS-TW-Exposure-Ontology.json). A keyword decides which condition a signal bears on. It never decides a trend or a link to STE. Edit this file to change the scan; no code change is needed. A watchpoint update needs one of its keywords strongly and one of its issueKeywords anywhere in the same page.",
+  "standingSet": "conditions",
   "windowDays": 8,
+  "audience": "Group Head, Risk & Assurance (Wilson); R&A Business Partner, Urban Solutions (Hwaimay); Head, Urban Solutions (Gareth); Head, URS Taiwan (KS Yong)",
+  "contextCues": {
+    "place": [
+      "Taiwan",
+      "Taiwanese",
+      "Taipei",
+      "Kaohsiung",
+      "Taichung",
+      "Taoyuan",
+      "Tainan",
+      "Hsinchu",
+      "Hualien",
+      "Yilan",
+      "Keelung"
+    ],
+    "sector": [
+      "MRT",
+      "metro",
+      "rail",
+      "railway",
+      "train",
+      "transit",
+      "signalling",
+      "signaling"
+    ]
+  },
   "conditions": [
     {
       "conditionId": "TW-GLOBAL-01",
@@ -416,5 +443,17 @@
         "extension"
       ]
     }
-  ]
+  ],
+  "sectionTitles": {
+    "ORDER_BOOK": "Order-book baseline and context",
+    "PROJECTS": "Direct disruption to named Taiwan rail projects",
+    "SUPPLIERS": "Disruption to named suppliers",
+    "CUSTOMERS": "Customer relationships and upcoming award decisions",
+    "HAZARDS": "Natural disasters and public health (Taiwan)",
+    "CONDITIONS": "Findings mapped to the ten standing conditions",
+    "PRIORITY_FINDINGS": "Priority findings for this reader",
+    "OTHER_SIGNALS": "Other signals in this reader's scope",
+    "QA_LOG": "QA and correction log",
+    "WATCHPOINTS": "Bottom line and watchpoints"
+  }
 }
