@@ -1,33 +1,58 @@
-# Acquisition
+# Acquisition lanes
 
-Adapters live here. They may propose candidates. They do not score, and they
-must not import `assess_impact`.
+This page describes the adapters in `grit/acquisition/`: what each one fetches, what it returns, and which command uses it.
 
-Lanes: `APPROVED`, `WILD`, `SPHERA`, `AGILE`, `ISOS`. ISOS returns an empty
-list until a feed exists. Sphera and AGILE scores are dropped on the way in.
+## Rules for every adapter
 
-The live wild scan is GDELT, not a search engine. The scan loop calls
-`collect_export_scan()`: one 15-minute events file, then a local filter
-per condition. It does not poll the DOC API. Tone is not read. `DATEADDED`
-is `seen_at`, not a publication date. The file has no headline, so those
-rows are not Dataverse signals. `grit/acquisition/currents.py` is the headline stream. It calls
-currentsapi.services, not GDELT, and allows one or two pulls. The key stays
-in `CURRENTS_API_KEY`. A failed fetch is an error, not an empty week.
+An adapter fetches pages and returns `Candidate` records. It does not score, rank, or link a page to the STE register. It must not import the harm scorer (`assess_impact`); a contract test checks this.
 
-`grit/acquisition/brave.py` is a second headline stream, from the Brave News Search
-API. Its queries are not typed by hand. `plan_queries()` builds one Boolean
-string per active LOB in a named pack, from that LOB's governed keywords:
-`"railway signalling" OR "CBTC" OR ...`. A long list is split, not cut, and
-inactive LOBs are skipped. A keyword only widens the pull. It is not an STE
-link, so every row still goes through the bind. The key stays in
-`BRAVE_SEARCH_API_KEY`. A failed fetch is an error, not an empty week. One run
-makes at most six pulls. Print the plan with
-`python -m grit.acquisition.brave --pack urs-tw --plan-only`, and narrow a large
-pack with `--lob`. The command stores nothing.
+A failed fetch raises an error. It never returns an empty list, because an empty list means "nothing happened this week".
 
-`grit/acquisition/brave_plan.py` sends the weekly query plan from `grit/ontology/query_plan.py` to the same
-News Search API. It reuses this module's mapping, logs each search as it returns, collapses the
-results to one candidate per page, and stops with a recorded reason at a monthly or rate limit. It
-stores its run under `output/brave-plan/`. It does not fetch a page or score a result.
+Each candidate carries one source lane:
 
-Do not copy `.env`, `secrets/`, `output/`, or credential files from GCP_Gemini.
+| Lane | Source | Status |
+|---|---|---|
+| `APPROVED` | Pages from an approved source list. | Adapter only. No command uses it. |
+| `WILD` | Search results from Brave News, Currents, or GDELT. | In use. |
+| `SPHERA` | Sphera supplier-risk alerts. Sphera's own scores are dropped. | Adapter only. No API contract is documented. |
+| `AGILE` | AGILE alerts. AGILE's own scores are dropped. | Adapter only. |
+| `ISOS` | International SOS alerts. | Returns an empty list until a feed exists. |
+
+## Brave News
+
+Brave News is the main source. The weekly reader scan (`grit scan` and `grit weekly`) sends each reader pack's queries through `grit/acquisition/brave_plan.py`.
+
+- Each query is sent once per run. A query already answered in that run is not sent again, so an interrupted scan resumes.
+- Results collapse to one candidate per page. The URL loses tracking parameters and a trailing slash.
+- The candidate's text is Brave's description plus its extra snippets. A snippet that is a list of other headlines (two or more separators such as `·`) is dropped.
+- The run stops, and records why, at the monthly limit (`BRAVE_MONTHLY_LIMIT`, default 2000, counted in `output/brave-usage.json`) or when Brave keeps answering HTTP 429.
+
+The key is `BRAVE_SEARCH_API_KEY`.
+
+`grit/acquisition/brave.py` holds the shared result mapping. It also has a small command that prints one Boolean query per active LOB and stores nothing:
+
+```bash
+.venv/bin/python -m grit.acquisition.brave --pack urs-tw --plan-only
+```
+
+## Currents
+
+`grit/acquisition/currents.py` calls currentsapi.services. It allows at most two pulls per run and 20 records per pull, and it keeps only records with a title and a URL. To add Currents results to a reader scan, pass up to two queries:
+
+```bash
+.venv/bin/python -m grit scan --pack urs-tw --currents "Taiwan Strait" "Kaohsiung MRT"
+```
+
+The key is `CURRENTS_API_KEY`.
+
+## GDELT
+
+`grit/acquisition/gdelt.py` reads GDELT's public 15-minute events export: it downloads the latest file listed in `lastupdate.txt` and filters it locally for each query. It does not poll the DOC API, which rate-limits heavily.
+
+The export has a URL and a date added, but no headline. `DATEADDED` is stored as `seen_at`, not as a publication date, and tone and Goldstein scores are not read. A bad checksum raises `GdeltFetchError`.
+
+No command calls this adapter today. Wiring it into the reader scan is an open item for the MVP.
+
+## Credentials
+
+Keys live in the gitignored `.env`. Do not copy `.env`, `secrets/`, `output/`, or credential files from another repository, such as the `GCP_Gemini` project.

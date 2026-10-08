@@ -1,17 +1,19 @@
 version: 1
+# Draft class and relation list for the ontology. No code loads this file; grit/ontology/graph.py follows it by hand
+# and adds the relations part_of, buys_from and competes_in, and the class Theme. See ontology-bind.md.
 descriptions:
-  STE: ST Engineering
-  LOB: A line of business / business area an STE entity operates in, e.g. Mobility Rail, Smart Sustainable Utilities
-  Customer: Entity that STE sells to
-  Supplier: Entity that STE buys from
-  Site: A specific project location or facility in the exposure register (e.g. a warehouse), not a country of incorporation.
-  State: A sovereign actor in the event
-  Org: Organization or a company or institution that is not a row on the STE register
-  Policy: Policy or a named instrument e.g. CHIPS Act, Entity List, an export licence rule, a travel ban
-  Good: Material under control or in the chain e.g. lithography tools, rare earths, dual-use AI chips
-  Place: Geography that is not a register site e.g. Taiwan Strait, Kaohsiung, Shenzhen, a sea lane
-  Event: Incident the article reports e.g. a licence denial, a drill, a plant fire
-  ManagementRequest: An approved leadership or LOB-head monitoring request (spec 29). It sets priority only and is never an STE link on its own.
+  STE: ST Engineering, a business area, a unit, or a registered legal entity.
+  LOB: A line of business that an STE entity operates in, such as Mobility Rail or Smart Sustainable Utilities.
+  Customer: An organization that STE sells to.
+  Supplier: An organization that STE buys from.
+  Site: A project location or facility in the exposure register, such as a warehouse. A country of incorporation is not a site.
+  State: A sovereign actor in an event.
+  Org: A company or institution that is not on the STE register, such as a competitor.
+  Policy: A policy or named instrument, such as the CHIPS Act, the Entity List, an export licence rule, or a travel ban.
+  Good: A material under control or in the supply chain, such as lithography tools, rare earths, or dual-use AI chips.
+  Place: A geography that is not a register site, such as the Taiwan Strait, Kaohsiung, Shenzhen, or a sea lane.
+  Event: The incident a page reports, such as a licence denial, a drill, or a plant fire.
+  ManagementRequest: An approved monitoring request from leadership or a LOB head (spec 29). It sets priority only and never links a page to STE on its own.
 classes:
   - STE
   - LOB

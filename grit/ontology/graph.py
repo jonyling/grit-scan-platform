@@ -1,6 +1,6 @@
 """Typed ontology graph over the pack's registers. Pure: no network, no model.
 
-Classes and relations follow schema.yaml. part_of, buys_from and competes_in are additions to its relation list,
+Classes and relations follow docs/design/schema.yaml. part_of, buys_from and competes_in are additions to its relation list,
 and Theme is an addition to its class list. Every edge carries a status and a basis, so a path can be audited:
 
     SOURCE_STATED  the workbook says it.

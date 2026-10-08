@@ -1,16 +1,22 @@
 version: 1
-# DRAFT for review; no code loads this yet.
-# Sources: condition ids and watchIndicators from config/urs-tw/URS-TW-Global-Baseline.json,
-# theme ids from config/urs/URS-STE-Themes.json, titles from 268 GRIT_Signals rows (2026-10-01).
-# Each pattern has a label (condition_id or theme_id) and one trigger. The trigger is keywords_any,
-# else the triple fields (each *_any list holds on one hit), else the label theme's own keywords.
-# theme_id and keywords_any are proposed additions to the bind doc's field set.
-#   keywords_any: case-insensitive phrase in title or body; 6+ characters or multi-word.
-# Triple triggers only fire on GDELT rows or accepted proposed triples.
-# Currents and weekly text rows can only fire keyword and theme triggers.
-# OPEN: with require_ste_link true, Trump-Xi coverage (about 51 of 268 rows) stays unbound.
+# Draft. No code loads this file. See ontology-bind.md for its status.
+#
+# Each pattern ties one trigger to a label: a condition_id from config/urs-tw/URS-TW-Global-Baseline.json,
+# or a theme_id from config/urs/URS-STE-Themes.json. The example titles come from 268 GRIT_Signals rows
+# exported on 2026-10-01.
+#
+# Triggers, checked in this order:
+#   keywords_any   A phrase in the title or body, case-insensitive. Each phrase has 6 or more characters or
+#                  more than one word.
+#   *_any fields   actors_any, rel_any, obj_any, places_any: a triple from GDELT or an accepted agent proposal.
+#                  One hit in each listed field fires the pattern. Text rows, such as Brave or Currents
+#                  results, cannot fire these triggers.
+#   (neither)      The label theme's own keywords.
+#
+# require_ste_link: true means the pattern fires only on a page already linked to the STE register.
+# Open question: with that rule, Trump-Xi coverage (about 51 of the 268 rows) stays unlinked.
 patterns:
-  # --- urs-tw: ten Layer 1 conditions. condition_id is the baseline id. ---
+  # urs-tw: the ten standing conditions. condition_id is the baseline id.
   - id: US_CN_TECH_RIVALRY
     pack: [urs-tw]
     condition_id: TW-GLOBAL-06
@@ -22,8 +28,8 @@ patterns:
     exclude_rel: []
   - id: TW_PERSONNEL_DUTY_OF_CARE
     pack: [urs-tw]
-    condition_id: TW-GLOBAL-03   # closest baseline condition; evacuation guidance sits in TW-GLOBAL-10
-    aperture: [DAILY, WEEKLY, RED]   # RED stays only if a named human approves it as pageable
+    condition_id: TW-GLOBAL-03   # the closest condition; evacuation guidance is under TW-GLOBAL-10
+    aperture: [DAILY, WEEKLY, RED]   # RED only if a named person approves it as pageable
     require_ste_link: true
     require_site_or_personnel: true
     actors_any: [PRC, PLA]
@@ -85,7 +91,7 @@ patterns:
     require_ste_link: true
     keywords_any: [disaster prevention, radio security, spoofing, typhoon, earthquake, shelter guidance]
 
-  # --- urs: no baseline conditions, so each pattern points at a theme_id. ---
+  # urs: the pack has no conditions, so each pattern points at a theme_id.
   - id: URS_COMPETITION
     pack: [urs]
     theme_id: URS-KEY-01
@@ -93,17 +99,17 @@ patterns:
     require_ste_link: true
   - id: URS_FINANCIAL_VOLATILITY
     pack: [urs]
-    theme_id: URS-KEY-02       # management focus: USD/ILS for Israel, SGD/QAR for Qatar
+    theme_id: URS-KEY-02       # management request 3: USD/ILS for Israel, SGD/QAR for Qatar
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
   - id: URS_PROJECT_COST_MARGIN
     pack: [urs]
-    theme_id: URS-KEY-03       # e.g. "Tri-Rail $60M funding shortfall", rail labour strikes
+    theme_id: URS-KEY-03       # examples: "Tri-Rail $60M funding shortfall", rail labour strikes
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
   - id: URS_CYBER_INCIDENT
     pack: [urs]
-    theme_id: URS-KEY-04       # e.g. UK airports ransomware, rail SCADA directives, TETRA spoofing
+    theme_id: URS-KEY-04       # examples: UK airports ransomware, rail SCADA directives, TETRA spoofing
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
   - id: URS_GEOPOLITICAL_OPERATIONS
@@ -111,7 +117,7 @@ patterns:
     theme_id: URS-KEY-05
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
-  - id: URS_TECH_EXPORT_CONTROLS   # GDELT or proposed-triple path; urs counterpart of US_CN_TECH_RIVALRY
+  - id: URS_TECH_EXPORT_CONTROLS   # triple trigger; the urs counterpart of US_CN_TECH_RIVALRY
     pack: [urs]
     theme_id: URS-KEY-05
     aperture: [DAILY, WEEKLY]
@@ -121,22 +127,22 @@ patterns:
     obj_any: [semiconductors, lithography, dual_use_ai]
   - id: URS_FRAUD_CORRUPTION
     pack: [urs]
-    theme_id: URS-KEY-06       # sheet 7: no key issues identified, so no extra triggers
+    theme_id: URS-KEY-06       # sheet 7 lists no key issues, so no extra triggers
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
   - id: URS_NATURAL_DISASTER_PANDEMIC
     pack: [urs]
-    theme_id: URS-TIER_2-02    # e.g. Kumamoto earthquake rail restoration, heat-warped rails
+    theme_id: URS-TIER_2-02    # examples: Kumamoto earthquake rail restoration, heat-warped rails
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
   - id: URS_REGULATORY_COMPLIANCE
     pack: [urs]
-    theme_id: URS-TIER_2-03    # e.g. TSA rail cybersecurity directives, German locomotive approval
+    theme_id: URS-TIER_2-03    # examples: TSA rail cybersecurity directives, German locomotive approval
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
   - id: URS_HEALTH_AND_SAFETY
     pack: [urs]
-    theme_id: URS-TIER_2-04    # sheet 7: URS has no construction or heavy machinery; e.g. LA Metro platform strike
+    theme_id: URS-TIER_2-04    # sheet 7: URS has no construction or heavy machinery. Example: LA Metro platform strike
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
   - id: URS_CLIMATE_ADAPTATION
@@ -144,59 +150,59 @@ patterns:
     theme_id: URS-TIER_2-05
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
-  - id: URS_STAFF_SAFETY_CONFLICT   # non-Taiwan counterpart of TW_PERSONNEL_DUTY_OF_CARE; no RED proposed
+  - id: URS_STAFF_SAFETY_CONFLICT   # the urs counterpart of TW_PERSONNEL_DUTY_OF_CARE; no RED
     pack: [urs]
     theme_id: URS-EMERGING-01
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
   - id: URS_EMERGING_TECHNOLOGY
     pack: [urs]
-    theme_id: URS-EMERGING-02  # e.g. AI traffic management, post-quantum call, EV charging and ADAS
+    theme_id: URS-EMERGING-02  # examples: AI traffic management, a post-quantum call, EV charging and ADAS
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
   - id: URS_TALENT_SCARCITY
     pack: [urs]
-    theme_id: URS-EMERGING-03  # management focus: critical skills and visa changes for STE URS QFC Branch
+    theme_id: URS-EMERGING-03  # management request 1: critical skills and visa changes, STE URS QFC Branch
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
-  # --- urs: additions from sheet 7 (drivers, Tier-2 rationale, watchpoints). Trigger is keywords_any. ---
-  - id: URS_TAIWAN_CONCENTRATION   # sheet 7 Tier-2 #1: six prospective rail projects in Taiwan
+  # urs: additions from workbook sheet 7 (drivers, the tier-2 rationale, and watchpoints). Trigger is keywords_any.
+  - id: URS_TAIWAN_CONCENTRATION   # sheet 7, tier-2 risk 1: six prospective rail projects in Taiwan
     pack: [urs]
     theme_id: URS-TIER_2-01
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
     keywords_any: [Taiwan concentration, Taiwan rail, rail projects in Taiwan]
-  - id: URS_CHINESE_AFFILIATION_SCRUTINY   # sheet 7 Key Risk 5 driver
+  - id: URS_CHINESE_AFFILIATION_SCRUTINY   # sheet 7, key risk 5 driver
     pack: [urs]
     theme_id: URS-KEY-05
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
     keywords_any: [Chinese affiliation, public sentiment]
-  - id: URS_AI_ENABLED_ATTACK   # sheet 7 Key Risk 4 driver
+  - id: URS_AI_ENABLED_ATTACK   # sheet 7, key risk 4 driver
     pack: [urs]
     theme_id: URS-KEY-04
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
     keywords_any: [AI-enhanced, malicious attack, phishing]
-  - id: URS_CONFLICT_SUPPLY_CHAIN   # sheet 7 section 5.1 watchpoints
+  - id: URS_CONFLICT_SUPPLY_CHAIN   # sheet 7, section 5.1 watchpoints
     pack: [urs]
     theme_id: URS-EMERGING-01
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
     keywords_any: [blockade, embargo, critical materials, alternative sourcing]
-  - id: URS_TOLLING_TECHNOLOGY   # sheet 7 section 5.2, TransCore; road user charging is from a real signal
+  - id: URS_TOLLING_TECHNOLOGY   # sheet 7, section 5.2 (TransCore). "Road user charging" comes from a real signal
     pack: [urs]
     theme_id: URS-EMERGING-02
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
     keywords_any: [toll collection, RFID tolling, electronic toll, road user charging]
-  - id: URS_AI_ADOPTION_GOVERNANCE   # sheet 7 sections 5.3 and 5.4
+  - id: URS_AI_ADOPTION_GOVERNANCE   # sheet 7, sections 5.3 and 5.4
     pack: [urs]
     theme_id: URS-EMERGING-02
     aperture: [DAILY, WEEKLY]
     require_ste_link: true
     keywords_any: [Generative AI, edge computing, AI governance, responsible AI, predictive maintenance]
-  - id: URS_TALENT_MARKET   # sheet 7 section 5.5 watchpoints
+  - id: URS_TALENT_MARKET   # sheet 7, section 5.5 watchpoints
     pack: [urs]
     theme_id: URS-EMERGING-03
     aperture: [DAILY, WEEKLY]
