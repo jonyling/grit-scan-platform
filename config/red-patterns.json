@@ -8,7 +8,8 @@
       "label": "Military action against Taiwan",
       "packs": [
         "urs-tw",
-        "urs"
+        "urs",
+        "dsc"
       ],
       "requiresTaiwan": true,
       "phrases": [
@@ -64,7 +65,8 @@
       "label": "Pandemic or public health emergency",
       "packs": [
         "urs-tw",
-        "urs"
+        "urs",
+        "dsc"
       ],
       "requiresTaiwan": false,
       "phrases": [
@@ -123,7 +125,8 @@
       "label": "Sanction, debarment or ban naming STE",
       "packs": [
         "urs-tw",
-        "urs"
+        "urs",
+        "dsc"
       ],
       "requiresRung": [
         "DIRECT"

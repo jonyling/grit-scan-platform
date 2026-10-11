@@ -1,0 +1,52 @@
+{
+  "profileId": "yikai",
+  "name": "Yikai",
+  "role": "R&A Business Partner, Digital Systems & Cybersecurity",
+  "aperture": "MATERIAL_APERTURE",
+  "packs": [
+    "dsc"
+  ],
+  "businessScope": {
+    "businessAreas": [
+      "Digital Systems & Cybersecurity"
+    ],
+    "lobs": [],
+    "countries": []
+  },
+  "reviewRole": "REVIEWER",
+  "redAlerts": {
+    "receive": true,
+    "packs": [
+      "dsc"
+    ]
+  },
+  "email": null,
+  "briefs": {
+    "urs": {
+      "title": "GRIT-Scan: Digital Systems & Cybersecurity",
+      "subtitle": "Business Area Weekly Risk Scan",
+      "preparedFor": "R&A Business Partner, Digital Systems & Cybersecurity",
+      "sections": [
+        "BOTTOM_LINE",
+        "CONDITIONS",
+        "MANAGEMENT_REQUESTS",
+        "ENTITY_PACKS",
+        "ENTITIES",
+        "CUSTOMERS",
+        "SUPPLIERS",
+        "COMPETITORS",
+        "PRIORITY_FINDINGS",
+        "OTHER_SIGNALS",
+        "QA_LOG",
+        "WATCHPOINTS"
+      ],
+      "maxFindings": 12,
+      "formats": [
+        "docx",
+        "pptx",
+        "xlsx"
+      ]
+    }
+  },
+  "note": "Hwaimay reviews URS signals first. Approved signals go to the BA head for the AIRIS handoff. Receives the Urban Solutions business-area brief and the URS Taiwan entity brief."
+}

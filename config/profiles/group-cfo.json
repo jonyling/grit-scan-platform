@@ -5,7 +5,8 @@
   "aperture": "WIDE_APERTURE",
   "packs": [
     "urs-tw",
-    "urs"
+    "urs",
+    "dsc"
   ],
   "businessScope": {
     "businessAreas": [],
@@ -17,7 +18,8 @@
     "receive": true,
     "packs": [
       "urs-tw",
-      "urs"
+      "urs",
+      "dsc"
     ]
   },
   "email": null,

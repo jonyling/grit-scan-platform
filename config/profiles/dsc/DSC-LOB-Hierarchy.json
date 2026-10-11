@@ -1,0 +1,16 @@
+{"registerId":"DSC-LOB-HIERARCHY","businessArea":"Digital Systems & Cyber","status":"TRANSCRIBED_FROM_ORG_CHART_PENDING_BA_VALIDATION",
+ "source":"04_DSC_Entity_Info.xlsx, sheet '1. Org Chart', correct as at 1 September 2026","reportsTo":"Defence & Public Security (Group COO Mervyn Tan)",
+ "groupings":[{"lobGrouping":"Digital Systems","head":"Low Jin Phang","deputies":["Rajagopal (Defence Business)","Chris Goh (International & PSS/SG Business)"]},{"lobGrouping":"Cyber","head":"Goh Eng Choon"}],
+ "lobs":[
+  {"lobName":"Mission Software & Services","lobGrouping":"Digital Systems","head":"Percival Goh","aliases":[]},
+  {"lobName":"Advanced Networks & Sensors","lobGrouping":"Digital Systems","head":"Vinson Ong","aliases":["Advanced Network & Sensors"]},
+  {"lobName":"Cloud & Data Centre Solutions","lobGrouping":"Digital Systems","head":"Francis Kee","aliases":["Cloud and Data Centre Solutions"]},
+  {"lobName":"eServ","lobGrouping":"Digital Systems","head":"Patrick Ong","aliases":["eServices"]},
+  {"lobName":"Training & Simulation Systems","lobGrouping":"Digital Systems","head":"Gregory Cheong","aliases":["Training & Simulations"]},
+  {"lobName":"Unmanned & Integrated Systems","lobGrouping":"Digital Systems","head":"Goh Ming Joo","aliases":["Unmanned Integrated Systems"]},
+  {"lobName":"Space","lobGrouping":"Digital Systems","head":"Goh Ing Nam","aliases":[]},
+  {"lobName":"Codex","lobGrouping":"Digital Systems","head":"Tracie Teo Yan Ning","aliases":["Codex Solutions"]},
+  {"lobName":"Deep Cyber Capabilities","lobGrouping":"Cyber","head":"Goh Eng Choon (interim)","aliases":[]},
+  {"lobName":"Cyber Solutions & Infrastructure","lobGrouping":"Cyber","head":"Lim Meng Hwee","aliases":["Cybersecurity Products, Solutions & Services","Cybersecurity Products and Solutions"]}],
+ "unresolvedLabels":[{"label":"Digital Systems & Cyber","where":"sheet 2, LOB1 of ST Engineering Digital Systems Pte. Ltd.","reason":"The business area's own name. The entity links to the Digital Systems grouping."}],
+ "pendingValidation":["The Cyber label on sheets 3, 6 and 9 is mapped to Cyber Solutions & Infrastructure. Deep Cyber Capabilities may share it."]}

@@ -19,7 +19,8 @@
     "receive": true,
     "packs": [
       "urs-tw",
-      "urs"
+      "urs",
+      "dsc"
     ]
   },
   "email": null,
@@ -60,6 +61,29 @@
         "CUSTOMERS",
         "HAZARDS",
         "CONDITIONS",
+        "QA_LOG",
+        "WATCHPOINTS"
+      ],
+      "maxFindings": 8,
+      "formats": [
+        "docx",
+        "pptx",
+        "xlsx"
+      ]
+    }, 
+    "dsc": {
+      "title": "GRIT-Scan: Digital Systems & Cybersecurity",
+      "subtitle": "Business Area Weekly Risk Scan",
+      "preparedFor": "Group Head, Risk & Assurance",
+      "sections": [
+        "BOTTOM_LINE",
+        "CONDITIONS",
+        "MANAGEMENT_REQUESTS",
+        "ENTITIES",
+        "CUSTOMERS",
+        "SUPPLIERS",
+        "COMPETITORS",
+        "PRIORITY_FINDINGS",
         "QA_LOG",
         "WATCHPOINTS"
       ],
