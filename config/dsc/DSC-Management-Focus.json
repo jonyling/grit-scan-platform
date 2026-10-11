@@ -1,0 +1,310 @@
+{
+  "registerId": "DSC-MANAGEMENT-FOCUS",
+  "workbook": "04_DSC_Entity_Info.xlsx",
+  "sheet": "10. Management Focus",
+  "absence": "The sheet gives each area a list of watchpoints. It names no LOB, status, or reason, so none is recorded.",
+  "requests": [],
+  "focusItems": [
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Geopolitical, Trade Controls & Export Compliance",
+      "whyItMatters": null,
+      "indicators": [
+        "Sanctions",
+        "export controls",
+        "tariffs",
+        "technology bifurcation",
+        "defence export approvals",
+        "localisation requirements",
+        "political instability"
+      ],
+      "status": null,
+      "number": 1,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Critical Technology & Semiconductor Dependencies",
+      "whyItMatters": null,
+      "indicators": [
+        "Semiconductors",
+        "memory chips",
+        "GPUs",
+        "FPGA",
+        "NVIDIA",
+        "AMD",
+        "Xilinx",
+        "NXP",
+        "communications hardware",
+        "product obsolescence"
+      ],
+      "status": null,
+      "number": 2,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Cybersecurity & Security Threats",
+      "whyItMatters": null,
+      "indicators": [
+        "AI-enabled attacks",
+        "ransomware",
+        "OT security",
+        "critical infrastructure attacks",
+        "data leakage",
+        "quantum threats",
+        "PQC"
+      ],
+      "status": null,
+      "number": 3,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "AI, Automation & Emerging Technology",
+      "whyItMatters": null,
+      "indicators": [
+        "Generative AI",
+        "Agentic AI",
+        "autonomous systems",
+        "simulation technologies",
+        "digital twins",
+        "AI regulation",
+        "AI assurance"
+      ],
+      "status": null,
+      "number": 4,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Strategic Customers & Government Funding",
+      "whyItMatters": null,
+      "indicators": [
+        "MHA",
+        "HTX",
+        "SPF",
+        "SCDF",
+        "MINDEF",
+        "DSTA",
+        "DSO",
+        "CAAS",
+        "MPA",
+        "CAG",
+        "government budget changes",
+        "procurement programmes"
+      ],
+      "status": null,
+      "number": 5,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Strategic Suppliers & OEMs",
+      "whyItMatters": null,
+      "indicators": [
+        "Nokia",
+        "Ciena",
+        "NVIDIA",
+        "AWS",
+        "Boeing",
+        "Collins",
+        "Elbit",
+        "Israel Aerospace Industries",
+        "Schneider Electric",
+        "Eaton"
+      ],
+      "status": null,
+      "number": 6,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "International Markets & Country Risk",
+      "whyItMatters": null,
+      "indicators": [
+        "Thailand",
+        "Vietnam",
+        "UAE",
+        "Qatar",
+        "Saudi Arabia",
+        "Indonesia",
+        "Hong Kong",
+        "India",
+        "Pakistan",
+        "UK",
+        "Europe"
+      ],
+      "status": null,
+      "number": 7,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Competition & Market Intelligence",
+      "whyItMatters": null,
+      "indicators": [
+        "Lockheed Martin",
+        "RTX",
+        "Saab",
+        "Elbit",
+        "Leidos",
+        "NCS",
+        "CAE",
+        "Fortinet",
+        "Ensign",
+        "Accenture"
+      ],
+      "status": null,
+      "number": 8,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Workforce & Critical Skills",
+      "whyItMatters": null,
+      "indicators": [
+        "AI talent",
+        "cybersecurity talent",
+        "software engineers",
+        "quantum-safe expertise",
+        "labour shortages",
+        "visa policies"
+      ],
+      "status": null,
+      "number": 9,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Climate, Natural Hazards & Operational Disruption",
+      "whyItMatters": null,
+      "indicators": [
+        "Floods",
+        "earthquakes",
+        "wildfires",
+        "extreme heat",
+        "logistics disruption",
+        "utility outages"
+      ],
+      "status": null,
+      "number": 10,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Defence, Public Safety & Mission-Critical Technology Trends",
+      "whyItMatters": null,
+      "indicators": [
+        "C4ISR",
+        "tactical communications",
+        "5G defence networks",
+        "CUAS",
+        "unmanned systems",
+        "MUM-T",
+        "sensor fusion"
+      ],
+      "status": null,
+      "number": 11,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Space, Satellite & Geospatial Developments",
+      "whyItMatters": null,
+      "indicators": [
+        "LEO satellites",
+        "SATCOM",
+        "space domain awareness",
+        "geospatial analytics",
+        "satellite regulations"
+      ],
+      "status": null,
+      "number": 12,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Cloud, Data Centre & Digital Government",
+      "whyItMatters": null,
+      "indicators": [
+        "Sovereign cloud",
+        "AI compute",
+        "data localisation",
+        "digital identity",
+        "secure cloud",
+        "government digitalisation"
+      ],
+      "status": null,
+      "number": 13,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Cybersecurity Market & Post-Quantum Transition",
+      "whyItMatters": null,
+      "indicators": [
+        "Zero trust",
+        "SOC",
+        "managed security",
+        "PQC",
+        "encryption",
+        "QKD",
+        "critical infrastructure protection"
+      ],
+      "status": null,
+      "number": 14,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Major Industry Incidents & Peer Events",
+      "whyItMatters": null,
+      "indicators": [
+        "Cyber breaches",
+        "project failures",
+        "safety incidents",
+        "supply-chain failures",
+        "fraud",
+        "corruption",
+        "export-control violations"
+      ],
+      "status": null,
+      "number": 15,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Economic & Financial Environment",
+      "whyItMatters": null,
+      "indicators": [
+        "Inflation",
+        "FX volatility",
+        "customer funding",
+        "defence budgets",
+        "public sector spending",
+        "recession indicators"
+      ],
+      "status": null,
+      "number": 16,
+      "canonicalLob": null
+    }
+  ],
+  "dropped": []
+}

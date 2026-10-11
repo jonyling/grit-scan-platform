@@ -1,0 +1,246 @@
+{
+  "registerId": "DSC-STE-THEMES",
+  "workbook": "04_DSC_Entity_Info.xlsx",
+  "sheet": "7. Annual Risks",
+  "absence": "Keywords beyond the governed risk title are generic business-risk vocabulary for the same entity-wide theme (see _GENERAL_RISK_KEYWORDS), not per-condition prose. Country- or condition-specific terms -- the Taiwan Layer-1 baseline -- are still not copied. Driver text is stored and is not used as a keyword.",
+  "themes": [
+    {
+      "themeId": "DSC-KEY-01",
+      "themeName": "Talent Retention and Recruitment",
+      "tier": "KEY",
+      "keywords": [
+        "talent retention",
+        "tech talent",
+        "cybersecurity talent",
+        "AI talent",
+        "skills shortage",
+        "attrition"
+      ],
+      "sheetDetail": "Digital Systems Rising demand for highly skilled tech professionals in areas such as software development and AI, data analytics, and cybersecurity affects recruiting at scale Cyber Competitive and continuous high demand for Cybersecurity resources (including AI and quantum-safe capabilities), locally & globally",
+      "sheetExtra": "Digital Systems Tech Talent Pipeline Development: Continue efforts in investing in training/certifications to upskill existing employees and fresh hires from Institute of Higher Learning Collaborate with universities to offer internships to provide leaning opportunities to nurture future talent; and promote joining bonus incentive to entice good performing interns to join us upon their graduation Continue to harvest Young Talents (i.e. ramp up recruitment of fresh Degree & Diploma graduates and hire 1st Class Honours to supplement SGIS scholars) to combat tech talent shortage Competitive Compensation: Offer a slight premium in starting salaries to attract exceptional graduates with hot and deep skillsets Strengthen employer branding: Capitalising on every opportunity to engage potential candidates through university partnerships such as campus recruitment drives, freshman/orientation camps, and dedicated networking events Appointing business reps as brand ambassadors, to share positive experience, success stories of how they have grown with the company and emphasising the development opportunities Cyber Capitalise internship and conversion programs with Polytechnics and Universities, including joint career talk/ outreach with Cyber Youth Association. Strengthen Cybersecurity talent pipeline and ensure sustainability supply of resources Collaborate with ITE, customise Work-Study program that better support the business as well as students’ on-the-job training. Continue to leverage on strategic partnership with government/ association/ training institution (e.g., MINDEF, Singapore Computer Society, Red Alpha etc.) Enhance Job Rotational program, Cyber Competency Development framework, better support and retain core Cybersecurity team Strengthen employer branding with deliberate engagement efforts through career talks/ fairs together with D’Crypt"
+    },
+    {
+      "themeId": "DSC-KEY-02",
+      "themeName": "Violation of Personal Data Protection laws",
+      "tier": "KEY",
+      "keywords": [
+        "personal data",
+        "data protection",
+        "PDPA",
+        "GDPR",
+        "data breach",
+        "privacy regulator"
+      ],
+      "sheetDetail": "Data protection has become more complex with the rapid adoption of AI and digital technologies, increasing the risk of personal data loss or leakage.",
+      "sheetExtra": "Awareness training on PDPA requirements and sharing of case studies Mandatory e-learning modules (PDPA) Implementation of PDPA DLP software for email transmission Appointment of LOB Data Governance Officers to ensure effective operationalization of the organization’s PDPA policies and practices Data Protection Trustmark certification granted to eServ whose business involves acting as data intermediary for customer"
+    },
+    {
+      "themeId": "DSC-KEY-03",
+      "themeName": "Violation of Trade Compliance and Regulations",
+      "tier": "KEY",
+      "keywords": [
+        "export control",
+        "sanctions",
+        "Entity List",
+        "ITAR",
+        "dual-use",
+        "trade compliance",
+        "strategic goods"
+      ],
+      "sheetDetail": "The current global landscape (geo-economic volatility, US-China bifurcation and evolving trade policies of the Trump administration) presents challenges for trade compliance.",
+      "sheetExtra": "Centralized EC Office established at DPS Level Strengthened governance, education/training and process enforcement through centralized supervision and resources, including yearly Export Control Training and SOP/ processes at LOB/ BA Level.. Implementation of a 2-gate Export Control compliance check system whereby the independent DPS EC office will perform final compliance checks on all export transactions initiated by business units before they are permitted to be submitted to customers and partners. Two levels of export control supports provided by both EC at LOB and DPS Level. Instituted monthly EC Meetings involving all LOBs EC Heads to share good EC practices, review and create awareness of deficiencies due to human errors. Sharing of changes in trade control regulations/requirements, lessons learnt to avoid similar mistakes/errors. . Export control checklists at LOBs for different export activities related to handling of strategic control goods. Half-yearly audit on all defence transactions involving ML strategic control goods. Strengthened trade compliance with EC, Procurement, Finance, Legal and R&A support. Export Control Policy under Group R&A – Risk - 008"
+    },
+    {
+      "themeId": "DSC-KEY-04",
+      "themeName": "Fraud, bribery and corruption",
+      "tier": "KEY",
+      "keywords": [
+        "fraud",
+        "bribery",
+        "corruption",
+        "code of conduct",
+        "conflict of interest"
+      ],
+      "sheetDetail": "Fraud, bribery, and corruption could pose significant risks to organizational integrity, financial stability, and reputation.",
+      "sheetExtra": "Robust intermediary onboarding and review process including screening and completion of Group Anti-Bribery & Corruption e-learning Ongoing risk assessment on key areas/processes where fraud, bribery and corruption risk is inherently high Annual COI declaration by all staff Enhance staff awareness Mandatory Code of Business Conduct and Ethics elearning Anti-Bribery & Corruption e-learning Communication of Group risk appetite statements Reinforcement of tone at the top through email circulars and reminders to staff on key policies and consequences"
+    },
+    {
+      "themeId": "DSC-KEY-05",
+      "themeName": "Breach of security regulations (including Frontier AI-related Cybersecurity Risks)",
+      "tier": "KEY",
+      "keywords": [
+        "Breach of security regulations",
+        "security breach",
+        "classified information",
+        "security clearance",
+        "frontier AI",
+        "cyber attack",
+        "ransomware",
+        "data exfiltration"
+      ],
+      "sheetDetail": "Lack awareness of GISO requirements for non-Defence project (N2) networks/computers. Implementation of FCL requirements and cybersecurity controls does not meet the stipulated requirements. Carriage of image-capturing devices into Red Zones. Cyber threats have escalated significantly, with AI-driven attacks, frontier AI-driven attacks, frontier AI-related data leakage risks and self-learning malware that can evade detection and quantum–driven threats challenging encryption capabilities becoming primary concerns. Rapid advances in Frontier AI may also reduce the effectiveness of existing cybersecurity products and services, requiring continuous enhancement of cybersecurity products, capabilities and controls.",
+      "sheetExtra": "Continuous enhancement of cybersecurity products, capabilities and controls to address evolving AI-enabled and emerging cyber threats. 3 Levels of Audit Framework implemented for N3 projects – Self-Check, Cross-Check and Independent Check. Monthly Security Spot Checks (BA). Quarterly Security Inspection by DPS Security Spot checks in Red Zones for carriage of image-capturing devices. Defence-related SOPs and IT Security for MINDEF Classified Works (aka N3 SOP) disseminated through LOB to project team for implementation and compliance. Physical/ cybersecurity policies/ frameworks/ handbooks and e-learning. Dissemination of ISM through DEN network through LOB Heads Security. Cybersecurity Management Policy for N2 Project Network available on GISO Hub, Sunburst Connect. SOC monitoring on N1 and DEN network. Project performed compliance check based on checklist provided. Pre-FCL surveys by MSD to enhance ground understanding of security requirements. Employee/ Project/ GEWCA Security Clearance (MSD). Monthly security/cybersecurity message disseminated through email to all staff. ISOC Phase 1 eLearning for personnel involved in Defence Business. N2 attestations for declared networks and computers."
+    },
+    {
+      "themeId": "DSC-KEY-06",
+      "themeName": "Major Supply Chain Disruption (including Semiconductor Memory Chip Price Escalation Risks)",
+      "tier": "KEY",
+      "keywords": [
+        "Major Supply Chain Disruption",
+        "supply chain disruption",
+        "memory chip",
+        "DRAM",
+        "chip shortage",
+        "semiconductor shortage",
+        "component shortage",
+        "lead time"
+      ],
+      "sheetDetail": "Supply chain disruptions due to geopolitical tensions, trade restrictions, global pandemic/catastrophes, single-source dependencies, including semiconductor memory chip price escalation.",
+      "sheetExtra": "Incorporate contractual safeguards (including pricing mechanisms where appropriate) to mitigate the impact of price volatility and supply chain disruptions. Develop alternative sources to minimize supply concentration risk ST Engineering Supplier Code of Conduct establishes clear expectation and requirements for our suppliers’ behaviours and practices regarding environmental protection, ethical labour practices and governance. Source and evaluate alternative for single source parts to meet Product/Project technical requirement where possible with engineering support Leverage on Group Procurement CoE Team’s domain knowledge and business relationship with strategic suppliers to source/pull in orders\\ Supply chain risk monitoring tool in collaboration with Group Procurement Supply Chain Resilience Team"
+    },
+    {
+      "themeId": "DSC-TIER_2-01",
+      "themeName": "Competition",
+      "tier": "TIER_2",
+      "keywords": [
+        "competition",
+        "competitor",
+        "pricing pressure",
+        "technology differentiation",
+        "market access"
+      ],
+      "sheetDetail": "•DS&C business will face increasing competition from rapid advancements in technology and innovation",
+      "sheetExtra": null
+    },
+    {
+      "themeId": "DSC-TIER_2-02",
+      "themeName": "Workplace Health and Safety",
+      "tier": "TIER_2",
+      "keywords": [
+        "workplace safety",
+        "health and safety",
+        "occupational safety"
+      ],
+      "sheetDetail": "•Risk of physical safety hazards are relatively low but there may be mental wellbeing issues with workload demands as well as online harms such as digital burnout with AI",
+      "sheetExtra": null
+    },
+    {
+      "themeId": "DSC-TIER_2-03",
+      "themeName": "Product quality and reliability",
+      "tier": "TIER_2",
+      "keywords": [
+        "product defect",
+        "product recall",
+        "system failure",
+        "software defect",
+        "quality assurance",
+        "reliability"
+      ],
+      "sheetDetail": "•Acceptance testing and quality assurance measures are in place, but any incident can prove to be detrimental to reputation",
+      "sheetExtra": null
+    },
+    {
+      "themeId": "DSC-TIER_2-04",
+      "themeName": "Pandemic",
+      "tier": "TIER_2",
+      "keywords": [
+        "pandemic",
+        "outbreak",
+        "epidemic",
+        "public health emergency"
+      ],
+      "sheetDetail": "•Lessons learnt from COVID-19 will provide better preparedness for future pandemics",
+      "sheetExtra": null
+    },
+    {
+      "themeId": "DSC-TIER_2-05",
+      "themeName": "Intellectual Property rights",
+      "tier": "TIER_2",
+      "keywords": [
+        "intellectual property",
+        "patent infringement",
+        "copyright",
+        "trade secret",
+        "IP theft"
+      ],
+      "sheetDetail": "•With increasing adoption of AI, there could be complications with IP protection for DS&C solutions",
+      "sheetExtra": null
+    },
+    {
+      "themeId": "DSC-EMERGING-01",
+      "themeName": "Critical emerging technologies causing business disruption",
+      "tier": "EMERGING",
+      "keywords": [
+        "quantum computing",
+        "generative AI",
+        "agentic AI",
+        "emerging technology",
+        "disruptive technology",
+        "post-quantum"
+      ],
+      "sheetDetail": "Close monitoring of watchpoints & action plans",
+      "sheetExtra": "AI: Develop AI solutions and AI generative products (e.g., AGIL Vision) Execute quantum AI / Machine Learning projects (e.g., logistics optimisation) Collaborate with partners (including cross-LOB/ cross-BA/ GTO/ GEC/ external partners) to execute AI projects Build an AI-savvy workforce by recruiting data scientists and AI specialists Curate AI related LinkedIn e-Learn courses for staff self development Established the AI COE to accelerate AI development and deployment overseeing key areas of study such as AI tech seminars & training development and AI certification Maintain and operate DX@ai as a secure, governed AI sandbox to support exploration, development and demonstration of AI/ML use cases. Implement AI-enabled productivity and workforce transformation initiatives, supported by targeted hiring and capability development. Military/ PSS CONOPS: • Investing in R&D and development of unmanned capabilities (e.g. Manned - Unmanned Teaming Operating System, Swarm Operations, Counter-Unmanned) to maintain competitiveness against evolving CONOPS • Develop workforce capabilities in AI, automation, unmanned, counter-unmanned operations aligned to emerging CONOPS requirements. • Engage customers regularly to monitor evolving operational requirements and inform capability development • Monitor technology and industry developments to identify emerging risks and capability gaps Quantum: Readiness of products to be quantum-safe e.g. QKD/PQC/QKMS, supported by demonstrated feasibility, test-beds, and in-house capability development."
+    },
+    {
+      "themeId": "DSC-EMERGING-02",
+      "themeName": "Uncertainty in key markets due to economic slowdown, geopolitical risks, political instability or regulatory/policy shifts",
+      "tier": "EMERGING",
+      "keywords": [
+        "economic slowdown",
+        "defence budget",
+        "defense budget",
+        "political instability",
+        "recession",
+        "coup"
+      ],
+      "sheetDetail": "Close monitoring of watchpoints & action plans",
+      "sheetExtra": "Major Bid Review Committee (MBRC) to review bids in new countries and amounts beyond SGD $5M Closely monitor key markets economic indicators, political development and policy changes via credible news sources Engage with local country managers, agents or intermediaries to gain insights to assess the economic, geopolitical developments, political situation or any potential regulatory changes. Incorporate appropriate contractual safeguards (e.g. pass-through pricing, price adjustment or FM clauses) to protect margins Consider alternative supplies and markets for competitiveness and resilience"
+    },
+    {
+      "themeId": "DSC-EMERGING-03",
+      "themeName": "Technology bifurcation causing business disruption",
+      "tier": "EMERGING",
+      "keywords": [
+        "technology bifurcation",
+        "decoupling",
+        "tech war",
+        "chip export",
+        "export restriction"
+      ],
+      "sheetDetail": "Close monitoring of watchpoints & action plans",
+      "sheetExtra": "Diversify supply chains and markets where possible to maintain competitiveness and reduce dependence on any single country, region or supplier for critical technology components During International Business meetings, review the applicable countries affected by technology bifurcation (including the US-China tech bifurcation, technological nationalism & localisation pressures) and the impact on business/ strategy and consider (where feasible) local partnerships and technology transfer strategies Work with Group Procurement Supply Chain Resilience Team to roll out supply chain risk monitoring tool to enable faster response to global risk events"
+    },
+    {
+      "themeId": "DSC-EMERGING-04",
+      "themeName": "Adverse outcomes (ethical/ regulatory) from use or development of AI",
+      "tier": "EMERGING",
+      "keywords": [
+        "Adverse outcomes",
+        "AI regulation",
+        "AI ethics",
+        "AI liability",
+        "AI Act",
+        "deepfake",
+        "AI misuse",
+        "AI governance"
+      ],
+      "sheetDetail": "Close monitoring of watchpoints & action plans",
+      "sheetExtra": "Employees implementing AI solutions armed with awareness of AI frameworks within key markets In Singapore, DS&C businesses deploying AI solutions are piloting the AI Verify toolkit developed by IMDA Implementation of Group AI Governance Framework requirements, supported by a central register, control checklists and training programmes."
+    },
+    {
+      "themeId": "DSC-EMERGING-05",
+      "themeName": "Climate change mitigation and adaptation",
+      "tier": "EMERGING",
+      "keywords": [
+        "climate change",
+        "climate adaptation",
+        "esg",
+        "green practices",
+        "carbon",
+        "sustainability reporting"
+      ],
+      "sheetDetail": "Close monitoring of watchpoints & action plans",
+      "sheetExtra": "Chiller Plant Optimisation (ST Engineering Hub only) AHU Energy Optimisation (ST Engineering Hub Only) Converting ICE vehicle to EVs (Partially only) All existing software implementation for projects and products are optimised to reduce processing cycles and energy consumption"
+    }
+  ]
+}

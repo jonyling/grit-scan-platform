@@ -1,0 +1,218 @@
+{
+  "registerId": "DSC-LOB-PROFILES",
+  "workbook": "04_DSC_Entity_Info.xlsx",
+  "sheet": "6. LOB_Keywords",
+  "absence": "priorityCountries is empty. Country of incorporation is not a priority country, and none was invented.",
+  "lobHierarchy": {
+    "registerId": "DSC-LOB-HIERARCHY",
+    "status": "TRANSCRIBED_FROM_ORG_CHART_PENDING_BA_VALIDATION"
+  },
+  "lobs": [
+    {
+      "lobId": "LOB-mission-software-services",
+      "lobName": "Mission Software & Services",
+      "canonicalLob": "Mission Software & Services",
+      "baName": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "active": true,
+      "keywords": [
+        "Software",
+        "Artificial Intelligence",
+        "Machine Learning",
+        "Big Data",
+        "Analytics Solutions"
+      ],
+      "keywordTiers": {
+        "KEY_TIER_2": [
+          "Software",
+          "Artificial Intelligence",
+          "Machine Learning",
+          "Big Data",
+          "Analytics Solutions"
+        ],
+        "EMERGING": []
+      },
+      "priorityCountries": []
+    },
+    {
+      "lobId": "LOB-advanced-network-sensors",
+      "lobName": "Advanced Network & Sensors",
+      "canonicalLob": "Advanced Networks & Sensors",
+      "baName": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "active": true,
+      "keywords": [
+        "Advanced connectivity",
+        "5G",
+        "Network Security",
+        "Analytics Solutions"
+      ],
+      "keywordTiers": {
+        "KEY_TIER_2": [
+          "Advanced connectivity",
+          "5G",
+          "Network Security",
+          "Analytics Solutions"
+        ],
+        "EMERGING": []
+      },
+      "priorityCountries": []
+    },
+    {
+      "lobId": "LOB-training-simulations",
+      "lobName": "Training & Simulations",
+      "canonicalLob": "Training & Simulation Systems",
+      "baName": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "active": true,
+      "keywords": [
+        "Software",
+        "Artificial Intelligence",
+        "Machine Learning",
+        "Gen-AI"
+      ],
+      "keywordTiers": {
+        "KEY_TIER_2": [
+          "Software",
+          "Artificial Intelligence",
+          "Machine Learning",
+          "Gen-AI"
+        ],
+        "EMERGING": []
+      },
+      "priorityCountries": []
+    },
+    {
+      "lobId": "LOB-unmanned-integrated-systems",
+      "lobName": "Unmanned Integrated Systems",
+      "canonicalLob": "Unmanned & Integrated Systems",
+      "baName": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "active": true,
+      "keywords": [
+        "Artificial Intelligence",
+        "Machine Learning",
+        "Advanced connectivity",
+        "5G",
+        "Software"
+      ],
+      "keywordTiers": {
+        "KEY_TIER_2": [
+          "Artificial Intelligence",
+          "Machine Learning",
+          "Advanced connectivity",
+          "5G",
+          "Software"
+        ],
+        "EMERGING": []
+      },
+      "priorityCountries": []
+    },
+    {
+      "lobId": "LOB-space",
+      "lobName": "Space",
+      "canonicalLob": "Space",
+      "baName": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "active": true,
+      "keywords": [
+        "Space Technology",
+        "Advanced connectivity",
+        "Big Data",
+        "Encryption Technologies"
+      ],
+      "keywordTiers": {
+        "KEY_TIER_2": [
+          "Space Technology",
+          "Advanced connectivity",
+          "Big Data",
+          "Encryption Technologies"
+        ],
+        "EMERGING": []
+      },
+      "priorityCountries": []
+    },
+    {
+      "lobId": "LOB-eservices",
+      "lobName": "eServices",
+      "canonicalLob": "eServ",
+      "baName": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "active": true,
+      "keywords": [
+        "Software",
+        "Cloud",
+        "Data Centre",
+        "Big Data",
+        "Analytics Solutions"
+      ],
+      "keywordTiers": {
+        "KEY_TIER_2": [
+          "Software",
+          "Cloud",
+          "Data Centre",
+          "Big Data",
+          "Analytics Solutions"
+        ],
+        "EMERGING": []
+      },
+      "priorityCountries": []
+    },
+    {
+      "lobId": "LOB-cloud-data-centre-solutions",
+      "lobName": "Cloud & Data Centre Solutions",
+      "canonicalLob": "Cloud & Data Centre Solutions",
+      "baName": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "active": true,
+      "keywords": [
+        "Cloud",
+        "Data Centre",
+        "Big Data",
+        "IT Risk Management",
+        "Cybersecurity Solutions"
+      ],
+      "keywordTiers": {
+        "KEY_TIER_2": [
+          "Cloud",
+          "Data Centre",
+          "Big Data",
+          "IT Risk Management",
+          "Cybersecurity Solutions"
+        ],
+        "EMERGING": []
+      },
+      "priorityCountries": []
+    },
+    {
+      "lobId": "LOB-cybersecurity-products-solutions-services",
+      "lobName": "Cybersecurity Products, Solutions & Services",
+      "canonicalLob": "Cyber Solutions & Infrastructure",
+      "baName": "Digital Systems & Cyber",
+      "lobGrouping": "Cyber",
+      "active": true,
+      "keywords": [
+        "Cyber Defense",
+        "Cybersecurity Solutions",
+        "Network Security",
+        "IT Risk Management",
+        "Encryption Technologies",
+        "Encryptors",
+        "Quantum Security"
+      ],
+      "keywordTiers": {
+        "KEY_TIER_2": [
+          "Cyber Defense",
+          "Cybersecurity Solutions",
+          "Network Security",
+          "IT Risk Management",
+          "Encryption Technologies",
+          "Encryptors",
+          "Quantum Security"
+        ],
+        "EMERGING": []
+      },
+      "priorityCountries": []
+    }
+  ]
+}

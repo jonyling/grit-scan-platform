@@ -22,7 +22,7 @@
   },
   "email": null,
   "briefs": {
-    "urs": {
+    "dsc": {
       "title": "GRIT-Scan: Digital Systems & Cybersecurity",
       "subtitle": "Business Area Weekly Risk Scan",
       "preparedFor": "R&A Business Partner, Digital Systems & Cybersecurity",
@@ -48,5 +48,5 @@
       ]
     }
   },
-  "note": "Hwaimay reviews URS signals first. Approved signals go to the BA head for the AIRIS handoff. Receives the Urban Solutions business-area brief and the URS Taiwan entity brief."
+  "note": "Yikai reviews DSC signals first. Approved signals go to the BA head for the AIRIS handoff. Receives the DS&C business-area brief."
 }

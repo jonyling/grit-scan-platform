@@ -1,0 +1,243 @@
+{
+  "registerId": "DSC-COMPETITORS",
+  "workbook": "04_DSC_Entity_Info.xlsx",
+  "sheet": "3. Competitors",
+  "absence": "A LOB label that is not on the org chart has no canonicalLob. The same competitor can appear under more than one LOB.",
+  "competitors": [
+    {
+      "lobLabel": "1. Mission Software & Services",
+      "competitor": "Lockheed Martin",
+      "workscope": "Mission systems integration, battlefield C4ISR software, and defense software lifecycles.",
+      "note": null,
+      "category": null,
+      "row": 4,
+      "canonicalLob": "Mission Software & Services"
+    },
+    {
+      "lobLabel": "1. Mission Software & Services",
+      "competitor": "Elbit Systems",
+      "workscope": "Command-and-control (C4I) software, tactical situational awareness, and combat management systems.",
+      "note": null,
+      "category": null,
+      "row": 5,
+      "canonicalLob": "Mission Software & Services"
+    },
+    {
+      "lobLabel": "1. Mission Software & Services",
+      "competitor": "Frequentis",
+      "workscope": "Cross-domain C4ISR voice and data integration, air traffic management software, and tactical command centers.",
+      "note": null,
+      "category": null,
+      "row": 6,
+      "canonicalLob": "Mission Software & Services"
+    },
+    {
+      "lobLabel": "1. Mission Software & Services",
+      "competitor": "SAAB AB",
+      "workscope": "Combat management systems (9LV), battlefield command-and-control software, and defense IT integrations.",
+      "note": null,
+      "category": null,
+      "row": 7,
+      "canonicalLob": "Mission Software & Services"
+    },
+    {
+      "lobLabel": "2. Cloud & Data Centre Solutions",
+      "competitor": "Leidos Holdings",
+      "workscope": "Federal and defense secure cloud modernization, data center consolidation, and hybrid enterprise IT platforms.",
+      "note": null,
+      "category": null,
+      "row": 8,
+      "canonicalLob": "Cloud & Data Centre Solutions"
+    },
+    {
+      "lobLabel": "2. Cloud & Data Centre Solutions",
+      "competitor": "NCS",
+      "workscope": "Hybrid multi-cloud architectures, enterprise data center operations, virtualization, and public sector ICT hosting.",
+      "note": null,
+      "category": null,
+      "row": 9,
+      "canonicalLob": "Cloud & Data Centre Solutions"
+    },
+    {
+      "lobLabel": "2. Cloud & Data Centre Solutions",
+      "competitor": "AWS GovCloud / Azure Gov",
+      "workscope": "High-compliance cloud infrastructure, cloud-native storage, and mission-critical government workloads.",
+      "note": null,
+      "category": null,
+      "row": 10,
+      "canonicalLob": "Cloud & Data Centre Solutions"
+    },
+    {
+      "lobLabel": "3. Advanced Network & Sensors",
+      "competitor": "Raytheon Technologies (RTX)",
+      "workscope": "Advanced air & missile defense radars, electro-optical/infrared (EO/IR) sensors, and electronic warfare suites.",
+      "note": null,
+      "category": null,
+      "row": 11,
+      "canonicalLob": "Advanced Networks & Sensors"
+    },
+    {
+      "lobLabel": "3. Advanced Network & Sensors",
+      "competitor": "SAAB AB",
+      "workscope": "Airborne and land-based radar systems (Giraffe series), maritime surveillance, and tactical sensor networks.",
+      "note": null,
+      "category": null,
+      "row": 12,
+      "canonicalLob": "Advanced Networks & Sensors"
+    },
+    {
+      "lobLabel": "3. Advanced Network & Sensors",
+      "competitor": "Elbit Systems",
+      "workscope": "Electro-optic precision sensors, night-vision systems, EW systems, and tactical radio communications.",
+      "note": null,
+      "category": null,
+      "row": 13,
+      "canonicalLob": "Advanced Networks & Sensors"
+    },
+    {
+      "lobLabel": "4. Training & Simulations",
+      "competitor": "CAE Inc.",
+      "workscope": "Full-flight simulators, synthetic wargaming software, live-virtual-constructive (LVC) training networks, and military aviation academies.",
+      "note": null,
+      "category": null,
+      "row": 14,
+      "canonicalLob": "Training & Simulation Systems"
+    },
+    {
+      "lobLabel": "4. Training & Simulations",
+      "competitor": "Lockheed Martin",
+      "workscope": "F-35 and military flight simulators, ground vehicle trainers, and live-fire range digitalization.",
+      "note": null,
+      "category": null,
+      "row": 15,
+      "canonicalLob": "Training & Simulation Systems"
+    },
+    {
+      "lobLabel": "4. Training & Simulations",
+      "competitor": "SAAB AB",
+      "workscope": "Live military training systems, laser simulator accessories, and virtual tactical wargaming platforms.",
+      "note": null,
+      "category": null,
+      "row": 16,
+      "canonicalLob": "Training & Simulation Systems"
+    },
+    {
+      "lobLabel": "5. Unmanned Integrated Systems",
+      "competitor": "Elbit Systems",
+      "workscope": "Unmanned aerial vehicles (Hermes family), autonomous ground vehicles (UGVs), and unmanned surface vessels.",
+      "note": null,
+      "category": null,
+      "row": 17,
+      "canonicalLob": "Unmanned & Integrated Systems"
+    },
+    {
+      "lobLabel": "5. Unmanned Integrated Systems",
+      "competitor": "Lockheed Martin",
+      "workscope": "Tactical drones, autonomous stealth UAS platforms, and swarming technology.",
+      "note": null,
+      "category": null,
+      "row": 18,
+      "canonicalLob": "Unmanned & Integrated Systems"
+    },
+    {
+      "lobLabel": "5. Unmanned Integrated Systems",
+      "competitor": "Raytheon Technologies (RTX)",
+      "workscope": "Counter-UAS (C-UAS) systems, interceptors, and unmanned autonomous sensing swarms.",
+      "note": null,
+      "category": null,
+      "row": 19,
+      "canonicalLob": "Unmanned & Integrated Systems"
+    },
+    {
+      "lobLabel": "6. Space",
+      "competitor": "Lockheed Martin",
+      "workscope": "Satellite manufacturing (military & civil), space payload integration, deep space propulsion, and missile warning networks.",
+      "note": null,
+      "category": null,
+      "row": 20,
+      "canonicalLob": "Space"
+    },
+    {
+      "lobLabel": "6. Space",
+      "competitor": "Raytheon Technologies (RTX)",
+      "workscope": "Space-based environmental and missile tracking sensors, satellite ground control stations, and space payloads.",
+      "note": null,
+      "category": null,
+      "row": 21,
+      "canonicalLob": "Space"
+    },
+    {
+      "lobLabel": "6. Space",
+      "competitor": "Leidos Holdings",
+      "workscope": "Space situational awareness systems, payload integration, and satellite data processing workflows.",
+      "note": null,
+      "category": null,
+      "row": 22,
+      "canonicalLob": "Space"
+    },
+    {
+      "lobLabel": "7. eServices",
+      "competitor": "Accenture",
+      "workscope": "Large-scale digital government transformations, smart city platform deployment, and public portal automation.",
+      "note": null,
+      "category": null,
+      "row": 23,
+      "canonicalLob": "eServ"
+    },
+    {
+      "lobLabel": "7. eServices",
+      "competitor": "NCS",
+      "workscope": "End-to-end eGovernment systems, digital identity implementations, smart mobility solutions, and transport ticketing.",
+      "note": null,
+      "category": null,
+      "row": 24,
+      "canonicalLob": "eServ"
+    },
+    {
+      "lobLabel": "7. eServices",
+      "competitor": "Leidos Holdings",
+      "workscope": "Public sector workflow automation, citizen portal modernizations, and large-scale government enterprise operations.",
+      "note": null,
+      "category": null,
+      "row": 25,
+      "canonicalLob": "eServ"
+    },
+    {
+      "lobLabel": "8. Cybersecurity Products and Solutions",
+      "competitor": "Fortinet",
+      "workscope": "Next-Generation Firewalls (NGFW), Secure Access Service Edge (SASE), network security devices, and threat protection hardware.",
+      "note": null,
+      "category": null,
+      "row": 26,
+      "canonicalLob": "Cyber Solutions & Infrastructure"
+    },
+    {
+      "lobLabel": "8. Cybersecurity Products and Solutions",
+      "competitor": "Rapid7",
+      "workscope": "Vulnerability management platforms, incident detection and response (SIEM/XDR), and cloud risk assessment tools.",
+      "note": null,
+      "category": null,
+      "row": 27,
+      "canonicalLob": "Cyber Solutions & Infrastructure"
+    },
+    {
+      "lobLabel": "8. Cybersecurity Products and Solutions",
+      "competitor": "Ensign InfoSecurity",
+      "workscope": "Regional Managed Security Services (MSSP), specialized threat intelligence, OT/IoT security, and incident response.",
+      "note": null,
+      "category": null,
+      "row": 28,
+      "canonicalLob": "Cyber Solutions & Infrastructure"
+    },
+    {
+      "lobLabel": "8. Cybersecurity Products and Solutions",
+      "competitor": "NCS",
+      "workscope": "Integrated SecOps, SOC operations, identity access management, and enterprise cyber resilience.",
+      "note": null,
+      "category": null,
+      "row": 29,
+      "canonicalLob": "Cyber Solutions & Infrastructure"
+    }
+  ],
+  "dropped": []
+}

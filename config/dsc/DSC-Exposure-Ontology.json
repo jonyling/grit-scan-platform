@@ -1,0 +1,866 @@
+{
+  "registerId": "DSC-EXPOSURE",
+  "workbook": "04_DSC_Entity_Info.xlsx",
+  "absence": {
+    "projects": "04_DSC_Entity_Info.xlsx has no project sheet. No project was invented.",
+    "sites": "Registered addresses were not promoted to site aliases. A repeated legal name was not split into a second site."
+  },
+  "sharedSupplierNote": "2 suppliers are listed for more than one business area in column B. They are recorded under DS&C, and sharedWith names the other business areas.",
+  "anonymisedCustomerNote": "5 customers are named only by country and programme, such as 'Thailand NPE Programme Customer'. They stay in the register and are not searched by name.",
+  "entities": [
+    {
+      "entityId": "ENTITY-st-engineering-digital-systems-pte-ltd",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Digital Systems Pte. Ltd.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Digital Systems & Cyber",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Digital Systems Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-codex-solutions-pte-ltd",
+      "sourceEntityId": null,
+      "entityName": "Codex Solutions Pte. Ltd.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Codex",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "Codex Solutions Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-mission-software-services-pte-ltd",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Mission Software & Services Pte. Ltd.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Mission Software & Services",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Mission Software & Services Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-mission-software-services-pte-ltd-hongkong-branch",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Mission Software & Services Pte. Ltd. - HongKong Branch",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Mission Software & Services",
+      "countryOfIncorporation": "Hong Kong",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Mission Software & Services Pte. Ltd. - HongKong Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-mak-technologies-inc",
+      "sourceEntityId": null,
+      "entityName": "MAK Technologies, Inc.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Training & Simulation Systems",
+      "countryOfIncorporation": "USA",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "MAK Technologies, Inc."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-electronics-training-simulation-systems-pte-ltd-kazakhstan-branch",
+      "sourceEntityId": null,
+      "entityName": "ST Electronics (Training & Simulation Systems) Pte. Ltd. - Kazakhstan Branch",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Training & Simulation Systems",
+      "countryOfIncorporation": "Kazakhstan",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Electronics (Training & Simulation Systems) Pte. Ltd. - Kazakhstan Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-training-simulation-systems-pte-ltd",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Training & Simulation Systems Pte. Ltd.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Training & Simulation Systems",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Training & Simulation Systems Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-antycip-ltd",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Antycip Ltd",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Training & Simulation Systems",
+      "countryOfIncorporation": "UK",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Antycip Ltd"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-antycip-sas",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Antycip SAS",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Training & Simulation Systems",
+      "countryOfIncorporation": "France",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Antycip SAS"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-antycip-sas-german-branch",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Antycip SAS - German Branch",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Training & Simulation Systems",
+      "countryOfIncorporation": "Germany",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Antycip SAS - German Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-antycip-sas-italy-branch",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Antycip SAS - Italy Branch",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Training & Simulation Systems",
+      "countryOfIncorporation": "Italy",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Antycip SAS - Italy Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-miltope-corporation",
+      "sourceEntityId": null,
+      "entityName": "Miltope Corporation",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Advanced Networks & Sensors",
+      "countryOfIncorporation": "USA",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "Miltope Corporation"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-advanced-networks-sensors-pte-ltd",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Advanced Networks & Sensors Pte. Ltd.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Advanced Networks & Sensors",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Advanced Networks & Sensors Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-cloud-and-data-centre-solutions-pte-ltd",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Cloud and Data Centre Solutions Pte. Ltd.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Cloud and Data Centre Solutions",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Cloud and Data Centre Solutions Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-unmanned-integrated-systems-pte-ltd",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Unmanned & Integrated Systems Pte. Ltd.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Unmanned & Integrated Systems",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Unmanned & Integrated Systems Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-e-services-pte-ltd",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering E-Services Pte. Ltd.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "eServ",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering E-Services Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-geo-insights-pte-ltd",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Geo-Insights Pte. Ltd.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Space",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Geo-Insights Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-satellite-systems-pte-ltd",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Satellite Systems Pte. Ltd.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Digital Systems",
+      "lob": "Space",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Satellite Systems Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-innoedge-labs-pte-ltd",
+      "sourceEntityId": null,
+      "entityName": "InnoEdge Labs Pte. Ltd.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Cyber",
+      "lob": "Deep Cyber Capabilities",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "InnoEdge Labs Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-d-crypt-pte-ltd",
+      "sourceEntityId": null,
+      "entityName": "D'Crypt Pte. Ltd.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Cyber",
+      "lob": "Deep Cyber Capabilities",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "D'Crypt Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-info-security-pte-ltd",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Info-Security Pte. Ltd.",
+      "cluster": null,
+      "businessArea": "Digital Systems & Cyber",
+      "lobGrouping": "Cyber",
+      "lob": "Cyber Solutions & Infrastructure",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": null,
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Info-Security Pte. Ltd."
+      ]
+    }
+  ],
+  "projects": [],
+  "customers": [
+    {
+      "customerId": "CUSTOMER-ministry-of-home-affairs-mha",
+      "customerName": "Ministry of Home Affairs (MHA)",
+      "aliases": [
+        "Ministry of Home Affairs (MHA)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-home-team-science-technology-agency-htx",
+      "customerName": "Home Team Science & Technology Agency (HTX)",
+      "aliases": [
+        "Home Team Science & Technology Agency (HTX)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-singapore-police-force-spf",
+      "customerName": "Singapore Police Force (SPF)",
+      "aliases": [
+        "Singapore Police Force (SPF)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-singapore-civil-defence-force-scdf",
+      "customerName": "Singapore Civil Defence Force (SCDF)",
+      "aliases": [
+        "Singapore Civil Defence Force (SCDF)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-defence-mindef",
+      "customerName": "Ministry of Defence (MINDEF)",
+      "aliases": [
+        "Ministry of Defence (MINDEF)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-defence-science-technology-agency-dsta",
+      "customerName": "Defence Science & Technology Agency (DSTA)",
+      "aliases": [
+        "Defence Science & Technology Agency (DSTA)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-defence-science-organisation-dso",
+      "customerName": "Defence Science Organisation (DSO)",
+      "aliases": [
+        "Defence Science Organisation (DSO)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-civil-aviation-authority-of-singapore-caas",
+      "customerName": "Civil Aviation Authority of Singapore (CAAS)",
+      "aliases": [
+        "Civil Aviation Authority of Singapore (CAAS)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-maritime-and-port-authority-of-singapore-mpa",
+      "customerName": "Maritime and Port Authority of Singapore (MPA)",
+      "aliases": [
+        "Maritime and Port Authority of Singapore (MPA)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-changi-airport-group-cag",
+      "customerName": "Changi Airport Group (CAG)",
+      "aliases": [
+        "Changi Airport Group (CAG)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-housing-development-board-hdb",
+      "customerName": "Housing & Development Board (HDB)",
+      "aliases": [
+        "Housing & Development Board (HDB)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-public-utilities-board-pub",
+      "customerName": "Public Utilities Board (PUB)",
+      "aliases": [
+        "Public Utilities Board (PUB)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-national-environment-agency-nea",
+      "customerName": "National Environment Agency (NEA)",
+      "aliases": [
+        "National Environment Agency (NEA)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-prime-minister-s-office-elections-department-pmo-eld",
+      "customerName": "Prime Minister's Office - Elections Department (PMO ELD)",
+      "aliases": [
+        "Prime Minister's Office - Elections Department (PMO ELD)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-science-centre-board",
+      "customerName": "Science Centre Board",
+      "aliases": [
+        "Science Centre Board"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-tower-transit-singapore",
+      "customerName": "Tower Transit Singapore",
+      "aliases": [
+        "Tower Transit Singapore"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-dxc-technology",
+      "customerName": "DXC Technology",
+      "aliases": [
+        "DXC Technology"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-royal-thai-air-force-rtaf",
+      "customerName": "Royal Thai Air Force (RTAF)",
+      "aliases": [
+        "Royal Thai Air Force (RTAF)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-public-security-vietnam-mops",
+      "customerName": "Ministry of Public Security, Vietnam (MOPS)",
+      "aliases": [
+        "Ministry of Public Security, Vietnam (MOPS)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-uk-ministry-of-defence-uk-mod",
+      "customerName": "UK Ministry of Defence (UK MOD)",
+      "aliases": [
+        "UK Ministry of Defence (UK MOD)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-np-aerospace-united-kingdom",
+      "customerName": "NP Aerospace (United Kingdom)",
+      "aliases": [
+        "NP Aerospace (United Kingdom)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-national-disaster-management-agency-bnpb-indonesia",
+      "customerName": "National Disaster Management Agency (BNPB), Indonesia",
+      "aliases": [
+        "National Disaster Management Agency (BNPB), Indonesia"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-hong-kong-police-force-hkpf",
+      "customerName": "Hong Kong Police Force (HKPF)",
+      "aliases": [
+        "Hong Kong Police Force (HKPF)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-estonia-defence-force-edf",
+      "customerName": "Estonia Defence Force (EDF)",
+      "aliases": [
+        "Estonia Defence Force (EDF)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-faleolo-international-airport-samoa",
+      "customerName": "Faleolo International Airport (Samoa)",
+      "aliases": [
+        "Faleolo International Airport (Samoa)"
+      ]
+    },
+    {
+      "customerId": "CUSTOMER-thailand-npe-programme-customer",
+      "customerName": "Thailand NPE Programme Customer",
+      "aliases": [
+        "Thailand NPE Programme Customer"
+      ],
+      "anonymised": true
+    },
+    {
+      "customerId": "CUSTOMER-qatar-dpe-simulation-solutions-customer",
+      "customerName": "Qatar DPE & Simulation Solutions Customer",
+      "aliases": [
+        "Qatar DPE & Simulation Solutions Customer"
+      ],
+      "anonymised": true
+    },
+    {
+      "customerId": "CUSTOMER-uae-project-perseus-customer",
+      "customerName": "UAE Project Perseus Customer",
+      "aliases": [
+        "UAE Project Perseus Customer"
+      ],
+      "anonymised": true
+    },
+    {
+      "customerId": "CUSTOMER-pakistan-flight-simulation-upgrade-customer",
+      "customerName": "Pakistan Flight Simulation Upgrade Customer",
+      "aliases": [
+        "Pakistan Flight Simulation Upgrade Customer"
+      ],
+      "anonymised": true
+    },
+    {
+      "customerId": "CUSTOMER-india-atc-simulator-customer",
+      "customerName": "India ATC Simulator Customer",
+      "aliases": [
+        "India ATC Simulator Customer"
+      ],
+      "anonymised": true
+    }
+  ],
+  "suppliers": [
+    {
+      "supplierId": "SUPPLIER-nokia-solutions-and-networks-singapore-pte-ltd",
+      "supplierName": "NOKIA SOLUTIONS AND NETWORKS SINGAPORE PTE. LTD.",
+      "businessArea": "DS&C",
+      "aliases": [
+        "NOKIA SOLUTIONS AND NETWORKS SINGAPORE PTE. LTD."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-ciena-communications-international",
+      "supplierName": "CIENA COMMUNICATIONS INTERNATIONAL",
+      "businessArea": "DS&C",
+      "aliases": [
+        "CIENA COMMUNICATIONS INTERNATIONAL"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-ubiqconn-technology-inc",
+      "supplierName": "UBIQCONN TECHNOLOGY INC",
+      "businessArea": "DS&C",
+      "aliases": [
+        "UBIQCONN TECHNOLOGY INC"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-elbit-systems-electro-optics-elop-ltd",
+      "supplierName": "ELBIT SYSTEMS ELECTRO-OPTICS ELOP LTD",
+      "businessArea": "DS&C",
+      "aliases": [
+        "ELBIT SYSTEMS ELECTRO-OPTICS ELOP LTD"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-toplink-pacific-pte-ltd",
+      "supplierName": "TOPLINK PACIFIC PTE LTD",
+      "businessArea": "DS&C",
+      "aliases": [
+        "TOPLINK PACIFIC PTE LTD"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-elbit-security-systems-ltd",
+      "supplierName": "ELBIT SECURITY SYSTEMS LTD",
+      "businessArea": "DS&C",
+      "aliases": [
+        "ELBIT SECURITY SYSTEMS LTD"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-rockwell-collins-simulation-training-solutions-llc",
+      "supplierName": "ROCKWELL COLLINS SIMULATION & TRAINING SOLUTIONS LLC",
+      "businessArea": "DS&C",
+      "aliases": [
+        "ROCKWELL COLLINS SIMULATION & TRAINING SOLUTIONS LLC"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-sitep-italia-s-p-a",
+      "supplierName": "SITEP ITALIA S.P.A.",
+      "businessArea": "DS&C",
+      "aliases": [
+        "SITEP ITALIA S.P.A."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-chengdu-vantron-technology-ltd",
+      "supplierName": "CHENGDU VANTRON TECHNOLOGY,LTD.",
+      "businessArea": "DS&C",
+      "aliases": [
+        "CHENGDU VANTRON TECHNOLOGY,LTD."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-dong-won-precision-co-ltd-gyeonggi-do",
+      "supplierName": "DONG WON PRECISION CO., LTD (GYEONGGI-DO)",
+      "businessArea": "DS&C",
+      "aliases": [
+        "DONG WON PRECISION CO., LTD (GYEONGGI-DO)"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-the-boeing-company-st-louis",
+      "supplierName": "THE BOEING COMPANY (ST LOUIS)",
+      "businessArea": "DS&C",
+      "aliases": [
+        "THE BOEING COMPANY (ST LOUIS)"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-israel-aerospace-industries-ltd-beer-yaakov",
+      "supplierName": "ISRAEL AEROSPACE INDUSTRIES LTD (BEER YAAKOV)",
+      "businessArea": "DS&C",
+      "aliases": [
+        "ISRAEL AEROSPACE INDUSTRIES LTD (BEER YAAKOV)"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-nvidia-corporation",
+      "supplierName": "NVIDIA Corporation",
+      "businessArea": "DS&C",
+      "aliases": [
+        "NVIDIA Corporation"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-amazon-web-services-singapore-private-limited",
+      "supplierName": "AMAZON WEB SERVICES SINGAPORE PRIVATE LIMITED",
+      "businessArea": "DS&C",
+      "aliases": [
+        "AMAZON WEB SERVICES SINGAPORE PRIVATE LIMITED"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-applied-systems-singapore-pte-ltd",
+      "supplierName": "APPLIED SYSTEMS (SINGAPORE) PTE LTD",
+      "businessArea": "DS&C",
+      "aliases": [
+        "APPLIED SYSTEMS (SINGAPORE) PTE LTD"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-axiomtek-co-ltd",
+      "supplierName": "AXIOMTEK CO., LTD.",
+      "businessArea": "DS&C",
+      "aliases": [
+        "AXIOMTEK CO., LTD."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-flightsafety-defense-corporation",
+      "supplierName": "FLIGHTSAFETY DEFENSE CORPORATION",
+      "businessArea": "DS&C",
+      "aliases": [
+        "FLIGHTSAFETY DEFENSE CORPORATION"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-imagesat-international-i-s-i-ltd",
+      "supplierName": "IMAGESAT INTERNATIONAL (I.S.I) LTD",
+      "businessArea": "DS&C",
+      "aliases": [
+        "IMAGESAT INTERNATIONAL (I.S.I) LTD"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-lan-system-engineering-pte-ltd",
+      "supplierName": "LAN SYSTEM ENGINEERING PTE LTD",
+      "businessArea": "DS&C",
+      "aliases": [
+        "LAN SYSTEM ENGINEERING PTE LTD"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-mariyani-inc",
+      "supplierName": "MARIYANI, INC",
+      "businessArea": "DS&C",
+      "aliases": [
+        "MARIYANI, INC"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-orbit-communication-systems-ltd",
+      "supplierName": "ORBIT COMMUNICATION SYSTEMS LTD",
+      "businessArea": "DS&C",
+      "aliases": [
+        "ORBIT COMMUNICATION SYSTEMS LTD"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-pt-geo-prima-energi",
+      "supplierName": "PT. GEO PRIMA ENERGI",
+      "businessArea": "DS&C",
+      "aliases": [
+        "PT. GEO PRIMA ENERGI"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-task-comm-engineering-pte-ltd",
+      "supplierName": "TASK COMM ENGINEERING PTE LTD",
+      "businessArea": "DS&C",
+      "aliases": [
+        "TASK COMM ENGINEERING PTE LTD"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-amphenol-corporation",
+      "supplierName": "Amphenol Corporation",
+      "businessArea": "DS&C",
+      "aliases": [
+        "Amphenol Corporation"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-glenair-inc",
+      "supplierName": "Glenair, Inc",
+      "businessArea": "DS&C",
+      "aliases": [
+        "Glenair, Inc"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-micron-technology-inc",
+      "supplierName": "Micron Technology Inc",
+      "businessArea": "DS&C",
+      "aliases": [
+        "Micron Technology Inc"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-xilinx-inc",
+      "supplierName": "Xilinx, Inc",
+      "businessArea": "DS&C",
+      "aliases": [
+        "Xilinx, Inc"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-advanced-micro-devices-inc",
+      "supplierName": "Advanced Micro Devices, Inc.",
+      "businessArea": "DS&C",
+      "aliases": [
+        "Advanced Micro Devices, Inc."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-nxp-semiconductors-n-v",
+      "supplierName": "NXP Semiconductors N.V.",
+      "businessArea": "DS&C",
+      "aliases": [
+        "NXP Semiconductors N.V."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-newspace-india-limited",
+      "supplierName": "NEWSPACE INDIA LIMITED",
+      "businessArea": "DS&C",
+      "aliases": [
+        "NEWSPACE INDIA LIMITED"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-tianyi-satcom-co-ltd",
+      "supplierName": "TIANYI SATCOM CO., LTD",
+      "businessArea": "DS&C",
+      "aliases": [
+        "TIANYI SATCOM CO., LTD"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-schneider-electric-singapore-pte-ltd",
+      "supplierName": "SCHNEIDER ELECTRIC SINGAPORE PTE. LTD.",
+      "businessArea": "DS&C",
+      "aliases": [
+        "SCHNEIDER ELECTRIC SINGAPORE PTE. LTD."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-pacific-internet-s-pte-ltd",
+      "supplierName": "PACIFIC INTERNET (S) PTE. LTD.",
+      "businessArea": "DS&C",
+      "aliases": [
+        "PACIFIC INTERNET (S) PTE. LTD."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-eaton-electric-singapore-pte-ltd",
+      "supplierName": "EATON ELECTRIC (SINGAPORE) PTE. LTD.",
+      "businessArea": "DS&C",
+      "aliases": [
+        "EATON ELECTRIC (SINGAPORE) PTE. LTD."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-metasensing-s-r-l",
+      "supplierName": "METASENSING S.R.L.",
+      "businessArea": "DS&C",
+      "aliases": [
+        "METASENSING S.R.L."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-disti-llc",
+      "supplierName": "DISTI, LLC",
+      "businessArea": "DS&C",
+      "aliases": [
+        "DISTI, LLC"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-blinq-networks-inc",
+      "supplierName": "BLINQ NETWORKS INC.",
+      "businessArea": "DS&C",
+      "aliases": [
+        "BLINQ NETWORKS INC."
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-motorola-solutions-singapore-pte-ltd",
+      "supplierName": "MOTOROLA SOLUTIONS SINGAPORE PTE. LTD.",
+      "businessArea": "DS&C",
+      "aliases": [
+        "MOTOROLA SOLUTIONS SINGAPORE PTE. LTD."
+      ],
+      "sharedWith": [
+        "URS"
+      ]
+    },
+    {
+      "supplierId": "SUPPLIER-frontier-integrated-technology-pte-ltd",
+      "supplierName": "FRONTIER INTEGRATED TECHNOLOGY PTE LTD",
+      "businessArea": "DS&C",
+      "aliases": [
+        "FRONTIER INTEGRATED TECHNOLOGY PTE LTD"
+      ],
+      "sharedWith": [
+        "URS"
+      ]
+    }
+  ],
+  "sites": []
+}
