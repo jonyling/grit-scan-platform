@@ -170,3 +170,13 @@ def test_an_anonymised_customer_is_not_searched_by_name() -> None:
     plan = {"namedItems": {"source": "graph", "lanes": {"CUSTOMER": {"cadenceWeeks": 1}}}}
     targets = [spec.sources[0]["target"] for spec in reader_queries(plan, pack=pack)]
     assert targets == ["CUSTOMER-a"]
+
+
+def test_an_unknown_pack_stops_the_cli_before_a_run_is_registered() -> None:
+    from argparse import Namespace
+
+    from grit.cli import _packs
+
+    with pytest.raises(SystemExit, match="Unknown pack\\(s\\): dls"):
+        _packs(Namespace(pack=["dls"]))
+    assert _packs(Namespace(pack=["urs"])) == ["urs"]

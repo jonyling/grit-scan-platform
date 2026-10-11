@@ -37,10 +37,17 @@ def _client() -> Any:
 
 
 def _packs(args: argparse.Namespace) -> list[str]:
-    """The packs named with --pack, or every pack with a scan plan, entity packs first."""
-    from grit.ontology.pack import scanned_packs
+    """The packs named with --pack, or every pack with a scan plan, entity packs first. An unknown pack stops the command
+    before any run is registered."""
+    from grit.ontology.pack import manifests, scanned_packs
 
-    return list(args.pack) if args.pack else scanned_packs()
+    if not args.pack:
+        return scanned_packs()
+    known = manifests()
+    unknown = [name for name in args.pack if name not in known]
+    if unknown:
+        raise SystemExit(f"Unknown pack(s): {', '.join(unknown)}. Known packs: {', '.join(sorted(known))}")
+    return list(args.pack)
 
 
 def _run(pool: Any, args: argparse.Namespace, pack: str) -> Any:
