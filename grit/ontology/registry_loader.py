@@ -110,22 +110,18 @@ def _seed_entries(workbook_path: Path) -> tuple[RegistryEntry, ...]:
             _add_entry(entries, seen_ids, RegistryKind.CUSTOMER, name, None, None)
 
     supplier_rows = read_worksheet(workbook_path, "5. Suppliers")
+    # Column A is the name and column B the business area. Column A's header is "Name" in the URS sheet and a stray number
+    # in the DS&C sheet, so the header row is found by column B.
     supplier_header_index = next(
-        (
-            index
-            for index, row in enumerate(supplier_rows)
-            if _normalise_header(row[0] if row else None) == "name" and _normalise_header(row[1] if len(row) > 1 else None) == "ba"
-        ),
+        (index for index, row in enumerate(supplier_rows) if _normalise_header(row[1] if len(row) > 1 else None) == "ba"),
         None,
     )
     if supplier_header_index is None:
         raise ValueError("Suppliers sheet is missing its Name/BA header row.")
-    supplier_headers = [_normalise_header(value) for value in supplier_rows[supplier_header_index]]
     for values in supplier_rows[supplier_header_index + 1 :]:
-        row = dict(zip(supplier_headers, values, strict=False))
-        name = _value(row, "Name")
+        name = _clean_text(values[0]) if values else None
         if name:
-            _add_entry(entries, seen_ids, RegistryKind.SUPPLIER, name, _value(row, "BA"), None)
+            _add_entry(entries, seen_ids, RegistryKind.SUPPLIER, name, (_clean_text(values[1]) if len(values) > 1 else "") or None, None)
 
     if not entries:
         raise ValueError("No canonical RegistryEntry rows could be seeded from URS Entity Info.xlsx sheets 2, 4, and 5.")
@@ -150,14 +146,14 @@ def _canonical_snapshot_hash(
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def load_transmission_registry(workbook_path: str | Path, aliases_path: str | Path) -> TransmissionRegistry:
-    """Seed canonical records from sheets 2/4/5/6 and validate alias references."""
+def load_transmission_registry(workbook_path: str | Path, aliases_path: str | Path | None) -> TransmissionRegistry:
+    """Seed canonical records from sheets 2/4/5/6 and validate alias references. aliases_path None means no reviewed aliases."""
     workbook = Path(workbook_path)
     entries = _seed_entries(workbook)
     seen_ids = {entry.entity_id for entry in entries}
     lob_keywords = load_lob_keywords(workbook)
 
-    alias_data: dict[str, Any] = json.loads(Path(aliases_path).read_text(encoding="utf-8-sig"))
+    alias_data: dict[str, Any] = json.loads(Path(aliases_path).read_text(encoding="utf-8-sig")) if aliases_path else {}
     aliases = tuple(AliasRecord(entity_id=item["entity_id"], alias=item["alias"]) for item in alias_data.get("aliases", []))
     unknown_alias_ids = {alias.entity_id for alias in aliases} - seen_ids
     if unknown_alias_ids:

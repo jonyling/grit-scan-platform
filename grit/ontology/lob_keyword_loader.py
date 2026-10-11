@@ -7,6 +7,9 @@ some prefixed with a "1." or "(1)" style number. This module unpacks that
 block layout into flat, typed records; it invents no keyword and no LOB
 name of its own -- anything that cannot be attributed to a LOB block is
 dropped, not guessed.
+
+The DS&C workbook uses a simpler layout: one row per LOB, with its keywords
+in one comma-separated cell. A cell with two or more commas is split.
 """
 
 from __future__ import annotations
@@ -19,6 +22,9 @@ from grit.ontology.xlsx_reader import read_worksheet
 
 _SHEET = "6. LOB_Keywords"
 _LEADING_NUMBERING = re.compile(r"^\(?\d+\)?\.?\s*")
+# Inside a comma-separated cell, a number is a list marker only with its punctuation and a space: "1. Cloud", "(2) AI".
+# "5G" and "3D mapping" keep their digits.
+_LIST_MARKER = re.compile(r"^(?:\(\d+\)|\d+[.)])\s+")
 
 
 def _clean_keyword(value: object) -> str | None:
@@ -27,6 +33,16 @@ def _clean_keyword(value: object) -> str | None:
         return None
     text = _LEADING_NUMBERING.sub("", text).strip().strip(",").strip()
     return text or None
+
+
+def _keywords(value: object) -> list[str]:
+    """One keyword per cell, or, where a workbook lists a LOB's keywords in one cell (DS&C), a comma-separated list."""
+    text = str(value or "")
+    if text.count(",") < 2:
+        keyword = _clean_keyword(text)
+        return [keyword] if keyword else []
+    parts = (_LIST_MARKER.sub("", part.replace("\xa0", " ").strip()).strip() for part in text.split(","))
+    return [part for part in parts if part]
 
 
 def load_lob_keywords(workbook_path: str | Path) -> tuple[LobKeyword, ...]:
@@ -47,13 +63,10 @@ def parse_lob_keyword_rows(rows: list[list[object | None]]) -> tuple[LobKeyword,
         if current_lob is None:
             continue  # stray row before the first LOB block; nothing to attribute it to
 
-        key_tier2 = _clean_keyword(row[1]) if len(row) > 1 else None
-        if key_tier2:
-            keywords.append(LobKeyword(lob=current_lob, keyword=key_tier2, tier=KeywordTier.KEY_TIER_2))
-
-        emerging = _clean_keyword(row[2]) if len(row) > 2 else None
-        if emerging:
-            keywords.append(LobKeyword(lob=current_lob, keyword=emerging, tier=KeywordTier.EMERGING))
+        for keyword in _keywords(row[1]) if len(row) > 1 else []:
+            keywords.append(LobKeyword(lob=current_lob, keyword=keyword, tier=KeywordTier.KEY_TIER_2))
+        for keyword in _keywords(row[2]) if len(row) > 2 else []:
+            keywords.append(LobKeyword(lob=current_lob, keyword=keyword, tier=KeywordTier.EMERGING))
 
     if not keywords:
         raise ValueError(f"No keywords could be parsed from '{_SHEET}'.")

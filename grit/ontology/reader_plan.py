@@ -85,6 +85,8 @@ def _name_lanes(add: Any, pack: Any, lanes: Mapping[str, Any], reviewed_aliases:
         if lane not in lanes:
             continue
         for row in exposure.get(key) or []:
+            if row.get("anonymised"):
+                continue  # 'Thailand NPE Programme Customer' names no organisation that news would print
             query, _basis = search_name(row[name_key], str(row.get(id_key) or ""), reviewed, countries)
             add(lane, query, str(row.get(id_key)), key, exact=True, cadence=lanes[lane].get("cadenceWeeks", 1))
     if "COMPETITOR" in lanes:

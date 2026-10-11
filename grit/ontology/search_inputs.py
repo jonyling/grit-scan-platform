@@ -176,8 +176,8 @@ def parse_competitor_rows(rows: list[list[str]]) -> dict[str, Any]:
     lob = ""
     category: str | None = None
     for number, (label, name, workscope, note) in enumerate(rows, start=1):
-        if label.casefold() == "lob" and name.casefold() == "competitor":
-            continue
+        if name.casefold() == "competitor" and "lob" in label.casefold():
+            continue  # the header row: "LOB" or "Line of Business (LOB)"
         if label:
             lob = label
             category = None
@@ -252,10 +252,40 @@ def parse_management_focus_rows(rows: list[list[str]]) -> dict[str, Any]:
     return {"requests": requests, "focusItems": items, "dropped": dropped}
 
 
-def load_keyword_library(workbook: Path, hierarchy: dict[str, Any] | None, *, sheets: tuple[str, ...] = (), prefix: str = "URS") -> dict[str, Any]:
+def parse_management_area_rows(rows: list[list[str]]) -> dict[str, Any]:
+    """Parse a management focus sheet laid out as 'S/N | Management Focus Area | Key Watchpoints' (DS&C). Each area covers
+    the whole business area. Its watchpoints are a comma-separated list. Fails loudly on another layout."""
+    header = next((index for index, row in enumerate(rows) if row[0].casefold() in {"s/n", "no"} and "focus area" in row[1].casefold()), None)
+    if header is None:
+        raise ValueError("Management focus sheet is missing its 'S/N | Management Focus Area | Key Watchpoints' header.")
+    items: list[dict[str, Any]] = []
+    dropped: list[dict[str, Any]] = []
+    for number, (index, area, watchpoints, *_rest) in enumerate(rows[header + 1 :], start=header + 2):
+        if not area:
+            continue
+        if not index.isdigit():
+            dropped.append({"row": number, "text": area[:120], "reason": "NO_SERIAL_NUMBER"})
+            continue
+        items.append(
+            {
+                "scope": "All LOBs",
+                "allLobs": True,
+                "focus": area,
+                "whyItMatters": None,
+                "indicators": [item.strip(" .") for item in watchpoints.split(",") if item.strip(" .")],
+                "status": None,
+                "number": int(index),
+            }
+        )
+    return {"requests": [], "focusItems": items, "dropped": dropped}
+
+
+def load_keyword_library(workbook: Path, hierarchy: dict[str, Any] | None, *, sheets: tuple[str, ...] | None = None, prefix: str = "URS") -> dict[str, Any]:
+    """sheets None reads the URS keyword sheets. An empty tuple reads none: a workbook can carry copies of another business
+    area's sheets, and those are not this business area's vocabulary."""
     states = sheet_states(workbook)
     libraries = []
-    for sheet in sheets or LIBRARY_SHEETS:
+    for sheet in LIBRARY_SHEETS if sheets is None else sheets:
         rows = [
             (_clean(row[0]) if row else "", _clean(row[1]) if len(row) > 1 else "")
             for row in read_worksheet(workbook, sheet, keep_blank_rows=True)
@@ -279,7 +309,8 @@ def load_keyword_library(workbook: Path, hierarchy: dict[str, Any] | None, *, sh
 def load_competitors(workbook: Path, hierarchy: dict[str, Any] | None, *, prefix: str = "URS") -> dict[str, Any]:
     parsed = parse_competitor_rows(_cells(read_worksheet(workbook, COMPETITOR_SHEET, keep_blank_rows=True), 4))
     for item in parsed["competitors"]:
-        lob = resolve_lob(item["lobLabel"], hierarchy)
+        numbered = _NUMBERED.match(item["lobLabel"])
+        lob = resolve_lob(item["lobLabel"], hierarchy) or (resolve_lob(numbered.group(2), hierarchy) if numbered else None)
         item["canonicalLob"] = lob["lobName"] if lob else None
     return {
         "registerId": f"{prefix}-COMPETITORS",
@@ -290,8 +321,16 @@ def load_competitors(workbook: Path, hierarchy: dict[str, Any] | None, *, prefix
     }
 
 
-def load_management_focus(workbook: Path, hierarchy: dict[str, Any] | None, *, prefix: str = "URS") -> dict[str, Any]:
-    parsed = parse_management_focus_rows(_cells(read_worksheet(workbook, MANAGEMENT_SHEET, keep_blank_rows=True), 5))
+def load_management_focus(workbook: Path, hierarchy: dict[str, Any] | None, *, prefix: str = "URS", layout: str = "requests") -> dict[str, Any]:
+    """layout 'requests' is the URS sheet: numbered requests, then a LOB / Scope table. 'areas' is the DS&C sheet: one row
+    per focus area with its watchpoints."""
+    rows = _cells(read_worksheet(workbook, MANAGEMENT_SHEET, keep_blank_rows=True), 5)
+    if layout == "areas":
+        parsed = parse_management_area_rows(rows)
+        absence = "The sheet gives each area a list of watchpoints. It names no LOB, status, or reason, so none is recorded."
+    else:
+        parsed = parse_management_focus_rows(rows)
+        absence = "The status text is copied unchanged. A status that says research draft means a business area has not validated the item."
     for item in parsed["focusItems"]:
         lob = resolve_lob(item["scope"], hierarchy)
         item["canonicalLob"] = lob["lobName"] if lob else None
@@ -299,6 +338,6 @@ def load_management_focus(workbook: Path, hierarchy: dict[str, Any] | None, *, p
         "registerId": f"{prefix}-MANAGEMENT-FOCUS",
         "workbook": workbook.name,
         "sheet": MANAGEMENT_SHEET,
-        "absence": "The status text is copied unchanged. A status that says research draft means a business area has not validated the item.",
+        "absence": absence,
         **parsed,
     }

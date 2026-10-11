@@ -30,8 +30,24 @@ You need:
    | `registers`, `optional` | The register file names. Use the prefix, such as `CAS-STE-Themes.json`. |
    | `build.prefix` | The id prefix, such as `CAS`. Theme ids become `CAS-KEY-01`. |
    | `build.defaultWorkbook` | The workbook's file name in `secrets/`. |
-   | `build.keywordSheets` | The names of the BA's hidden LOB keyword sheets. |
+   | `build.keywordSheets` | The names of the BA's hidden LOB keyword sheets. Use `[]` if it has none. A workbook copied from the URS template can carry the URS sheets. Do not list those. |
    | `build.lobHierarchy` | The hand-authored hierarchy file, such as `CAS-LOB-Hierarchy.json`. |
+
+   A workbook that departs from the URS layout needs these optional `build` fields. The DS&C workbook needs all of them.
+
+   | Field | When the workbook has |
+   |---|---|
+   | `themeCounts` | A sheet 7 section with a different number of rows, such as `{"EMERGING": 5}`. The default is 6 key, 5 tier-2 and 3 emerging risks. The build fails if a count is wrong. |
+   | `themeVocabulary` | Theme names the built-in vocabulary does not know. Key each list by the start of the theme name, such as `"talent retention": ["tech talent", "attrition"]`. |
+   | `sourceSheets` | A source sheet with another column layout, such as `{"9. Specific Industry News": {"name_col": 1, "heading_col": null, "numbered": true}}`. Columns count from 0. `numbered` strips a leading "1. " from each name. |
+   | `managementFocusLayout` | `"areas"` when sheet 10 is one row per focus area (S/N, area, watchpoints), not numbered requests and a LOB / Scope table. |
+   | `supplierUnit`, `sharedSupplierSeparator` | Supplier BA values that name two business areas, such as `URS/DS&C`. Set the BA's own label (`DS&C`) and the separator (`/`). The supplier is recorded under the BA, and `sharedWith` names the other. |
+
+   The build also handles these differences without configuration:
+   - A sheet 6 cell with two or more commas is split into one keyword per item.
+   - The supplier header row is found by its `BA` column, whatever column A says.
+   - A competitor LOB label such as "1. Mission Software & Services" resolves without its number.
+   - A customer named only by country and programme, such as "Thailand NPE Programme Customer", is marked `anonymised`. It is not searched by name.
 
 4. Write the LOB hierarchy by hand from the org chart. Copy `config/urs/URS-LOB-Hierarchy.json`: each LOB has a name, its grouping, and the other labels the workbook uses for it. Set `status` to say a BA owner must validate it.
 
@@ -100,5 +116,7 @@ Give the BA head `"reviewRole": "BA_HEAD"`. Only the BA head's approvals go to A
 ## Known limits
 
 - `grit gaps` and the `grit digest-*` commands read the `urs` pack today. Add a pack option before you use them for another BA.
-- The harm scorer's transmission registry reads one workbook (`GRIT_WORKBOOK`). A second BA needs its own registry or a merged workbook.
-- The general theme vocabulary in `grit/ontology/build_pack.py` is keyed by the start of each theme's name. A BA whose sheet 7 uses new theme names keeps the title only, until someone adds vocabulary for it.
+- `GRIT_WORKBOOK` overrides only the URS workbook. To point another BA at a different file, set `GRIT_WORKBOOK_PREFIX`, such as `GRIT_WORKBOOK_DSC`.
+- The harm scorer reads each pack's own workbook. The reviewed aliases in `config/registry_aliases.json` name URS register ids, so they apply to URS only.
+- `config/risk/Risk-Cascade.json` names the URS and URS Taiwan theme registers. A pack outside that lineage uses its own themes at its own level, and no entity level.
+- The RED patterns in `config/red-patterns.json` list the packs they apply to. Add the new pack id to each pattern that should cover it.

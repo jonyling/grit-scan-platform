@@ -103,9 +103,11 @@ def test_risk_cascade_orders_entity_before_ba_before_group() -> None:
 def test_every_profile_loads_and_one_ba_head_approves_for_airis() -> None:
     profiles = load_profiles()
     assert {"wilson", "hwaimay", "gareth", "ksyong", "group-cfo"} <= set(profiles)
-    assert [profile.profile_id for profile in profiles.values() if profile.review_role == "BA_HEAD"] == ["gareth"]
-    for name in ("wilson", "hwaimay", "gareth"):
+    heads = {profile.profile_id: set(profile.packs) for profile in profiles.values() if profile.review_role == "BA_HEAD"}
+    assert [profile_id for profile_id, packs in heads.items() if packs & {"urs", "urs-tw"}] == ["gareth"], "one BA head approves URS for AIRIS"
+    for name in ("hwaimay", "gareth"):
         assert set(profiles[name].briefs) == {"urs", "urs-tw"}, "BA readers get the business-area and the entity brief"
+    assert {"urs", "urs-tw"} <= set(profiles["wilson"].briefs), "the head of R&A reads every URS brief"
     assert set(profiles["ksyong"].briefs) == {"urs-tw"}, "the entity head gets the entity brief only"
     assert profiles["group-cfo"].briefs == {}
 

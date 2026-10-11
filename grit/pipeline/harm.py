@@ -44,23 +44,35 @@ def _plain(value: Any) -> Any:
     return value
 
 
-@lru_cache(maxsize=1)
-def _registry_and_definition() -> tuple[Any, Any, str | None]:
-    """The transmission registry needs the confidential workbook. Without it, harm stays unscored and says why."""
+@lru_cache(maxsize=8)
+def _registry_and_definition(pack: str | None = None) -> tuple[Any, Any, str | None]:
+    """The transmission registry needs the pack's confidential workbook. Without it, harm stays unscored and says why.
+
+    The reviewed aliases in registry_aliases.json name URS register ids, so they apply only to the URS workbook. A pack
+    with no workbook of its own (an entity pack) uses its parent's."""
+    from grit.ontology.pack import manifests
     from grit.ontology.registry_loader import load_transmission_registry
     from grit.ontology.workbook import workbook_path
 
     definition = parse_severity_definition(SPECS_DIR / "15_Severity_Definition.md", PRECEDING_YEAR_EBIT_SGD_MILLIONS)
+    known = manifests()
+    manifest = known.get(pack or "") or {}
+    if not manifest.get("build") and manifest.get("parent"):
+        manifest = known.get(manifest["parent"]) or {}
+    build = manifest.get("build") or {}
+    prefix = str(build.get("prefix") or "URS")
     try:
-        registry = load_transmission_registry(workbook_path(), CONFIG_DIR / "registry_aliases.json")
-    except FileNotFoundError as exc:
+        workbook = workbook_path(build.get("defaultWorkbook"), prefix=prefix)
+        aliases = CONFIG_DIR / "registry_aliases.json" if prefix.upper() == "URS" else None
+        registry = load_transmission_registry(workbook, aliases)
+    except (FileNotFoundError, ValueError) as exc:
         return None, definition, str(exc)
     return registry, definition, None
 
 
-def score_harm(record: Mapping[str, Any], *, run_date: date, credibility: Sequence[Mapping[str, Any]], lob: str | None) -> dict[str, Any]:
+def score_harm(record: Mapping[str, Any], *, run_date: date, credibility: Sequence[Mapping[str, Any]], lob: str | None, pack: str | None = None) -> dict[str, Any]:
     """credibility holds one credibility_lookup() result per outlet that carries the event, the signal's own page first."""
-    registry, definition, missing = _registry_and_definition()
+    registry, definition, missing = _registry_and_definition(pack)
     if registry is None:
         return {"status": "NOT_RUN", "reason": f"The transmission registry is unavailable: {missing}"}
     published = None

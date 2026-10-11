@@ -85,8 +85,21 @@ class RiskCascade:
         return found
 
 
-def load_risk_cascade(config_dir: Path = CONFIG_DIR) -> RiskCascade:
+def load_risk_cascade(config_dir: Path = CONFIG_DIR, pack: Any | None = None) -> RiskCascade:
+    """Risk-Cascade.json names one entity and one business-area theme register (URS Taiwan and URS today). With a reader
+    pack, a level's register is kept only when it belongs to the pack, its parent, or its children. Otherwise the pack's
+    own themes fill its own level, and the other level is empty, so a DS&C signal is never placed in a URS theme."""
     cascade = json.loads((config_dir / "risk" / "Risk-Cascade.json").read_text(encoding="utf-8"))
     files = {level["level"]: config_dir / level["register"] for level in cascade["levels"]}
     load = lambda path: json.loads(path.read_text(encoding="utf-8-sig")) if path.is_file() else None  # noqa: E731
-    return RiskCascade(cascade, load(files["ENTITY"]), load(files["BA"]), load(files["GROUP"]) or {})
+    registers = {level: load(path) for level, path in files.items()}
+    if pack is not None:
+        lineage = {pack.pack, (pack.manifest or {}).get("parent"), *pack.children} - {None}
+        for level in ("ENTITY", "BA"):
+            try:
+                owner = files[level].relative_to(config_dir).parts[0]
+            except (KeyError, ValueError):
+                continue
+            if owner not in lineage:
+                registers[level] = pack.themes if level == pack.level else None
+    return RiskCascade(cascade, registers.get("ENTITY"), registers.get("BA"), registers.get("GROUP") or {})

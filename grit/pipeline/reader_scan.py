@@ -316,7 +316,7 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
     readers = ReaderIndex({} if from_graph else reader.exposure, reader.scan_plan, reader.baseline, pool.watchpoints(run.pack))
     requests = [row for row in pool.management_requests(active_only=True) if row.get("pack") in (None, run.pack)]
     themes_in_plan = {item["id"] for item in standing_items(reader)} if standing_set(reader) == "themes" else set()
-    cascade = load_risk_cascade()
+    cascade = load_risk_cascade(pack=reader)
     patterns = red_patterns if red_patterns is not None else json.loads((CONFIG_DIR / "red-patterns.json").read_text(encoding="utf-8"))
     conditions = {condition["id"]: condition for condition in reader.baseline.get("conditions") or []}
     registers = [reader.source_register, business.source_register]
@@ -377,7 +377,7 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
             kept += 1
             outlets = [{"url": record["url"], "publisher": record["publisher"]}, *decision["also_reported_by"]]
             credibility = [_credibility(item["url"], item.get("publisher"), registers) for item in outlets]
-            harm = score_harm_fn(record, run_date=run.run_date, credibility=credibility, lob=link.canonical_lob)
+            harm = score_harm_fn(record, run_date=run.run_date, credibility=credibility, lob=link.canonical_lob, pack=run.pack)
             risks = cascade.hits(record["title"], record["text"], [theme.theme_id for theme in link.themes if theme.strong])
             own_level = [{"themeId": hit.risk_id, "themeName": hit.name, "tier": hit.tier} for hit in risks if hit.level == reader.level]
             condition = conditions.get(condition_ids[0]) if condition_ids else None

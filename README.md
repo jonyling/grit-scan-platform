@@ -95,7 +95,7 @@ Use the project virtual environment. Do not install packages into system Python,
 
 The `urs` pack is built from the confidential URS Entity Info workbook. Git ignores `secrets/`, `output/`, `.env`, and every `.xlsx` file.
 
-1. Copy the workbook to `secrets/URS_Entity_Info_20261006.xlsx`. To use another path, set `GRIT_WORKBOOK`.
+1. Copy the workbook to `secrets/URS_Entity_Info_20261006.xlsx`. To use another path, set `GRIT_WORKBOOK`. Another business area's workbook has its own variable, such as `GRIT_WORKBOOK_DSC`.
 2. Copy `.env.example` to `.env` and fill in the values you need:
    - Gemini on Vertex: `GOOGLE_CLOUD_PROJECT` and `GOOGLE_APPLICATION_CREDENTIALS` for a service-account file, or `GOOGLE_API_KEY` for express mode. `GEMINI_MODEL` names the model.
    - Search: `BRAVE_SEARCH_API_KEY`, and optionally `CURRENTS_API_KEY`. `BRAVE_MONTHLY_LIMIT` sets the local monthly guard (default 2000).

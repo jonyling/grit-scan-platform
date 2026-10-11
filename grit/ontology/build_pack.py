@@ -1,11 +1,21 @@
 """Build a business-area reader pack from its Entity Info workbook.
 
 The workbook follows the BA Entity Info template (sheets 2 to 10, News-Pri, News-Sec, and hidden LOB keyword sheets). What
-differs per business area sits in the pack's pack.json under "build": the id prefix, the keyword sheet names, and the
-hand-authored LOB hierarchy file. The register file names come from the manifest's registers.
+differs per business area sits in the pack's pack.json under "build":
 
-The workbook is the source. A missing rating, domain, project, site, or Layer 1 condition stays absent. An entity pack's
-conditions are not copied.
+    prefix                   the id prefix, such as URS or DSC
+    defaultWorkbook          the workbook's file name in secrets/
+    lobHierarchy             the hand-authored LOB hierarchy file
+    keywordSheets            the hidden LOB keyword sheets. Omitted: the URS sheets. []: none.
+    themeCounts              rows per sheet 7 section, such as {"EMERGING": 5}. Default 6, 5 and 3.
+    themeVocabulary          general vocabulary for theme names, keyed by the start of the name
+    sourceSheets             a sheet's column layout, such as {"9. Specific Industry News": {"name_col": 1, "numbered": true}}
+    managementFocusLayout    "requests" (URS) or "areas" (one row per focus area, DS&C)
+    supplierUnit             the business area's own label in the supplier sheet's BA column, such as "DS&C"
+    sharedSupplierSeparator  the separator in a BA value naming two business areas, such as "/" in "URS/DS&C"
+
+The register file names come from the manifest's registers. The workbook is the source. A missing rating, domain, project,
+site, or Layer 1 condition stays absent. An entity pack's conditions are not copied.
 """
 
 from __future__ import annotations
@@ -42,16 +52,17 @@ def build_pack(
     output.mkdir(parents=True, exist_ok=True)
     hierarchy_file = Path(lob_hierarchy) if lob_hierarchy else CONFIG_DIR / manifest["pack"] / str(build.get("lobHierarchy") or "-")
     hierarchy = json.loads(hierarchy_file.read_text(encoding="utf-8-sig")) if hierarchy_file.is_file() else None
-    sheets = tuple(build.get("keywordSheets") or ())
+    # A manifest without keywordSheets reads the URS keyword sheets. An empty list reads none.
+    sheets = tuple(build["keywordSheets"]) if "keywordSheets" in build else None
     documents = {
-        "source_register": _sources(workbook, prefix),
-        "exposure": _exposure(workbook, prefix),
+        "source_register": _sources(workbook, prefix, _source_layouts(build.get("sourceSheets"))),
+        "exposure": _exposure(workbook, prefix, own_label=build.get("supplierUnit"), shared_separator=build.get("sharedSupplierSeparator")),
         "lob_profiles": _lobs(workbook, hierarchy, prefix),
-        "themes": _themes(workbook, prefix),
+        "themes": _themes(workbook, prefix, counts=build.get("themeCounts"), vocabulary=build.get("themeVocabulary")),
         "baseline": _baseline(prefix, ba_name, list(manifest.get("children") or [])),
         "keyword_library": load_keyword_library(workbook, hierarchy, sheets=sheets, prefix=prefix),
         "competitors": load_competitors(workbook, hierarchy, prefix=prefix),
-        "management_focus": load_management_focus(workbook, hierarchy, prefix=prefix),
+        "management_focus": load_management_focus(workbook, hierarchy, prefix=prefix, layout=str(build.get("managementFocusLayout") or "requests")),
     }
     written: dict[str, Path] = {}
     for key in GENERATED:
@@ -69,20 +80,28 @@ def build_urs_pack(workbook_path: str | Path, output_dir: str | Path, lob_hierar
     return build_pack(workbook_path, output_dir, manifests()["urs"], lob_hierarchy)
 
 
-# name_col is where a source's name sits. heading_col is where a section heading sits, if the sheet has them.
+# name_col is where a source's name sits. heading_col is where a section heading sits, if the sheet has them. numbered
+# strips a leading "1. " from the name. A manifest's build.sourceSheets overrides a sheet's layout.
 _SOURCE_SHEETS = {
     "News-Pri": {"name_col": 2, "heading_col": 1},
     "News-Sec": {"name_col": 0, "heading_col": None},
     "9. Specific Industry News": {"name_col": 0, "heading_col": None},
 }
 _SOURCE_HEADERS = {"source", "organisation", "organization", "link", "focus", "keyreports"}
+# A customer the workbook names only by country and programme, with no organisation name.
+_ANONYMISED = re.compile(r"\bCustomer$")
 
 
-def _sources(workbook: Path, prefix: str = "URS") -> dict:
+def _source_layouts(overrides: dict | None) -> dict[str, dict]:
+    return {sheet: {**layout, **((overrides or {}).get(sheet) or {})} for sheet, layout in _SOURCE_SHEETS.items()}
+
+
+def _sources(workbook: Path, prefix: str = "URS", layouts: dict[str, dict] | None = None) -> dict:
+    layouts = layouts or _SOURCE_SHEETS
     sources: list[dict] = []
     seen: set[str] = set()
     skipped_without_url: list[str] = []
-    for sheet, layout in _SOURCE_SHEETS.items():
+    for sheet, layout in layouts.items():
         name_col, heading_col = layout["name_col"], layout["heading_col"]
         group: str | None = None
         for row in read_worksheet(workbook, sheet):
@@ -92,6 +111,8 @@ def _sources(workbook: Path, prefix: str = "URS") -> dict:
                 continue
             link = next((cell for cell in cells if _domain(cell)), None)
             name = cells[name_col].lstrip("-").strip() if name_col < len(cells) else ""
+            if layout.get("numbered"):
+                name = re.sub(r"^\d+\.\s+", "", name)
             if link is None:
                 if heading_col is not None and filled == [heading_col]:
                     group = cells[heading_col]
@@ -135,7 +156,7 @@ def _sources(workbook: Path, prefix: str = "URS") -> dict:
     }
 
 
-def _exposure(workbook: Path, prefix: str = "URS") -> dict:
+def _exposure(workbook: Path, prefix: str = "URS", *, own_label: str | None = None, shared_separator: str | None = None) -> dict:
     sheet_rows = _sheet_dicts(workbook, "2. Entity Address")
     lob_names = {keyword.lob for keyword in load_lob_keywords(workbook)}
     lob_names.update(_value(row, "LOB1") for row in sheet_rows if _value(row, "NameOfEntity") and _value(row, "LOB1"))
@@ -176,35 +197,35 @@ def _exposure(workbook: Path, prefix: str = "URS") -> dict:
         if not name or name in seen:
             continue
         seen.add(name)
-        customers.append({"customerId": f"CUSTOMER-{slugify(name)}", "customerName": name, "aliases": [name]})
+        customer = {"customerId": f"CUSTOMER-{slugify(name)}", "customerName": name, "aliases": [name]}
+        if _ANONYMISED.search(name):
+            customer["anonymised"] = True
+        customers.append(customer)
     suppliers = []
     seen.clear()
     supplier_rows = read_worksheet(workbook, "5. Suppliers")
+    # The name is column A and the business area column B. Column A's header is "Name" in the URS sheet and a stray
+    # number in the DS&C sheet, so the header row is found by column B.
     header_index = next(
-        (
-            index
-            for index, row in enumerate(supplier_rows)
-            if _key(row[0] if row else None) == "name" and _key(row[1] if len(row) > 1 else None) == "ba"
-        ),
+        (index for index, row in enumerate(supplier_rows) if _key(row[1] if len(row) > 1 else None) == "ba"),
         None,
     )
     if header_index is None:
         raise ValueError("Suppliers sheet is missing its Name/BA header row.")
-    headers = [_key(value) for value in supplier_rows[header_index]]
+    shared_count = 0
     for values in supplier_rows[header_index + 1 :]:
-        row = dict(zip(headers, values, strict=False))
-        name = _value(row, "Name")
+        name = _clean(values[0] if values else None)
         if not name or name in seen:
             continue
         seen.add(name)
-        suppliers.append(
-            {
-                "supplierId": f"SUPPLIER-{slugify(name)}",
-                "supplierName": name,
-                "businessArea": _value(row, "BA"),
-                "aliases": [name],
-            }
-        )
+        unit = _clean(values[1] if len(values) > 1 else None) or None
+        supplier = {"supplierId": f"SUPPLIER-{slugify(name)}", "supplierName": name, "businessArea": unit, "aliases": [name]}
+        parts = [part.strip() for part in unit.split(shared_separator)] if unit and shared_separator and own_label else []
+        if own_label in parts and len(parts) > 1:
+            supplier["businessArea"] = own_label
+            supplier["sharedWith"] = [part for part in parts if part != own_label]
+            shared_count += 1
+        suppliers.append(supplier)
     _require_unique_ids(entities, "entityId")
     _require_unique_ids(customers, "customerId")
     _require_unique_ids(suppliers, "supplierId")
@@ -225,6 +246,26 @@ def _exposure(workbook: Path, prefix: str = "URS") -> dict:
                 )
             }
             if shifted_names
+            else {}
+        ),
+        **(
+            {
+                "sharedSupplierNote": (
+                    f"{shared_count} suppliers are listed for more than one business area in column B. "
+                    f"They are recorded under {own_label}, and sharedWith names the other business areas."
+                )
+            }
+            if shared_count
+            else {}
+        ),
+        **(
+            {
+                "anonymisedCustomerNote": (
+                    f"{sum(1 for row in customers if row.get('anonymised'))} customers are named only by country and programme, "
+                    "such as 'Thailand NPE Programme Customer'. They stay in the register and are not searched by name."
+                )
+            }
+            if any(row.get("anonymised") for row in customers)
             else {}
         ),
         "entities": entities,
@@ -331,17 +372,28 @@ _GENERAL_RISK_KEYWORDS: dict[str, list[str]] = {
 }
 
 
-def _general_keywords(name: str) -> list[str]:
+def _general_keywords(name: str, vocabulary: dict[str, list[str]] | None = None) -> list[str]:
+    """A manifest's build.themeVocabulary is read first, so a business area can add vocabulary for its own theme names."""
     lowered = name.casefold()
-    return next((words for start, words in _GENERAL_RISK_KEYWORDS.items() if lowered.startswith(start)), [])
+    for table in (vocabulary or {}, _GENERAL_RISK_KEYWORDS):
+        found = next((words for start, words in table.items() if lowered.startswith(start.casefold())), None)
+        if found is not None:
+            return list(found)
+    return []
 
 
-def _themes(workbook: Path, prefix: str = "URS") -> dict:
+_THEME_COUNTS = {"KEY": 6, "TIER_2": 5, "EMERGING": 3}
+
+
+def _themes(workbook: Path, prefix: str = "URS", *, counts: dict[str, int] | None = None, vocabulary: dict[str, list[str]] | None = None) -> dict:
+    """counts is the number of rows each sheet 7 section must have. A different count fails loudly, so a section that
+    lost or gained a row is never read silently."""
     rows = read_worksheet(workbook, "7. Annual Risks")
+    expected = {**_THEME_COUNTS, **(counts or {})}
     sections = (
-        ("KEY", "ref", "keyrisk", 6),
-        ("TIER_2", "sn", "tier2risk", 5),
-        ("EMERGING", "no", "emergingrisk", 3),
+        ("KEY", "ref", "keyrisk", expected["KEY"]),
+        ("TIER_2", "sn", "tier2risk", expected["TIER_2"]),
+        ("EMERGING", "no", "emergingrisk", expected["EMERGING"]),
     )
     themes = []
     for tier, ref_key, name_key, expected in sections:
@@ -353,7 +405,7 @@ def _themes(workbook: Path, prefix: str = "URS") -> dict:
             short = name.split("(", 1)[0].strip()
             keywords = [short] if short and short != name and len(short) >= 6 else []
             seen_lower = {k.lower() for k in keywords}
-            for keyword in _general_keywords(name):
+            for keyword in _general_keywords(name, vocabulary):
                 if keyword.lower() not in seen_lower:
                     keywords.append(keyword)
                     seen_lower.add(keyword.lower())
@@ -484,7 +536,8 @@ def _main() -> None:
     parser.add_argument("--workbook", type=Path, help="Defaults to GRIT_WORKBOOK, then secrets/ and the manifest's defaultWorkbook.")
     args = parser.parse_args()
     manifest = known[args.pack]
-    workbook = args.workbook or default_workbook(str((manifest.get("build") or {}).get("defaultWorkbook") or ""))
+    build = manifest.get("build") or {}
+    workbook = args.workbook or default_workbook(str(build.get("defaultWorkbook") or "") or None, prefix=build.get("prefix"))
     written = build_pack(workbook, ROOT / "config" / args.pack, manifest)
     for key, path in written.items():
         print(f"{key}: {path}")
