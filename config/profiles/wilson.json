@@ -5,7 +5,8 @@
   "aperture": "WIDE_APERTURE",
   "packs": [
     "urs",
-    "urs-tw"
+    "urs-tw",
+    "dsc"
   ],
   "businessScope": {
     "businessAreas": [
@@ -95,5 +96,5 @@
       ]
     }
   },
-  "note": "Basic profile. Receives the Urban Solutions business-area brief and the URS Taiwan entity brief. Memory builds from Wilson's approve and reject decisions in the pool."
+  "note": "Basic profile. Receives the Urban Solutions business-area brief, the URS Taiwan entity brief, and the DSC brief. Memory builds from Wilson's approve and reject decisions in the pool."
 }
