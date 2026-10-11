@@ -1,0 +1,7 @@
+{"profileId":"ecgoh","name":"Goh Eng Choon","role":"President, Cybersecurity","aperture":"MATERIAL_APERTURE","packs":["dsc"],
+ "businessScope":{"businessArea":"Digital Systems & Cyber","lobGrouping":"Cybersecurity"},"reviewRole":"BA_HEAD",
+ "redAlerts":{"receive":true,"packs":["dsc"]},"email":null,
+ "briefs":{"dsc":{"title":"GRIT-Scan: Digital Systems & Cyber","subtitle":"Weekly risk scan, business-area level","preparedFor":"Goh Eng Choon, President, Cybersecurity",
+  "sections":["BOTTOM_LINE","CONDITIONS","MANAGEMENT_REQUESTS","ENTITIES","CUSTOMERS","SUPPLIERS","COMPETITORS","PRIORITY_FINDINGS","OTHER_SIGNALS","QA_LOG","WATCHPOINTS"],
+  "maxFindings":8,"formats":["docx","xlsx"]}},
+ "note":"BA head for Digital Systems & Cyber."}
