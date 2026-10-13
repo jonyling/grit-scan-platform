@@ -67,6 +67,14 @@ class OntologyPack:
         return list((self.manifest or {}).get("children") or [])
 
 
+def _read(path: Path) -> Any:
+    """A register file. A JSON error names the file, so a hand edit that broke it is easy to find."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8-sig"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{path} is not valid JSON: {exc.msg} at line {exc.lineno}, column {exc.colno}.") from exc
+
+
 def load_ontology_pack(config_dir: Path, pack: str = "urs-tw") -> OntologyPack:
     known = manifests(config_dir)
     if pack not in known:
@@ -80,12 +88,12 @@ def load_ontology_pack(config_dir: Path, pack: str = "urs-tw") -> OntologyPack:
         if not path.is_file():
             missing.append(name)
             continue
-        loaded[key] = json.loads(path.read_text(encoding="utf-8-sig"))
+        loaded[key] = _read(path)
     if missing:
         raise FileNotFoundError(f"Ontology pack '{pack}' is incomplete. Place the governed registers in {root}: {', '.join(missing)}")
     for key, name in (manifest.get("optional") or {}).items():
         path = root / name
-        loaded[key] = json.loads(path.read_text(encoding="utf-8-sig")) if path.is_file() else None
+        loaded[key] = _read(path) if path.is_file() else None
     return OntologyPack(config_dir=root, pack=pack, manifest=manifest, **loaded)
 
 

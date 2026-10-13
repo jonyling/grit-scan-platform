@@ -180,3 +180,12 @@ def test_an_unknown_pack_stops_the_cli_before_a_run_is_registered() -> None:
     with pytest.raises(SystemExit, match="Unknown pack\\(s\\): dls"):
         _packs(Namespace(pack=["dls"]))
     assert _packs(Namespace(pack=["urs"])) == ["urs"]
+
+
+def test_a_broken_register_file_is_named_in_the_error(tmp_path: Path) -> None:
+    from grit.ontology.pack import load_ontology_pack
+
+    _write(tmp_path / "x" / "pack.json", {"pack": "x", "level": "BA", "registers": {}, "optional": {"scan_plan": "X-Scan-Plan.json"}})
+    (tmp_path / "x" / "X-Scan-Plan.json").write_text('{"themes": [{"a": 1} {"b": 2}]}', encoding="utf-8")
+    with pytest.raises(ValueError, match=r"X-Scan-Plan\.json is not valid JSON: Expecting ',' delimiter at line 1, column \d+"):
+        load_ontology_pack(tmp_path, "x")
