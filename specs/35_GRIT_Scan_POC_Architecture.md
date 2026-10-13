@@ -19,16 +19,17 @@ Spec 34 section 1 lists ten invariants. The POC keeps all of them. Three matter 
 
 ## 3. Structure
 
-A deterministic layer sits under six agent roles.
+A deterministic layer sits under seven agent roles. [Spec 36](36_Key_Risks_Implications_and_Proposer.md) added the Proposer and the key-risk implication.
 
 | Role | What it proposes | What decides | Code |
 |---|---|---|---|
 | Supervisor | The order of steps for a reader and week. | `TransitionGuard()` on every workflow advance; `ReviewGate()` on every package. | `grit/pipeline/reader_scan.py`, `grit/workflow/` |
 | Researcher | Search results for each query, and one follow-up search per thin finding. | The query plan, the monthly search guard, URL canonicalisation, and the dedupe rule. | `grit/ontology/reader_plan.py`, `grit/acquisition/` |
-| Assessor | A draft for each standing condition: movement and a cited summary. The finding card's answers. | Quote, number, citation, and banned-word checks. The confidence rule. | `grit/agents/reader.py`, `grit/agents/loop/` |
+| Assessor | A draft for each standing condition: movement and a cited summary. For a key risk, the implication for the business area. The finding card's answers. | Quote, number, citation, and banned-word checks. The anchor check on an implication. The confidence rule. | `grit/agents/reader.py`, `grit/agents/loop/` |
 | Critic | Issues with a draft: stale, unsupported, or contradictory claims. | An issue counts only with a verbatim quote from a supplied source. | `grit/agents/reader.py` |
 | Profiler | The reader's preferences, from their approve and reject decisions. | A bounded memory rule that reorders within a tier and can hide what the reader rejected, never a P1 or RED signal. | `grit/profiles/memory.py` |
 | Reporter | Entries for named items, the bottom line, and chat answers. | Checks, then one brief model rendered to every format. | `grit/agents/reader.py`, `grit/agents/chat.py`, `grit/report/` |
+| Proposer | Options for management to consider on a key risk. Its reasoning goes to the execution log only. | Owner, quote, citation, number, and banned-word checks. `ReviewGate()` on the package that carries the options. | `grit/agents/reader.py`, `grit/pipeline/reader_scan.py` |
 
 ## 4. Data flow
 
@@ -37,7 +38,7 @@ A deterministic layer sits under six agent roles.
 3. **Acquire.** Brave News returns pages. Currents can add two pulls. Each page becomes one signal in the pool, keyed by its canonical URL, with a sighting per query.
 4. **Embed.** Gemini embeddings go into the pool, through a text-hash cache.
 5. **Assess.** Deterministic functions run on every signal: document type, the business-area link ladder, reader-pack hits, management-request matches, the keep rule, briefing priority, the risk cascade, the harm scorer, relevance labels, and the RED rule. Results are stored per signal, run, and pack.
-6. **Agents.** The Assessor drafts each standing condition or theme. A theme an entity pack covers draws on that pack's signals for the same date. The Critic reviews all drafts. Accepted issues go back to the Assessor once and are logged as QA corrections. The Reporter writes item entries and the bottom line; a BA bottom line also reads its entity packs' bottom lines. Watchpoints update by rule. The finding loop writes six-question cards, taking management-request matches first, then theme-bound signals.
+6. **Agents.** The Assessor drafts each standing condition or theme. A theme an entity pack covers draws on that pack's signals for the same date. The Critic reviews all drafts. Accepted issues go back to the Assessor once and are logged as QA corrections. Each theme's sources reach the Assessor most material first, and a key risk gets an implication. The Proposer writes options for a key risk that is escalating or cites a material source. The Reporter writes item entries and the bottom line; a BA bottom line also reads its entity packs' bottom lines. Watchpoints update by rule. The finding loop writes six-question cards, taking management-request matches first, then theme-bound signals.
 7. **Route.** For each reader, `ApertureRouting()` assigns P1 to P4 and includes or suppresses each signal. Memory reorders within a tier.
 8. **Report.** One brief model per reader renders to Word, PowerPoint, Excel, and Markdown. RED patterns write draft emails. Nothing is sent.
 9. **Review.** Each reader's package runs `NEW` to `PENDING_REVIEW` through the guard. A reviewer's decision goes through `ReviewGate()`. Signals the BA head approved, inside an approved package, move to `AIRIS_HANDOFF_READY` and are exported.

@@ -28,8 +28,8 @@ MIN_DOUBT_QUOTE = 4
 _BANNED = re.compile(r"\b(severity|severe|likelihood|likely|unlikely|probabilit(?:y|ies)|probable|probably|risk score|risk rating|high negative impact)\b", re.I)
 _CERTAIN = re.compile(r"\b(will|certainly|definitely|inevitabl\w+|guarantee\w*|undoubtedly)\b", re.I)
 _MODAL = re.compile(r"\b(could|may|might|would|can|if)\b", re.I)
-_IDS = re.compile(r"\b(?:[EPRF]\d{1,3}|URS-[A-Z0-9_]+-\d+)\b")
-_STE_NAME = re.compile(r"\b(ST Engineering|STE|URS|Urban Solutions)\b")
+_IDS = re.compile(r"\b(?:[EPRF]\d{1,3}|[A-Z]{2,6}(?:-[A-Z0-9_]+)+-\d+)\b")  # evidence ids, and theme ids such as URS-KEY-04 or DSC-TIER_2-01
+_STE_NAMES = ("ST Engineering", "STE")
 _MINISTRY = re.compile(r"^(?:ministry|department|bureau)\b", re.I)  # a generic public-body name, used in many countries
 _OPERATORS = re.compile(r"\b(?:site|filetype|inurl|intitle):|[()]|\bOR\b|\bAND\b|\bNOT\b")
 SUPPORTS = frozenset({"EVENT", "CONNECTION"})
@@ -101,7 +101,8 @@ def check(card: Any, context: Context) -> list[str]:
     if len(what.split()) > MAX_WHAT_WORDS:
         found.append(f"TOO_LONG: what_happened: more than {MAX_WHAT_WORDS} words")
     found += _problems(what, context.signal_text, "what_happened")
-    for name in {match.group(0) for match in _STE_NAME.finditer(what)}:
+    names = "|".join(re.escape(name) for name in sorted({*_STE_NAMES, *context.business_names}, key=len, reverse=True))
+    for name in {match.group(0) for match in re.finditer(rf"(?<![\w&]){names}(?![\w&])", what)}:
         if name.casefold() not in normalise_text(context.signal_text):
             found.append(f"UNGROUNDED_NAME: what_happened: {name} is not in the signal text")
     quotes = [quote for quote in card["event_quotes"] if not (isinstance(quote, str) and not quote.strip())]

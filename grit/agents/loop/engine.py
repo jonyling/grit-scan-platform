@@ -21,7 +21,7 @@ from grit.ontology.graph import OntologyGraph
 from grit.agents.loop.card import check, default_follow_up, finalize, valid_follow_up
 from grit.agents.loop.context import Context, build_context
 from grit.agents.loop.llm import LoopError, call_json
-from grit.agents.loop.prompts import DRAFT_SYSTEM, DRAFT_VERSION, EVALUATE_SYSTEM, EVALUATE_VERSION
+from grit.agents.loop.prompts import DRAFT_VERSION, EVALUATE_SYSTEM, EVALUATE_VERSION, draft_system
 from grit.agents.loop.tools import FollowUpTool
 
 QUESTIONS = frozenset({"Q1", "Q2", "Q3", "Q4", "Q5"})
@@ -61,8 +61,12 @@ class FindingLoop:
         tool: FollowUpTool,
         config: LoopConfig = LoopConfig(),
         log: Callable[[dict[str, Any]], None] | None = None,
+        business_area: tuple[str, str] = ("Urban Solutions", "URS"),
     ) -> None:
+        """business_area is the name and short label of the business area the cards are written for."""
         self.client, self.model, self.graph, self.index, self.themes = client, model, graph, index, themes
+        self.business_area = business_area
+        self.draft_system = draft_system(*business_area)
         self.pool, self.vectors, self.tool, self.config = pool, vectors, tool, config
         self._log = log or (lambda entry: None)
 
@@ -75,7 +79,7 @@ class FindingLoop:
             return _failure(finding_id, signal, self.model, f"the loop failed ({type(exc).__name__})", progress)
 
     def _run(self, finding_id: str, signal: Mapping[str, Any], progress: dict[str, Any]) -> dict[str, Any]:
-        context = build_context(finding_id, signal, graph=self.graph, index=self.index, themes=self.themes, pool=self.pool, vectors=self.vectors, same_event=self.config.same_event)
+        context = build_context(finding_id, signal, graph=self.graph, index=self.index, themes=self.themes, pool=self.pool, vectors=self.vectors, same_event=self.config.same_event, business_names=self.business_area)
         iterations: list[dict[str, Any]] = progress["iterations"]
         card: dict[str, Any] | None = None
         violations: list[str] = []
@@ -89,7 +93,7 @@ class FindingLoop:
             if card is not None:
                 request |= {"previous_card": card, "violations": violations, "issues": issues}
             try:
-                draft = call_json(self.client, model=self.model, system=DRAFT_SYSTEM, payload=request, retries=self.config.retries, pause=self.config.pause)
+                draft = call_json(self.client, model=self.model, system=self.draft_system, payload=request, retries=self.config.retries, pause=self.config.pause)
                 progress["calls"] += 1
             except LoopError as exc:
                 stop = "LLM_ERROR"

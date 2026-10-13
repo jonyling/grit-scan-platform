@@ -17,5 +17,6 @@ Specs 13–33 state the rules. Spec 34 states the rebuild order. Spec 35 describ
 | [32](32_GRIT_Cascade_Design_Global_to_Entity.md), [33](33_URS_TW_Global_Conditions_Scanner_Agent_Specification.md) | The cascade from global conditions to an entity, and the Taiwan condition scanner. |
 | [34](34_GRIT_Scan_Rebuild_Specification.md) | The rebuild order and invariants. Section 5 is a gap list; spec 35 records what later work closed. |
 | [35](35_GRIT_Scan_POC_Architecture.md) | The proof of concept as built: six roles, the signal pool, and the interfaces. |
+| [36](36_Key_Risks_Implications_and_Proposer.md) | Key risk focus, the implication for the business area, and the Proposer's response options. |
 
 `archive/` holds an early draft of spec 17 for reference. It does not govern.

@@ -6,12 +6,13 @@ from datetime import date
 from pathlib import Path
 
 from grit.acquisition.brave_plan import BraveResponse
-from grit.agents.reader_prompts import ASSESSOR_SYSTEM, CRITIC_SYSTEM, REPORTER_BOTTOM_LINE_SYSTEM, REPORTER_ITEMS_SYSTEM
+from grit.agents.reader_prompts import ASSESSOR_SYSTEM, CRITIC_SYSTEM, PROPOSER_SYSTEM, REPORTER_BOTTOM_LINE_SYSTEM, REPORTER_ITEMS_SYSTEM
 from grit.pipeline import reader_scan
 from grit.pool import Pool
 from tests.test_reader_scan import ARTICLES, _Embedder
 
 RUN_DATE = date(2026, 10, 7)
+REASONING = "PROPOSER-WORKING-NOT-FOR-THE-BRIEF."
 BA_ARTICLES = {
     "CBTC resignalling project delay": [
         {"title": "CBTC resignalling of the North-South line delayed again", "url": "https://www.straitstimes.com/singapore/cbtc-resignalling-delay",
@@ -42,11 +43,26 @@ def _model(system: str, payload: dict) -> dict:
     if system == ASSESSOR_SYSTEM:
         sources = payload["sources"]
         if payload["item"]["id"] == "URS-KEY-04" and sources:
+            lob = payload["business_area"]["lines_of_business"][0]
             return {"movement": "ESCALATING", "summary": "A ransomware cyberattack disrupted ticketing at a European rail operator. [S1]", "source_ids": ["S1"],
-                    "quotes": [{"source_id": "S1", "quote": "A ransomware cyberattack disrupted ticketing systems"}], "change_from_prior": "First assessment."}
+                    "quotes": [{"source_id": "S1", "quote": "A ransomware cyberattack disrupted ticketing systems"}], "change_from_prior": "First assessment.",
+                    "implication": f"A similar attack could disrupt systems that {lob} delivers to rail operators. [S1]"}
         return {"movement": "NO_MATERIAL_CHANGE", "summary": "No new development was found this week in the checked sources.", "source_ids": [], "quotes": []}
     if system == CRITIC_SYSTEM:
         return {"issues": []}
+    if system == PROPOSER_SYSTEM:
+        owners, controls = payload["owner_roles"], payload["theme"]["key_controls"]
+        return {
+            "reasoning": f"{REASONING} The attack tests the key controls.",
+            "options": [
+                {"kind": "STRENGTHEN_CONTROL", "option": "Consider testing rail ticketing systems against ransomware. [S1]", "owner": owners[0],
+                 "builds_on": controls[:40].strip(), "trigger": "", "source_ids": ["S1"]},
+                {"kind": "ADDRESS_GAP", "option": "Consider asking key suppliers to confirm their ransomware recovery plans.", "owner": "Group Information Security Officer (GISO)",
+                 "builds_on": "", "trigger": "", "source_ids": ["S1"]},
+                {"kind": "MONITOR", "option": "Consider continuing to monitor ransomware reports from rail operators.", "owner": "R&A business partner",
+                 "builds_on": "", "trigger": "A rail operator in a URS market reports an attack.", "source_ids": []},
+            ],
+        }
     if system == REPORTER_ITEMS_SYSTEM:
         items = []
         for item in payload["items"]:
@@ -99,7 +115,37 @@ def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
     assert checks["CUSTOMER-land-transport-authority"]["status"] == "FOUND"
     assert sum(1 for row in checks.values() if row["item_type"] == "ENTITY") >= 41, "every STE entity is listed, quiet or not"
 
+    key = themes["URS-KEY-04"]
+    assert key["implication"] and "could" in key["implication"] and "[SIG-" in key["implication"], "a key risk carries a cited implication"
+    assert [option["kind"] for option in key["options"]] == ["STRENGTHEN_CONTROL", "ADDRESS_GAP", "MONITOR"]
+    assert all(source.startswith("SIG-") for option in key["options"] for source in option["source_ids"]), "option sources are stored as signal ids"
+    assert not themes["URS-KEY-01"]["options"], "the Proposer runs only on a key risk with validated, escalating or material evidence"
+    proposer = [row for row in pool.execution_log(run.run_id) if row["actor"] == "Proposer"]
+    assert len(proposer) == 1 and proposer[0]["status"] == "VALIDATED"
+    assert REASONING in proposer[0]["detail"]["reasoning"], "the chain of thought is kept in the execution log"
+    assert REASONING not in str(pool.conditions(run.run_id)), "and nowhere else"
+
+    import dataclasses
+
+    from grit.report.brief import build_brief
+
     profiles = load_profiles()
+    plain = build_brief(pool, run.run_id, profiles["wilson"])
+    entry = next(row for row in plain["conditions"] if row["condition_id"] == "URS-KEY-04")
+    assert entry["full"] and entry["implication"]["plain"] and entry["options"] == [], "a profile without RESPONSE_OPTIONS sees no options"
+    assert not next(row for row in plain["conditions"] if row["condition_id"] == "URS-TIER_2-01")["full"], "a quiet tier-2 theme stays one row"
+    briefs = dict(profiles["wilson"].briefs)
+    briefs["urs"] = {**briefs["urs"], "sections": [*briefs["urs"]["sections"], "RESPONSE_OPTIONS"]}
+    with_options = dataclasses.replace(profiles["wilson"], briefs=briefs)
+    rich = write_pack(pool, run.run_id, with_options, folder=tmp_path / "wilson-options", submit=False)
+    document = Document(rich["files"]["docx"])
+    text = "\n".join(paragraph.text for paragraph in document.paragraphs)
+    for phrase in ("Key risks", "What it could mean for Urban Solutions", "Options for management consideration", "Consider testing rail ticketing systems",
+                   "Owner: R&A business partner", "Trigger: A rail operator in a URS market reports an attack.", "Not reviewed advice."):
+        assert phrase in text, phrase
+    assert REASONING not in text and REASONING not in Path(rich["files"]["md"]).read_text(encoding="utf-8")
+    assert "Options for management consideration" in Path(rich["files"]["md"]).read_text(encoding="utf-8")
+
     wilson = write_pack(pool, run.run_id, profiles["wilson"], folder=tmp_path / "wilson")
     document = Document(wilson["files"]["docx"])
     text = "\n".join([paragraph.text for paragraph in document.paragraphs] + [cell.text for table in document.tables for row in table.rows for cell in row.cells])

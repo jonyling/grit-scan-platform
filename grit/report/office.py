@@ -12,6 +12,8 @@ from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.util import Emu, Inches, Pt
 
+from grit.report.docx_brief import OPTIONS_NOTE, option_line
+
 NAVY = RGBColor(0x1F, 0x38, 0x64)
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
 GREY = RGBColor(0x55, 0x55, 0x55)
@@ -89,6 +91,17 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
                 for paragraph in cell.text_frame.paragraphs:
                     for item in paragraph.runs:
                         item.font.size = Pt(9)
+
+    for row in [row for row in brief.get("conditions") or [] if row.get("full") and (row.get("implication") or row.get("options"))] if "CONDITIONS" in sections else []:
+        slide = deck.slides.add_slide(blank)
+        _title(slide, f"{row['number']}. {row['name']}", f"{row.get('group') or 'Risk theme'}. Trend: {row['trend']}. Confidence: {row['confidence']}.")
+        lines = []
+        if row.get("implication"):
+            lines.append(f"What it could mean for {meta.get('pack_label')}: {row['implication']['plain']}")
+        lines += [f"Option: {option['text']['plain']} ({option_line(option)})" for option in row.get("options") or []]
+        if row.get("options"):
+            lines.append(OPTIONS_NOTE)
+        _text(slide, lines, size=12)
 
     named = [item for group in (brief.get("projects") or []) + (brief.get("entities") or []) for item in group["items"] if item["text"]]
     named += [item for item in (brief.get("suppliers") or []) + (brief.get("customers") or []) + (brief.get("hazards") or []) if item["text"]]
@@ -173,9 +186,16 @@ def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], 
         (7, 8, 6, 13, 6, 60, 22, 20, 8, 16, 24, 40, 18, 10, 50, 30, 40, 22),
     )
     _sheet(
-        workbook, "Standing items", ("#", "Item", "Tier", "Trend", "Confidence", "Status", "Basis"),
-        [(row["number"], row["name"], row.get("group") or "", row["trend"], row["confidence"], row["status"], row["basis"]["plain"]) for row in brief.get("conditions") or []], (4, 40, 14, 12, 12, 14, 100),
+        workbook, "Standing items", ("#", "Item", "Tier", "Trend", "Confidence", "Status", "Basis", "Implication"),
+        [
+            (row["number"], row["name"], row.get("group") or "", row["trend"], row["confidence"], row["status"], row["basis"]["plain"], (row.get("implication") or {}).get("plain") or "")
+            for row in brief.get("conditions") or []
+        ],
+        (4, 40, 14, 12, 12, 14, 100, 60),
     )
+    options = [(row["name"], option["kind"], option["text"]["plain"], option.get("owner") or "", option.get("builds_on") or "", option.get("trigger") or "") for row in brief.get("conditions") or [] for option in row.get("options") or []]
+    if options:
+        _sheet(workbook, "Response options", ("Key risk", "Kind", "Option (proposed, not reviewed advice)", "Owner", "Builds on", "Trigger"), options, (36, 22, 80, 30, 50, 40))
     if brief.get("management_requests"):
         _sheet(
             workbook, "Management requests", ("Request", "Status", "Source", "Signals this week"),

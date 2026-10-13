@@ -109,6 +109,8 @@ CREATE TABLE IF NOT EXISTS condition_assessments (
     status          TEXT NOT NULL,            -- VALIDATED, NO_EVIDENCE, WITHHELD
     violations_json TEXT NOT NULL DEFAULT '[]',
     ranking_json    TEXT NOT NULL DEFAULT '{}',
+    implication     TEXT,                     -- a key risk's implication for the business area (spec 36)
+    options_json    TEXT NOT NULL DEFAULT '[]', -- the Proposer's checked options, without its reasoning
     PRIMARY KEY (run_id, condition_id)
 );
 

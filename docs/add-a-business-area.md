@@ -40,6 +40,7 @@ You need:
    | `themeCounts` | A sheet 7 section with a different number of rows, such as `{"EMERGING": 5}`. The default is 6 key, 5 tier-2 and 3 emerging risks. The build fails if a count is wrong. |
    | `themeVocabulary` | Theme names the built-in vocabulary does not know. Key each list by the start of the theme name, such as `"talent retention": ["tech talent", "attrition"]`. |
    | `sourceSheets` | A source sheet with another column layout, such as `{"9. Specific Industry News": {"name_col": 1, "heading_col": null, "numbered": true}}`. Columns count from 0. `numbered` strips a leading "1. " from each name. |
+   | `themeActionPlans` | Key risks with an Action Plans column on sheet 7. Set `true` so the Proposer can build on the action plans (spec 36). |
    | `managementFocusLayout` | `"areas"` when sheet 10 is one row per focus area (S/N, area, watchpoints), not numbered requests and a LOB / Scope table. |
    | `supplierUnit`, `sharedSupplierSeparator` | Supplier BA values that name two business areas, such as `URS/DS&C`. Set the BA's own label (`DS&C`) and the separator (`/`). The supplier is recorded under the BA, and `sharedWith` names the other. |
 
@@ -66,7 +67,7 @@ You need:
 
 The scan plan decides what is searched every week and what the brief calls its sections. Copy `config/urs/URS-Scan-Plan.json` to `config/PACK/PREFIX-Scan-Plan.json`, and add `"scan_plan": "PREFIX-Scan-Plan.json"` to `optional` in `pack.json`.
 
-1. **Themes.** Keep `"standingSet": "themes"`. For each theme id in the generated themes register, write two or three queries anchored to the BA's own sectors. "Rail cyberattack" finds what matters to URS; "cybersecurity" finds everything. A theme an entity pack covers, such as a country-concentration risk, gets `"coveredBy": "ENTITY-PACK"` and no queries.
+1. **Themes.** Keep `"standingSet": "themes"`. For each theme id in the generated themes register, write queries anchored to the BA's own sectors: about four for each key risk, drawn from its sheet 7 drivers, and one or two for each tier-2 and emerging risk. "Rail cyberattack" finds what matters to URS; "cybersecurity" finds everything. A theme an entity pack covers, such as a country-concentration risk, gets `"coveredBy": "ENTITY-PACK"` and no queries.
 
 2. **Management requests.** Copy each numbered request and each focus item from sheet 10. Give each one:
    - `status`: `ACTIVE` for a numbered request, or a focus item marked "Management priority" or "Core control focus"; `PROPOSED` for one marked "Research draft".
@@ -90,6 +91,8 @@ The scan plan decides what is searched every week and what the brief calls its s
 Add a brief for the new pack to each reader's profile in `config/profiles/`. A profile can read several packs. Add the pack to `packs`, then add an entry under `briefs`, keyed by the pack id, with its title, sections, and formats. Copy the `urs` entries in `wilson.json`, `hwaimay.json`, and `gareth.json`.
 
 Give the BA head `"reviewRole": "BA_HEAD"`. Only the BA head's approvals go to AIRIS.
+
+To show the Proposer's options for management consideration under each key risk, add `RESPONSE_OPTIONS` to the brief's `sections`. Give it to the readers who act on the options, such as the BA head and the R&A business partner.
 
 ## Run and review the first week
 

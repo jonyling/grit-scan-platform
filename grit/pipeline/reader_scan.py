@@ -97,7 +97,7 @@ def standing_items(pack: OntologyPack) -> list[dict[str, Any]]:
     return [
         {"id": row["themeId"], "name": row["themeName"], "kind": "THEME", "domain": TIER_LABELS.get(row.get("tier"), row.get("tier")), "tier": row.get("tier"),
          "currentAssessment": row.get("sheetDetail"), "transmission": row.get("sheetExtra"), "watchIndicators": row.get("keywords") or [],
-         "coveredBy": (plan.get(row["themeId"]) or {}).get("coveredBy")}
+         "coveredBy": (plan.get(row["themeId"]) or {}).get("coveredBy"), "actionPlans": row.get("sheetActionPlans")}
         for row in (pack.themes or {}).get("themes") or []
     ]
 
@@ -479,10 +479,39 @@ def material_order(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]
     return rows
 
 
-def condition_sources(rows: Sequence[Mapping[str, Any]], condition_id: str) -> list[Mapping[str, Any]]:
-    """Kept signals that bear on a standing item: a strong keyword hit, or found by one of the item's own queries."""
+_MATERIAL_RUNGS = {"DIRECT": 0, "PERIMETER": 1, "COUNTERPARTY": 2}
+
+
+def _request_hit(row: Mapping[str, Any]) -> bool:
+    return any(hit.get("item_type") == REQUEST for hit in (row.get("link") or {}).get("reader_hits") or [])
+
+
+def materiality_order(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
+    """The evidence order for a standing item (spec 36): RED or a high-negative-impact harm verdict, then the link rung,
+    a management-request match, briefing tier, outlets, and recency. Deterministic; no model judges materiality."""
+    rows = list(rows)
+    rows.sort(key=lambda row: str(row.get("published_at") or ""), reverse=True)
+    rows.sort(key=lambda row: (
+        not (row.get("red") or row.get("harm_verdict") == "HIGH_NEGATIVE_IMPACT"),
+        _MATERIAL_RUNGS.get(str(row.get("rung") or (row.get("link") or {}).get("rung")), 3),
+        not _request_hit(row),
+        row.get("tier") or 9,
+        -(row.get("corroboration") or 1),
+    ))
+    return rows
+
+
+def is_material(row: Mapping[str, Any]) -> bool:
+    """A source that can carry a key risk's response options: a register link, a request match, briefing tier 1 or 2, or RED."""
+    rung = str(row.get("rung") or (row.get("link") or {}).get("rung"))
+    return rung in _MATERIAL_RUNGS or _request_hit(row) or (row.get("tier") or 9) <= 2 or bool(row.get("red"))
+
+
+def condition_sources(rows: Sequence[Mapping[str, Any]], condition_id: str, *, theme: bool = False) -> list[Mapping[str, Any]]:
+    """Kept signals that bear on a standing item: a strong keyword hit, or found by one of the item's own queries. For a risk
+    theme the most material come first (spec 36). An entity pack's standing conditions keep the tier-then-recency order."""
     chosen = [row for row in rows if condition_id in (row.get("condition_ids") or []) or condition_id in (row["link"].get("sighting_targets") or [])]
-    return _recent_first(chosen)[:MAX_CONDITION_SOURCES]
+    return (materiality_order(chosen) if theme else _recent_first(chosen))[:MAX_CONDITION_SOURCES]
 
 
 def child_sources(pool: Pool, run: ReaderRun, child: str) -> list[Mapping[str, Any]]:
@@ -490,7 +519,7 @@ def child_sources(pool: Pool, run: ReaderRun, child: str) -> list[Mapping[str, A
     customers, or reach briefing tier 2."""
     rows = pool.assessments(run_id_for(run.run_date, child), kept_only=True)
     chosen = [row for row in rows if any(hit.get("strong") for hit in row.get("exposure") or []) or (row.get("tier") or 9) <= 2]
-    return _recent_first(chosen)[:MAX_CONDITION_SOURCES]
+    return materiality_order(chosen)[:MAX_CONDITION_SOURCES]
 
 
 def _prior(pool: Pool, run: ReaderRun) -> tuple[dict[str, Any] | None, dict[str, dict[str, Any]]]:
@@ -498,6 +527,42 @@ def _prior(pool: Pool, run: ReaderRun) -> tuple[dict[str, Any] | None, dict[str,
     if previous is None:
         return None, {}
     return previous, {row["condition_id"]: row for row in pool.conditions(previous["run_id"])}
+
+
+# Owners the Proposer may name, besides the LOB and grouping heads in the LOB hierarchy. Roles, never people.
+GROUP_FUNCTIONS = (
+    "Business area head", "R&A business partner", "Group Risk & Assurance", "Group Information Security Officer (GISO)",
+    "Export control and trade compliance office", "Data protection officer", "Group Procurement", "Human Resources", "Legal and Compliance", "Finance",
+)
+
+
+def business_area_context(pack: OntologyPack) -> dict[str, Any]:
+    """What a key risk's implication may name (spec 36): the business area's lines of business, groupings, entities, customers
+    and suppliers from the typed graph. The model sees one short name for each. The check accepts any alias."""
+    business = graph_pack(pack)
+    graph = build_graph(business, reviewed_aliases=_aliases())
+    own = {business.label.casefold(), str((business.manifest or {}).get("shortLabel") or "").casefold(), "st engineering", "ste"}
+
+    def short(node: Any) -> str:
+        names = [alias for alias in node.aliases if len(alias) >= 4 and alias.casefold() not in own]
+        return min(names, key=len) if names else node.name
+
+    groups = {
+        "lines_of_business": [node for node in graph.of_class("LOB")],
+        "entities": [node for node in graph.of_class("STE") if node.kind == "ENTITY"],
+        "customers": list(graph.of_class("Customer")),
+        "suppliers": list(graph.of_class("Supplier")),
+    }
+    anchors = sorted({alias for nodes in groups.values() for node in nodes for alias in (node.name, *node.aliases) if len(alias) >= 3 and alias.casefold() not in own})
+    return {"name": business.label, **{key: sorted({short(node) for node in nodes}) for key, nodes in groups.items()}, "anchors": anchors}
+
+
+def owner_roles(pack: OntologyPack) -> list[str]:
+    """The LOB and grouping heads from the hand-authored LOB hierarchy, then the Group functions."""
+    hierarchy = graph_pack(pack).lob_hierarchy or {}
+    roles = [str(group.get("headRole") or f"Head, {group['lobGrouping']}") for group in hierarchy.get("groupings") or [] if group.get("lobGrouping")]
+    roles += [f"Head, {lob['lobName']}" for lob in hierarchy.get("lobs") or [] if lob.get("lobName")]
+    return list(dict.fromkeys([*roles, *GROUP_FUNCTIONS]))
 
 
 def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Callable[[str], None] = print) -> dict[str, Any]:
@@ -522,14 +587,20 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
         return {"trend": prior.get("trend_label"), "summary": prior.get("summary"), "run_date": previous_run["run_date"]} if prior and previous_run else None
 
     # Assessor: one draft per standing item. A theme an entity pack covers draws on that pack's signals for the same date.
+    # A key risk also gets an implication for the business area (spec 36).
+    area = business_area_context(pack) if standing_set(pack) == "themes" else None
+
+    def area_for(item: Mapping[str, Any]) -> dict[str, Any] | None:
+        return area if area is not None and item.get("tier") == "KEY" else None
+
     drafts: dict[str, dict[str, Any]] = {}
     tables: dict[str, tuple[dict[str, dict[str, Any]], dict[str, str]]] = {}
     for item in items:
-        sources = child_sources(pool, run, item["coveredBy"]) if item.get("coveredBy") else condition_sources(rows, item["id"])
+        sources = child_sources(pool, run, item["coveredBy"]) if item.get("coveredBy") else condition_sources(rows, item["id"], theme=item["kind"] == "THEME")
         by_signal.update({row["signal_id"]: row for row in sources})
         table, back = agents.source_table(sources)
         tables[item["id"]] = (table, back)
-        draft, call = agents.assess_condition(client, model, condition=item, prior=prior_view(item["id"]), sources=table)
+        draft, call = agents.assess_condition(client, model, condition=item, prior=prior_view(item["id"]), sources=table, business_area=area_for(item))
         write_log(call)
         drafts[item["id"]] = draft
         log(f"  Assessor {item['id']:16} {draft['status']:12} {draft.get('movement') or '-':20} sources {len(table)}")
@@ -556,7 +627,7 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
             back[local] = str(source_signal)
         fixed_issue = dict(issue) | {"source_id": local, "correction": _renumber(str(issue.get("correction") or ""), combined_back, back)}
         item = by_id[key]
-        refined, call = agents.assess_condition(client, model, condition=item, prior=prior_view(key), sources=table, issues=[fixed_issue], previous=drafts[key])
+        refined, call = agents.assess_condition(client, model, condition=item, prior=prior_view(key), sources=table, issues=[fixed_issue], previous=drafts[key], business_area=area_for(item))
         write_log(call)
         before = drafts[key].get("summary")
         if refined["status"] in {"VALIDATED", "NO_EVIDENCE"}:
@@ -564,6 +635,31 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
             pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=str(issue.get("problem") or before), correction=agents.strip_marks(fixed_issue["correction"]), source_ids=[str(source_signal)], origin="CRITIC")
         else:
             pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=str(issue.get("problem")), correction="Raised by the Critic. The redraft failed its checks, so the earlier draft stands.", source_ids=[str(source_signal)], origin="CRITIC")
+
+    # Proposer: options for a key risk whose validated assessment is escalating or cites a material source (spec 36).
+    options: dict[str, list[dict[str, Any]]] = {}
+    if area is not None:
+        owners = owner_roles(pack)
+        for item in items:
+            key = item["id"]
+            draft = drafts[key]
+            if item.get("tier") != "KEY" or draft["status"] != "VALIDATED":
+                continue
+            table, back = tables[key]
+            cited = [ref for ref in draft.get("source_ids") or [] if ref in table]
+            if draft.get("movement") != "ESCALATING" and not any(is_material(by_signal[back[ref]]) for ref in cited if back.get(ref) in by_signal):
+                log(f"  Proposer {key:16} SKIPPED      no escalation and no material source")
+                continue
+            result, call = agents.propose_options(
+                client, model, theme=item, assessment={"movement": draft.get("movement"), "summary": draft.get("summary"), "implication": draft.get("implication")},
+                sources={ref: table[ref] for ref in cited}, owners=owners,
+            )
+            write_log(call)
+            log(f"  Proposer {key:16} {result['status']:12} options {len(result['options'])}")
+            if result["status"] == "VALIDATED":
+                options[key] = [{**option, "source_ids": [back[ref] for ref in option["source_ids"] if ref in back]} for option in result["options"]]
+            else:
+                pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=None, correction="Response options withheld: the Proposer's draft failed its checks twice. " + "; ".join(result["violations"][:2]), origin="CHECK")
 
     # Persist the standing items. For conditions, run the governed weekly cascade for themes, descent and priority.
     scan: list[dict[str, Any]] = []
@@ -578,10 +674,13 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
         status = draft["status"]
         if status == "WITHHELD":
             pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=None, correction="Withheld: the Assessor's draft failed its checks twice. " + "; ".join(draft["violations"][:2]), origin="CHECK")
+        if draft.get("implication_violations"):
+            pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=None, correction="Implication withheld: it failed its checks twice, so the assessment stands without it. " + "; ".join(draft["implication_violations"][:2]), origin="CHECK")
         pool.save_condition({
             "run_id": run.run_id, "pack": run.pack, "condition_id": key, "condition_name": item["name"], "movement": draft.get("movement"),
             "trend_label": trend_label(draft.get("movement")) if status != "WITHHELD" else "Not established", "confidence": level,
             "summary": summary, "source_ids_json": cited, "status": status, "violations_json": draft.get("violations") or [],
+            "implication": _cite(draft["implication"], back) if draft.get("implication") else None, "options_json": options.get(key, []),
             "ranking_json": {"kind": item["kind"], "tier": item.get("tier"), "domain": item.get("domain"), "coveredBy": item.get("coveredBy")},
         })
         if status == "VALIDATED" and item["kind"] == "CONDITION":
@@ -602,7 +701,11 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
     checks = _item_checks(pool, run, pack, rows, client=client, model=model, write_log=write_log, log=log)
     watch = update_watchpoints(pool, run, rows)
     bottom = _bottom_line(pool, run, client=client, model=model, write_log=write_log)
-    return {"standing": {key: draft["status"] for key, draft in drafts.items()}, "critic_accepted": len(accepted), "items": checks, "watchpoints": watch, "bottom_line": bottom["status"]}
+    return {
+        "standing": {key: draft["status"] for key, draft in drafts.items()}, "critic_accepted": len(accepted),
+        "implications": sum(1 for draft in drafts.values() if draft.get("implication")), "options": {key: len(rows) for key, rows in options.items()},
+        "items": checks, "watchpoints": watch, "bottom_line": bottom["status"],
+    }
 
 
 def _combined_table(tables: Mapping[str, tuple[dict[str, Any], dict[str, str]]], drafts: Mapping[str, Mapping[str, Any]]) -> tuple[dict[str, Any], dict[str, str]]:
@@ -832,7 +935,8 @@ def findings(pool: Pool, run: ReaderRun, *, client: Any, model: str, top: int = 
     vectors = {signal["url"]: vectors_by_id[signal["signal_id"]] for signal in every if signal["signal_id"] in vectors_by_id}
     pool_records = [{"url": s["url"], "title": s["title"], "text": s["text"], "publisher": s["publisher"], "published_at": s["published_at"]} for s in every]
     tool = FollowUpTool(search=search, embed=None, index=index, pool=pool_records, vectors=vectors, same_event=0.90, budget=top)
-    engine = FindingLoop(client, model, graph=graph, index=index, themes=business.themes["themes"], pool=pool_records, vectors=vectors, tool=tool, config=LoopConfig())
+    names = (business.label, str((business.manifest or {}).get("shortLabel") or business.label))
+    engine = FindingLoop(client, model, graph=graph, index=index, themes=business.themes["themes"], pool=pool_records, vectors=vectors, tool=tool, config=LoopConfig(), business_area=names)
     written = 0
     for number, row in enumerate(rows, start=1):
         signal = {

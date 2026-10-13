@@ -17,16 +17,17 @@ Agents propose. Deterministic functions decide. A named human approves.
 
 GRIT-Scan follows the M365 Copilot ontology method, turned around. Copilot asks and then retrieves from a graph. GRIT-Scan pulls the web with keywords, then binds what it pulled to the register. Keywords decide what is fetched; the register decides what belongs to STE.
 
-A deterministic layer sits under six agent roles:
+A deterministic layer sits under seven agent roles:
 
 | Role | Proposes | Decided by |
 |---|---|---|
 | Supervisor | The order of steps for a reader and week. | `TransitionGuard()` on each workflow advance, and `ReviewGate()` on each package. |
 | Researcher | Search results, and one follow-up search for a thin finding. | The query plan, the monthly search guard, and the dedupe rule. |
-| Assessor | A draft for each standing condition, and the answers on a finding card. | Quote, number, citation, and banned-word checks. Confidence is a rule. |
+| Assessor | A draft for each standing condition or theme, the implication of each key risk for the business area, and the answers on a finding card. | Quote, number, citation, and banned-word checks. An implication must name the business area's own lines of business, entities, customers, or suppliers. Confidence is a rule. |
 | Critic | Stale, unsupported, or contradictory claims in the drafts. | An issue counts only with a verbatim quote from a supplied source. |
 | Profiler | The reader's preferences from their approve and reject decisions. | A bounded memory rule. It reorders within a tier and never hides a P1 or RED signal. |
 | Reporter | Entries for named items, the bottom line, and chat answers. | The same checks, then one brief model rendered to every format. |
+| Proposer | Two to four options for management to consider on a key risk that is escalating or has material evidence. | Each option must name an owner role, quote the key control or action plan it builds on, and cite its sources. The Proposer's reasoning goes to the execution log, never to the brief (spec 36). |
 
 ## Reader packs
 
@@ -133,7 +134,7 @@ Run these commands from the repository root. `DATE` is the run date, `YYYY-MM-DD
 
 The URS Taiwan brief follows the 2 Oct 2026 reference brief in `docs/reference/`: a bottom-line box, the order-book baseline, named projects, suppliers, customers, natural hazards, the ten standing conditions with trend, confidence, and dated sources, the QA and correction log, and the watchpoints.
 
-The Urban Solutions brief follows the same style at BA level: the bottom line, the 14 risk themes in register order, management-requested topics with the signals that matched each one, the URS Taiwan summary, STE entities by line of business, customer, supplier, and competitor watch, priority findings, the QA log, and the watchpoints. Each reader's profile chooses which of these sections they receive.
+The Urban Solutions brief follows the same style at BA level: the bottom line, the 14 risk themes in register order (each key risk, and any escalating theme, in full with its implication; the rest as one table row), management-requested topics with the signals that matched each one, the URS Taiwan summary, STE entities by line of business, customer, supplier, and competitor watch, priority findings, the QA log, and the watchpoints. Each reader's profile chooses which of these sections they receive.
 
 ## Review packs and hand off to AIRIS
 
@@ -190,7 +191,7 @@ Profiles are JSON files in `config/profiles/`. A profile changes what a reader s
 | `ksyong` | Head, URS Taiwan | Material | Reader | URS Taiwan only. |
 | `group-cfo` | Group CFO | Wide | Reader | RED alerts only. |
 
-A profile lists its packs in `packs` and one brief per pack under `briefs`. Each package is one reader's brief for one pack and one week.
+A profile lists its packs in `packs` and one brief per pack under `briefs`. Each package is one reader's brief for one pack and one week. Add `RESPONSE_OPTIONS` to a brief's `sections` to show the Proposer's options under each key risk; it adds no section of its own.
 
 A wide-aperture reader sees every kept signal. A material-aperture reader sees a signal only with P1, P2, or P4 priority, or a standing-condition match (spec 24). News priority is P1 for an active management request, P2 for a direct exposure path, P3 for a competitor, sector, or theme match, and P4 for a customer (spec 29).
 

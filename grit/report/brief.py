@@ -135,7 +135,8 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
     routed = routed_signals(pool, run_id, profile)
     cards = {row["signal_id"]: row for row in pool.findings(run_id)}
 
-    ids = _cited_ids(*(row.get("summary") for row in conditions), *(row.get("summary") for row in checks))
+    ids = _cited_ids(*(row.get("summary") for row in conditions), *(row.get("implication") for row in conditions), *(row.get("summary") for row in checks))
+    ids |= {signal_id for row in conditions for option in row.get("options") or [] for signal_id in option.get("source_ids") or []}
     ids |= {signal_id for row in checks for signal_id in row.get("signal_ids") or []}
     ids |= {signal_id for row in conditions for signal_id in row.get("source_ids") or []}
     ids |= {signal_id for row in qa for signal_id in row.get("source_ids") or []}
@@ -180,6 +181,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
 
     entities = [{"heading": grouping, "items": items} for grouping, items in sorted(entity_groups.items(), key=lambda pair: (pair[0].startswith(pack.label), pair[0]))]
 
+    sections = set(brief_config.get("sections") or [])
     condition_rows = []
     for number, row in enumerate(conditions, start=1):
         ranking = row.get("ranking") or {}
@@ -188,11 +190,19 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             "covered_by": ranking.get("coveredBy"), "trend": row["trend_label"], "confidence": (row["confidence"] or "").title() or "Not established",
             "status": row["status"], "basis": render(row["summary"]) if row["summary"] else {"runs": [{"text": "Withheld: the draft failed its checks. See the QA log."}], "plain": "Withheld: the draft failed its checks. See the QA log.", "sources": []},
             "themes": ranking.get("steThemes") or [], "risk_level": ranking.get("riskLevel"), "priority_label": ranking.get("priorityLabel"),
+            "tier": ranking.get("tier"),
+            # Spec 36: a key risk, or any escalating theme, gets a full entry. Every other theme stays one table row.
+            "full": ranking.get("kind") == "THEME" and (ranking.get("tier") == "KEY" or row.get("movement") == "ESCALATING"),
+            "implication": render(row["implication"]) if row.get("implication") else None,
+            "options": [
+                {**{key: option.get(key) for key in ("kind", "owner", "builds_on", "trigger")},
+                 "text": render(option["option"] + (f" [{', '.join(option['source_ids'])}]" if option.get("source_ids") else ""))}
+                for option in row.get("options") or []
+            ] if "RESPONSE_OPTIONS" in sections else [],
         })
 
     shown = [row for row in routed if row["shown"]]
     max_findings = int(brief_config.get("maxFindings") or 8)
-    sections = set(brief_config.get("sections") or [])
     # The package holds what the reader receives, so a section the profile leaves out adds no member.
     priority_rows = [row for row in shown if (row.get("tier") or 9) <= 2][:max_findings] if "PRIORITY_FINDINGS" in sections else []
     findings = []

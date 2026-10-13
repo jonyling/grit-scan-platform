@@ -431,3 +431,25 @@ def test_a_ministry_name_cannot_reach_high_because_the_register_states_no_countr
     assert confidence(context, identity={"verdict": "YES"})["level"] == MEDIUM  # a YES from the model does not lift it
     agency, _ = _context("LAND TRANSPORT AUTHORITY awards a signalling contract", pool=[_page("https://b.com/1", "b.com", "Signalling contract awarded", "LAND TRANSPORT AUTHORITY named the winner.")], vectors={"https://a.com/1": _unit(0), "https://b.com/1": _unit(5)})
     assert confidence(agency)["level"] == HIGH  # an agency name that is not a generic ministry is unaffected
+
+
+def test_the_card_checks_and_prompt_follow_the_business_area() -> None:
+    import dataclasses
+
+    from grit.agents.loop.prompts import DRAFT_SYSTEM, draft_system
+
+    context, _ = _context("LAND TRANSPORT AUTHORITY awards a signalling contract")
+    dsc = dataclasses.replace(context, business_names=("Digital Systems & Cyber", "DS&C"))
+    card = _good(dsc)
+    card["what_happened"] = "DS&C won the signalling contract."
+    assert "UNGROUNDED_NAME: what_happened: DS&C" in " | ".join(check(card, dsc))
+    card["what_happened"] = "URS won the signalling contract."
+    assert not any("UNGROUNDED_NAME" in item for item in check(card, dsc)), "another business area's label is not this pack's name"
+    card = _good(dsc)
+    card["hypothesis"]["text"] = "Under DSC-KEY-05 the business area could see 2 more reviews."
+    found = " | ".join(check(card, dsc))
+    assert "UNGROUNDED_NUMBER: hypothesis: 2" in found and "UNGROUNDED_NUMBER: hypothesis: 05" not in found, "a DS&C theme id is an id, not a number"
+
+    prompt = draft_system("Digital Systems & Cyber", "DS&C")
+    assert "Digital Systems & Cyber (DS&C)" in prompt and "URS" not in prompt and "Urban Solutions" not in prompt
+    assert "Urban Solutions (URS)" in DRAFT_SYSTEM

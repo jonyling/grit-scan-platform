@@ -50,6 +50,7 @@ class Context:
     strong_nodes: set[str] = field(default_factory=set)
     signal_group: str = ""
     seen_urls: set[str] = field(default_factory=set)
+    business_names: tuple[str, ...] = ("Urban Solutions", "URS")  # the business area's name and short label
 
     def independent_outlets(self) -> int:
         return len({item["group"] for item in self.evidence.values() if item["kind"] in {"OUTLET", "FOLLOW_UP"} and item["independent"]})
@@ -194,6 +195,7 @@ def build_context(
     pool: Sequence[Mapping[str, Any]],
     vectors: Mapping[str, Sequence[float]],
     same_event: float,
+    business_names: Sequence[str] = ("Urban Solutions", "URS"),
 ) -> Context:
     link = signal["link"]
     involves = link["involves"]
@@ -269,7 +271,7 @@ def build_context(
     context = Context(
         finding_id=finding_id, signal=dict(signal), view={}, entities=shown, entities_total=total, paths=paths, evidence={}, themes=hit_themes,
         scope=_scope_of(graph, reaches, entities), gaps=gaps, signal_text=f"{signal['title']}\n{text}", strong_nodes={item["node_id"] for item in strong if item["cls"] != "Place"},
-        signal_group=group, seen_urls={signal["url"]},
+        signal_group=group, seen_urls={signal["url"]}, business_names=tuple(name for name in business_names if name),
     )
     seen_facts: set[tuple[str, str, str]] = set()
     for path in paths.values():

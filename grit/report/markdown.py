@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from grit.report.docx_brief import SECTION_TITLES, section_title
+from grit.report.docx_brief import OPTIONS_NOTE, SECTION_TITLES, option_line, section_title
 
 
 def _md(rendered: Mapping[str, Any] | None, fallback: str = "No new item found this week in the checked sources.") -> str:
@@ -59,8 +59,21 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
         elif key in {"SUPPLIERS", "CUSTOMERS", "HAZARDS"}:
             body += [f"- {item['name']}: {_md(item['text'])}" for item in brief.get(key.lower()) or []]
         elif key == "CONDITIONS" and brief.get("conditions"):
-            body += ["| # | Condition | Trend | Confidence | Basis |", "|---|---|---|---|---|"]
-            body += [f"| {row['number']} | {row['name']}{' (' + row['group'] + ')' if row.get('group') else ''} | {row['trend']} | {row['confidence']} | {_md(row['basis'])} |" for row in brief["conditions"]]
+            full = [row for row in brief["conditions"] if row.get("full")]
+            for row in full:
+                body += [f"### {row['number']}. {row['name']}", "", f"*{row.get('group') or 'Risk theme'}. Trend: {row['trend']}. Confidence: {row['confidence']}.*", "", _md(row["basis"]), ""]
+                if row.get("implication"):
+                    body += [f"**What it could mean for {meta.get('pack_label') or 'the business area'}:** {_md(row['implication'])}", ""]
+                if row.get("options"):
+                    body += ["**Options for management consideration**", ""]
+                    body += [f"- {_md(option['text'])} *{option_line(option)}*" for option in row["options"]]
+                    body += ["", f"*{OPTIONS_NOTE}*", ""]
+            rest = [row for row in brief["conditions"] if row not in full]
+            if rest:
+                if full:
+                    body += ["### Other risk themes", ""]
+                body += ["| # | Condition | Trend | Confidence | Basis |", "|---|---|---|---|---|"]
+                body += [f"| {row['number']} | {row['name']}{' (' + row['group'] + ')' if row.get('group') else ''} | {row['trend']} | {row['confidence']} | {_md(row['basis'])} |" for row in rest]
         elif key == "PRIORITY_FINDINGS":
             body += [f"- [{item['priority'] + ' · ' if item['priority'] else ''}tier {item['tier']}] [{item['title']}]({item['url']}) ({item['outlet']}, {item['date'] or 'n.d.'}). {' '.join(line for line in item['why'] if line)}" for item in brief.get("findings") or []]
         elif key == "OTHER_SIGNALS":

@@ -283,19 +283,72 @@ def _hazards(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) 
     return True
 
 
+OPTIONS_NOTE = "Proposed by GRIT-Scan for management consideration. Not reviewed advice."
+OPTION_KINDS = {
+    "STRENGTHEN_CONTROL": "Strengthens a key control", "ACCELERATE_ACTION_PLAN": "Brings forward an action plan",
+    "ADDRESS_GAP": "Covers a gap in the controls", "MONITOR": "Continue monitoring",
+}
+
+
+def option_line(option: Mapping[str, Any]) -> str:
+    """The plain metadata after an option: its kind, owner, what it builds on, and its trigger."""
+    parts = [OPTION_KINDS.get(str(option.get("kind")), str(option.get("kind"))), f"Owner: {option.get('owner')}"]
+    if option.get("builds_on"):
+        parts.append(f"Builds on: \u201c{option['builds_on']}\u201d")
+    if option.get("trigger"):
+        parts.append(f"Trigger: {option['trigger']}")
+    return ". ".join(parts) + "."
+
+
+def _full_entry(document: Any, row: Mapping[str, Any], label: str) -> None:
+    """A key risk, or an escalating theme, in full: trend, assessment, implication, and the options the profile asks for."""
+    _heading(document, f"{row['number']}. {row['name']}", level=3)
+    line = document.add_paragraph()
+    run = line.add_run(f"{row.get('group') or 'Risk theme'}. Trend: {row['trend']}. Confidence: {row['confidence']}.")
+    run.italic, run.font.size, run.font.color.rgb = True, Pt(9), GREY
+    if row.get("covered_by"):
+        line.add_run(f" Draws on the {row['covered_by']} entity pack.").font.size = Pt(9)
+    _runs(document.add_paragraph(), row["basis"])
+    if row.get("implication"):
+        paragraph = document.add_paragraph()
+        paragraph.add_run(f"What it could mean for {label}: ").bold = True
+        _runs(paragraph, row["implication"])
+    if row.get("options"):
+        paragraph = document.add_paragraph()
+        paragraph.add_run("Options for management consideration").bold = True
+        for option in row["options"]:
+            item = document.add_paragraph(style="List Bullet")
+            _runs(item, option["text"])
+            meta = item.add_run(f" {option_line(option)}")
+            meta.font.size, meta.font.color.rgb = Pt(9), GREY
+        note = document.add_paragraph()
+        run = note.add_run(OPTIONS_NOTE)
+        run.italic, run.font.size, run.font.color.rgb = True, Pt(8), LIGHT
+
+
 def _conditions(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
     if dry:
         return bool(brief.get("conditions"))
     _heading(document, title)
     prior = brief["meta"].get("prior_run_date")
     widths = (0.8, 3.6, 2.2, 2.0, 8.6)
-    label = "Risk theme" if brief["meta"].get("standing_label") == "risk theme" else "Condition"
-    table = _table(document, ("#", label, f"Trend vs {prior}" if prior else "Trend", "Confidence", "Basis / source and date"), widths)
-    for row in brief["conditions"]:
-        name = f"{row['name']} ({row['group']})" if row.get("group") else row["name"]
-        if row.get("covered_by"):
-            name += f". Draws on the {row['covered_by']} entity pack."
-        _row(table, (row["number"], name, row["trend"], row["confidence"], row["basis"]), widths)
+    themes = brief["meta"].get("standing_label") == "risk theme"
+    full = [row for row in brief["conditions"] if row.get("full")] if themes else []
+    rest = [row for row in brief["conditions"] if row not in full]
+    if full:
+        _heading(document, "Key risks" if all(row.get("tier") == "KEY" for row in full) else "Key risks and escalating themes", level=2)
+        for row in full:
+            _full_entry(document, row, brief["meta"].get("pack_label") or "the business area")
+    if rest:
+        if full:
+            _heading(document, "Other risk themes", level=2)
+        label = "Risk theme" if themes else "Condition"
+        table = _table(document, ("#", label, f"Trend vs {prior}" if prior else "Trend", "Confidence", "Basis / source and date"), widths)
+        for row in rest:
+            name = f"{row['name']} ({row['group']})" if row.get("group") else row["name"]
+            if row.get("covered_by"):
+                name += f". Draws on the {row['covered_by']} entity pack."
+            _row(table, (row["number"], name, row["trend"], row["confidence"], row["basis"]), widths)
     note = document.add_paragraph()
     run = note.add_run("Trend is the Assessor's proposal, validated against the cited sources. Confidence is computed by rule from the cited outlets and their register ratings.")
     run.font.size, run.font.color.rgb = Pt(8), LIGHT

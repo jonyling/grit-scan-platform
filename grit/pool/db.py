@@ -22,6 +22,7 @@ SCHEMA = Path(__file__).with_name("schema.sql")
 MIGRATIONS = {
     "watchpoint_updates": {"cycles_before": "INTEGER NOT NULL DEFAULT 0"},
     "management_requests": {"pack": "TEXT", "queries_json": "TEXT NOT NULL DEFAULT '[]'", "source": "TEXT"},
+    "condition_assessments": {"implication": "TEXT", "options_json": "TEXT NOT NULL DEFAULT '[]'"},
 }
 _JSON_SUFFIX = "_json"
 

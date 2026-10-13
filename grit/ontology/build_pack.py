@@ -9,6 +9,7 @@ differs per business area sits in the pack's pack.json under "build":
     keywordSheets            the hidden LOB keyword sheets. Omitted: the URS sheets. []: none.
     themeCounts              rows per sheet 7 section, such as {"EMERGING": 5}. Default 6, 5 and 3.
     themeVocabulary          general vocabulary for theme names, keyed by the start of the name
+    themeActionPlans         true keeps each Key Risk's Action Plans column as sheetActionPlans (spec 36)
     sourceSheets             a sheet's column layout, such as {"9. Specific Industry News": {"name_col": 1, "numbered": true}}
     managementFocusLayout    "requests" (URS) or "areas" (one row per focus area, DS&C)
     supplierUnit             the business area's own label in the supplier sheet's BA column, such as "DS&C"
@@ -58,7 +59,7 @@ def build_pack(
         "source_register": _sources(workbook, prefix, _source_layouts(build.get("sourceSheets"))),
         "exposure": _exposure(workbook, prefix, own_label=build.get("supplierUnit"), shared_separator=build.get("sharedSupplierSeparator")),
         "lob_profiles": _lobs(workbook, hierarchy, prefix),
-        "themes": _themes(workbook, prefix, counts=build.get("themeCounts"), vocabulary=build.get("themeVocabulary")),
+        "themes": _themes(workbook, prefix, counts=build.get("themeCounts"), vocabulary=build.get("themeVocabulary"), action_plans=bool(build.get("themeActionPlans"))),
         "baseline": _baseline(prefix, ba_name, list(manifest.get("children") or [])),
         "keyword_library": load_keyword_library(workbook, hierarchy, sheets=sheets, prefix=prefix),
         "competitors": load_competitors(workbook, hierarchy, prefix=prefix),
@@ -385,9 +386,12 @@ def _general_keywords(name: str, vocabulary: dict[str, list[str]] | None = None)
 _THEME_COUNTS = {"KEY": 6, "TIER_2": 5, "EMERGING": 3}
 
 
-def _themes(workbook: Path, prefix: str = "URS", *, counts: dict[str, int] | None = None, vocabulary: dict[str, list[str]] | None = None) -> dict:
+def _themes(
+    workbook: Path, prefix: str = "URS", *, counts: dict[str, int] | None = None, vocabulary: dict[str, list[str]] | None = None, action_plans: bool = False
+) -> dict:
     """counts is the number of rows each sheet 7 section must have. A different count fails loudly, so a section that
-    lost or gained a row is never read silently."""
+    lost or gained a row is never read silently. action_plans keeps a Key Risk's fifth column, Action Plans, which the
+    Proposer builds on (spec 36). It is opt-in, so a pack's register changes only when it is rebuilt with the flag."""
     rows = read_worksheet(workbook, "7. Annual Risks")
     expected = {**_THEME_COUNTS, **(counts or {})}
     sections = (
@@ -400,7 +404,7 @@ def _themes(workbook: Path, prefix: str = "URS", *, counts: dict[str, int] | Non
         found = _section(rows, ref_key, name_key)
         if len(found) != expected:
             raise ValueError(f"Sheet 7 {tier} section has {len(found)} rows; expected {expected}.")
-        for ref, name, detail, extra in found:
+        for ref, name, detail, extra, plans in found:
             theme_id = f"{prefix}-{tier}-{int(ref):02d}"
             short = name.split("(", 1)[0].strip()
             keywords = [short] if short and short != name and len(short) >= 6 else []
@@ -417,6 +421,7 @@ def _themes(workbook: Path, prefix: str = "URS", *, counts: dict[str, int] | Non
                     "keywords": keywords,
                     "sheetDetail": detail or None,
                     "sheetExtra": extra or None,
+                    **({"sheetActionPlans": plans or None} if action_plans and tier == "KEY" else {}),
                 }
             )
     return {
@@ -462,7 +467,7 @@ def _require_unique_ids(rows: list[dict], field: str) -> None:
         seen[identity] = name
 
 
-def _section(rows: list[list], ref_key: str, name_key: str) -> list[tuple[str, str, str, str]]:
+def _section(rows: list[list], ref_key: str, name_key: str) -> list[tuple[str, str, str, str, str]]:
     start = next(
         (
             index + 1
@@ -482,7 +487,7 @@ def _section(rows: list[list], ref_key: str, name_key: str) -> list[tuple[str, s
             continue
         name = _clean(row[1] if len(row) > 1 else None)
         if name:
-            found.append((ref, name, _clean(row[2] if len(row) > 2 else None), _clean(row[3] if len(row) > 3 else None)))
+            found.append((ref, name, *(_clean(row[index] if len(row) > index else None) for index in (2, 3, 4))))
     return found
 
 
