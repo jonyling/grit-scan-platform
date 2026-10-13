@@ -15,7 +15,7 @@ from pptx.enum.shapes import MSO_CONNECTOR, MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
-from grit.report.docx_brief import implication_text, key_risk_headers, priority_trend, response_lines
+from grit.report.docx_brief import implication_text, key_risk_headers, opportunity_text, priority_trend, radar_cells, radar_headers, response_lines
 
 # The reference deck's palette (docs/reference/GRIT-Scan_Executive_Summary.pptx).
 GOLD, EYEBROW, INK, MUTED, BODY = RGBColor(0xC0, 0x8A, 0x1E), RGBColor(0xA9, 0x74, 0x07), RGBColor(0x12, 0x21, 0x3F), RGBColor(0x5A, 0x68, 0x84), RGBColor(0x2C, 0x3A, 0x55)
@@ -112,7 +112,10 @@ def deck_items(brief: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     pack. Escalating first, then key risks, then register order."""
     rows = brief.get("conditions") or []
     themes = brief["meta"].get("standing_label") == "risk theme"
-    chosen = [row for row in rows if row.get("full")] if themes else [row for row in rows if row["trend"] in TRENDS]
+    if brief["meta"].get("level") == "GROUP":
+        chosen = [row for row in rows if row.get("status") == "VALIDATED"]  # every condition with evidence this period (spec 37)
+    else:
+        chosen = [row for row in rows if row.get("full")] if themes else [row for row in rows if row["trend"] in TRENDS]
     return sorted(chosen, key=lambda row: (row["trend"] != "Escalating", row.get("tier") != "KEY", row["number"]))
 
 
@@ -198,7 +201,10 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
         _badge(slide, 10.55, 0.9, 2.28, 0.54, tag, colour, fill)
         _rule(slide, 1.58)
         _words(slide, 0.5, 1.74, 7.75, 0.26, [(f"WHAT IT MEANS FOR {short.upper()}", 14, True, INK)])
-        _words(slide, 0.5, 2.06, 7.75, 1.0, [(fit(implication_text(row), 230), 14, True, INK)])
+        meaning = fit(implication_text(row), 230)
+        if row.get("radar"):
+            meaning = f"{fit(implication_text(row), 140)} Opportunity: {fit(opportunity_text(row), 85)}"
+        _words(slide, 0.5, 2.06, 7.75, 1.0, [(meaning, 14 if not row.get("radar") else 12.5, True, INK)])
         _words(slide, 0.5, 3.1, 7.75, 0.26, [("WHAT HAPPENED", 14, True, INK)])
         happened = 380 if options_on else 650
         _words(slide, 0.5, 3.42, 7.75, 1.35 if options_on else 2.6, [(fit(row["development"], happened), 13, False, BODY)])
@@ -212,6 +218,8 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
         _shape(slide, 8.35, 1.74, 0.05, 2.1, bar)
         _words(slide, 8.6, 1.94, 3.98, 0.25, [("RISK LINKAGE", 12, True, colour)])
         linkage = f"{row.get('group') or 'Standing item'} \u2192 {row['name']}." + (f" Priority {row['priority']}." if row.get("priority") else "") + f" Confidence: {row['confidence']}."
+        if row.get("radar"):
+            linkage = f"Affects: {', '.join(row.get('business_areas') or []) or 'not mapped yet'}. Would change if: {row.get('counter_indicator') or 'not established'}"
         _words(slide, 8.6, 2.24, 3.98, 0.86, [(fit(linkage, 130), 12.5, False, INK)])
         _words(slide, 8.6, 3.1, 3.98, 0.25, [("OWNER", 12, True, colour)])
         _words(slide, 8.6, 3.38, 3.98, 0.42, [(fit("; ".join(owners), 80) if owners else "Not assigned in this brief.", 12, False, BODY)])
@@ -286,7 +294,11 @@ def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], 
         (4, 40, 14, 12, 12, 14, 100, 60),
     )
     full = [row for row in brief.get("conditions") or [] if row.get("full")]
-    if full:
+    if full and brief["meta"].get("level") == "GROUP":
+        options = any(row.get("options") for row in full) or "RESPONSE_OPTIONS" in (brief["meta"].get("sections") or [])
+        rows = [["\n".join(lines) for lines in radar_cells(row, options=options)] for row in full]
+        _sheet(workbook, "Group radar", radar_headers(options=options), rows, (60, 40, 70, 24, 50, 70, 22) if options else (60, 40, 70, 24, 50, 22))
+    elif full:
         options = any(row.get("options") for row in full) or "RESPONSE_OPTIONS" in (brief["meta"].get("sections") or [])
         rows = []
         for row in full:

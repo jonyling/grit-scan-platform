@@ -19,7 +19,7 @@ Spec 34 section 1 lists ten invariants. The POC keeps all of them. Three matter 
 
 ## 3. Structure
 
-A deterministic layer sits under seven agent roles. [Spec 36](36_Key_Risks_Implications_and_Proposer.md) added the Proposer and the key-risk implication.
+A deterministic layer sits under nine agent roles. [Spec 36](36_Key_Risks_Implications_and_Proposer.md) added the Proposer and the key-risk implication. [Spec 37](37_STE_Group_Pack.md) added the Baseliner and the Strategist for the Group pack.
 
 | Role | What it proposes | What decides | Code |
 |---|---|---|---|
@@ -30,6 +30,8 @@ A deterministic layer sits under seven agent roles. [Spec 36](36_Key_Risks_Impli
 | Profiler | The reader's preferences, from their approve and reject decisions. | A bounded memory rule that reorders within a tier and can hide what the reader rejected, never a P1 or RED signal. | `grit/profiles/memory.py` |
 | Reporter | Entries for named items, the bottom line, and chat answers. | Checks, then one brief model rendered to every format. | `grit/agents/reader.py`, `grit/agents/chat.py`, `grit/report/` |
 | Proposer | Options for management to consider on a key risk. Its reasoning goes to the execution log only. | Owner, quote, citation, number, and banned-word checks. `ReviewGate()` on the package that carries the options. | `grit/agents/reader.py`, `grit/pipeline/reader_scan.py` |
+| Baseliner | A Group condition's current position, from cited evidence, for Wilson's sign-off. | Quote, number, citation, and indicator checks. Wilson signs off before it becomes the baseline. | `grit/agents/reader.py`, `grit/pipeline/group.py` |
+| Strategist | Scenarios for each Group strategic shift, with signposts and counter-indicators. Its reasoning goes to the execution log only. | Possibility, anchor, citation, and number checks. A person edits each scenario before it is used. | `grit/agents/reader.py`, `grit/pipeline/group.py` |
 
 ## 4. Data flow
 

@@ -116,6 +116,10 @@ To show the Proposer's options for management consideration under each key risk,
    .venv/bin/python -m grit gaps export
    ```
 
+## Add the business area to the Group pack
+
+The Group pack (`ste`) draws its footprint from its business-area children (spec 37). Add the new pack id to `children` in `config/ste/pack.json`, and add it to `businessAreas` for each condition it touches in `config/ste/STE-Scan-Plan.json`.
+
 ## Known limits
 
 - `grit gaps` and the `grit digest-*` commands read the `urs` pack today. Add a pack option before you use them for another BA.

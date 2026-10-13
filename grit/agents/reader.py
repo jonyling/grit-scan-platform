@@ -17,6 +17,8 @@ from grit.agents.loop.llm import LoopError, call_json
 from grit.agents.reader_prompts import (
     ASSESSOR_SYSTEM,
     ASSESSOR_VERSION,
+    BASELINER_SYSTEM,
+    BASELINER_VERSION,
     CRITIC_SYSTEM,
     CRITIC_VERSION,
     PROPOSER_SYSTEM,
@@ -24,6 +26,8 @@ from grit.agents.reader_prompts import (
     REPORTER_BOTTOM_LINE_SYSTEM,
     REPORTER_ITEMS_SYSTEM,
     REPORTER_VERSION,
+    STRATEGIST_SYSTEM,
+    STRATEGIST_VERSION,
 )
 from grit.core.canonical import canonical_hash
 
@@ -123,24 +127,68 @@ def anchor_hits(text: str, anchors: Sequence[str]) -> list[str]:
     return [anchor for anchor in anchors if len(anchor) >= 3 and re.search(rf"(?<![\w&]){re.escape(normalise(anchor))}(?![\w&])", folded)]
 
 
-def check_implication(text: Any, cited_ids: Sequence[str], sources: Mapping[str, Mapping[str, Any]], anchors: Sequence[str]) -> list[str]:
-    """An implication names the business area's own anchors, reads as a possibility, and rests on the assessment's sources."""
+def check_implication(
+    text: Any, cited_ids: Sequence[str], sources: Mapping[str, Mapping[str, Any]], anchors: Sequence[str], field_name: str = "implication"
+) -> list[str]:
+    """An implication (or an opportunity) names the business area's own anchors, reads as a possibility, and rests on the
+    assessment's sources."""
+    label = field_name.upper()
     if not isinstance(text, str) or not text.strip():
-        return ["IMPLICATION_MISSING: implication: write one when the assessment cites a source."]
+        return [f"{label}_MISSING: {field_name}: write one when the assessment cites a source."]
     found: list[str] = []
     marks = marked_ids(text)
     if not marks:
-        found.append("IMPLICATION_UNCITED: implication: end each sentence with [S#] ids from source_ids.")
-    found += [f"UNLISTED_SOURCE: implication cites {mark}, which is not in source_ids." for mark in marks if mark not in cited_ids]
+        found.append(f"{label}_UNCITED: {field_name}: end each sentence with [S#] ids from source_ids.")
+    found += [f"UNLISTED_SOURCE: {field_name} cites {mark}, which is not in source_ids." for mark in marks if mark not in cited_ids]
     if not anchor_hits(strip_marks(text), anchors):
-        found.append("NO_ANCHOR: implication: name a line of business, entity, customer or supplier exactly as business_area lists it.")
+        found.append(f"NO_ANCHOR: {field_name}: name a line of business, entity, customer or supplier exactly as business_area lists it.")
     if not _MODAL.search(text):
-        found.append("NOT_CONDITIONAL: implication: use could, may or might.")
+        found.append(f"NOT_CONDITIONAL: {field_name}: use could, may or might.")
     certain = _CERTAIN.search(text)
     if certain:
-        found.append(f"CERTAINTY_CLAIM: implication: '{certain.group(0)}'. It is a possibility, not a forecast.")
-    found += text_problems(text, haystack(sources, [mark for mark in marks if mark in cited_ids] or list(cited_ids)), "implication")
+        found.append(f"CERTAINTY_CLAIM: {field_name}: '{certain.group(0)}'. It is a possibility, not a forecast.")
+    found += text_problems(text, haystack(sources, [mark for mark in marks if mark in cited_ids] or list(cited_ids)), field_name)
     return found
+
+
+def check_counter_indicator(text: Any, cited_ids: Sequence[str], sources: Mapping[str, Mapping[str, Any]]) -> list[str]:
+    """What would show the assessment is wrong. It looks forward, so it needs no citation, but it adds no number and no score word."""
+    if not isinstance(text, str) or not text.strip():
+        return ["COUNTER_MISSING: counter_indicator: name the development that would show this assessment is wrong."]
+    found: list[str] = []
+    if len(re.findall(r"[.!?](?:\s|$)", text.strip())) > 2:
+        found.append("TOO_LONG: counter_indicator: one or two sentences.")
+    return found + text_problems(strip_marks(text), haystack(sources, cited_ids), "counter_indicator")
+
+
+def check_extras(
+    draft: Any, cited_ids: Sequence[str], sources: Mapping[str, Mapping[str, Any]], anchors: Sequence[str], group: bool
+) -> tuple[dict[str, str | None], dict[str, list[str]]]:
+    """The fields that ride on a validated assessment, each checked on its own: the implication, and for a Group condition the
+    opportunity and the counter-indicator (spec 37). Returns the fields that passed and the problems of those that failed."""
+    accepted: dict[str, str | None] = {}
+    failing: dict[str, list[str]] = {}
+    if not anchors or not cited_ids:
+        return accepted, failing
+    draft = draft if isinstance(draft, Mapping) else {}
+    checks: dict[str, list[str]] = {"implication": check_implication(draft.get("implication"), cited_ids, sources, anchors)}
+    if group:
+        opportunity = draft.get("opportunity")
+        checks["opportunity"] = [] if opportunity in (None, "") else check_implication(opportunity, cited_ids, sources, anchors, "opportunity")
+        checks["counter_indicator"] = check_counter_indicator(draft.get("counter_indicator"), cited_ids, sources)
+    for name, problems in checks.items():
+        if problems:
+            failing[name] = problems
+        else:
+            value = draft.get(name)
+            if name == "counter_indicator" and isinstance(value, str):
+                value = strip_marks(value)  # it needs no citation, and a local [S#] would mean nothing in the brief
+            accepted[name] = value.strip() if isinstance(value, str) and value.strip() else None
+    return accepted, failing
+
+
+def _flat(failing: Mapping[str, Sequence[str]]) -> list[str]:
+    return [problem for problems in failing.values() for problem in problems]
 
 
 def assess_condition(
@@ -171,19 +219,24 @@ def assess_condition(
     if not sources and not issues:
         log.status = "SKIPPED_NO_SOURCES"
         return {"status": "NO_EVIDENCE", "movement": "NO_MATERIAL_CHANGE", "summary": NOTHING_FOUND, "source_ids": [], "change_from_prior": None, "implication": None, "violations": []}, log
+    group = bool((business_area or {}).get("group"))
     violations: list[str] = []
-    implication_problems: list[str] = []
-    passed: dict[str, Any] | None = None  # the first draft whose assessment passed. A retry after it may change only the implication.
+    accepted: dict[str, str | None] = {}
+    failing: dict[str, list[str]] = {}
+    passed: dict[str, Any] | None = None  # the first draft whose assessment passed. A retry after it may change only the failing extra fields.
     for _attempt in range(2):
         draft = _call(client, model, ASSESSOR_SYSTEM, payload, log)
         if draft is None:
             break
         if passed is not None:
-            problems = check_implication(draft.get("implication") if isinstance(draft, Mapping) else None, list(passed.get("source_ids") or []), sources, anchors)
-            if not problems:
-                passed = {**passed, "implication": draft["implication"]}
-            implication_problems = problems
-            log.violations.extend(problems)
+            retried, still = check_extras(draft, list(passed.get("source_ids") or []), sources, anchors, group)
+            for name in list(failing):
+                if name in retried:
+                    accepted[name] = retried[name]
+                    del failing[name]
+                else:
+                    failing[name] = still.get(name, failing[name])
+            log.violations.extend(_flat(failing))
             break
         violations = check_condition(draft, sources)
         if violations:
@@ -191,21 +244,23 @@ def assess_condition(
             payload = payload | {"previous_draft": draft, "violations": violations}
             continue
         passed = dict(draft)
-        if anchors and draft.get("source_ids"):
-            implication_problems = check_implication(draft.get("implication"), list(draft.get("source_ids") or []), sources, anchors)
-        if not implication_problems:
+        accepted, failing = check_extras(draft, list(draft.get("source_ids") or []), sources, anchors, group)
+        if not failing:
             break
-        log.violations.extend(implication_problems)
-        payload = payload | {"previous_draft": draft, "violations": implication_problems, "keep_assessment": "Keep movement, summary, source_ids and quotes unchanged. Fix only the implication."}
+        log.violations.extend(_flat(failing))
+        payload = payload | {
+            "previous_draft": draft, "violations": _flat(failing),
+            "keep_assessment": f"Keep movement, summary, source_ids and quotes unchanged. Fix only: {', '.join(failing)}.",
+        }
     if passed is not None:
         draft = passed
         log.status = "VALIDATED"
         ids = list(draft.get("source_ids") or [])
-        implication = draft.get("implication") if anchors and ids and not implication_problems else None
         return {
             "status": "VALIDATED" if ids else "NO_EVIDENCE", "movement": draft["movement"], "summary": draft["summary"].strip(), "source_ids": ids,
             "change_from_prior": draft.get("change_from_prior"), "quotes": draft.get("quotes") or [],
-            "implication": implication.strip() if isinstance(implication, str) else None, "implication_violations": implication_problems, "violations": [],
+            "implication": accepted.get("implication"), "opportunity": accepted.get("opportunity"), "counter_indicator": accepted.get("counter_indicator"),
+            "implication_violations": _flat(failing), "violations": [],
         }, log
     if log.status != "LLM_ERROR":
         log.status = "WITHHELD"
@@ -416,3 +471,151 @@ def canonical_text(value: Any) -> str:
     if isinstance(value, (list, tuple)):
         return " ".join(canonical_text(item) for item in value)
     return str(value if value is not None else "")
+
+
+NO_POSITION = "The sources in this run do not establish the current position."
+HORIZONS = frozenset({"1-5 years", "5-10 years"})
+
+
+def check_baseline(draft: Any, sources: Mapping[str, Mapping[str, Any]], indicators: Sequence[str]) -> list[str]:
+    """A drafted current position: cited sentences, verbatim quotes, grounded numbers, and readings only for listed indicators."""
+    if not isinstance(draft, Mapping):
+        return ["BAD_SHAPE: the draft is not an object"]
+    position = draft.get("position")
+    if not isinstance(position, str) or not position.strip():
+        return ["BAD_SHAPE: position is empty"]
+    found = source_problems(draft.get("source_ids"), sources, "source_ids")
+    ids = [item for item in draft.get("source_ids") or [] if item in sources] if isinstance(draft.get("source_ids"), list) else []
+    readings = draft.get("indicators") if isinstance(draft.get("indicators"), list) else None
+    if readings is None:
+        return found + ["BAD_SHAPE: indicators must be a list"]
+    texts = [position]
+    for number, item in enumerate(readings, start=1):
+        if not isinstance(item, Mapping) or item.get("indicator") not in indicators or not isinstance(item.get("reading"), str):
+            found.append(f"UNKNOWN_INDICATOR: indicators {number}: copy one of the watch indicators exactly, with a reading.")
+            continue
+        texts.append(item["reading"])
+        if not marked_ids(item["reading"]):
+            found.append(f"UNCITED: indicators {number}: end the reading with [S#].")
+    for text in texts:
+        found += [f"UNLISTED_SOURCE: cites {mark}, which is not in source_ids." for mark in marked_ids(text) if mark not in ids]
+    if ids:
+        found += quote_problems(draft.get("quotes", []), sources, "quotes", ids)
+        if not draft.get("quotes"):
+            found.append("NO_EVIDENCE: a position with sources needs at least one verbatim quote.")
+        if not marked_ids(position):
+            found.append("UNCITED: position: end each sentence with [S#] ids.")
+    found += text_problems(" ".join(texts + [str(draft.get("gaps") or "")]), haystack(sources, ids), "position")
+    return found
+
+
+def draft_baseline(client: Any, model: str, *, condition: Mapping[str, Any], sources: Mapping[str, Mapping[str, Any]]) -> tuple[dict[str, Any], CallLog]:
+    """Returns {status, position, indicators, gaps, source_ids, violations}. status is DRAFTED, NO_EVIDENCE, or WITHHELD."""
+    indicators = [str(item) for item in condition.get("watchIndicators") or []]
+    payload: dict[str, Any] = {
+        "condition": {key: condition.get(key) for key in ("id", "name", "domain", "transmission", "watchIndicators")},
+        "sources": sources,
+    }
+    log = CallLog("Baseliner", BASELINER_VERSION, model, str(condition.get("id")), canonical_hash(payload))
+    if not sources:
+        log.status = "SKIPPED_NO_SOURCES"
+        return {"status": "NO_EVIDENCE", "position": NO_POSITION, "indicators": [], "gaps": "None of the watch indicators is covered.", "source_ids": [], "violations": []}, log
+    violations: list[str] = []
+    for _attempt in range(2):
+        draft = _call(client, model, BASELINER_SYSTEM, payload, log)
+        if draft is None:
+            break
+        violations = check_baseline(draft, sources, indicators)
+        if not violations:
+            log.status = "VALIDATED"
+            ids = list(draft.get("source_ids") or [])
+            return {
+                "status": "DRAFTED" if ids else "NO_EVIDENCE", "position": draft["position"].strip(), "indicators": list(draft.get("indicators") or []),
+                "gaps": str(draft.get("gaps") or "").strip() or None, "source_ids": ids, "violations": [],
+            }, log
+        log.violations.extend(violations)
+        payload = payload | {"previous_draft": draft, "violations": violations}
+    if log.status != "LLM_ERROR":
+        log.status = "WITHHELD"
+    return {"status": "WITHHELD", "position": None, "indicators": [], "gaps": None, "source_ids": [], "violations": violations or log.violations}, log
+
+
+def check_scenarios(draft: Any, sources: Mapping[str, Mapping[str, Any]], anchors: Sequence[str]) -> list[str]:
+    """Proposed scenarios: possibility, not forecast; observable signposts; STE sentences that name the Group's own anchors; and
+    no number that the cited sources do not contain."""
+    if not isinstance(draft, Mapping):
+        return ["BAD_SHAPE: the draft is not an object"]
+    found: list[str] = []
+    if not isinstance(draft.get("reasoning"), str) or not draft["reasoning"].strip():
+        found.append("NO_REASONING: reasoning: think first, in plain sentences.")
+    scenarios = draft.get("scenarios")
+    if not isinstance(scenarios, list) or not 2 <= len(scenarios) <= 4:
+        return found + ["BAD_COUNT: scenarios: two to four scenarios."]
+    for number, item in enumerate(scenarios, start=1):
+        where = f"scenario {number}"
+        if not isinstance(item, Mapping) or not isinstance(item.get("name"), str) or not isinstance(item.get("narrative"), str):
+            found.append(f"BAD_SHAPE: {where}: needs a name and a narrative")
+            continue
+        if item.get("horizon") not in HORIZONS:
+            found.append(f"BAD_VALUE: {where}: horizon must be one of {sorted(HORIZONS)}")
+        signposts, counters = item.get("signposts"), item.get("counter_indicators")
+        if not isinstance(signposts, list) or not 2 <= len([text for text in signposts if isinstance(text, str) and text.strip()]) <= 4:
+            found.append(f"BAD_COUNT: {where}: two to four signposts.")
+        if not isinstance(counters, list) or not 1 <= len([text for text in counters if isinstance(text, str) and text.strip()]) <= 2:
+            found.append(f"BAD_COUNT: {where}: one or two counter-indicators.")
+        ids = item.get("source_ids")
+        found += source_problems(ids, sources, where)
+        ids = [ref for ref in ids if ref in sources] if isinstance(ids, list) else []
+        if not ids:
+            found.append(f"UNCITED: {where}: cite in source_ids the sources the scenario starts from.")
+        for field_name in ("narrative", "risk_for_ste"):
+            text = item.get(field_name)
+            if not isinstance(text, str) or not _MODAL.search(text):
+                found.append(f"NOT_CONDITIONAL: {where}: {field_name} uses could, may or might.")
+            elif _CERTAIN.search(text):
+                found.append(f"CERTAINTY_CLAIM: {where}: {field_name}: '{_CERTAIN.search(text).group(0)}'.")
+        for field_name in ("risk_for_ste", "opportunity_for_ste"):
+            text = item.get(field_name)
+            if field_name == "opportunity_for_ste" and text in (None, ""):
+                continue
+            if not isinstance(text, str) or not anchor_hits(text, anchors):
+                found.append(f"NO_ANCHOR: {where}: {field_name} names a business area, line of business, entity or country as business_area lists it.")
+        if any(marked_ids(str(item.get(key) or "")) for key in ("narrative", "risk_for_ste", "opportunity_for_ste")):
+            found.append(f"MARK_IN_TEXT: {where}: put citations in source_ids, not [S#] in the text.")
+        texts = [item.get("narrative"), item.get("risk_for_ste"), item.get("opportunity_for_ste"), *(signposts or []), *(counters or [])]
+        found += text_problems(" ".join(str(text) for text in texts if isinstance(text, str)), haystack(sources, ids), where)
+    return found
+
+
+def propose_scenarios(
+    client: Any, model: str, *, shift: Mapping[str, Any], business_area: Mapping[str, Any], conditions: Sequence[Mapping[str, Any]], sources: Mapping[str, Mapping[str, Any]]
+) -> tuple[dict[str, Any], CallLog]:
+    """Returns {status, scenarios, violations}. status is PROPOSED or WITHHELD. The reasoning goes to the log entry only."""
+    anchors = [str(item) for item in business_area.get("anchors") or []]
+    payload: dict[str, Any] = {
+        "shift": {key: shift.get(key) for key in ("themeId", "themeName", "keywords")},
+        "business_area": {key: value for key, value in business_area.items() if key != "anchors"},
+        "conditions": [dict(item) for item in conditions],
+        "sources": sources,
+    }
+    log = CallLog("Strategist", STRATEGIST_VERSION, model, str(shift.get("themeId")), canonical_hash(payload))
+    if not sources:
+        log.status = "SKIPPED_NO_SOURCES"
+        return {"status": "NO_EVIDENCE", "scenarios": [], "violations": []}, log
+    violations: list[str] = []
+    for _attempt in range(2):
+        draft = _call(client, model, STRATEGIST_SYSTEM, payload, log)
+        if draft is None:
+            break
+        if isinstance(draft, Mapping) and isinstance(draft.get("reasoning"), str):
+            log.reasoning = draft["reasoning"].strip()
+        violations = check_scenarios(draft, sources, anchors)
+        if not violations:
+            log.status = "VALIDATED"
+            keep = ("name", "horizon", "narrative", "signposts", "counter_indicators", "risk_for_ste", "opportunity_for_ste", "source_ids")
+            return {"status": "PROPOSED", "scenarios": [{key: item.get(key) for key in keep} for item in draft["scenarios"]], "violations": []}, log
+        log.violations.extend(violations)
+        payload = payload | {"previous_draft": {key: value for key, value in dict(draft).items() if key != "reasoning"} if isinstance(draft, Mapping) else draft, "violations": violations}
+    if log.status != "LLM_ERROR":
+        log.status = "WITHHELD"
+    return {"status": "WITHHELD", "scenarios": [], "violations": violations or log.violations}, log

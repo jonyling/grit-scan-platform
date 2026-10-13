@@ -360,6 +360,31 @@ def build_graph(pack: Any, *, reviewed_aliases: Mapping[str, Any] | None = None,
     return OntologyGraph(nodes.values(), edges, gaps)
 
 
+def merge_graphs(graphs: Iterable[OntologyGraph], themes: Iterable[Mapping[str, Any]] = ()) -> OntologyGraph:
+    """One graph over several business areas, for a Group pack. A node two graphs share (the group, a country, a customer)
+    becomes one node with both alias tables. The business areas' themes are replaced by the Group pack's own themes."""
+    nodes: dict[str, Node] = {}
+    edges: dict[tuple[str, str, str], Edge] = {}
+    gaps: list[Mapping[str, Any]] = []
+    for graph in graphs:
+        for node in graph.nodes.values():
+            if node.cls == "Theme":
+                continue
+            kept = nodes.get(node.id)
+            if kept is None:
+                nodes[node.id] = node
+                continue
+            aliases = tuple(dict.fromkeys((*kept.aliases, *node.aliases)))
+            nodes[node.id] = Node(kept.id, kept.cls, kept.kind, kept.name, aliases, {**node.alias_basis, **kept.alias_basis}, {**node.attrs, **kept.attrs})
+        for edge in graph.edges:
+            if edge.src in nodes and edge.dst in nodes:
+                edges.setdefault((edge.src, edge.rel, edge.dst), edge)
+        gaps.extend(graph.gaps)
+    for theme in themes:
+        nodes[theme["themeId"]] = Node(theme["themeId"], "Theme", theme["tier"], theme["themeName"], (), {}, {"keywords": theme.get("keywords") or []})
+    return OntologyGraph(nodes.values(), edges.values(), gaps)
+
+
 def _apply_overlay(nodes: dict[str, Node], edges: list[Edge], overlay: Mapping[str, Any] | None) -> None:
     """Add hand-authored rows. An unknown node, an unknown relation, or a VALIDATED row with no approver fails loudly."""
     for item in (overlay or {}).get("edges") or []:

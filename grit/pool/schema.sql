@@ -111,6 +111,8 @@ CREATE TABLE IF NOT EXISTS condition_assessments (
     ranking_json    TEXT NOT NULL DEFAULT '{}',
     implication     TEXT,                     -- a key risk's implication for the business area (spec 36)
     options_json    TEXT NOT NULL DEFAULT '[]', -- the Proposer's checked options, without its reasoning
+    opportunity     TEXT,                     -- a Group condition's opportunity pathway (spec 37)
+    counter_indicator TEXT,                   -- what would show the assessment is wrong (spec 37)
     PRIMARY KEY (run_id, condition_id)
 );
 

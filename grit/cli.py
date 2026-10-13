@@ -37,12 +37,14 @@ def _client() -> Any:
 
 
 def _packs(args: argparse.Namespace) -> list[str]:
-    """The packs named with --pack, or every pack with a scan plan, entity packs first. An unknown pack stops the command
-    before any run is registered."""
-    from grit.ontology.pack import manifests, scanned_packs
+    """The packs named with --pack, or every weekly pack with a scan plan, entity packs first. An unknown pack stops the
+    command before any run is registered."""
+    from grit.ontology.pack import load_ontology_pack, manifests, scanned_packs
+    from grit.settings import CONFIG_DIR
 
     if not args.pack:
-        return scanned_packs()
+        # A monthly pack, such as the Group pack (spec 37), runs only when named.
+        return [name for name in scanned_packs() if int((load_ontology_pack(CONFIG_DIR, name).scan_plan or {}).get("windowDays") or 8) <= 10]
     known = manifests()
     unknown = [name for name in args.pack if name not in known]
     if unknown:
@@ -174,7 +176,43 @@ def report_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
     return 0
 
 
+def baseline_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
+    """Draft each standing condition's current position for sign-off (spec 37)."""
+    from grit.pipeline.group import draft_baseline
+    from grit.pipeline.reader_scan import ReaderRun, run_id_for
+
+    from grit.pipeline.reader_scan import _load_pack
+
+    if _load_pack(pack).level != "GROUP":
+        print(f"Skipped {pack}: this command is for Group packs.")
+        return 0
+    run = ReaderRun(run_id_for(args.date, pack), args.date, pack)
+    if pool.run(run.run_id) is None:
+        raise SystemExit(f"No run {run.run_id}. Run grit weekly --pack {pack} --date {args.date} first.")
+    print(json.dumps(draft_baseline(pool, run, client=_client(), model=_model(args.model)), indent=2))
+    return 0
+
+
+def scenarios_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
+    """Propose scenarios for each strategic shift, for a person to review (spec 37)."""
+    from grit.pipeline.group import propose_scenarios
+    from grit.pipeline.reader_scan import ReaderRun, run_id_for
+
+    from grit.pipeline.reader_scan import _load_pack
+
+    if _load_pack(pack).level != "GROUP":
+        print(f"Skipped {pack}: this command is for Group packs.")
+        return 0
+    run = ReaderRun(run_id_for(args.date, pack), args.date, pack)
+    if pool.run(run.run_id) is None:
+        raise SystemExit(f"No run {run.run_id}. Run grit weekly --pack {pack} --date {args.date} first.")
+    print(json.dumps(propose_scenarios(pool, run, client=_client(), model=_model(args.model)), indent=2))
+    return 0
+
+
 cmd_plan = _for_each_pack(plan_step)
+cmd_baseline = _for_each_pack(baseline_step)
+cmd_scenarios = _for_each_pack(scenarios_step)
 cmd_scan = _for_each_pack(scan_step)
 cmd_assess = _for_each_pack(assess_step)
 cmd_agents = _for_each_pack(agents_step)
@@ -320,6 +358,7 @@ def _delegates() -> dict[str, tuple[str, Callable[[], Callable[..., Any]], str]]
     return {
         "pack-build": ("Rebuild a business-area pack's registers from its workbook.", lambda: __import__("grit.ontology.build_pack", fromlist=["_main"])._main, "grit pack-build"),
         "pack-show": ("Print what a reader pack contains.", lambda: __import__("grit.ontology.pack", fromlist=["_main"])._main, "grit pack-show"),
+        "pack-init": ("Write the Group pack's starting registers and reader profiles. Existing files are kept.", lambda: __import__("grit.ontology.group_seed", fromlist=["_main"])._main, "grit pack-init"),
         "gaps": ("Export or import the BA relationship and alias questions.", lambda: __import__("grit.ontology.relationship_gaps", fromlist=["main"]).main, "grit gaps"),
         "digest-plan": ("Print the business-area query plan for a date.", lambda: __import__("grit.ontology.query_plan", fromlist=["_main"])._main, "grit digest-plan"),
         "digest-search": ("Send the business-area query plan to Brave.", lambda: __import__("grit.acquisition.brave_plan", fromlist=["main"]).main, "grit digest-search"),
@@ -357,6 +396,8 @@ def build_parser() -> argparse.ArgumentParser:
             sub.add_argument("--profile", nargs="*", default=["all"])
             sub.add_argument("--no-submit", action="store_true", help="Write the packs without putting them into review.")
     reader("assess", cmd_assess, "Rerun the deterministic assessment on a scanned run. No network.")
+    reader("baseline-draft", cmd_baseline, "Draft a Group pack's baseline for sign-off from a completed run.").add_argument("--model")
+    reader("scenarios", cmd_scenarios, "Propose scenarios for a Group pack's strategic shifts from a completed run, for review.").add_argument("--model")
     sub = reader("agents", cmd_agents, "Run the Assessor, Critic and Reporter, then the finding loop.")
     sub.add_argument("--model")
     sub.add_argument("--findings", type=int, default=6)

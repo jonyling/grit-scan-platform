@@ -72,13 +72,53 @@ def _aliases() -> dict[str, Any]:
 
 
 def graph_pack(pack: OntologyPack) -> OntologyPack:
-    """The business-area pack whose typed graph binds names: the pack itself at BA level, else its parent."""
+    """The business-area pack whose typed graph binds names: the pack itself at BA level, else its parent. A Group pack binds
+    names through all its business-area children: this returns a view with their registers joined (spec 37)."""
     if pack.level == "BA":
         return pack
+    if pack.level == "GROUP":
+        import dataclasses
+
+        children = [child for child in (_load_pack(name) for name in pack.children) if child.level == "BA"]
+        if not children:
+            raise ValueError(f"Group pack {pack.pack} names no business-area children in pack.json.")
+        exposure = {key: [row for child in children for row in (child.exposure.get(key) or [])] for key in ("entities", "customers", "suppliers", "projects", "sites")}
+        lobs = {"lobs": [lob for child in children for lob in (child.lob_profiles.get("lobs") or [])]}
+        competitors = {"competitors": [row for child in children for row in ((child.competitors or {}).get("competitors") or [])]}
+        return dataclasses.replace(pack, exposure=exposure, lob_profiles=lobs, competitors=competitors)
     parent = (pack.manifest or {}).get("parent")
     if not parent:
         raise ValueError(f"Pack {pack.pack} is {pack.level} level and names no parent business-area pack in pack.json.")
     return _load_pack(parent)
+
+
+def pack_graph(pack: OntologyPack) -> Any:
+    """The typed graph a reader pack binds names through: its business area's graph, or for a Group pack the merged graphs
+    of its business-area children, with the Group pack's own themes."""
+    from grit.ontology.graph import merge_graphs
+
+    if pack.level == "GROUP":
+        children = [child for child in (_load_pack(name) for name in pack.children) if child.level == "BA"]
+        return merge_graphs((build_graph(child, reviewed_aliases=_aliases()) for child in children), themes=(pack.themes or {}).get("themes") or [])
+    return build_graph(graph_pack(pack), reviewed_aliases=_aliases())
+
+
+def footprint_rule(link: Any, hits: Sequence[ReaderHit], graph: Any) -> Any:
+    """Group packs only (spec 37). A signal with no register link that names a country where an STE entity is registered, in
+    the title or lead, and strongly hits a standing condition, is on the FOOTPRINT rung. A country alone is still no link."""
+    import dataclasses
+
+    from grit.ontology.link import FOOTPRINT
+
+    if link.rung is not None:
+        return link
+    conditions = [hit for hit in hits if hit.item_type == CONDITION and hit.strong]
+    places = [place for place in link.place_ids if graph.entities_in_place(place)]
+    if not conditions or not places:
+        return link
+    place = graph.nodes[places[0]]
+    reason = f"FOOTPRINT: names {place.name}, where {len(graph.entities_in_place(places[0]))} registered STE entities sit, and hits standing condition {conditions[0].item_name}."
+    return dataclasses.replace(link, rung=FOOTPRINT, reasons=(*link.reasons, reason))
 
 
 def standing_set(pack: OntologyPack) -> str:
@@ -175,8 +215,12 @@ def acquire(
     usage_path: Path | None = None,
     sleep: Callable[[float], None] | None = None,
     log: Callable[[str], None] = print,
+    fallback_max: int | None = None,
 ) -> dict[str, Any]:
-    """Researcher. Sends each query once per run, writes every result into the pool as it returns, and logs every search."""
+    """Researcher. Sends each query once per run, writes every result into the pool as it returns, and logs every search.
+    A query Brave did not answer (the monthly limit, a rate limit, or an error) or answered with nothing goes to Currents,
+    up to fallback_max per run (spec 37)."""
+    from grit.acquisition.brave import BraveFetchError
     from grit.acquisition.brave_plan import candidates_from_searches, collect_plan
 
     run.folder.mkdir(parents=True, exist_ok=True)
@@ -188,37 +232,82 @@ def acquire(
     by_id = {spec.query_id: spec for spec in specs}
     fetched_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     found = {"queries_sent": 0, "results": 0, "signals_new": 0, "skipped_answered": len(specs) - len([s for s in specs if s.query_id not in answered])}
+    returned: dict[str, int] = {}
 
     def on_search(entry: dict[str, Any]) -> None:
         with (run.folder / "searches.jsonl").open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
         candidates, hits = candidates_from_searches([entry], fetched_at=entry["fetched_at"])
         spec = by_id[entry["query_id"]]
+        engine = entry.get("engine") or "BRAVE"
+        returned[spec.query_id] = returned.get(spec.query_id, 0) + len(entry.get("results") or [])
         for candidate in candidates:
             before = pool.one("SELECT 1 FROM signals WHERE url = ?", (candidate.url,))
             signal_id = pool.add_signal(
                 url=candidate.url, title=candidate.title, text=candidate.text, publisher=candidate.publisher, published_at=candidate.published_at,
-                lane="BRAVE", content_hash=candidate.content_hash, seen_at=entry["fetched_at"],
+                lane=engine, content_hash=candidate.content_hash, seen_at=entry["fetched_at"],
             )
             found["signals_new"] += 0 if before else 1
             for hit in hits.get(candidate.url, []):
                 pool.add_sighting(signal_id, run.run_id, query_id=spec.query_id, query=spec.query, lane=spec.lane, target_id=target_of(spec), rank=hit.get("rank"))
         found["queries_sent"] += 1
         found["results"] += len(entry.get("results") or [])
-        log(f"  {spec.lane:10} {len(entry.get('results') or []):>3} results  {spec.query}")
+        log(f"  {spec.lane:10} {len(entry.get('results') or []):>3} results  {spec.query}" + ("  (Currents)" if engine == "CURRENTS" else ""))
 
     stopped = None
     if todo:
         options: dict[str, Any] = {"usage_path": usage_path} if usage_path else {}
         if sleep is not None:
             options["sleep"] = sleep
-        result = collect_plan(todo, fetched_at=fetched_at, freshness="pw", country="ALL", getter=getter, on_search=on_search, **options)
-        stopped = result.stopped
+        try:
+            result = collect_plan(todo, fetched_at=fetched_at, freshness=_freshness(run), country="ALL", getter=getter, on_search=on_search, **options)
+            stopped = result.stopped
+        except BraveFetchError as exc:
+            stopped = "BRAVE_ERROR"
+            log(f"  Brave stopped: {exc}")
+        thin = [spec for spec in todo if returned.get(spec.query_id, 0) == 0]
+        # An injected Brave getter is an offline run: Currents runs live only beside a live Brave, or with its own getter.
+        if thin and (getter is None or currents_getter is not None):
+            found["currents_fallback"] = _currents_fallback(thin, fetched_at=fetched_at, getter=currents_getter, on_search=on_search, limit=fallback_max, log=log)
     if currents_queries:
         found["currents"] = _currents(pool, run, currents_queries[:2], currents_getter, fetched_at)
     found["stopped"] = stopped
     pool.log(actor_type="AGENT", actor="Researcher", status="SUCCEEDED" if not stopped else stopped, run_id=run.run_id, version="brave-news-1", detail=found)
     return found
+
+
+def _freshness(run: ReaderRun) -> str:
+    """Brave's freshness window: a week, or a month for a pack whose scan window is longer than ten days."""
+    plan = (_load_pack(run.pack).scan_plan or {}) if run.pack else {}
+    return "pm" if int(plan.get("windowDays") or 8) > 10 else "pw"
+
+
+def _currents_fallback(
+    specs: Sequence[Any], *, fetched_at: str, getter: Callable[..., Any] | None, on_search: Callable[[dict[str, Any]], None], limit: int | None, log: Callable[[str], None]
+) -> dict[str, Any]:
+    """Send Brave's unanswered and empty queries to Currents, one search each, logged like a Brave search (spec 37)."""
+    import os
+
+    from grit.acquisition.currents import CurrentsFetchError, collect_currents
+
+    cap = limit if limit is not None else int(os.environ.get("CURRENTS_FALLBACK_MAX", "40") or 40)
+    if getter is None and not os.environ.get("CURRENTS_API_KEY", "").strip():
+        log(f"  Currents fallback skipped for {len(specs)} queries: CURRENTS_API_KEY is not set.")
+        return {"sent": 0, "skipped": len(specs), "reason": "NO_KEY"}
+    sent = 0
+    for spec in list(specs)[:cap]:
+        try:
+            candidates = collect_currents(spec.query, fetched_at=fetched_at, max_records=20, getter=getter)
+        except CurrentsFetchError as exc:
+            log(f"  Currents stopped: {exc}")
+            return {"sent": sent, "skipped": len(specs) - sent, "reason": "CURRENTS_ERROR"}
+        results = [
+            {"url": item.url, "title": item.title, "text": item.text, "publisher": item.publisher, "published_at": item.published_at, "rank": rank}
+            for rank, item in enumerate(candidates, start=1) if item.url and item.title
+        ]
+        on_search({"query_id": spec.query_id, "query": spec.query, "sent_query": spec.query, "engine": "CURRENTS", "status": 200, "fetched_at": fetched_at, "results": results})
+        sent += 1
+    return {"sent": sent, "skipped": max(0, len(specs) - cap), "reason": None if len(specs) <= cap else "FALLBACK_LIMIT"}
 
 
 def _currents(pool: Pool, run: ReaderRun, queries: Sequence[str], getter: Callable[..., Any] | None, fetched_at: str) -> int:
@@ -308,7 +397,7 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
     """Deterministic only. Writes one assessment row per signal in the run."""
     reader = _load_pack(run.pack)
     business = graph_pack(reader)
-    graph = build_graph(business, reviewed_aliases=_aliases())
+    graph = pack_graph(reader)
     index = LinkIndex(graph, business.lob_profiles)
     seed_watchpoints(pool, reader)
     seed_requests(pool, reader)
@@ -339,6 +428,8 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
         hits = readers.hits(signal["title"], signal["text"])
         if from_graph:
             hits += graph_hits(link, graph)
+        if reader.level == "GROUP":
+            link = footprint_rule(link, hits, graph)
         if themes_in_plan:
             # A theme keyword is common prose. It counts for a theme only on a page that theme's own query found, or on a page
             # that already links to the register.
@@ -540,7 +631,7 @@ def business_area_context(pack: OntologyPack) -> dict[str, Any]:
     """What a key risk's implication may name (spec 36): the business area's lines of business, groupings, entities, customers
     and suppliers from the typed graph. The model sees one short name for each. The check accepts any alias."""
     business = graph_pack(pack)
-    graph = build_graph(business, reviewed_aliases=_aliases())
+    graph = pack_graph(pack)
     own = {business.label.casefold(), str((business.manifest or {}).get("shortLabel") or "").casefold(), "st engineering", "ste"}
 
     def short(node: Any) -> str:
@@ -553,8 +644,15 @@ def business_area_context(pack: OntologyPack) -> dict[str, Any]:
         "customers": list(graph.of_class("Customer")),
         "suppliers": list(graph.of_class("Supplier")),
     }
+    if pack.level == "GROUP":
+        # The Group view also names the business areas and the countries where STE entities sit (spec 37).
+        groups["business_areas"] = [node for node in graph.of_class("STE") if node.kind == "BUSINESS_AREA"]
+        groups["countries"] = [node for node in graph.of_class("Place") if graph.entities_in_place(node.id)]
     anchors = sorted({alias for nodes in groups.values() for node in nodes for alias in (node.name, *node.aliases) if len(alias) >= 3 and alias.casefold() not in own})
-    return {"name": business.label, **{key: sorted({short(node) for node in nodes}) for key, nodes in groups.items()}, "anchors": anchors}
+    context = {"name": business.label, **{key: sorted({short(node) for node in nodes}) for key, nodes in groups.items()}, "anchors": anchors}
+    if pack.level == "GROUP":
+        context["group"] = True
+    return context
 
 
 def owner_roles(pack: OntologyPack) -> list[str]:
@@ -588,10 +686,12 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
 
     # Assessor: one draft per standing item. A theme an entity pack covers draws on that pack's signals for the same date.
     # A key risk also gets an implication for the business area (spec 36).
-    area = business_area_context(pack) if standing_set(pack) == "themes" else None
+    # A Group pack's conditions get it too, with the opportunity and the counter-indicator (spec 37).
+    group = pack.level == "GROUP"
+    area = business_area_context(pack) if standing_set(pack) == "themes" or group else None
 
     def area_for(item: Mapping[str, Any]) -> dict[str, Any] | None:
-        return area if area is not None and item.get("tier") == "KEY" else None
+        return area if area is not None and (item.get("tier") == "KEY" or group) else None
 
     drafts: dict[str, dict[str, Any]] = {}
     tables: dict[str, tuple[dict[str, dict[str, Any]], dict[str, str]]] = {}
@@ -643,15 +743,17 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
         for item in items:
             key = item["id"]
             draft = drafts[key]
-            if item.get("tier") != "KEY" or draft["status"] != "VALIDATED":
+            if (item.get("tier") != "KEY" and not group) or draft["status"] != "VALIDATED":
                 continue
             table, back = tables[key]
             cited = [ref for ref in draft.get("source_ids") or [] if ref in table]
             if draft.get("movement") != "ESCALATING" and not any(is_material(by_signal[back[ref]]) for ref in cited if back.get(ref) in by_signal):
                 log(f"  Proposer {key:16} SKIPPED      no escalation and no material source")
                 continue
+            # A Group condition has no register of key controls: its transmission text is not a control, so it is not offered as one.
+            theme = {**item, "transmission": None} if group else item
             result, call = agents.propose_options(
-                client, model, theme=item, assessment={"movement": draft.get("movement"), "summary": draft.get("summary"), "implication": draft.get("implication")},
+                client, model, theme=theme, assessment={"movement": draft.get("movement"), "summary": draft.get("summary"), "implication": draft.get("implication")},
                 sources={ref: table[ref] for ref in cited}, owners=owners,
             )
             write_log(call)
@@ -675,12 +777,13 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
         if status == "WITHHELD":
             pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=None, correction="Withheld: the Assessor's draft failed its checks twice. " + "; ".join(draft["violations"][:2]), origin="CHECK")
         if draft.get("implication_violations"):
-            pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=None, correction="Implication withheld: it failed its checks twice, so the assessment stands without it. " + "; ".join(draft["implication_violations"][:2]), origin="CHECK")
+            pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=None, correction="Implication, opportunity or counter-indicator withheld: it failed its checks twice, so the assessment stands without it. " + "; ".join(draft["implication_violations"][:2]), origin="CHECK")
         pool.save_condition({
             "run_id": run.run_id, "pack": run.pack, "condition_id": key, "condition_name": item["name"], "movement": draft.get("movement"),
             "trend_label": trend_label(draft.get("movement")) if status != "WITHHELD" else "Not established", "confidence": level,
             "summary": summary, "source_ids_json": cited, "status": status, "violations_json": draft.get("violations") or [],
             "implication": _cite(draft["implication"], back) if draft.get("implication") else None, "options_json": options.get(key, []),
+            "opportunity": _cite(draft["opportunity"], back) if draft.get("opportunity") else None, "counter_indicator": draft.get("counter_indicator"),
             "ranking_json": {"kind": item["kind"], "tier": item.get("tier"), "domain": item.get("domain"), "coveredBy": item.get("coveredBy")},
         })
         if status == "VALIDATED" and item["kind"] == "CONDITION":
@@ -755,7 +858,7 @@ def _item_rows(pack: OntologyPack, rows: Sequence[Mapping[str, Any]] = ()) -> li
     only the competitors that this week's signals name: 191 quiet competitors are not news."""
     plan = pack.scan_plan or {}
     if (plan.get("namedItems") or {}).get("source") == "graph":
-        graph = build_graph(graph_pack(pack), reviewed_aliases=_aliases())
+        graph = pack_graph(pack)
         found = [(ENTITY, node.id, node.name) for node in graph.of_class("STE")]
         found += [(CUSTOMER, node.id, node.name) for node in graph.of_class("Customer")]
         found += [(SUPPLIER, node.id, node.name) for node in graph.of_class("Supplier")]
@@ -884,7 +987,7 @@ def bottom_line_facts(pool: Pool, run: ReaderRun) -> dict[str, Any]:
     requests = {row["request_id"]: row for row in pool.management_requests() if row.get("pack") in (None, run.pack)}
     matches = request_matches(rows)
     return {
-        "brief": f"{pack.label} weekly risk scan ({pack.level.lower()} level)",
+        "brief": f"{pack.label} {'monthly' if int((pack.scan_plan or {}).get('windowDays') or 8) > 10 else 'weekly'} risk scan ({pack.level.lower()} level)",
         "reader": (pack.scan_plan or {}).get("audience") or pack.label,
         "standing_items": [
             {"name": row["condition_name"], "kind": (row.get("ranking") or {}).get("kind") or "CONDITION", "trend": row["trend_label"], "confidence": row["confidence"], "summary": strip_marks(row["summary"] or "") or None}
@@ -925,8 +1028,9 @@ def findings(pool: Pool, run: ReaderRun, *, client: Any, model: str, top: int = 
     from grit.agents.loop.engine import FindingLoop, LoopConfig
     from grit.agents.loop.tools import FollowUpTool
 
-    business = graph_pack(_load_pack(run.pack))
-    graph = build_graph(business, reviewed_aliases=_aliases())
+    reader = _load_pack(run.pack)
+    business = graph_pack(reader)
+    graph = pack_graph(reader)
     index = LinkIndex(graph, business.lob_profiles)
     rows = material_order(row for row in _kept(pool, run) if row["link"].get("rung") and (row.get("tier") or 9) <= max_tier)[:top]
     vectors_by_id = run_vectors(pool, run)

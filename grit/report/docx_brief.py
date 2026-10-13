@@ -311,7 +311,7 @@ def key_risk_headers(meta: Mapping[str, Any], *, options: bool) -> tuple[str, ..
 
 
 def priority_trend(row: Mapping[str, Any]) -> list[str]:
-    lines = [row.get("group") or "Standing item"]
+    lines = [row.get("group") or ("Group condition" if row.get("radar") else "Standing item")]
     if row.get("priority"):
         lines.append(f"Priority: {row['priority']}")
     return lines + [f"Trend: {row['trend']}", f"Confidence: {row['confidence']}"]
@@ -320,9 +320,37 @@ def priority_trend(row: Mapping[str, Any]) -> list[str]:
 def implication_text(row: Mapping[str, Any]) -> str:
     if row.get("implication"):
         return text_only(row["implication"]["runs"])
-    if row.get("tier") == "KEY":
-        return "Not established this week: no implication passed its checks."
+    if row.get("tier") == "KEY" or row.get("radar"):
+        return "Not established this period: no implication passed its checks."
     return "Not drafted: implications are written for key risks only."
+
+
+def opportunity_text(row: Mapping[str, Any]) -> str:
+    return text_only(row["opportunity"]["runs"]) if row.get("opportunity") else "None evident in this period's sources."
+
+
+RADAR_HEADERS = ("Theme and what changed", "Sources, date and time", "Risk and opportunity for STE", "Business areas", "Counter-indicator")
+
+
+def radar_headers(*, options: bool) -> tuple[str, ...]:
+    """The Group Strategic Radar's columns (spec 37). The response column needs RESPONSE_OPTIONS in the profile."""
+    return RADAR_HEADERS + (("Proposed response",) if options else ()) + ("Priority and trend",)
+
+
+def radar_cells(row: Mapping[str, Any], *, options: bool) -> list[list[str]]:
+    """One radar row as lists of lines, one list per column."""
+    refs = row.get("sources") or []
+    cells = [
+        [f"{row['number']}. {row['name']}", row["development"]],
+        [f"{number}. {ref['outlet']} ({ref.get('when') or ref.get('date') or 'date not stated'})" for number, ref in enumerate(refs, start=1)] or ["No source this period."],
+        [f"Risk: {implication_text(row)}", f"Opportunity: {opportunity_text(row)}"],
+        [", ".join(row.get("business_areas") or []) or "Not mapped yet."],
+        [row.get("counter_indicator") or "Not established this period."],
+    ]
+    if options:
+        cells.append([f"\u2022 {option} ({detail})" for option, detail in response_lines(row)] or ["No option proposed: no escalation and no material source."])
+    cells.append(priority_trend(row))
+    return cells
 
 
 def response_lines(row: Mapping[str, Any]) -> list[tuple[str, str]]:
@@ -387,9 +415,33 @@ def _key_risk_table(document: Any, brief: Mapping[str, Any], rows: Sequence[Mapp
         run.italic, run.font.size, run.font.color.rgb = True, Pt(8), LIGHT
 
 
+def _radar_table(document: Any, brief: Mapping[str, Any], rows: Sequence[Mapping[str, Any]]) -> None:
+    options = any(row.get("options") for row in rows) or "RESPONSE_OPTIONS" in (brief["meta"].get("sections") or [])
+    headers = radar_headers(options=options)
+    widths = (5.0, 3.4, 5.2, 2.4, 3.6, 4.4, 2.3) if options else (6.0, 3.8, 6.4, 2.8, 4.4, 2.6)
+    table = _table(document, headers, widths)
+    for row in rows:
+        cells = table.add_row().cells
+        for cell, width, lines in zip(cells, widths, radar_cells(row, options=options)):
+            cell.width = Cm(width)
+            _cell_lines(cell, lines, bold_first=cell is cells[0])
+    note = document.add_paragraph()
+    run = note.add_run(
+        "Movement is measured against the signed-off Group baseline, or the previous period until Wilson signs it off. Business areas are proposed. "
+        + (OPTIONS_NOTE if options else "")
+    )
+    run.italic, run.font.size, run.font.color.rgb = True, Pt(8), LIGHT
+
+
 def _conditions(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
     if dry:
         return bool(brief.get("conditions"))
+    if brief["meta"].get("level") == "GROUP":
+        _orient(document, landscape=True)
+        _heading(document, title)
+        _radar_table(document, brief, brief["conditions"])
+        _orient(document, landscape=False)
+        return True
     prior = brief["meta"].get("prior_run_date")
     widths = (0.8, 3.6, 2.2, 2.0, 8.6)
     themes = brief["meta"].get("standing_label") == "risk theme"

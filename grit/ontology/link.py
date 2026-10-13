@@ -6,6 +6,8 @@ Rungs, strongest first:
   COMPETITOR    it names a registered competitor.
   PERIMETER     it matches a LOB keyword and names a country where an entity of that LOB's grouping is registered.
   SECTOR        it matches a LOB keyword and nothing else.
+  FOOTPRINT     a Group pack only: no register link, but it names a country where an STE entity is registered and hits a standing
+                condition strongly (spec 37). grit/pipeline/reader_scan.py sets it.
   THEME         no register link, but it is a big event: it hits a KEY STE theme and meets the scale cues. grit/core/priority.py sets it.
 A name counts only when it is strong: in the title, in the first 400 characters, or named twice. One passing mention in the body is
 recorded and does not raise the rung. A one-word name that is not an acronym ("Leonardo", "Alstom") also needs a second ontology cue in the
@@ -30,7 +32,8 @@ COMPETITOR = "COMPETITOR"
 PERIMETER = "PERIMETER"
 SECTOR = "SECTOR"
 THEME = "THEME"
-RUNGS = (THEME, SECTOR, PERIMETER, COMPETITOR, COUNTERPARTY, DIRECT)  # weakest first
+FOOTPRINT = "FOOTPRINT"
+RUNGS = (THEME, FOOTPRINT, SECTOR, PERIMETER, COMPETITOR, COUNTERPARTY, DIRECT)  # weakest first
 LEAD_CHARS = 400
 MIN_THEME_KEYWORD = 6
 MATCHED_CLASSES = frozenset({"STE", "Customer", "Supplier", "Org", "Place", "Site"})

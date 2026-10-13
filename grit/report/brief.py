@@ -153,7 +153,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
     routed = routed_signals(pool, run_id, profile)
     cards = {row["signal_id"]: row for row in pool.findings(run_id)}
 
-    ids = _cited_ids(*(row.get("summary") for row in conditions), *(row.get("implication") for row in conditions), *(row.get("summary") for row in checks))
+    ids = _cited_ids(*(row.get("summary") for row in conditions), *(row.get("implication") for row in conditions), *(row.get("opportunity") for row in conditions), *(row.get("summary") for row in checks))
     ids |= {signal_id for row in conditions for option in row.get("options") or [] for signal_id in option.get("source_ids") or []}
     ids |= {signal_id for row in checks for signal_id in row.get("signal_ids") or []}
     ids |= {signal_id for row in conditions for signal_id in row.get("source_ids") or []}
@@ -201,12 +201,19 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
 
     sections = set(brief_config.get("sections") or [])
     reader_priority = {row["signal_id"]: row["route"]["priority"] for row in routed if row["route"].get("priority")}
+    # A Group condition names the business areas it touches (spec 37). The scan plan proposes them by pack id.
+    from grit.ontology.pack import manifests
+
+    labels = {name: manifest.get("label") or name for name, manifest in manifests(CONFIG_DIR).items()}
+    areas = {row["conditionId"]: [labels.get(item, item) for item in row.get("businessAreas") or []] for row in plan_config.get("conditions") or []}
+    group = pack.level == "GROUP"
     condition_rows = []
     for number, row in enumerate(conditions, start=1):
         ranking = row.get("ranking") or {}
         basis = render(row["summary"]) if row["summary"] else None
         implication = render(row["implication"]) if row.get("implication") else None
-        sources = list({ref["signal_id"]: ref for ref in [*(basis or {}).get("sources", []), *(implication or {}).get("sources", [])]}.values())
+        opportunity = render(row["opportunity"]) if row.get("opportunity") else None
+        sources = list({ref["signal_id"]: ref for ref in [*(basis or {}).get("sources", []), *(implication or {}).get("sources", []), *(opportunity or {}).get("sources", [])]}.values())
         condition_rows.append({
             "number": number, "condition_id": row["condition_id"], "name": row["condition_name"], "group": ranking.get("domain") if ranking.get("kind") == "THEME" else None,
             "covered_by": ranking.get("coveredBy"), "trend": row["trend_label"], "confidence": (row["confidence"] or "").title() or "Not established",
@@ -215,8 +222,11 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             "priority": min((reader_priority[ref["signal_id"]] for ref in sources if ref["signal_id"] in reader_priority), default=None),
             "themes": ranking.get("steThemes") or [], "risk_level": ranking.get("riskLevel"), "priority_label": ranking.get("priorityLabel"),
             "tier": ranking.get("tier"),
-            # Spec 36: a key risk, or any escalating theme, gets a full entry. Every other theme stays one table row.
-            "full": ranking.get("kind") == "THEME" and (ranking.get("tier") == "KEY" or row.get("movement") == "ESCALATING"),
+            # Spec 36: a key risk, or any escalating theme, gets a full entry. Every other theme stays one table row. Every Group
+            # condition is a row of the radar (spec 37).
+            "full": group or (ranking.get("kind") == "THEME" and (ranking.get("tier") == "KEY" or row.get("movement") == "ESCALATING")),
+            "opportunity": opportunity, "counter_indicator": row.get("counter_indicator"), "radar": group,
+            "business_areas": areas.get(row["condition_id"], []),
             "implication": implication,
             "options": [
                 {**{key: option.get(key) for key in ("kind", "owner", "builds_on", "trigger")},

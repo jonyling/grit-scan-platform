@@ -5,7 +5,7 @@ Priority is reader-scoped. It is assigned here and never written to a shared sig
   P1  an ACTIVE management request in the reader's scope matches the signal.
   P2  a governed exposure path reaches the reader's business: an STE name, a registered supplier, a perimeter link, or a
       strong mention of a named project, entity, supplier or site in the reader pack. A passing mention sets no priority.
-  P3  a competitor, sector, or theme-level match with no direct path.
+  P3  a competitor, sector, footprint, or theme-level match with no direct path.
   P4  a registered customer with no direct path.
 The lowest number wins, and every condition that matched is recorded.
 
@@ -99,7 +99,7 @@ def aperture_routing(
         if hit.get("strong") and hit.get("item_type") in {"PROJECT", "SUPPLIER", "SITE", "ENTITY"}:
             matched.append(f"P2: names reader-pack {hit['item_type'].lower()} {hit.get('item_name')}.")
             priorities.append("P2")
-    if rung in {"COMPETITOR", "SECTOR", "THEME"}:
+    if rung in {"COMPETITOR", "SECTOR", "FOOTPRINT", "THEME"}:
         matched.append(f"P3: {rung.lower()}-level match without a direct path.")
         priorities.append("P3")
     customer = (rung == "COUNTERPARTY" and any(item.get("cls") == "Customer" for item in strong)) or any(hit.get("strong") and hit.get("item_type") == "CUSTOMER" for hit in exposure)

@@ -37,15 +37,49 @@ A reader pack is a folder under `config/` with a `pack.json` manifest. The manif
 |---|---|---|---|---|
 | `urs` | Business area | The 14 STE risk themes from workbook sheet 7: six key, five tier-2, and three emerging risks. | 41 entities, 20 customers, and 15 suppliers from the typed graph, plus competitors on an eight-week rotation. | About 120 |
 | `urs-tw` | Entity, under `urs` | Ten standing conditions, from US-China competition to Taiwan's infrastructure resilience. | Named projects, suppliers, customers, sites, hazards, and watchpoints. | 60 |
+| `dsc` | Business area | The 16 DS&C risk themes from workbook sheet 7: six key, five tier-2, and five emerging risks. | 21 entities, 30 customers, and 39 suppliers from the typed graph, plus competitors. | About 117 |
+| `ste` | Group | Wilson's 12 dashboard themes as standing conditions, measured monthly against a baseline he signs off (spec 37). | None of its own: its footprint comes from its business-area children. | About 48 a month |
 
 A BA brief summarises its entity packs that ran on the same date. Its Taiwan-concentration theme draws on the URS Taiwan pack's signals. Run entity packs first; `grit weekly` does that by default.
+
+## Group pack
+
+The Group pack (`ste`) briefs the CEO and the Chairman each month on the geopolitical and technology picture facing ST Engineering as a whole ([spec 37](specs/37_STE_Group_Pack.md)). It binds news through all its business-area children, so a signal can link on the footprint rung: a country where an STE entity is registered, named with one of the 12 standing conditions. For each condition with evidence, the Assessor writes the risk pathway, any opportunity, and the counter-indicator, and the Proposer writes options.
+
+1. Write the pack and the two reader profiles. Existing files are kept.
+
+   ```bash
+   .venv/bin/python -m grit pack-init --pack ste
+   ```
+
+2. Add `"ste"` to `packs` in `config/profiles/wilson.json`, and add an `ste` brief: copy `briefs.ste` from `config/profiles/vschong.json` and set `preparedFor`.
+
+3. Run the month. A monthly pack runs only when you name it, so `grit weekly` without `--pack` leaves it out.
+
+   ```bash
+   .venv/bin/python -m grit weekly --pack ste
+   ```
+
+4. Draft the baseline for Wilson's sign-off. The draft goes to `output/runs/DATE-ste/baseline-draft/`. After he signs off, copy each `currentAssessment` into `config/ste/STE-Global-Baseline.json` and set its `status` to `SIGNED_OFF`.
+
+   ```bash
+   .venv/bin/python -m grit baseline-draft --pack ste --date DATE
+   ```
+
+5. Each quarter, propose scenarios for the eight strategic shifts. A person edits them and saves them as `config/ste/STE-Scenarios.json`.
+
+   ```bash
+   .venv/bin/python -m grit scenarios --pack ste --date DATE
+   ```
+
+The monthly brief is the Group Strategic Radar: one row for each condition, with what changed, its sources, the risk and opportunity for STE, the business areas it touches, the counter-indicator, the options, and the trend. Wilson reviews it before it is released.
 
 ## Weekly run
 
 One weekly run for a reader pack has these stages. Each stage reads and writes the signal pool, so you can rerun one stage alone.
 
 1. **Plan.** The pack's scan plan becomes queries: for each standing condition or theme, for each active management request, for each named project, entity, supplier, customer, and hazard, and for each watchpoint. A BA pack takes its names from the typed graph and rotates the long lists.
-2. **Acquire.** Brave News answers each query once per run. Each page becomes one signal, keyed by its canonical URL.
+2. **Acquire.** Brave News answers each query once per run. A query Brave leaves unanswered or empty goes to Currents, up to `CURRENTS_FALLBACK_MAX` (default 40) a run. Each page becomes one signal, keyed by its canonical URL.
 3. **Embed.** Gemini embeds each page once. Vectors are cached by text hash.
 4. **Assess.** With no model: document type, the link ladder, reader-pack hits, the keep rule, briefing priority, the risk cascade, the harm scorer, relevance labels, and the RED rule.
 5. **Agents.** The Assessor drafts each standing condition or theme, the Critic reviews the drafts, and the Reporter writes the named-item entries and the bottom line. Watchpoints update by rule. The finding loop writes cards for the strongest register-linked signals.
@@ -190,10 +224,12 @@ Profiles are JSON files in `config/profiles/`. A profile changes what a reader s
 | `gareth` | Head, URS | Material | BA head | Short URS and URS Taiwan briefs. Approves for AIRIS. |
 | `ksyong` | Head, URS Taiwan | Material | Reader | URS Taiwan only. |
 | `group-cfo` | Group CFO | Wide | Reader | RED alerts only. |
+| `vschong` | Chief Executive Officer (Vincent S. Chong) | Material | Reader | The monthly Group Strategic Radar, after Wilson approves it. |
+| `mkteo` | Chairman (MK Teo) | Material | Reader | The monthly Group Strategic Radar. He conveys his views to Wilson. |
 
 A profile lists its packs in `packs` and one brief per pack under `briefs`. Each package is one reader's brief for one pack and one week. Add `RESPONSE_OPTIONS` to a brief's `sections` to show the Proposer's options under each key risk; it adds no section of its own.
 
-A wide-aperture reader sees every kept signal. A material-aperture reader sees a signal only with P1, P2, or P4 priority, or a standing-condition match (spec 24). News priority is P1 for an active management request, P2 for a direct exposure path, P3 for a competitor, sector, or theme match, and P4 for a customer (spec 29).
+A wide-aperture reader sees every kept signal. A material-aperture reader sees a signal only with P1, P2, or P4 priority, or a standing-condition match (spec 24). News priority is P1 for an active management request, P2 for a direct exposure path, P3 for a competitor, sector, footprint, or theme match, and P4 for a customer (spec 29).
 
 Memory counts the reader's latest decision on each signal against its features: themes, register names, LOB, conditions, reader-pack items, and outlet. It moves a signal by at most three per feature, inside its tier. It hides a signal the reader rejected, and an outlet the reader rejected three times and never approved. It never hides a P1 or RED signal.
 
@@ -269,7 +305,7 @@ These are the open items for the MVP, not a ranking.
 4. The order-book anchors are copied from the reference brief. A named BA owner must confirm them.
 5. The BA relationship gaps limit entity-level paths (see the previous section).
 6. Nothing schedules the weekly run, sends mail, or authenticates dashboard users. The workflow ledger is written to the pool, not to Dataverse.
-7. Only Urban Solutions and URS Taiwan have scan plans. The other six business areas follow [Add a business area](docs/add-a-business-area.md).
+7. Urban Solutions, URS Taiwan, DS&C, and the Group pack have scan plans. The other business areas follow [Add a business area](docs/add-a-business-area.md). Until they do, the Group footprint covers URS and DS&C only.
 8. Generated short names cannot tell two companies with one name apart. On 2026-10-07, "Amtech Systems" matched a US semiconductor company. Reject such aliases through `grit gaps`.
 
 ## Specifications

@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-from grit.ontology.link import COMPETITOR, COUNTERPARTY, DIRECT, PERIMETER, SECTOR, THEME, LinkIndex, link_candidate, rung_rank
+from grit.ontology.link import COMPETITOR, COUNTERPARTY, DIRECT, FOOTPRINT, PERIMETER, SECTOR, THEME, LinkIndex, link_candidate, rung_rank
 from grit.ontology.pack import load_ontology_pack
 from grit.ontology.graph import build_graph
 
@@ -108,7 +108,7 @@ def test_a_theme_keyword_counts_only_in_the_title_or_lead_or_when_named_twice() 
 
 
 def test_rungs_rank_from_theme_up() -> None:
-    assert [rung_rank(r) for r in (None, THEME, SECTOR, PERIMETER, COMPETITOR, COUNTERPARTY, DIRECT)] == [0, 1, 2, 3, 4, 5, 6]
+    assert [rung_rank(r) for r in (None, THEME, FOOTPRINT, SECTOR, PERIMETER, COMPETITOR, COUNTERPARTY, DIRECT)] == [0, 1, 2, 3, 4, 5, 6, 7]
 
 
 def test_the_urs_pack_links_a_named_customer_and_records_the_link_as_json() -> None:
