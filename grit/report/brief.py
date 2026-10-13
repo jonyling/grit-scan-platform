@@ -35,6 +35,21 @@ def fmt_date(value: str | None) -> str | None:
     return None
 
 
+def fmt_when(value: str | None) -> str | None:
+    """The publication date, with the time when the source states one: '3 Oct 2026, 08:15 UTC'."""
+    try:
+        parsed = datetime.strptime(str(value or ""), "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError:
+        return fmt_date(value)
+    day = f"{parsed.day} {parsed.strftime('%b %Y')}"
+    return day if (parsed.hour, parsed.minute, parsed.second) == (0, 0, 0) else f"{day}, {parsed.strftime('%H:%M')} UTC"
+
+
+def text_only(runs: Sequence[Mapping[str, Any]]) -> str:
+    """Runs as one line of text with the citations left out, for a table whose source column lists them."""
+    return re.sub(r"\s+([.,;])", r"\1", re.sub(r"\s+", " ", "".join(run["text"] for run in runs if "text" in run))).strip()
+
+
 def window_label(run_date: date, days: int) -> str:
     start = run_date - timedelta(days=days)
     if start.year == run_date.year:
@@ -55,7 +70,10 @@ def citations(text: str | None, signals: Mapping[str, Mapping[str, Any]]) -> tup
             signal = signals.get(signal_id)
             if signal is None:
                 continue
-            ref = {"signal_id": signal_id, "outlet": signal.get("publisher") or "source", "date": fmt_date(signal.get("published_at")), "url": signal.get("url"), "title": signal.get("title")}
+            ref = {
+                "signal_id": signal_id, "outlet": signal.get("publisher") or "source", "date": fmt_date(signal.get("published_at")),
+                "when": fmt_when(signal.get("published_at")), "url": signal.get("url"), "title": signal.get("title"),
+            }
             refs.append(ref)
             cited[signal_id] = ref
         if refs:
@@ -182,18 +200,24 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
     entities = [{"heading": grouping, "items": items} for grouping, items in sorted(entity_groups.items(), key=lambda pair: (pair[0].startswith(pack.label), pair[0]))]
 
     sections = set(brief_config.get("sections") or [])
+    reader_priority = {row["signal_id"]: row["route"]["priority"] for row in routed if row["route"].get("priority")}
     condition_rows = []
     for number, row in enumerate(conditions, start=1):
         ranking = row.get("ranking") or {}
+        basis = render(row["summary"]) if row["summary"] else None
+        implication = render(row["implication"]) if row.get("implication") else None
+        sources = list({ref["signal_id"]: ref for ref in [*(basis or {}).get("sources", []), *(implication or {}).get("sources", [])]}.values())
         condition_rows.append({
             "number": number, "condition_id": row["condition_id"], "name": row["condition_name"], "group": ranking.get("domain") if ranking.get("kind") == "THEME" else None,
             "covered_by": ranking.get("coveredBy"), "trend": row["trend_label"], "confidence": (row["confidence"] or "").title() or "Not established",
-            "status": row["status"], "basis": render(row["summary"]) if row["summary"] else {"runs": [{"text": "Withheld: the draft failed its checks. See the QA log."}], "plain": "Withheld: the draft failed its checks. See the QA log.", "sources": []},
+            "status": row["status"], "basis": basis or {"runs": [{"text": "Withheld: the draft failed its checks. See the QA log."}], "plain": "Withheld: the draft failed its checks. See the QA log.", "sources": []},
+            "development": text_only(basis["runs"]) if basis else "Withheld: the draft failed its checks. See the QA log.", "sources": sources,
+            "priority": min((reader_priority[ref["signal_id"]] for ref in sources if ref["signal_id"] in reader_priority), default=None),
             "themes": ranking.get("steThemes") or [], "risk_level": ranking.get("riskLevel"), "priority_label": ranking.get("priorityLabel"),
             "tier": ranking.get("tier"),
             # Spec 36: a key risk, or any escalating theme, gets a full entry. Every other theme stays one table row.
             "full": ranking.get("kind") == "THEME" and (ranking.get("tier") == "KEY" or row.get("movement") == "ESCALATING"),
-            "implication": render(row["implication"]) if row.get("implication") else None,
+            "implication": implication,
             "options": [
                 {**{key: option.get(key) for key in ("kind", "owner", "builds_on", "trigger")},
                  "text": render(option["option"] + (f" [{', '.join(option['source_ids'])}]" if option.get("source_ids") else ""))}
@@ -281,7 +305,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             "prepared_for": brief_config.get("preparedFor") or profile.role, "reader": profile.label, "profile_id": profile.profile_id, "aperture": profile.aperture,
             "run_id": run_id, "run_date": run["run_date"], "window": window_label(run_date, window), "prior_run_date": fmt_date(previous["run_date"]) if previous else None,
             "grounded_in": _grounded_in(pack), "status": STATUS, "sections": list(brief_config.get("sections") or []),
-            "pack": pack_name, "pack_label": pack.label, "level": pack.level, "section_titles": dict(plan_config.get("sectionTitles") or {}),
+            "pack": pack_name, "pack_label": pack.label, "pack_short": str((pack.manifest or {}).get("shortLabel") or pack.label), "level": pack.level, "section_titles": dict(plan_config.get("sectionTitles") or {}),
             "standing_label": "risk theme" if any(row.get("group") for row in condition_rows) else "condition",
         },
         "bottom_line": {"label": label, "text": bottom_text, "escalation": escalation, "drafted_by": "Reporter (validated)" if bottom.get("status") == "VALIDATED" else "rule (the Reporter's draft was withheld or absent)"},

@@ -130,11 +130,11 @@ Run these commands from the repository root. `DATE` is the run date, `YYYY-MM-DD
 
    To run the stages one at a time, use `grit scan`, `grit agents`, and `grit report` with the same `--date`. `grit assess` reruns the deterministic assessment with no network call. A query already answered in a run is not sent again, so an interrupted scan resumes.
 
-3. Open the packs. Each reader's files are in `output/runs/DATE-PACK/PROFILE/vN/`: a Word brief, a PowerPoint deck, an Excel signal list, a Markdown copy, and the brief model as JSON. RED drafts are in `output/runs/DATE-PACK/alerts/`.
+3. Open the packs. Each reader's files are in `output/runs/DATE-PACK/PROFILE/vN/`: a Word brief, a PowerPoint executive summary in the format of `docs/reference/GRIT-Scan_Executive_Summary.pptx`, an Excel signal list, a Markdown copy, and the brief model as JSON. RED drafts are in `output/runs/DATE-PACK/alerts/`.
 
 The URS Taiwan brief follows the 2 Oct 2026 reference brief in `docs/reference/`: a bottom-line box, the order-book baseline, named projects, suppliers, customers, natural hazards, the ten standing conditions with trend, confidence, and dated sources, the QA and correction log, and the watchpoints.
 
-The Urban Solutions brief follows the same style at BA level: the bottom line, the 14 risk themes in register order (each key risk, and any escalating theme, in full with its implication; the rest as one table row), management-requested topics with the signals that matched each one, the URS Taiwan summary, STE entities by line of business, customer, supplier, and competitor watch, priority findings, the QA log, and the watchpoints. Each reader's profile chooses which of these sections they receive.
+The Urban Solutions brief follows the same style at BA level: the bottom line, the 14 risk themes in register order (each key risk, and any escalating theme, as a row of the key-risk table: development, source, date and time, relevance to the business area, proposed response, and priority and trend; the rest as one row of the theme table), management-requested topics with the signals that matched each one, the URS Taiwan summary, STE entities by line of business, customer, supplier, and competitor watch, priority findings, the QA log, and the watchpoints. Each reader's profile chooses which of these sections they receive.
 
 ## Review packs and hand off to AIRIS
 

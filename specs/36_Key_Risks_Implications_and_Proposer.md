@@ -32,7 +32,28 @@ The scan plan gives each Key Risk more queries than a tier-2 or emerging theme. 
 
 ### Brief layout
 
-In the standing-items section, each Key Risk gets a full entry: trend, confidence, the assessment, the implication, and, where the reader's profile asks for them, the response options. A tier-2 or emerging theme that is escalating also gets a full entry. Every other theme stays one row in the table.
+In the standing-items section, each Key Risk, and any escalating tier-2 or emerging theme, is one row of a table with the R&A reviewer's columns:
+
+| Column | Content |
+|---|---|
+| News/Developments | The theme, then the Assessor's validated summary without inline references. |
+| News/Information Source | Each cited outlet, numbered and linked, with the article title. |
+| Date and Time | Each source's publication date, with the time when the source states one. |
+| Relevance/Potential Impact to the business area | The implication. The header uses the pack's short label, such as DS&C. |
+| Proposed Response/Management Consideration | The Proposer's options, each with its kind, owner, what it builds on, and its trigger. The column appears only when the profile includes `RESPONSE_OPTIONS`. |
+| Priority/Trend | The tier, the reader's best news priority among the sources, the trend, and the confidence. |
+
+The Word brief puts this table on a landscape page. The Markdown copy and the Excel `Key risks` sheet use the same columns. Every other theme stays one row in the standing-items table.
+
+### Executive-summary deck
+
+The PowerPoint deck follows `docs/reference/GRIT-Scan_Executive_Summary.pptx`. It is built on a template trimmed from that deck (`grit/report/templates/executive_summary.pptx`, rebuilt with `python -m grit.report.deck_template`), so it carries the ST Engineering master and branding.
+
+1. **Cover.** The business area, the scan window, the reader, and the report owner.
+2. **Executive summary.** The status badge, the two leading items (escalating first, then key risks), the other items with their appendix numbers, and the bottom line.
+3. **Appendix, one slide per item.** What it means for the business area, what happened, and, when the profile includes `RESPONSE_OPTIONS`, the options. A side panel gives the risk linkage, the owners of the options, and up to three sources.
+
+Each summary item links to its appendix slide, and each appendix slide links back. Text that does not fit a box is shortened to whole sentences. The Word brief keeps the full text.
 
 ## 2. Implication
 

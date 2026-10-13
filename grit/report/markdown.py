@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from grit.report.docx_brief import OPTIONS_NOTE, SECTION_TITLES, option_line, section_title
+from grit.report.docx_brief import OPTIONS_NOTE, SECTION_TITLES, implication_text, key_risk_headers, priority_trend, response_lines, section_title
 
 
 def _md(rendered: Mapping[str, Any] | None, fallback: str = "No new item found this week in the checked sources.") -> str:
@@ -60,14 +60,25 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
             body += [f"- {item['name']}: {_md(item['text'])}" for item in brief.get(key.lower()) or []]
         elif key == "CONDITIONS" and brief.get("conditions"):
             full = [row for row in brief["conditions"] if row.get("full")]
-            for row in full:
-                body += [f"### {row['number']}. {row['name']}", "", f"*{row.get('group') or 'Risk theme'}. Trend: {row['trend']}. Confidence: {row['confidence']}.*", "", _md(row["basis"]), ""]
-                if row.get("implication"):
-                    body += [f"**What it could mean for {meta.get('pack_label') or 'the business area'}:** {_md(row['implication'])}", ""]
-                if row.get("options"):
-                    body += ["**Options for management consideration**", ""]
-                    body += [f"- {_md(option['text'])} *{option_line(option)}*" for option in row["options"]]
-                    body += ["", f"*{OPTIONS_NOTE}*", ""]
+            if full:
+                options = any(row.get("options") for row in full) or "RESPONSE_OPTIONS" in meta["sections"]
+                headers = key_risk_headers(meta, options=options)
+                body += ["| " + " | ".join(headers) + " |", "|" + "---|" * len(headers)]
+                for row in full:
+                    refs = row.get("sources") or []
+                    cells = [
+                        f"**{row['number']}. {row['name']}**<br>{row['development']}",
+                        "<br>".join(f"{number}. [{ref['outlet']}]({ref['url']})" if ref.get("url") else f"{number}. {ref['outlet']}" for number, ref in enumerate(refs, start=1)) or "No source this week.",
+                        "<br>".join(f"{number}. {ref.get('when') or ref.get('date') or 'Date not stated'}" for number, ref in enumerate(refs, start=1)) or "Not applicable.",
+                        implication_text(row),
+                    ]
+                    if options:
+                        cells.append("<br>".join(f"• {option} *{detail}*" for option, detail in response_lines(row)) or "No option proposed.")
+                    cells.append("<br>".join(priority_trend(row)))
+                    body.append("| " + " | ".join(cell.replace("|", "/").replace("\n", " ") for cell in cells) + " |")
+                if options:
+                    body += ["", f"*{OPTIONS_NOTE}*"]
+                body.append("")
             rest = [row for row in brief["conditions"] if row not in full]
             if rest:
                 if full:

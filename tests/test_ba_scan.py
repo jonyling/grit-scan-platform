@@ -135,19 +135,54 @@ def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
     assert entry["full"] and entry["implication"]["plain"] and entry["options"] == [], "a profile without RESPONSE_OPTIONS sees no options"
     assert not next(row for row in plain["conditions"] if row["condition_id"] == "URS-TIER_2-01")["full"], "a quiet tier-2 theme stays one row"
     briefs = dict(profiles["wilson"].briefs)
-    briefs["urs"] = {**briefs["urs"], "sections": [*briefs["urs"]["sections"], "RESPONSE_OPTIONS"]}
+    briefs["urs"] = {**briefs["urs"], "sections": [*briefs["urs"]["sections"], "RESPONSE_OPTIONS"], "formats": ["docx", "pptx", "xlsx"]}
     with_options = dataclasses.replace(profiles["wilson"], briefs=briefs)
     rich = write_pack(pool, run.run_id, with_options, folder=tmp_path / "wilson-options", submit=False)
+    short = build_brief(pool, run.run_id, with_options)["meta"]["pack_short"]
+    headers = ["News/Developments", "News/Information Source", "Date and Time", f"Relevance/Potential Impact to {short}", "Proposed Response/Management Consideration", "Priority/Trend"]
+
     document = Document(rich["files"]["docx"])
-    text = "\n".join(paragraph.text for paragraph in document.paragraphs)
-    for phrase in ("Key risks", "What it could mean for Urban Solutions", "Options for management consideration", "Consider testing rail ticketing systems",
-                   "Owner: R&A business partner", "Trigger: A rail operator in a URS market reports an attack.", "Not reviewed advice."):
-        assert phrase in text, phrase
-    assert REASONING not in text and REASONING not in Path(rich["files"]["md"]).read_text(encoding="utf-8")
-    assert "Options for management consideration" in Path(rich["files"]["md"]).read_text(encoding="utf-8")
+    table = next([[cell.text for cell in row.cells] for row in table.rows] for table in document.tables if table.rows[0].cells[0].text == "News/Developments")
+    assert table[0] == headers, "the key risks keep the R&A reviewer's six columns"
+    cyber = next(row for row in table[1:] if row[3] and "could disrupt" in row[3])
+    assert cyber[1].startswith("1. ") and "4 Oct 2026" in cyber[2]
+    assert "Consider testing rail ticketing systems" in cyber[4] and "Owner: R&A business partner" in cyber[4]
+    assert "Trend: Escalating" in cyber[5] and "Key risk" in cyber[5]
+    assert any(section.page_width > section.page_height for section in document.sections), "the six-column table sits on a landscape page"
+    text = "\n".join([paragraph.text for paragraph in document.paragraphs] + [cell.text for table in document.tables for row in table.rows for cell in row.cells])
+    assert "Not reviewed advice." in text and REASONING not in text
+    markdown = Path(rich["files"]["md"]).read_text(encoding="utf-8")
+    assert "| " + " | ".join(headers) + " |" in markdown and REASONING not in markdown
+
+    from openpyxl import load_workbook
+
+    sheet = load_workbook(rich["files"]["xlsx"])["Key risks"]
+    assert [cell.value for cell in sheet[1]] == headers
+
+    from pptx import Presentation
+
+    from grit.report.deck_template import CONTENT_LAYOUT, COVER_LAYOUT
+    from grit.report.office import deck_items
+
+    deck = Presentation(rich["files"]["pptx"])
+    slides = list(deck.slides)
+    items = deck_items(build_brief(pool, run.run_id, with_options))
+    assert len(slides) == 2 + len(items), "a cover, the executive summary, and one appendix slide per key risk or escalating theme"
+    assert slides[0].slide_layout.name == COVER_LAYOUT and all(slide.slide_layout.name == CONTENT_LAYOUT for slide in slides[1:])
+    texts = ["\n".join(shape.text_frame.text for shape in slide.shapes if shape.has_text_frame) for slide in slides]
+    assert "GRIT-Scan" in texts[0] and "SCAN WINDOW" in texts[0] and "REPORT OWNER" in texts[0]
+    assert "Weekly Risk Radar" in texts[1] and "BOTTOM LINE" in texts[1] and "NEW & ESCALATING" in texts[1]
+    detail = next(text for text in texts[2:] if "Consider testing rail ticketing systems" in text)
+    for label in ("WHAT IT MEANS FOR", "WHAT HAPPENED", "OPTIONS FOR MANAGEMENT CONSIDERATION", "RISK LINKAGE", "OWNER", "SOURCES", "Back to Executive Summary"):
+        assert label in detail, label
+    targets = lambda slide: {deck.slides.index(shape.click_action.target_slide) for shape in slide.shapes if shape.click_action.target_slide is not None}  # noqa: E731
+    assert 2 in targets(slides[1]) and all(targets(slide) == {1} for slide in slides[2:]), "summary links to the appendix, and each appendix slide links back"
+    assert not any(REASONING in text for text in texts)
 
     wilson = write_pack(pool, run.run_id, profiles["wilson"], folder=tmp_path / "wilson")
     document = Document(wilson["files"]["docx"])
+    key_table = next(table for table in document.tables if table.rows[0].cells[0].text == "News/Developments")
+    assert "Proposed Response/Management Consideration" not in [cell.text for cell in key_table.rows[0].cells], "no response column without RESPONSE_OPTIONS"
     text = "\n".join([paragraph.text for paragraph in document.paragraphs] + [cell.text for table in document.tables for row in table.rows for cell in row.cells])
     assert "GRIT-Scan: Urban Solutions" in text
     for heading in ("Standing risk themes (URS annual risks)", "Management-requested topics", "Entity reader packs", "STE entities by line of business", "Customer watch"):

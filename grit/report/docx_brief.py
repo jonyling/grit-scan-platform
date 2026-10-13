@@ -6,12 +6,15 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from docx import Document
+from docx.enum.section import WD_ORIENT, WD_SECTION
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.opc.constants import RELATIONSHIP_TYPE
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
+
+from grit.report.brief import text_only
 
 NAVY = RGBColor(0x1F, 0x38, 0x64)
 GREY = RGBColor(0x55, 0x55, 0x55)
@@ -300,27 +303,85 @@ def option_line(option: Mapping[str, Any]) -> str:
     return ". ".join(parts) + "."
 
 
-def _full_entry(document: Any, row: Mapping[str, Any], label: str) -> None:
-    """A key risk, or an escalating theme, in full: trend, assessment, implication, and the options the profile asks for."""
-    _heading(document, f"{row['number']}. {row['name']}", level=3)
-    line = document.add_paragraph()
-    run = line.add_run(f"{row.get('group') or 'Risk theme'}. Trend: {row['trend']}. Confidence: {row['confidence']}.")
-    run.italic, run.font.size, run.font.color.rgb = True, Pt(9), GREY
-    if row.get("covered_by"):
-        line.add_run(f" Draws on the {row['covered_by']} entity pack.").font.size = Pt(9)
-    _runs(document.add_paragraph(), row["basis"])
+def key_risk_headers(meta: Mapping[str, Any], *, options: bool) -> tuple[str, ...]:
+    """The key-risk table's columns, in the R&A reviewer's wording. The response column needs RESPONSE_OPTIONS in the profile."""
+    short = meta.get("pack_short") or meta.get("pack_label") or "the business area"
+    headers = ("News/Developments", "News/Information Source", "Date and Time", f"Relevance/Potential Impact to {short}")
+    return headers + (("Proposed Response/Management Consideration",) if options else ()) + ("Priority/Trend",)
+
+
+def priority_trend(row: Mapping[str, Any]) -> list[str]:
+    lines = [row.get("group") or "Standing item"]
+    if row.get("priority"):
+        lines.append(f"Priority: {row['priority']}")
+    return lines + [f"Trend: {row['trend']}", f"Confidence: {row['confidence']}"]
+
+
+def implication_text(row: Mapping[str, Any]) -> str:
     if row.get("implication"):
-        paragraph = document.add_paragraph()
-        paragraph.add_run(f"What it could mean for {label}: ").bold = True
-        _runs(paragraph, row["implication"])
-    if row.get("options"):
-        paragraph = document.add_paragraph()
-        paragraph.add_run("Options for management consideration").bold = True
-        for option in row["options"]:
-            item = document.add_paragraph(style="List Bullet")
-            _runs(item, option["text"])
-            meta = item.add_run(f" {option_line(option)}")
-            meta.font.size, meta.font.color.rgb = Pt(9), GREY
+        return text_only(row["implication"]["runs"])
+    if row.get("tier") == "KEY":
+        return "Not established this week: no implication passed its checks."
+    return "Not drafted: implications are written for key risks only."
+
+
+def response_lines(row: Mapping[str, Any]) -> list[tuple[str, str]]:
+    """Each option as (the option, its kind, owner, what it builds on, and its trigger)."""
+    return [(text_only(option["text"]["runs"]), option_line(option)) for option in row.get("options") or []]
+
+
+def _cell_lines(cell: Any, lines: Sequence[str], *, size: float = 8.5, bold_first: bool = False) -> None:
+    for number, line in enumerate(lines):
+        paragraph = cell.paragraphs[0] if number == 0 else cell.add_paragraph()
+        run = paragraph.add_run(line)
+        run.font.size = Pt(size)
+        run.bold = bold_first and number == 0
+
+
+def _orient(document: Any, landscape: bool) -> None:
+    """Start a new page in landscape or portrait. The key-risk table needs the width of a landscape page."""
+    current = document.sections[-1]
+    section = document.add_section(WD_SECTION.NEW_PAGE)
+    width, height = sorted((current.page_width, current.page_height), reverse=landscape)
+    section.orientation = WD_ORIENT.LANDSCAPE if landscape else WD_ORIENT.PORTRAIT
+    section.page_width, section.page_height = width, height
+
+
+def _key_risk_table(document: Any, brief: Mapping[str, Any], rows: Sequence[Mapping[str, Any]]) -> None:
+    options = any(row.get("options") for row in rows) or "RESPONSE_OPTIONS" in (brief["meta"].get("sections") or [])
+    headers = key_risk_headers(brief["meta"], options=options)
+    widths = (5.6, 3.6, 2.6, 5.0, 6.0, 2.9) if options else (7.4, 4.2, 2.8, 7.6, 3.7)
+    table = _table(document, headers, widths)
+    for row in rows:
+        cells = table.add_row().cells
+        for cell, width in zip(cells, widths):
+            cell.width = Cm(width)
+        _cell_lines(cells[0], [f"{row['number']}. {row['name']}", row["development"]], bold_first=True)
+        for number, ref in enumerate(row.get("sources") or [], start=1):
+            paragraph = cells[1].paragraphs[0] if number == 1 else cells[1].add_paragraph()
+            paragraph.add_run(f"{number}. ").font.size = Pt(8.5)
+            if ref.get("url"):
+                _hyperlink(paragraph, str(ref["outlet"]), str(ref["url"]), size=8.5)
+            else:
+                paragraph.add_run(str(ref["outlet"])).font.size = Pt(8.5)
+            if ref.get("title"):
+                title = paragraph.add_run(f": {str(ref['title'])[:90]}")
+                title.font.size, title.italic = Pt(8), True
+        if not row.get("sources"):
+            _cell_lines(cells[1], ["No source this week."])
+        _cell_lines(cells[2], [f"{number}. {ref.get('when') or ref.get('date') or 'Date not stated'}" for number, ref in enumerate(row.get("sources") or [], start=1)] or ["Not applicable."])
+        _cell_lines(cells[3], [implication_text(row)])
+        if options:
+            lines = response_lines(row)
+            for number, (option, detail) in enumerate(lines):
+                paragraph = cells[4].paragraphs[0] if number == 0 else cells[4].add_paragraph()
+                paragraph.add_run(f"\u2022 {option} ").font.size = Pt(8.5)
+                meta = paragraph.add_run(detail)
+                meta.font.size, meta.font.color.rgb = Pt(7.5), GREY
+            if not lines:
+                _cell_lines(cells[4], ["No option proposed: the risk is not escalating and cites no material source." if row.get("tier") == "KEY" else "Options are proposed for key risks only."])
+        _cell_lines(cells[-1], priority_trend(row))
+    if options:
         note = document.add_paragraph()
         run = note.add_run(OPTIONS_NOTE)
         run.italic, run.font.size, run.font.color.rgb = True, Pt(8), LIGHT
@@ -329,16 +390,17 @@ def _full_entry(document: Any, row: Mapping[str, Any], label: str) -> None:
 def _conditions(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
     if dry:
         return bool(brief.get("conditions"))
-    _heading(document, title)
     prior = brief["meta"].get("prior_run_date")
     widths = (0.8, 3.6, 2.2, 2.0, 8.6)
     themes = brief["meta"].get("standing_label") == "risk theme"
     full = [row for row in brief["conditions"] if row.get("full")] if themes else []
     rest = [row for row in brief["conditions"] if row not in full]
     if full:
+        _orient(document, landscape=True)
+    _heading(document, title)
+    if full:
         _heading(document, "Key risks" if all(row.get("tier") == "KEY" for row in full) else "Key risks and escalating themes", level=2)
-        for row in full:
-            _full_entry(document, row, brief["meta"].get("pack_label") or "the business area")
+        _key_risk_table(document, brief, full)
     if rest:
         if full:
             _heading(document, "Other risk themes", level=2)
@@ -352,6 +414,8 @@ def _conditions(document: Any, brief: Mapping[str, Any], title: str, *, dry: boo
     note = document.add_paragraph()
     run = note.add_run("Trend is the Assessor's proposal, validated against the cited sources. Confidence is computed by rule from the cited outlets and their register ratings.")
     run.font.size, run.font.color.rgb = Pt(8), LIGHT
+    if full:
+        _orient(document, landscape=False)
     return True
 
 
