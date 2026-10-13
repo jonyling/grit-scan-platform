@@ -86,7 +86,8 @@
         "COMPETITORS",
         "PRIORITY_FINDINGS",
         "QA_LOG",
-        "WATCHPOINTS"
+        "WATCHPOINTS",
+        "RESPONSE_OPTIONS"
       ],
       "maxFindings": 8,
       "formats": [

@@ -38,7 +38,8 @@
         "PRIORITY_FINDINGS",
         "OTHER_SIGNALS",
         "QA_LOG",
-        "WATCHPOINTS"
+        "WATCHPOINTS",
+        "RESPONSE_OPTIONS"
       ],
       "maxFindings": 12,
       "formats": [

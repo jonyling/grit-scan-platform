@@ -2,7 +2,7 @@
  "note":"Under Defence & Public Security. Two Presidents: Digital Systems (Low Jin Phang) and Cyber (Goh Eng Choon). No entity pack yet.",
  "registers":{"source_register":"DSC-Source-Register.json","exposure":"DSC-Exposure-Ontology.json","lob_profiles":"DSC-LOB-Profiles.json","themes":"DSC-STE-Themes.json","baseline":"DSC-Global-Baseline.json"},
  "optional":{"lob_hierarchy":"DSC-LOB-Hierarchy.json","keyword_library":"DSC-Keyword-Library.json","competitors":"DSC-Competitors.json","management_focus":"DSC-Management-Focus.json","relationships":"DSC-Relationships.json","scan_plan":"DSC-Scan-Plan.json"},
- "build":{"prefix":"DSC","defaultWorkbook":"04_DSC_Entity_Info.xlsx","lobHierarchy":"DSC-LOB-Hierarchy.json","keywordSheets":[],
+ "build":{"themeActionPlans": true, "prefix":"DSC","defaultWorkbook":"04_DSC_Entity_Info.xlsx","lobHierarchy":"DSC-LOB-Hierarchy.json","keywordSheets":[],
   "themeCounts":{"KEY":6,"TIER_2":5,"EMERGING":5},
   "sourceSheets":{"9. Specific Industry News":{"name_col":1,"heading_col":null,"numbered":true}},
   "managementFocusLayout":"areas","supplierUnit":"DS&C","sharedSupplierSeparator":"/",
