@@ -1,0 +1,367 @@
+{
+  "registerId": "STE-SOURCES",
+  "status": "PROPOSED_PENDING_WILSON_SIGN_OFF",
+  "absence": "Ratings are proposed by source class: official and intergovernmental sources and wires HIGH; think tanks, research and trade press MEDIUM or LOW. R&A confirms them.",
+  "sources": [
+    {
+      "sourceName": "Institute for the Study of War",
+      "sourceDomain": "understandingwar.org",
+      "sourceUrl": "https://understandingwar.org",
+      "sourceClass": "THINK_TANK",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "CSIS",
+      "sourceDomain": "csis.org",
+      "sourceUrl": "https://csis.org",
+      "sourceClass": "THINK_TANK",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Atlantic Council",
+      "sourceDomain": "atlanticcouncil.org",
+      "sourceUrl": "https://atlanticcouncil.org",
+      "sourceClass": "THINK_TANK",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "RUSI",
+      "sourceDomain": "rusi.org",
+      "sourceUrl": "https://rusi.org",
+      "sourceClass": "THINK_TANK",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "UAE Government",
+      "sourceDomain": "u.ae",
+      "sourceUrl": "https://u.ae",
+      "sourceClass": "GOVERNMENT",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "NEOM",
+      "sourceDomain": "neom.com",
+      "sourceUrl": "https://neom.com",
+      "sourceClass": "COMPANY",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Public Investment Fund",
+      "sourceDomain": "pif.gov.sa",
+      "sourceUrl": "https://pif.gov.sa",
+      "sourceClass": "GOVERNMENT",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Saudi Vision 2030",
+      "sourceDomain": "vision2030.gov.sa",
+      "sourceUrl": "https://vision2030.gov.sa",
+      "sourceClass": "GOVERNMENT",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "TrendForce",
+      "sourceDomain": "trendforce.com",
+      "sourceUrl": "https://trendforce.com",
+      "sourceClass": "INDUSTRY_RESEARCH",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "SemiAnalysis",
+      "sourceDomain": "semianalysis.com",
+      "sourceUrl": "https://semianalysis.com",
+      "sourceClass": "INDUSTRY_RESEARCH",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Tom's Hardware",
+      "sourceDomain": "tomshardware.com",
+      "sourceUrl": "https://tomshardware.com",
+      "sourceClass": "TRADE_PRESS",
+      "credibilityRating": "LOW",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "TSMC Investor Relations",
+      "sourceDomain": "investor.tsmc.com",
+      "sourceUrl": "https://investor.tsmc.com",
+      "sourceClass": "COMPANY",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Janes",
+      "sourceDomain": "janes.com",
+      "sourceUrl": "https://janes.com",
+      "sourceClass": "TRADE_PRESS",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Defense News",
+      "sourceDomain": "defensenews.com",
+      "sourceUrl": "https://defensenews.com",
+      "sourceClass": "TRADE_PRESS",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Breaking Defense",
+      "sourceDomain": "breakingdefense.com",
+      "sourceUrl": "https://breakingdefense.com",
+      "sourceClass": "TRADE_PRESS",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Epoch AI",
+      "sourceDomain": "epoch.ai",
+      "sourceUrl": "https://epoch.ai",
+      "sourceClass": "RESEARCH",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "METR",
+      "sourceDomain": "metr.org",
+      "sourceUrl": "https://metr.org",
+      "sourceClass": "RESEARCH",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "UK AI Security Institute",
+      "sourceDomain": "aisi.gov.uk",
+      "sourceUrl": "https://aisi.gov.uk",
+      "sourceClass": "GOVERNMENT",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Anthropic Research",
+      "sourceDomain": "anthropic.com",
+      "sourceUrl": "https://anthropic.com",
+      "sourceClass": "COMPANY",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "NIST",
+      "sourceDomain": "nist.gov",
+      "sourceUrl": "https://nist.gov",
+      "sourceClass": "GOVERNMENT",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "The Quantum Insider",
+      "sourceDomain": "thequantuminsider.com",
+      "sourceUrl": "https://thequantuminsider.com",
+      "sourceClass": "TRADE_PRESS",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "IBM Quantum",
+      "sourceDomain": "ibm.com",
+      "sourceUrl": "https://ibm.com",
+      "sourceClass": "COMPANY",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "US Bureau of Industry and Security",
+      "sourceDomain": "bis.gov",
+      "sourceUrl": "https://bis.gov",
+      "sourceClass": "GOVERNMENT",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "OFAC",
+      "sourceDomain": "ofac.treasury.gov",
+      "sourceUrl": "https://ofac.treasury.gov",
+      "sourceClass": "GOVERNMENT",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "CISA",
+      "sourceDomain": "cisa.gov",
+      "sourceUrl": "https://cisa.gov",
+      "sourceClass": "GOVERNMENT",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "World Bank",
+      "sourceDomain": "worldbank.org",
+      "sourceUrl": "https://worldbank.org",
+      "sourceClass": "INTERGOVERNMENTAL",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "IMF",
+      "sourceDomain": "imf.org",
+      "sourceUrl": "https://imf.org",
+      "sourceClass": "INTERGOVERNMENTAL",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "IFC",
+      "sourceDomain": "ifc.org",
+      "sourceUrl": "https://ifc.org",
+      "sourceClass": "INTERGOVERNMENTAL",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Deloitte",
+      "sourceDomain": "deloitte.com",
+      "sourceUrl": "https://deloitte.com",
+      "sourceClass": "ADVISORY",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "KPMG",
+      "sourceDomain": "kpmg.com",
+      "sourceUrl": "https://kpmg.com",
+      "sourceClass": "ADVISORY",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "PwC",
+      "sourceDomain": "pwc.com",
+      "sourceUrl": "https://pwc.com",
+      "sourceClass": "ADVISORY",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "US International Trade Administration",
+      "sourceDomain": "trade.gov",
+      "sourceUrl": "https://trade.gov",
+      "sourceClass": "GOVERNMENT",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "UK Government",
+      "sourceDomain": "gov.uk",
+      "sourceUrl": "https://gov.uk",
+      "sourceClass": "GOVERNMENT",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Global Risk Institute",
+      "sourceDomain": "globalriskinstitute.org",
+      "sourceUrl": "https://globalriskinstitute.org",
+      "sourceClass": "RESEARCH",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "GFMA",
+      "sourceDomain": "gfma.org",
+      "sourceUrl": "https://gfma.org",
+      "sourceClass": "INDUSTRY_BODY",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "SIPRI",
+      "sourceDomain": "sipri.org",
+      "sourceUrl": "https://sipri.org",
+      "sourceClass": "RESEARCH",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Reuters",
+      "sourceDomain": "reuters.com",
+      "sourceUrl": "https://reuters.com",
+      "sourceClass": "WIRE",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Associated Press",
+      "sourceDomain": "apnews.com",
+      "sourceUrl": "https://apnews.com",
+      "sourceClass": "WIRE",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Bloomberg",
+      "sourceDomain": "bloomberg.com",
+      "sourceUrl": "https://bloomberg.com",
+      "sourceClass": "WIRE",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    },
+    {
+      "sourceName": "Financial Times",
+      "sourceDomain": "ft.com",
+      "sourceUrl": "https://ft.com",
+      "sourceClass": "NEWSPAPER",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "ratingStatus": "PROPOSED"
+    }
+  ]
+}

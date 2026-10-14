@@ -1,0 +1,288 @@
+{
+  "baselineId": "STE-GROUP-BASELINE",
+  "readerId": "STE",
+  "readerName": "ST Engineering Group",
+  "revisionPrefix": "STE",
+  "deltaTitle": "STE GROUP MONTHLY STRATEGIC DELTA",
+  "effectiveDate": null,
+  "status": "DRAFT_PENDING_SIGN_OFF",
+  "signedOffBy": null,
+  "signedOffOn": null,
+  "absence": "No condition has a signed-off current assessment yet. Run grit baseline-draft and have Wilson sign it off.",
+  "posture": "The Group radar measures each standing condition against its signed-off baseline. Until Wilson signs it off, movement is judged against the previous month only.",
+  "idleLine": "No standing condition moved materially this month.",
+  "conditions": [
+    {
+      "id": "STE-GC-01",
+      "name": "Saudi, UAE and Qatar investment signals",
+      "domain": "Markets",
+      "currentAssessment": null,
+      "transmission": "Where Gulf state money flows (PIF, Vision 2030, UAE 2031, Qatar programmes) could open or close defence localisation, smart-city, mobility, cyber and aviation-services work, subject to localisation, technology-transfer and payment terms.",
+      "watchIndicators": [
+        "PIF investment announcements",
+        "Vision 2030 programme funding",
+        "UAE 2031 digital and smart-city programmes",
+        "Qatar infrastructure sustainment awards",
+        "Local-content and Saudisation thresholds"
+      ],
+      "steThemes": [
+        "Middle East defence and infrastructure spending",
+        "Sovereign AI and digital sovereignty"
+      ],
+      "referenceSources": [
+        "Saudi Vision 2030 Annual Report",
+        "We the UAE 2031",
+        "Public Investment Fund",
+        "World Bank MENAAP Economic Update",
+        "IMF Regional Economic Outlook"
+      ]
+    },
+    {
+      "id": "STE-GC-02",
+      "name": "Middle East security developments",
+      "domain": "Security",
+      "currentAssessment": null,
+      "transmission": "Conflict could raise demand for counter-UAS, border and maritime surveillance and secure communications, and could also put staff, sites, shipping routes and payment timing at risk in Gulf markets.",
+      "watchIndicators": [
+        "Attacks on Gulf cities or energy infrastructure",
+        "Red Sea and Gulf shipping disruption",
+        "Air-defence and counter-UAS procurement",
+        "Travel advisories for staff"
+      ],
+      "steThemes": [
+        "Middle East defence and infrastructure spending",
+        "AI + autonomous systems"
+      ],
+      "referenceSources": [
+        "Institute for the Study of War",
+        "Atlantic Council Middle East Programs",
+        "CSIS"
+      ]
+    },
+    {
+      "id": "STE-GC-03",
+      "name": "Defence budgets globally",
+      "domain": "Markets",
+      "currentAssessment": null,
+      "transmission": "Changes in national defence budgets and procurement priorities could move demand for C4ISR, autonomous systems, electronic warfare, training and simulation, and MRO.",
+      "watchIndicators": [
+        "National defence budget announcements",
+        "NATO spending commitments",
+        "Procurement priorities for drones and counter-drone systems",
+        "Major defence contract awards"
+      ],
+      "steThemes": [
+        "Human-machine teaming in defence and critical infrastructure",
+        "AI + autonomous systems"
+      ],
+      "referenceSources": [
+        "SIPRI",
+        "Defense News",
+        "Breaking Defense",
+        "Janes",
+        "RUSI"
+      ]
+    },
+    {
+      "id": "STE-GC-04",
+      "name": "Ukraine reconstruction",
+      "domain": "Markets",
+      "currentAssessment": null,
+      "transmission": "Reconstruction funding could open rail, transport command-and-control, border surveillance, secure communications, airport and critical-infrastructure work, subject to eligibility, financing and security conditions. Russia stays a sanctions and compliance watchpoint, not a market.",
+      "watchIndicators": [
+        "Reconstruction financing commitments",
+        "World Bank and IFC programme awards",
+        "Rail, energy and border-security tenders",
+        "Ceasefire or escalation",
+        "Sanctions changes affecting Russia"
+      ],
+      "steThemes": [
+        "Ukraine reconstruction",
+        "Export controls and technology blocs"
+      ],
+      "referenceSources": [
+        "World Bank RDNA5",
+        "World Bank and IFC sector assessments",
+        "US Country Commercial Guide: Ukraine"
+      ]
+    },
+    {
+      "id": "STE-GC-05",
+      "name": "China-Taiwan tensions",
+      "domain": "Security",
+      "currentAssessment": null,
+      "transmission": "Cross-strait escalation could disrupt Taiwan operations and Asian supply chains, tighten technology controls, and change defence demand across the region.",
+      "watchIndicators": [
+        "PLA activity around Taiwan",
+        "Blockade or quarantine drills",
+        "US arms sales to Taiwan",
+        "Semiconductor supply disruption from Taiwan"
+      ],
+      "steThemes": [
+        "Semiconductor/GPU access",
+        "Export controls and technology blocs"
+      ],
+      "referenceSources": [
+        "CSIS China Power",
+        "Institute for the Study of War",
+        "Taiwan Ministry of National Defense"
+      ]
+    },
+    {
+      "id": "STE-GC-06",
+      "name": "Semiconductor and HBM prices",
+      "domain": "Technology and supply",
+      "currentAssessment": null,
+      "transmission": "Memory and chip price rises could squeeze project margins and bid validity, and raise AI-infrastructure and product costs across the business areas.",
+      "watchIndicators": [
+        "DRAM and NAND contract prices",
+        "HBM spot versus contracted price",
+        "Advanced packaging capacity",
+        "Foundry utilisation",
+        "Supplier prepayments and allocation"
+      ],
+      "steThemes": [
+        "Semiconductor/GPU access"
+      ],
+      "referenceSources": [
+        "TrendForce",
+        "TSMC earnings calls",
+        "PwC Semiconductor and Beyond"
+      ]
+    },
+    {
+      "id": "STE-GC-07",
+      "name": "GPU availability",
+      "domain": "Technology and supply",
+      "currentAssessment": null,
+      "transmission": "Constrained GPU supply or allocation could delay AI-enabled products and data-centre projects even where budget exists, and favour smaller models and edge designs.",
+      "watchIndicators": [
+        "GPU lead times",
+        "Cloud GPU prices",
+        "Data-centre power and cooling costs",
+        "Vendor concentration across GPU, memory and packaging"
+      ],
+      "steThemes": [
+        "Semiconductor/GPU access",
+        "Sovereign AI and digital sovereignty"
+      ],
+      "referenceSources": [
+        "SemiAnalysis",
+        "Tom's Hardware",
+        "TSMC earnings calls"
+      ]
+    },
+    {
+      "id": "STE-GC-08",
+      "name": "Frontier AI capability jumps",
+      "domain": "Technology",
+      "currentAssessment": null,
+      "transmission": "A step change in model capability could speed up AI-enabled cyber attacks and product cycles, and bring new competitors, while opening work in secure, governed autonomy and AI assurance.",
+      "watchIndicators": [
+        "Frontier model releases",
+        "Autonomous-agent capability evaluations",
+        "AI-enabled cyber incidents",
+        "Compute growth"
+      ],
+      "steThemes": [
+        "AI + autonomous systems"
+      ],
+      "referenceSources": [
+        "Epoch AI",
+        "METR",
+        "UK AI Security Institute",
+        "Anthropic Research",
+        "UK Government AI Scenarios 2030"
+      ]
+    },
+    {
+      "id": "STE-GC-09",
+      "name": "AI regulation",
+      "domain": "Regulation",
+      "currentAssessment": null,
+      "transmission": "New AI rules could add assurance and liability requirements to AI-enabled products and services, and could favour sovereign or certified deployments.",
+      "watchIndicators": [
+        "EU AI Act milestones",
+        "US federal and state AI rules",
+        "Singapore AI governance frameworks",
+        "Sovereign AI procurement restrictions"
+      ],
+      "steThemes": [
+        "Sovereign AI and digital sovereignty",
+        "AI + autonomous systems"
+      ],
+      "referenceSources": [
+        "UK AI Security Institute",
+        "OECD AI policy",
+        "CSIS AI and Emerging Technology"
+      ]
+    },
+    {
+      "id": "STE-GC-10",
+      "name": "Quantum computing milestones",
+      "domain": "Technology",
+      "currentAssessment": null,
+      "transmission": "Progress toward a cryptographically relevant quantum computer could shorten the window to migrate long-life defence, aviation and infrastructure systems to post-quantum cryptography, and opens quantum-safe and quantum-sensing work.",
+      "watchIndicators": [
+        "Quantum hardware roadmap milestones",
+        "NIST post-quantum cryptography standards",
+        "Government PQC migration deadlines",
+        "Harvest-now-decrypt-later warnings"
+      ],
+      "steThemes": [
+        "Quantum-safe security migration"
+      ],
+      "referenceSources": [
+        "NIST PQC",
+        "The Quantum Insider",
+        "IBM Quantum",
+        "Global Risk Institute Quantum Threat Timeline",
+        "GFMA Quantum Migration"
+      ]
+    },
+    {
+      "id": "STE-GC-11",
+      "name": "Export controls",
+      "domain": "Regulation",
+      "currentAssessment": null,
+      "transmission": "Changes to export controls, entity lists and sanctions could restrict access to chips, components and markets, and decide which bids STE can make.",
+      "watchIndicators": [
+        "BIS Entity List additions",
+        "AI chip export rules",
+        "OFAC sanctions designations",
+        "Technology-transfer rules",
+        "China export restrictions"
+      ],
+      "steThemes": [
+        "Export controls and technology blocs",
+        "Semiconductor/GPU access"
+      ],
+      "referenceSources": [
+        "US Bureau of Industry and Security",
+        "OFAC",
+        "EU Sanctions Map"
+      ]
+    },
+    {
+      "id": "STE-GC-12",
+      "name": "Competitor strategic moves",
+      "domain": "Competition",
+      "currentAssessment": null,
+      "transmission": "Competitors' acquisitions, partnerships and wins could change STE's position in defence, smart-city, cyber and aerospace markets.",
+      "watchIndicators": [
+        "Competitor acquisitions and partnerships",
+        "Major competitor contract wins in STE markets",
+        "Competitor entry into Middle East localisation"
+      ],
+      "steThemes": [
+        "AI + autonomous systems",
+        "Middle East defence and infrastructure spending"
+      ],
+      "referenceSources": [
+        "Defense News",
+        "Breaking Defense",
+        "Company announcements"
+      ]
+    }
+  ]
+}

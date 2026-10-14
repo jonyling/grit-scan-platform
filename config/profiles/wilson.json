@@ -6,7 +6,8 @@
   "packs": [
     "urs",
     "urs-tw",
-    "dsc"
+    "dsc", 
+    "ste"
   ],
   "businessScope": {
     "businessAreas": [
@@ -89,6 +90,23 @@
         "WATCHPOINTS",
         "RESPONSE_OPTIONS"
       ],
+      "ste": {
+      "title": "GRIT-Scan: ST Engineering Group Strategic Radar",
+      "subtitle": "Monthly geopolitical and technology radar",
+      "preparedFor": "Wilson Yeo, Head of Risk & Assurance",
+      "sections": [
+        "BOTTOM_LINE",
+        "CONDITIONS",
+        "RESPONSE_OPTIONS",
+        "PRIORITY_FINDINGS",
+        "WATCHPOINTS"
+      ],
+      "maxFindings": 5,
+      "formats": [
+        "docx",
+        "pptx"
+      ]
+    }
       "maxFindings": 8,
       "formats": [
         "docx",

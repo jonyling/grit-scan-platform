@@ -1,0 +1,106 @@
+{
+  "registerId": "STE-STRATEGIC-SHIFTS",
+  "status": "PROPOSED_PENDING_WILSON_SIGN_OFF",
+  "source": "Wilson Yeo, email of 9 October 2026",
+  "themes": [
+    {
+      "themeId": "STE-SHIFT-01",
+      "themeName": "AI + autonomous systems",
+      "tier": "KEY",
+      "keywords": [
+        "autonomous systems",
+        "agentic AI",
+        "AI agents",
+        "autonomous vehicles",
+        "unmanned systems",
+        "drone swarm"
+      ]
+    },
+    {
+      "themeId": "STE-SHIFT-02",
+      "themeName": "Sovereign AI and digital sovereignty",
+      "tier": "KEY",
+      "keywords": [
+        "sovereign AI",
+        "digital sovereignty",
+        "sovereign cloud",
+        "data localisation",
+        "data localization"
+      ]
+    },
+    {
+      "themeId": "STE-SHIFT-03",
+      "themeName": "Semiconductor/GPU access",
+      "tier": "KEY",
+      "keywords": [
+        "GPU shortage",
+        "chip shortage",
+        "HBM demand",
+        "HBM supply",
+        "HBM prices",
+        "memory prices",
+        "memory supply",
+        "DRAM price",
+        "AI chips",
+        "semiconductor supply"
+      ]
+    },
+    {
+      "themeId": "STE-SHIFT-04",
+      "themeName": "Middle East defence and infrastructure spending",
+      "tier": "KEY",
+      "keywords": [
+        "Vision 2030",
+        "Public Investment Fund",
+        "Gulf defence spending",
+        "Saudi defence",
+        "UAE defence",
+        "Qatar infrastructure"
+      ]
+    },
+    {
+      "themeId": "STE-SHIFT-05",
+      "themeName": "Ukraine reconstruction",
+      "tier": "KEY",
+      "keywords": [
+        "Ukraine reconstruction",
+        "rebuild Ukraine",
+        "Ukraine recovery"
+      ]
+    },
+    {
+      "themeId": "STE-SHIFT-06",
+      "themeName": "Export controls and technology blocs",
+      "tier": "KEY",
+      "keywords": [
+        "export controls",
+        "Entity List",
+        "technology bifurcation",
+        "decoupling",
+        "chip export"
+      ]
+    },
+    {
+      "themeId": "STE-SHIFT-07",
+      "themeName": "Quantum-safe security migration",
+      "tier": "KEY",
+      "keywords": [
+        "post-quantum",
+        "quantum-safe",
+        "post-quantum cryptography",
+        "harvest now decrypt later",
+        "quantum computing"
+      ]
+    },
+    {
+      "themeId": "STE-SHIFT-08",
+      "themeName": "Human-machine teaming in defence and critical infrastructure",
+      "tier": "KEY",
+      "keywords": [
+        "human-machine teaming",
+        "manned-unmanned teaming",
+        "loyal wingman"
+      ]
+    }
+  ]
+}

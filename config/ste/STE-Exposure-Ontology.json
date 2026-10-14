@@ -1,0 +1,13 @@
+{
+  "registerId": "STE-EXPOSURE",
+  "derivedFrom": [
+    "dsc",
+    "urs"
+  ],
+  "absence": "The Group pack joins its children's registers at run time. This file stays empty.",
+  "entities": [],
+  "customers": [],
+  "suppliers": [],
+  "projects": [],
+  "sites": []
+}

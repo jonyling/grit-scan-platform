@@ -1,0 +1,264 @@
+{
+  "registerId": "STE-SCAN-PLAN",
+  "status": "PROPOSED_PENDING_WILSON_SIGN_OFF",
+  "standingSet": "conditions",
+  "windowDays": 31,
+  "audience": "Vincent S. Chong (CEO) and MK Teo (Chairman), ST Engineering, released by Wilson Yeo (Group Head, Risk & Assurance)",
+  "sectionTitles": {
+    "CONDITIONS": "Group Strategic Radar: the 12 standing conditions",
+    "PRIORITY_FINDINGS": "Signals to read in full"
+  },
+  "conditions": [
+    {
+      "conditionId": "STE-GC-01",
+      "queries": [
+        "Saudi PIF investment defence technology 2026",
+        "UAE sovereign fund AI infrastructure investment",
+        "Qatar infrastructure investment programme 2026",
+        "Saudi Vision 2030 localisation defence contract"
+      ],
+      "keywords": [
+        "Public Investment Fund",
+        "Vision 2030",
+        "PIF invest",
+        "Mubadala",
+        "Qatar Investment Authority",
+        "Saudi localisation"
+      ],
+      "businessAreas": [
+        "urs",
+        "dsc"
+      ],
+      "businessAreaStatus": "PROPOSED"
+    },
+    {
+      "conditionId": "STE-GC-02",
+      "queries": [
+        "Middle East security escalation Gulf",
+        "Houthi attack Saudi Arabia",
+        "Gulf air defence counter-drone",
+        "Red Sea shipping attack"
+      ],
+      "keywords": [
+        "Houthi",
+        "missile attack",
+        "drone attack",
+        "Red Sea",
+        "Gulf security",
+        "air defence"
+      ],
+      "businessAreas": [
+        "dsc",
+        "urs"
+      ],
+      "businessAreaStatus": "PROPOSED"
+    },
+    {
+      "conditionId": "STE-GC-03",
+      "queries": [
+        "defence budget increase 2027",
+        "NATO defence spending target",
+        "Asia defence budget rise",
+        "Pentagon budget drones counter-UAS"
+      ],
+      "keywords": [
+        "defence budget",
+        "defense budget",
+        "military spending",
+        "defence spending",
+        "defense spending"
+      ],
+      "businessAreas": [
+        "dsc"
+      ],
+      "businessAreaStatus": "PROPOSED"
+    },
+    {
+      "conditionId": "STE-GC-04",
+      "queries": [
+        "Ukraine reconstruction contracts",
+        "Ukraine recovery conference financing",
+        "World Bank Ukraine reconstruction",
+        "Ukraine rail energy rebuild tender"
+      ],
+      "keywords": [
+        "Ukraine reconstruction",
+        "Ukraine recovery",
+        "rebuild Ukraine",
+        "reconstruction of Ukraine"
+      ],
+      "businessAreas": [
+        "urs",
+        "dsc"
+      ],
+      "businessAreaStatus": "PROPOSED"
+    },
+    {
+      "conditionId": "STE-GC-05",
+      "queries": [
+        "China Taiwan military pressure",
+        "PLA drills Taiwan",
+        "Taiwan Strait blockade",
+        "US arms sale Taiwan"
+      ],
+      "keywords": [
+        "Taiwan Strait",
+        "PLA",
+        "cross-strait",
+        "Taiwan blockade"
+      ],
+      "businessAreas": [
+        "urs",
+        "dsc"
+      ],
+      "businessAreaStatus": "PROPOSED"
+    },
+    {
+      "conditionId": "STE-GC-06",
+      "queries": [
+        "DRAM contract prices",
+        "HBM prices 2026",
+        "memory chip price increase",
+        "TrendForce memory forecast"
+      ],
+      "keywords": [
+        "DRAM price",
+        "HBM",
+        "NAND price",
+        "memory prices",
+        "memory chip"
+      ],
+      "businessAreas": [
+        "dsc",
+        "urs"
+      ],
+      "businessAreaStatus": "PROPOSED"
+    },
+    {
+      "conditionId": "STE-GC-07",
+      "queries": [
+        "GPU shortage lead times",
+        "Nvidia GPU allocation",
+        "cloud GPU prices",
+        "AI data centre GPU supply"
+      ],
+      "keywords": [
+        "GPU shortage",
+        "GPU supply",
+        "GPU lead time",
+        "Nvidia allocation",
+        "GPU prices"
+      ],
+      "businessAreas": [
+        "dsc"
+      ],
+      "businessAreaStatus": "PROPOSED"
+    },
+    {
+      "conditionId": "STE-GC-08",
+      "queries": [
+        "frontier AI model release capability",
+        "AI agents autonomous capability evaluation",
+        "AI cyber attack capability",
+        "Epoch AI compute trends"
+      ],
+      "keywords": [
+        "frontier model",
+        "frontier AI",
+        "AI capabilities",
+        "autonomous agents",
+        "AI agent"
+      ],
+      "businessAreas": [
+        "dsc"
+      ],
+      "businessAreaStatus": "PROPOSED"
+    },
+    {
+      "conditionId": "STE-GC-09",
+      "queries": [
+        "AI regulation enforcement 2026",
+        "EU AI Act implementation",
+        "AI law government",
+        "AI safety institute"
+      ],
+      "keywords": [
+        "AI Act",
+        "AI regulation",
+        "AI law",
+        "AI rules",
+        "AI governance"
+      ],
+      "businessAreas": [
+        "dsc",
+        "urs"
+      ],
+      "businessAreaStatus": "PROPOSED"
+    },
+    {
+      "conditionId": "STE-GC-10",
+      "queries": [
+        "quantum computing milestone",
+        "post-quantum cryptography migration deadline",
+        "NIST post-quantum standard",
+        "quantum computer error correction breakthrough"
+      ],
+      "keywords": [
+        "quantum computer",
+        "quantum computing",
+        "post-quantum",
+        "PQC",
+        "quantum-safe"
+      ],
+      "businessAreas": [
+        "dsc"
+      ],
+      "businessAreaStatus": "PROPOSED"
+    },
+    {
+      "conditionId": "STE-GC-11",
+      "queries": [
+        "BIS Entity List additions",
+        "US export controls AI chips",
+        "OFAC sanctions designations technology",
+        "China export restrictions critical minerals"
+      ],
+      "keywords": [
+        "export controls",
+        "Entity List",
+        "export restrictions",
+        "sanctions",
+        "export ban"
+      ],
+      "businessAreas": [
+        "dsc",
+        "urs"
+      ],
+      "businessAreaStatus": "PROPOSED"
+    },
+    {
+      "conditionId": "STE-GC-12",
+      "queries": [
+        "Lockheed Martin acquisition",
+        "Thales contract Asia",
+        "Saab Elbit defence order",
+        "Hanwha Aerospace export deal"
+      ],
+      "keywords": [
+        "Lockheed Martin",
+        "Thales",
+        "Saab",
+        "Elbit",
+        "Hanwha",
+        "Leidos",
+        "Rheinmetall"
+      ],
+      "businessAreas": [
+        "dsc",
+        "urs"
+      ],
+      "businessAreaStatus": "PROPOSED"
+    }
+  ],
+  "watchpoints": []
+}

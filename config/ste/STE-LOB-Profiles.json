@@ -1,0 +1,9 @@
+{
+  "registerId": "STE-LOB-PROFILES",
+  "derivedFrom": [
+    "dsc",
+    "urs"
+  ],
+  "absence": "The Group pack joins its children's registers at run time. This file stays empty.",
+  "lobs": []
+}

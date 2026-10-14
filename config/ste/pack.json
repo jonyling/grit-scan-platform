@@ -1,0 +1,22 @@
+{
+  "pack": "ste",
+  "level": "GROUP",
+  "label": "ST Engineering Group",
+  "shortLabel": "STE",
+  "parent": null,
+  "children": [
+    "dsc",
+    "urs"
+  ],
+  "note": "The Group pack (spec 37). Its footprint, entities, customers, suppliers and competitors come from its business-area children at run time.",
+  "registers": {
+    "source_register": "STE-Source-Register.json",
+    "exposure": "STE-Exposure-Ontology.json",
+    "lob_profiles": "STE-LOB-Profiles.json",
+    "themes": "STE-Group-Themes.json",
+    "baseline": "STE-Global-Baseline.json"
+  },
+  "optional": {
+    "scan_plan": "STE-Scan-Plan.json"
+  }
+}

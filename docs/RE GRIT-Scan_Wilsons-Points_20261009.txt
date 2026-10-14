@@ -1,0 +1,797 @@
+From:	Wilson Yeo Wei Meng
+Sent:	Friday, 9 October 2026 15:47
+To:	Ling Kheng Aik Jony
+Cc:	Mao Hwai May; Wong Chuan Sern
+Subject:	RE: GRIT-Scan
+
+Follow Up Flag:	Follow up
+Flag Status:	Flagged
+
+Tks Jony. Yes, I was asking Copilot as well on the reports and websites we should regularly 
+scan to address some of the evolving country risks (e.g. Qatar – energy, electrical, supply 
+chain risks), geopolitical and technological concerns (e.g. Frontier AI, Quantum) and 
+opportunities  Hwai May have shared with you – pls see below for copilot’s suggested 
+reports/sites to monitor. We can discuss further next week. Tks 
+
+Copilot:
+
+Yes. If I were building a world-class strategic risk & opportunity scanning capability for 
+ST Engineering, I'd actually spend less time reading analyst reports and more time 
+monitoring the right primary sources.
+My "must-monitor" list would be:
+Tier 1: The Best Signal Sources (Weekly)
+Geopolitics & Security
+Institute for the Study of War (ISW)
+https://www.understandingwar.org
+Why:
+*	Russia-Ukraine
+*	Middle East conflicts
+*	Military developments
+*	Battlefield technology evolution
+*	Defence spending implications
+Excellent for identifying future demand for:
+*	C4ISR
+*	Autonomous systems
+*	Electronic warfare
+*	Counter-UAS
+ 
+CSIS
+https://www.csis.org
+Monitor:
+*	Defense & Security
+*	China Power
+*	Missile Defense
+*	AI & Emerging Technology
+One of the best forward-looking think tanks globally.
+ 
+Atlantic Council
+https://www.atlanticcouncil.org
+Especially:
+*	Middle East Programs
+*	GeoEconomics Center
+*	Scowcroft Center
+Good at spotting emerging geopolitical shifts before they become mainstream.
+ 
+RUSI
+https://www.rusi.org
+Probably the best defence-focused think tank outside the US.
+Watch for:
+*	Electronic warfare
+*	Drones
+*	Counter-drone
+*	Critical infrastructure
+*	Defence procurement
+ 
+Tier 2: Middle East Opportunities
+Saudi Vision 2030
+Already discussed.
+I'd monitor directly rather than waiting for analyst reports.
+Key question:
+Where is Saudi money actually flowing?
+Not where they say.
+ 
+UAE Government Future Initiatives
+https://u.ae
+Watch:
+*	Smart city
+*	AI
+*	Mobility
+*	Cyber
+*	Digital government
+ 
+NEOM
+https://www.neom.com
+Not because of NEOM itself.
+Because NEOM often previews:
+*	autonomous mobility
+*	digital infrastructure
+*	smart-city architectures
+*	energy systems
+that later spread across the region.
+ 
+Public Investment Fund (PIF)
+https://www.pif.gov.sa
+One of the best Middle East opportunity indicators.
+Ask:
+Where is PIF investing?
+That is where Saudi strategic priorities are moving.
+ 
+Tier 3: Semiconductor, GPU & AI Infrastructure
+TrendForce
+https://www.trendforce.com
+You already referenced them in your URS GRIT scan.
+Excellent for:
+*	DRAM
+*	NAND
+*	HBM
+*	AI memory
+This is probably more useful than Gartner for memory pricing.
+ 
+SemiAnalysis
+https://www.semianalysis.com
+One of my favourites.
+Tracks:
+*	NVIDIA
+*	AMD
+*	TSMC
+*	AI economics
+*	GPU shortages
+*	Datacenter investments
+Many articles are free.
+ 
+Tom's Hardware
+https://www.tomshardware.com
+Surprisingly useful.
+Good early signal source for:
+*	GPU launches
+*	memory supply issues
+*	AI hardware trends
+ 
+TSMC Earnings Calls
+https://investor.tsmc.com
+More useful than many analyst reports.
+Because TSMC effectively sees:
+*	AI demand
+*	automotive demand
+*	defence demand
+*	industrial demand
+before everyone else.
+ 
+Tier 4: Defence & Aerospace
+Janes
+https://www.janes.com
+Probably the gold standard.
+Expensive.
+If budget available, worth considering.
+ 
+Defense News
+https://www.defensenews.com
+Good signal source.
+Watch:
+*	defence contracts
+*	procurement priorities
+*	military modernization
+ 
+Breaking Defense
+https://breakingdefense.com
+Good for:
+*	emerging defence technology
+*	Pentagon priorities
+*	autonomous systems
+*	AI adoption
+ 
+Tier 5: Frontier AI
+Epoch AI
+https://epoch.ai
+Probably one of the best sources available today.
+Tracks:
+*	compute growth
+*	model capabilities
+*	AI scaling
+Very useful for scenario planning.
+ 
+METR
+https://metr.org
+Watch for:
+*	autonomous AI agents
+*	AI capability testing
+A leading indicator of whether frontier models are becoming genuinely useful for real work.
+ 
+UK AI Security Institute
+https://www.aisi.gov.uk
+Excellent.
+Very practical.
+Less hype.
+More risk oriented.
+The AI reports we discussed earlier are linked to this ecosystem. [assets.pub...ice.gov.uk], 
+[gov.uk]
+ 
+Anthropic Research
+https://www.anthropic.com/research
+Don't just watch OpenAI.
+Anthropic often publishes stronger safety and capability analyses.
+ 
+Tier 6: Quantum Computing
+NIST PQC
+https://www.nist.gov
+Monitor:
+*	Post-Quantum Cryptography
+Extremely relevant for:
+*	defence
+*	aerospace
+*	critical infrastructure
+ 
+Quantum Insider
+https://thequantuminsider.com
+Good industry signal source.
+ 
+IBM Quantum
+https://www.ibm.com/quantum
+Good for:
+*	roadmap tracking
+*	commercial milestones
+ 
+Tier 7: What Most Risk Managers Miss
+These are the ones I would prioritise.
+Export Controls
+US BIS
+https://www.bis.gov
+Many future winners and losers will be decided by:
+*	AI chip restrictions
+*	export controls
+*	technology transfer rules
+rather than technology itself.
+ 
+Sanctions
+OFAC
+https://ofac.treasury.gov
+Especially relevant if future opportunities arise in:
+*	Russia
+*	Middle East
+*	Dual-use sectors
+ 
+CISA
+https://www.cisa.gov
+Watch:
+*	critical infrastructure risks
+*	cyber threats
+*	vulnerability trends
+ 
+Tier 8: The "Wilson Dashboard"
+If I were building this for GRIT/AIRIS, I would monitor 12 themes monthly:
+1. Saudi / UAE / Qatar investment signals
+2. Middle East security developments
+3. Defence budgets globally
+4. Ukraine reconstruction
+5. China-Taiwan tensions
+6. Semiconductor & HBM prices
+7. GPU availability
+8. Frontier AI capability jumps
+9. AI regulation
+10. Quantum computing milestones
+11. Export controls
+12. Competitor strategic moves
+ 
+One final thought...
+For ST Engineering over the next 5-10 years, the risks/opportunities I would watch most 
+closely are not climate or ESG.
+The biggest strategic shifts are likely to come from:
+1.	AI + autonomous systems
+2.	Sovereign AI and digital sovereignty
+3.	Semiconductor/GPU access
+4.	Middle East defence and infrastructure spending
+5.	Ukraine reconstruction
+6.	Export controls and technology blocs
+7.	Quantum-safe security migration
+8.	Human-machine teaming in defence and critical infrastructure
+Those 8 themes alone could materially reshape where ST Engineering wins or loses over 
+the next decade.
+
+
+I found 1,278 internal file-domain results, 25 meetings and several relevant emails/chats. You 
+already have a fairly strong internal base, but it is dispersed. The bigger gap is a disciplined external-
+report library that separates current exposure, 3–5 year strategic risks, 5–10 year emerging risks, 
+and opportunities.
+My recommendation
+Do not look for one “master analyst report”. Build a risk-intelligence stack using 5 lenses:
+1.	Country and market attractiveness
+2.	Geopolitics, sanctions and security
+3.	Industry demand and competitor outlook
+4.	Technology and supply-chain economics
+5.	Long-range frontier scenarios
+Below is the best free or publicly accessible starting set I found.
+ 
+1. Middle East: Saudi Arabia, UAE and 
+Qatar
+Best regional reports
+1. World Bank MENAAP Economic Update
+World Bank MENAAP Economic Update
+Use this for:
+*	Regional macroeconomic outlook
+*	Conflict and geopolitical uncertainty
+*	Energy-route disruption
+*	Financial volatility
+*	Private-sector development
+*	Country growth assumptions
+The April 2026 edition specifically discusses conflict, disruption to energy routes and infrastructure, 
+financial volatility, and weakening regional growth. This is useful for establishing the regional 
+downside case, rather than relying only on attractive national investment plans. [worldbank.org]
+2. IMF Regional Economic Outlook for Middle East and Central Asia
+IMF Regional Economic Outlook: Middle East and Central Asia
+Best used for:
+*	Growth, inflation and fiscal outlook
+*	Oil-price sensitivities
+*	Interest-rate and FX considerations
+*	Government spending capacity
+*	Downside macro scenarios
+This should be a core input when assessing whether infrastructure and defence pipelines are fiscally 
+sustainable, especially under lower oil-price or tighter-financing scenarios.
+3. Deloitte Middle East Economic Monitor
+Deloitte Middle East Economic Monitor
+This is particularly relevant because it focuses on Saudi Arabia, UAE and Qatar, with country-level 
+socioeconomic updates, opportunities and challenges. [deloitte.com]
+I would use this as the monthly or quarterly “pulse” source, while the World Bank and IMF provide 
+the more independent macro baseline.
+4. KPMG Middle East Economic Outlook
+KPMG Middle East Economic Outlook
+Useful themes include:
+*	GCC non-oil economic diversification
+*	Labour-market developments
+*	Public-finance exposure to weaker oil prices
+*	Interest-rate environment
+*	Household consumption and domestic demand
+The report notes that diversification supports GCC growth, but oil prices below the fiscal break-even 
+level could constrain governments’ ability to use fiscal policy as a stabiliser. [assets.kpmg.com]
+Country strategy documents
+5. Saudi Vision 2030 Annual Report
+Saudi Vision 2030 Annual Reports
+Good for identifying where government commitment and funding are directed, including:
+*	Economic diversification
+*	Strategic industries
+*	Infrastructure and logistics
+*	Digitalisation
+*	Local capability development
+*	Investment and localisation
+The 2025 report states that Saudi Arabia’s non-oil contribution reached 55% of GDP and describes 
+continued reforms intended to enable investment and diversification. [vision2030.gov.sa]
+ST Engineering angle: defence localisation, unmanned systems, counter-UAS, cybersecurity, aviation 
+services, smart mobility, command-and-control, sustainment and training solutions.
+Watch the other side: Saudisation, local-content thresholds, technology transfer, sovereign control 
+over sensitive capabilities, partner selection and payment exposure.
+6. UAE 2031
+We the UAE 2031
+The plan emphasises economic growth, digital infrastructure, proactive regulation, global talent, 
+cybersecurity and the UAE’s positioning as an international economic hub. [u.ae]
+ST Engineering angle: smart cities, transport systems, airport and traffic management, cybersecurity, 
+AI-enabled government services, satellite communications, autonomous systems and critical-
+infrastructure protection.
+7. Qatar National Vision and sector programmes
+For Qatar, I would combine its national strategy with the World Bank, IMF and Deloitte sources rather 
+than rely solely on state-led publications. The main opportunity lenses should be:
+*	Rail and road infrastructure lifecycle support
+*	Smart-city operations
+*	Airport and aviation services
+*	Cyber and critical-infrastructure resilience
+*	Maritime and border security
+*	Sustainment of installed infrastructure following major build-out cycles
+Longer-term infrastructure source
+8. Siemens Middle East Power Outlook 2035
+Middle East Power: Outlook 2035
+Although it is sector-specific, this is useful for examining:
+*	Grid reliability
+*	Renewables and storage
+*	Gas-renewables integration
+*	Decentralised energy
+*	Industrial digitalisation
+*	Critical-infrastructure cybersecurity
+The report anticipates renewables, storage, gas generation, decentralised systems and digitalisation 
+all contributing to the region’s future power landscape. [assets.new...iemens.com]
+This could point to opportunities involving secure communications, command centres, sensors, OT 
+cybersecurity, smart infrastructure and resilience solutions.
+ 
+2. Semiconductor, memory-chip and GPU 
+economics
+This should not be treated merely as a procurement risk. It can affect:
+*	Project margins
+*	Bid validity periods
+*	AI infrastructure budgets
+*	Product architecture
+*	Customer affordability
+*	Cloud versus on-premises decisions
+*	Access to controlled technology
+*	Competitive differentiation
+Recommended free reports
+9. PwC Semiconductor and Beyond 2026
+PwC Semiconductor and Beyond 2026
+This is probably the best free strategic overview in this category. It covers:
+*	AI-led demand
+*	Supply-chain restructuring
+*	Trade restrictions
+*	national technology sovereignty
+*	end-market demand
+*	future semiconductor technologies
+PwC describes AI, geopolitical shifts and government investment as major forces reshaping 
+semiconductor demand and supply, while supply-chain resilience and technology sovereignty have 
+become strategic priorities. [pwc.com]
+10. McKinsey technology trends already available internally
+You already have   mckinsey technology trends outlook 2026.pdf. Its semiconductor section covers 
+application-specific chips, datacentre and cloud adoption, advanced packaging, Taiwan’s 
+manufacturing role, supply-chain diversification and China’s domestic semiconductor investment. 
+[mckinsey t...tlook 2026 | PDF]
+11. Internal URS and DS&C materials
+Your internal material already identifies the issue:
+*	  DS&C Risk Refresh 2026.pptx links geopolitical tensions, trade restrictions and single-
+source dependencies to semiconductor memory-price escalation. It also identifies contractual 
+pricing mechanisms and alternative sourcing as possible mitigations. [DS&C Risk...fresh 2026 
+| PowerPoint]
+*	  GRIT_Scan_URS_BA-wide_1-8Oct2026.docx links memory and AI-hardware costs directly 
+to project-margin and AI-infrastructure risks. [GRIT_Scan_...1-8Oct2026 | Word]
+What to monitor monthly
+I suggest these indicators:
+*	DRAM and NAND contract prices
+*	HBM spot versus contracted price
+*	GPU lead times
+*	Advanced packaging capacity
+*	Foundry utilisation
+*	Export-control changes
+*	Sovereign AI procurement restrictions
+*	Supplier prepayments and allocation arrangements
+*	Cloud GPU prices
+*	Electricity and cooling costs
+*	Vendor concentration across GPU, memory and packaging suppliers
+The risk is not just “prices rise”. The more significant scenarios are:
+1.	Persistent AI premium 
+HBM, accelerators and advanced packaging remain capacity-constrained.
+2.	Technology bifurcation 
+Different markets require different chips, cloud stacks, software and security architectures.
+3.	Allocation rather than price risk 
+ST Engineering may be willing to pay but cannot obtain the required equipment within 
+project timelines.
+4.	Rapid obsolescence 
+Hardware committed during tendering becomes uncompetitive before deployment.
+5.	Customer affordability ceiling 
+AI-enabled solutions become too expensive unless redesigned around smaller models, edge 
+computing or shared infrastructure.
+ 
+3. Ukraine and Russia: opportunity, but 
+treat them differently
+Ukraine
+12. World Bank RDNA5
+Updated Ukraine Recovery and Reconstruction Needs Assessment
+The February 2026 assessment estimates almost US$588 billion of reconstruction and recovery needs 
+over the next decade, with housing, transport and energy among the most affected sectors. 
+[worldbank.org]
+Potential ST Engineering-relevant areas, subject to strategy and eligibility, include:
+*	Rail restoration and modernisation
+*	Transport command-and-control
+*	Border surveillance
+*	Secure communications
+*	Cybersecurity and critical-infrastructure resilience
+*	Airport systems
+*	Unmanned inspection and demining-support technologies
+*	Energy and utility monitoring
+*	Emergency response systems
+*	MRO, lifecycle support and training
+13. World Bank/IFC private-sector opportunities
+Private Sector Opportunities for a Green and Resilient Reconstruction in Ukraine
+Ukraine Reconstruction Sector Assessments
+The sector assessment covers transportation, energy, telecommunications, water, housing, municipal 
+services, healthcare and education. [ifc.org]
+14. US Country Commercial Guide
+Ukraine Reconstruction and Infrastructure Guide
+This is useful for practical market intelligence on infrastructure priorities and market conditions. The 
+guide identifies roads, rail, bridges, ports, aviation facilities, energy, water, agriculture, border 
+security, healthcare and education as major reconstruction areas. [trade.gov]
+Russia
+I would not frame Russia as a normal market opportunity at this stage.
+The correct risk-management framing is:
+*	Monitor sanctions and export controls
+*	Identify prohibited versus permissible activities
+*	Consider reputational and end-user exposure
+*	Evaluate dual-use technology restrictions
+*	Assess payment, banking, insurance and logistics constraints
+*	Avoid assuming that a future ceasefire automatically restores market access
+*	Treat any re-entry as a distinct Board-level scenario requiring Legal, Compliance, Export 
+Control and government alignment
+A more defensible opportunity question is:
+If geopolitical conditions change, which civilian or humanitarian sectors could become legally 
+accessible, and what sanctions, export-control, reputational and end-use conditions would need to 
+be satisfied before ST Engineering considers participation?
+For now, Ukraine reconstruction is the more identifiable opportunity set, while Russia is 
+principally a scenario and compliance watchpoint.
+ 
+4. Frontier AI: 2026–2035 scenarios
+Best scenario sources
+15. UK Government AI Scenarios 2030
+AI Scenarios 2030
+The June 2026 update is especially useful because it is designed for policy stress-testing rather than 
+prediction. It examines uncertainty around future AI capability, adoption, geopolitics and 
+governance. [gov.uk]
+16. Future Risks of Frontier AI
+Future Risks of Frontier AI
+The paper highlights possible scaling of:
+*	Cyberattacks and fraud
+*	Mis- and disinformation
+*	harmful information access
+*	biased or harmful decisions
+*	autonomous agents
+*	geopolitical concentration
+*	inadequate control or misalignment
+It also emphasises that risk depends not only on technical capability, but on geopolitics, ownership, 
+access, safeguards and public attitudes. [assets.pub...ice.gov.uk]
+17. Frontier AI Risk Management technical assessment
+Frontier AI Risk Management Framework in Practice
+This provides a more technical lens across cyber offence, persuasion and manipulation, strategic 
+deception, uncontrolled AI R&D and self-replication. [arxiv.org]
+Scenarios I would test for ST Engineering
+Scenario A: Controlled acceleration
+AI capabilities continue improving but regulation, assurance and enterprise controls broadly keep 
+pace.
+Opportunities
+*	AI-enabled engineering and design
+*	Predictive maintenance
+*	Autonomous inspection
+*	Training and simulation
+*	Cyber defence
+*	Smart mobility
+*	AI assurance and verification
+*	Secure domain-specific AI for defence and government
+Risks
+*	Skills gaps
+*	dependency on a few model/cloud providers
+*	escalating compute costs
+*	contractual liability
+*	uneven adoption across BAs
+Scenario B: Agentic proliferation
+Autonomous agents become common in software engineering, operations, cyber and procurement.
+Risks
+*	Agents taking unauthorised actions
+*	identity and access-control failures
+*	prompt injection and tool misuse
+*	agent-to-agent contagion
+*	false transactions or operational commands
+*	unclear responsibility for decisions
+*	increased speed of cyber exploitation
+Opportunity
+ST Engineering could differentiate through secure, governed autonomous systems, rather than 
+merely adding AI features.
+Scenario C: AI geopolitical bifurcation
+US-, China-, European- and sovereign-aligned AI ecosystems diverge.
+Risks
+*	Restricted model, GPU and cloud access
+*	different regulatory and assurance requirements
+*	duplicated product architectures
+*	customer demands for sovereign hosting
+*	restrictions on data, model weights and advanced chips
+Opportunity
+Modular, model-agnostic and sovereign-deployable solutions become commercially valuable.
+This is consistent with your internal   2025_Geostrategic_Risks__1736989373.pdf, which describes 
+digital sovereignty and AI-related supply-chain de-risking as growing government priorities. 
+[2025_Geost...1736989373 | PDF]
+Scenario D: Capability shock
+Frontier models unexpectedly achieve large improvements in autonomous cyber, engineering or 
+scientific R&D.
+Potential consequences
+*	Current controls become inadequate quickly
+*	conventional cyber vulnerabilities are found and exploited faster
+*	product development cycles compress
+*	competitors emerge from outside traditional engineering sectors
+*	customers demand AI capabilities faster than certification and assurance processes can 
+support
+Scenario E: AI disappointment or economic correction
+Capability gains slow, AI returns underperform, or infrastructure economics become unattractive.
+Risks
+*	stranded GPU and datacentre investments
+*	write-downs
+*	failure to achieve productivity or revenue targets
+*	staff fatigue and loss of confidence
+*	abandoned pilots and vendor consolidation
+This scenario is important because most corporate plans currently focus more heavily on AI 
+acceleration than on underperformance.
+ 
+5. Quantum computing: risk and 
+opportunity to 2035
+Recommended free sources
+18. Deloitte Quantum Computing Futures
+Quantum Computing Futures
+Deloitte presents scenario planning for quantum development over the next five years and discusses 
+possible applications in materials, aerospace, automotive and industrial manufacturing. 
+[deloitte.com]
+19. Global Risk Institute Quantum Threat Timeline
+Quantum Threat Timeline Report 2025
+The expert survey assesses a cryptographically relevant quantum computer as quite possible within 
+10 years and likely within 15 years, while recommending immediate action on the associated cyber 
+risk. [globalrisk...titute.org]
+20. GFMA Quantum Migration report
+Quantum Migration: Mapping the Emerging Landscape
+This is finance-focused, but the underlying transition issues apply more broadly to long-lived 
+defence, aviation and infrastructure systems. The report points to the 2030–2035 period as one in 
+which cryptographically relevant quantum risk could become operationally material and stresses the 
+long lead time needed for migration. [gfma.org]
+Quantum scenarios relevant to ST Engineering
+Scenario 1: No cryptographic break by 2035
+The danger is complacency. Legacy systems, products and long-term contracts remain dependent on 
+cryptography that may later require expensive redesign.
+Scenario 2: Gradual commercial advantage
+Quantum delivers targeted value in:
+*	optimisation
+*	logistics
+*	scheduling
+*	advanced material simulation
+*	anomaly detection
+*	sensor processing
+*	maintenance planning
+Opportunity is likely to emerge through hybrid classical-quantum workflows before fully general 
+quantum advantage.
+Scenario 3: Harvest-now-decrypt-later becomes material
+Sensitive data captured today could be decrypted when sufficiently capable quantum systems 
+emerge.
+This particularly matters where confidentiality must endure for many years:
+*	defence communications
+*	technical designs
+*	identity systems
+*	government information
+*	customer infrastructure data
+*	long-life transport and aerospace platforms
+Scenario 4: Cryptographic break occurs before migration is complete
+Possible consequences include:
+*	compromised authentication and software signing
+*	untrusted firmware updates
+*	exposed secure communications
+*	urgent redesign of products already deployed
+*	contractual and warranty disputes
+*	customer loss of confidence
+*	inability to support legacy systems securely
+Opportunity scenario
+ST Engineering could develop or integrate:
+*	crypto-agile products
+*	post-quantum secure communications
+*	quantum-safe lifecycle services
+*	quantum sensing and navigation
+*	secure migration assessment
+*	hybrid optimisation solutions
+*	assurance services for long-life critical systems
+Your internal   WEF_Global_Risks_Report_2026.pdf also highlights accelerating convergence 
+between AI and quantum, rising concern over the next decade, and the need to treat quantum risk 
+alongside existing cyber risks. [WEF_Global...eport_2026 | PDF], [WEF_Global...eport_2026 | PDF]
+ 
+6. The ST Engineering risk-and-
+opportunity universe I would build
+Use the reports above to populate these 10 domains:
+1.	Geopolitics and sovereign alignment 
+Conflict, sanctions, alliances, market access, export controls.
+2.	Defence and security demand 
+CUAS, autonomous platforms, secure communications, border and maritime surveillance.
+3.	Infrastructure and smart cities 
+Rail, roads, airports, command centres, utilities and lifecycle support.
+4.	Supply-chain and technology access 
+GPU, HBM, chips, rare earths, advanced packaging and specialist suppliers.
+5.	Project and commercial risk 
+Fixed-price exposure, localisation, partners, LDs, customer credit and payment timing.
+6.	Frontier AI and autonomy 
+Agentic systems, AI cyber, assurance, data sovereignty and responsible deployment.
+7.	Quantum and future security 
+PQC, crypto-agility, sensing, navigation and optimisation.
+8.	Cyber-physical resilience 
+Attacks on transport, utilities, defence, aviation and connected products.
+9.	Climate, energy and resource constraints 
+Extreme heat, water stress, energy cost, grid resilience and low-carbon infrastructure.
+10.	Talent and operating model 
+Localisation, security clearances, AI/quantum talent, joint ventures and knowledge transfer.
+ 
+7. Practical next step for GRIT / AIRIS
+I would convert the above into a quarterly strategic scan, separate from the weekly GRIT news scan:
+Layer 1: Current signals, 0–12 months
+*	Conflict developments
+*	sanctions
+*	tenders and national budgets
+*	GPU and memory prices
+*	competitor wins/failures
+*	regulatory changes
+Layer 2: Strategic movements, 1–5 years
+*	GCC diversification
+*	defence localisation
+*	Ukraine reconstruction
+*	sovereign AI
+*	AI agent adoption
+*	PQC migration
+*	transport and infrastructure programmes
+Layer 3: Emerging scenarios, 5–10 years
+*	AI capability shock
+*	autonomous cyber conflict
+*	fragmented AI ecosystems
+*	cryptographically relevant quantum computing
+*	quantum sensing and navigation
+*	climate and water constraints in the Middle East
+*	restructuring of global defence and industrial alliances
+For each signal, require:
+*	Evidence and source quality
+*	Time horizon
+*	Direct ST Engineering exposure
+*	Risk pathway
+*	Opportunity pathway
+*	BA/LOB relevance
+*	Trigger or watchpoint
+*	Current control or strategic response
+*	Management decision required
+*	Counter-indicators that could invalidate the assessment
+This would fit very well with the approach already discussed in Internal Discussion session 8: AIRIS, 
+where the team considered overlaying internal risk data, competitor reports and thought-leadership 
+sources to identify material gaps and scenario implications. The meeting was transcribed. [Internal 
+D...n 8: AIRIS | Meeting]
+Bottom line: the strongest immediate sources are the World Bank, IMF and Deloitte for the Middle 
+East; PwC and your internal McKinsey report for semiconductors; World Bank/IFC for Ukraine; UK 
+Government scenarios for Frontier AI; and Deloitte, GRI and GFMA for quantum. The real value will 
+come from mapping them consistently to ST Engineering’s businesses, existing risk universe, 
+opportunities, and measurable watchpoints rather than summarising each report separately.
+
+
+Kind Regards,
+Wilson 
+ 
+ 
+From: Ling Kheng Aik Jony <khengaikjony.ling@stengg.com>  
+Sent: Friday, 9 October 2026 12:48 PM 
+To: Wilson Yeo Wei Meng <wilsonweimeng.yeo@stengg.com> 
+Cc: Mao Hwai May <hwaimay.mao@stengg.com>; Wong Chuan Sern <chuansern.wong@stengg.com> 
+Subject: RE: GRIT-Scan
+
+Hi Wilson, 
+
+Hwaimay and I discussed at length earlier.  
+ 
+Biggest takeaway is the Predictive Insights as requested by the chairman. I would explore 
+the idea of doing it on three levels: 
+(1)	Incidents / Facts; 
+(2)	Analysis in sites such as www.understandingwar.org by think-tanks such as the 
+Institute for Study of War; 
+(3)	Predicted scenarios by the LLM such as Claude following the BMW framework, 
+but this involves heavy Human-In-The-Loop (HITL) effort because the reasoning 
+departs from evidence and is moderately ungrounded. 
+
+Secondly, I would also do a pack for STE as a group, and I intend to do it on the higher 
+levels of the ontology: Group-BA-LOB. I would also tune the threshold for strength of 
+linkage to STE lower so that it would pick up more general and less directly related news. 
+An example is “Saudi–Houthi war reaches Riyadh” in your report: Your Copilot’s linkage is 
+just that URS has a Saudi entity and thus the signal is picked up, whilst for my current 
+Google-GRIT-Scan, it has to have a much stronger link e.g. Houthi missile hits office 
+building where STE-Saudi is situated. 
+
+Thirdly, I would budget the cost for tools such as Brave-search and Currents, which our 
+usage is still in the free tier, but with a lot more scans, it would definitely go into paid 
+subscription category.  
+ 
+Lastly, I would link up with Saravanan to update him of my progress and how we can build 
+GRIT-Scan with each other. Also, on the ISOS-related GRIT built by GEC 
+(rna.grit.stenggcloud.com), we would see how to link up with that and not replicate efforts.  
+ 
+As Hwaimay would be on leave next week, let’s meet next Friday morning to discuss the 
+progress. 
+
+Regards,
+Jony Ling
+SNAIC Attachment Intern
+Mobile: +6593626864
+Email: khengaikjony.ling@stengg.com
+
+From: Wilson Yeo Wei Meng <wilsonweimeng.yeo@stengg.com>  
+Sent: Thursday, 8 October 2026 22:48 
+To: Mao Hwai May <hwaimay.mao@stengg.com>; Ling Kheng Aik Jony 
+<khengaikjony.ling@stengg.com>; Wong Chuan Sern <chuansern.wong@stengg.com> 
+Subject: RE: GRIT-Scan
+
+Hi Jony, pls find attached for my GRIT-Scan report for URS BA from my prompt – for your 
+comparison and ref pls. I may not be able to attend the meeting tomorrow due to a 
+conflicting matter. 
+
+If we are more or less ok with the URS pilot, i think we can start to move on to other areas. I 
+just had my 1:1 meeting with our board Chairman who wanted us to focus on additional 
+areas – Hwai May can share more with you tomorrow. Tks 
+
+
+Kind Regards,
+Wilson 
+ 
+ 
+-----Original Appointment----- 
+From: Mao Hwai May hwaimay.mao@stengg.com  
+Sent: Monday, August 17, 2026 5:51 PM 
+To: Mao Hwai May; Ling Kheng Aik Jony; Wong Chuan Sern 
+Cc: Wilson Yeo Wei Meng 
+Subject: GRIT-Scan 
+When: Friday, October 9, 2026 9:30 AM-11:00 AM (UTC+08:00) Kuala Lumpur, Singapore. 
+Where: https://teams.microsoft.com/meet/454630630010282?p=lEtZ3z35Xfk89BSWqJ
+
+
+________________________________________________________________________________
+Microsoft Teams meeting 
+Join: 
+https://teams.microsoft.com/meet/454630630010282?p=lEtZ3z35Xfk8
+9BSWqJ 
+Meeting ID: 454 630 630 010 282 
+Passcode: 3yT7Li36 
+ 
+Need help? | System reference 
+For organizers: Meeting options 
+________________________________________________________________________________
+

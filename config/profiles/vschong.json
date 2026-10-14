@@ -1,0 +1,37 @@
+{
+  "profileId": "vschong",
+  "name": "Vincent S. Chong",
+  "role": "Chief Executive Officer",
+  "aperture": "MATERIAL_APERTURE",
+  "packs": [
+    "ste"
+  ],
+  "businessScope": {
+    "level": "GROUP"
+  },
+  "reviewRole": "READER",
+  "redAlerts": {
+    "receive": false
+  },
+  "email": null,
+  "briefs": {
+    "ste": {
+      "title": "GRIT-Scan: ST Engineering Group Strategic Radar",
+      "subtitle": "Monthly geopolitical and technology radar",
+      "preparedFor": "Vincent S. Chong, Chief Executive Officer",
+      "sections": [
+        "BOTTOM_LINE",
+        "CONDITIONS",
+        "RESPONSE_OPTIONS",
+        "PRIORITY_FINDINGS",
+        "WATCHPOINTS"
+      ],
+      "maxFindings": 5,
+      "formats": [
+        "docx",
+        "pptx"
+      ]
+    }
+  },
+  "note": "Reader. Receives the monthly Group Strategic Radar after Wilson approves it."
+}
