@@ -74,6 +74,26 @@ The Group pack (`ste`) briefs the CEO and the Chairman each month on the geopoli
 
 The monthly brief is the Group Strategic Radar: one row for each condition, with what changed, its sources, the risk and opportunity for STE, the business areas it touches, the counter-indicator, the options, and the trend. Wilson reviews it before it is released.
 
+## State of the Situation
+
+A State of the Situation (SotS) document explains one strategic topic in depth: its history, structural drivers, key actors, where things stand, the key uncertainties, and the indicators to watch. It is built only from the thought-leadership reports in the library, and every sentence cites a report page ([spec 38](specs/38_Report_Library_and_State_of_the_Situation.md)). It is the base for the Group pack's forecasts and options. There are 11 topics: Wilson's eight strategic shifts, plus China-Taiwan, defence budgets, and competitors.
+
+1. Put the reports in `secrets/reports/`. `grit/library/catalogue.py` names each file, its publisher and its edition.
+
+2. Read and embed them. A report that has not changed is skipped.
+
+   ```bash
+   .venv/bin/python -m grit library-ingest
+   ```
+
+3. Draft the four pilot topics: the Middle East, Ukraine, semiconductors and GPUs, and quantum-safe migration. Use `--topic` for others, or `--all`.
+
+   ```bash
+   .venv/bin/python -m grit sots
+   ```
+
+The drafts go to `output/sots/DATE/` as Word, Markdown, and JSON. To draft one section again, use `--redraft SECTION --from DATE`. To render again without a model call, use `--render-only DATE`. Wilson edits and signs off each document.
+
 ## Weekly run
 
 One weekly run for a reader pack has these stages. Each stage reads and writes the signal pool, so you can rerun one stage alone.

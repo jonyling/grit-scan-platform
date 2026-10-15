@@ -19,7 +19,7 @@ Spec 34 section 1 lists ten invariants. The POC keeps all of them. Three matter 
 
 ## 3. Structure
 
-A deterministic layer sits under nine agent roles. [Spec 36](36_Key_Risks_Implications_and_Proposer.md) added the Proposer and the key-risk implication. [Spec 37](37_STE_Group_Pack.md) added the Baseliner and the Strategist for the Group pack.
+A deterministic layer sits under nine agent roles. [Spec 36](36_Key_Risks_Implications_and_Proposer.md) added the Proposer and the key-risk implication. [Spec 37](37_STE_Group_Pack.md) added the Baseliner and the Strategist for the Group pack. [Spec 38](38_Report_Library_and_State_of_the_Situation.md) added the Situation Analyst, which drafts State of the Situation documents from the report library.
 
 | Role | What it proposes | What decides | Code |
 |---|---|---|---|

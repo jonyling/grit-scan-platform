@@ -6,6 +6,7 @@ streamlit
 pandas
 python-docx
 python-pptx
+pypdf
 openpyxl
 # Tests
 pytest

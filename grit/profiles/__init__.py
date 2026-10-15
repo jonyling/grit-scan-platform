@@ -74,7 +74,11 @@ def _profile(raw: dict[str, Any], source: Path) -> Profile:
 def load_profiles(directory: Path = PROFILES_DIR) -> dict[str, Profile]:
     profiles: dict[str, Profile] = {}
     for path in sorted(directory.glob("*.json")):
-        profile = _profile(json.loads(path.read_text(encoding="utf-8")), path)
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"{path} is not valid JSON: {exc.msg} at line {exc.lineno}, column {exc.colno}.") from exc
+        profile = _profile(raw, path)
         if profile.profile_id in profiles:
             raise ValueError(f"Duplicate profile id {profile.profile_id}")
         profiles[profile.profile_id] = profile
