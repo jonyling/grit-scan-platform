@@ -181,3 +181,18 @@ def test_the_profile_shapes_a_real_brief(tmp_path: Path, monkeypatch) -> None:
     assert brief["method"]["profile"].startswith("Reader profile v1") and brief["method"]["moved_by_profile"] == 1
     routed = {row["title"][:12]: row for row in routed_signals(pool, run.run_id, wilson)}
     assert routed["Taiwan repor"]["preference"]["affinity"] == 2 and all(row["shown"] for row in routed.values())
+
+
+def test_a_profile_can_add_the_group_radar_but_not_an_unknown_brief(tmp_path: Path) -> None:
+    _write(tmp_path, GOOD.replace("packs: [all]", "packs: [urs]").replace("aperture: WIDE", "aperture: WIDE\nbriefs:\n  ste: {}"))
+    known = Vocabulary(KNOWN.packs | {"ste"}, KNOWN.items, KNOWN.sections)
+    reader = load_reader_profile("wilson", tmp_path)
+    assert check(reader, known, notes("wilson", tmp_path)) == []
+    applied = apply(_profile(), reader, known)
+    assert "ste" in applied.packs and applied.brief_for("ste")["title"].endswith("Group Strategic Radar")
+    assert applied.brief_for("ste")["preparedFor"] == "Wilson, Head" and "RESPONSE_OPTIONS" in applied.brief_for("ste")["sections"]
+    _write(tmp_path, GOOD.replace("aperture: WIDE", "aperture: WIDE\nbriefs:\n  dsc: {}").replace("packs: [all]", "packs: [urs, dsc]"), note=False)
+    assert apply(_profile(), load_reader_profile("wilson", tmp_path), known).brief_for("dsc") is not None, "an existing JSON brief is kept"
+    _write(tmp_path, GOOD.replace("aperture: WIDE", "aperture: WIDE\nbriefs:\n  urs-tw: {}"), note=False)
+    with pytest.raises(ValueError, match="no default brief"):
+        apply(_profile(), load_reader_profile("wilson", tmp_path), known)

@@ -192,7 +192,8 @@ SOURCES = [
 ]
 
 
-def _brief(name: str, role: str) -> dict[str, Any]:
+def radar_brief(name: str, role: str) -> dict[str, Any]:
+    """The monthly Group Strategic Radar brief. A reader profile can add it for a reader whose JSON profile has none."""
     return {
         "title": "GRIT-Scan: ST Engineering Group Strategic Radar", "subtitle": "Monthly geopolitical and technology radar",
         "preparedFor": f"{name}, {role}", "sections": ["BOTTOM_LINE", "CONDITIONS", "RESPONSE_OPTIONS", "PRIORITY_FINDINGS", "WATCHPOINTS"],
@@ -204,7 +205,7 @@ def _profile(profile_id: str, name: str, role: str, note: str) -> dict[str, Any]
     return {
         "profileId": profile_id, "name": name, "role": role, "aperture": "MATERIAL_APERTURE", "packs": [PACK],
         "businessScope": {"level": "GROUP"}, "reviewRole": "READER", "redAlerts": {"receive": False}, "email": None,
-        "briefs": {PACK: _brief(name, role)}, "note": note,
+        "briefs": {PACK: radar_brief(name, role)}, "note": note,
     }
 
 

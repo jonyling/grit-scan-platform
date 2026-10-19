@@ -269,17 +269,37 @@ def body_problems(body: str, note_ids: set[str]) -> list[str]:
     return problems
 
 
+def default_brief(pack: str, profile: Any) -> dict[str, Any] | None:
+    """The brief a reader profile may add for a pack the JSON profile gives no brief: today, the Group radar."""
+    from grit.ontology.group_seed import PACK, radar_brief
+
+    if pack == PACK:
+        return radar_brief(profile.name or profile.role, profile.role)
+    return None
+
+
 def apply(profile: Any, reader: ReaderProfile, known: Vocabulary) -> Any:
     """The profile from config/profiles with the reader profile's settings applied, key by key. A key the reader profile
-    leaves out keeps its value."""
+    leaves out keeps its value. A pack under briefs.<pack> that the JSON profile has no brief for gets the pack's default
+    brief, if it has one."""
     import dataclasses
 
     front = reader.settings
     packs = tuple(profile.packs)
     if front.get("packs"):
         packs = tuple(sorted(known.packs)) if "all" in front["packs"] else tuple(front["packs"])
+    starting = dict(profile.briefs)
+    for pack in (front.get("briefs") or {}):
+        if pack in starting:
+            continue
+        template = default_brief(pack, profile)
+        if template is None:
+            raise ValueError(f"{reader.path}: briefs.{pack}: {profile.label} has no {pack} brief in config/profiles, and the pack has no default brief to add.")
+        if pack not in packs:
+            packs = (*packs, pack)
+        starting[pack] = template
     briefs = {}
-    for pack, config in profile.briefs.items():
+    for pack, config in starting.items():
         if pack not in packs:
             continue
         merged = dict(config)
