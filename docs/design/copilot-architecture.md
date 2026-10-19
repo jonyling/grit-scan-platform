@@ -1,6 +1,6 @@
 # GRIT-Scan Co-Pilot: architecture proposal
 
-**Status:** Proposal for review, 18 October 2026. Nothing here is built yet.
+**Status:** Proposal for review, 18 October 2026. Decisions of 19 October 2026 are in section 12. Nothing here is built yet.
 **Purpose:** Design a chat assistant beside the GRIT-Scan dashboard that answers from the signals the program collects, searches the web when the pool is not enough, and reasons to a clear, cited answer. It must keep working as the signal pool grows every day.
 **Read with:** Gemini's proposal (`Gem_GRIT-Scan_Co-Pilot_Architecture & UI_Spec.md`), and specs 35 to 38.
 
@@ -115,11 +115,11 @@ Dropped pages stay searchable, but only when asked: "did we see anything about X
 
 Every search is filtered before it is ranked.
 
-1. **The reader's packs.** The profile's packs, or one pack chosen in the drawer.
+1. **The reader's packs.** A reader searches only their own packs. Wilson and the Group readers search all packs. Within that, the drawer can narrow the search to one pack.
 2. **A time window.** It is taken from the question ("this week", "since June", "last quarter"). Without one, the default is the selected run plus the last 90 days.
 3. **Kept signals only.** Dropped pages need an explicit request.
 4. **The aperture.** A material-aperture reader searches what their brief would show. The answer states how many more matches lie outside their aperture, and offers to include them. The aperture shapes a brief; it is not an access control, because every reader is internal.
-5. **Memory.** Signals the reader rejected are hidden, except P1 and RED. The tier does not override this. (Gemini's draft SQL treats tier 1 and tier 2 like P1, which the dashboard rule does not.)
+5. **The reader's profile.** The profile's emphasis reorders results within a tier; it hides nothing. P1 and RED are never pushed down. Readers write notes rather than approving signals, so the profile replaces per-signal memory ([reader-notes.md](reader-notes.md)).
 
 ### Then rank
 
@@ -142,8 +142,9 @@ I would use Gemini function calling directly, not LangGraph. The loop is short, 
 | `whats_new(pack, since)` | The daily digests since a date | None |
 | `search_library(query, topic)` | Signed-off State of the Situation sections and report passages, with pages | One query embedding |
 | `lookup_register(kind, filters)` | Entities, customers or suppliers by country, LOB or name; a graph path to STE | None |
-| `web_search(query)` | Up to 8 results from Brave, falling back to Currents. Each is marked unvetted. | One search; at most 2 a question, and a daily cap per reader |
+| `web_search(query)` | Up to 8 results, each marked unvetted. Brave answers first; Currents answers first when Brave is within 10% of its monthly limit, and when Brave fails. | One search; at most 2 a question, and 17 a day per reader |
 | `propose_request(kind, title, keywords)` | A proposed management request (the existing `/concern` command) | None |
+| `save_note(text)` | Saves the reader's `/note` as a dated note for their profile ([reader-notes.md](reader-notes.md)) | None |
 
 **The loop:**
 
@@ -182,7 +183,7 @@ Every answer has this shape, and the checks enforce it:
 - A forecast names the source that makes it.
 - No governed score word appears ("severity", "likelihood", "probability", "risk score", "risk rating"), and no bare URL.
 - A sentence that cites only web results is marked unvetted.
-- An internal report (Co-Confidential) is cited only with its access note.
+- An internal report (Co-Confidential), such as the DS&C risk refresh, may be quoted to any reader of its packs, including the CEO and the Chairman, always with its access note.
 
 The drawer shows the steps taken, such as "Searched 3 runs, 41 events; read 2 conditions; 1 web search", but not the model's private reasoning. As for the Proposer, the reasoning is stored in the execution log.
 
@@ -191,7 +192,9 @@ The drawer shows the steps taken, such as "Searched 3 runs, 41 events; read 2 co
 - **No shared fact changes.** The chat never edits a shared fact. It cannot change a trend, a tier, or a register.
 - **Web results never enter a brief directly.** Each web citation has an "Add to pool" button. A web page added this way enters the pool as a CHAT lane signal and goes through the deterministic assessment like any other page. It reaches a brief only if the rules keep it and a reviewer approves the package.
 - **Proposals start as proposals.** A management request proposed in chat starts as PROPOSED. A reviewer activates it.
-- **Every turn is logged.** The question, the context, the tool calls, the source ids, the prompt version, the hashes and the checks go to the execution log. Each profile's conversation is private to that profile, and the log keeps it for audit.
+- **Every turn is logged.** The question, the context, the tool calls, the source ids, the prompt version, the hashes and the checks go to the execution log.
+- **Conversations are private.** A reader's conversation is visible only to that reader. Wilson does not see the Chairman's questions, in the dashboard or in a fit report. The audit log keeps them, and nobody browses it for content.
+- **Review labels follow the profile.** Whether an answer shows a "not reviewed" label is a profile setting, inferred from the reader's notes. It is not a fixed rule.
 
 ## 8. User interface
 
@@ -225,11 +228,11 @@ The proof of concept stays on SQLite because Section 2 shows it is fast enough f
 | Dropped pages | Do not embed them | Embed them (already done), exclude them by default, search them on request | It costs little, and supports "why was this missed?" |
 | Ranking | A weighted sum of vector, BM25 and exponential decay | Reciprocal rank fusion, then event collapse, with recency and tier as tie-breakers | No weights to tune; easier to explain |
 | Duplicates | Not addressed | Events: one per story, with all its outlets | This is the main source of dilution |
-| Memory rule in SQL | Keeps tier 1 and 2 as well as P1 and RED | Keeps P1 and RED only, as the dashboard states | Matches the governed rule |
+| Reader preferences | A memory rule in SQL that keeps tier 1 and 2 as well as P1 and RED | A profile distilled from the reader's notes: reorders within a tier, hides nothing, never pushes down P1 or RED | Readers write notes; they do not triage signals |
 | Web escalation | An LLM sufficiency grader | The model's own tool choice plus three deterministic triggers | Cheaper and predictable |
 | Orchestration | LangGraph | A bounded Python loop with Gemini function calling | Short loop; easy to audit and test |
 | Answer checks | Citation badges | Badges plus the full GRIT-Scan checks (citations, numbers, forecasts, score words) | The same standard as every other agent |
-| Daily ingestion | Implied daily scans | A free daily feed lane; scan cadence unchanged | The Brave budget |
+| Daily ingestion | Implied daily scans | A free daily feed lane; scan cadence unchanged. The feed list is drafted from Wilson's tiers and confirmed later. | The Brave budget |
 | Corpora | Signals and condition state | Also the library (State of the Situation), the registers, and digests | Questions need depth and structure, not only news |
 
 I agree with Gemini on the right-hand drawer, on injecting the sidebar context, on the run-scoped default, on badges that separate run evidence from web evidence, and on row-click focus.
@@ -245,11 +248,15 @@ I agree with Gemini on the right-hand drawer, on injecting the sidebar context, 
 
 Phase 1 alone gives the Chairman and Wilson a useful Co-Pilot, because the state store and the library already hold most of what they ask about.
 
-## 12. Questions for you and Wilson
+## 12. Decisions of 19 October 2026
 
-1. **Reach.** Should a reader search all packs, or only their own? I propose their own packs, with all packs for Wilson and the Group readers.
-2. **Internal reports.** May the Co-Pilot quote the Co-Confidential DS&C risk refresh to the CEO and the Chairman? I assume yes, with its access note.
-3. **Web budget.** How many searches a day for each reader? I propose 20, with Currents first when Brave is near its monthly limit.
-4. **Daily feeds.** Can Wilson approve the list of Tier 1 feeds in Section 5?
-5. **Chat records.** Should Wilson see the Chairman's questions? I propose that conversations stay private and the audit log keeps them.
-6. **Status of answers.** Should a chat answer be labelled "not reviewed" every time? I propose yes, as for every agent output that has not passed `ReviewGate()`.
+| # | Question | Decision | Where it applies |
+|---|---|---|---|
+| 1 | Reach | A reader searches only their own packs. Wilson and the Group readers search all packs. | Section 6 |
+| 2 | Internal reports | May be quoted to the CEO and the Chairman, with the access note. | Section 7, checks |
+| 3 | Web budget | 17 searches a day for each reader. Currents goes first when Brave is near its monthly limit. | Section 7, tools |
+| 4 | Daily feeds | Not put to Wilson for approval yet. Readers' notes come first: they decide what each reader needs. | Section 5; [reader-notes.md](reader-notes.md) |
+| 5 | Chat records | Wilson does not see the Chairman's questions. | Section 7, governance |
+| 6 | "Not reviewed" label | No fixed rule. Each reader's profile sets it, inferred from their notes. | Section 7, governance |
+
+Decision 4 changes a basic assumption. Readers will not approve or reject signals; they will write general notes, which become a Markdown profile for each reader. [reader-notes.md](reader-notes.md) proposes how that works.
