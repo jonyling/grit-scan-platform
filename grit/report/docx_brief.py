@@ -169,7 +169,8 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
     run = line.add_run(f"Scan window: {meta['window']}   |   Prepared for: {meta['prepared_for']}   |   Grounded in: {grounded}")
     run.italic, run.font.size, run.font.color.rgb = True, Pt(10), GREY
     status = document.add_paragraph()
-    run = status.add_run(f"Status: draft for review, not approved. Reader profile: {meta['reader']}. Run {meta['run_id']}.")
+    review = "Status: draft for review, not approved. " if meta.get("show_review_status", True) else ""
+    run = status.add_run(f"{review}Reader profile: {meta['reader']}. Run {meta['run_id']}.")
     run.font.size, run.font.color.rgb = Pt(9), LIGHT
 
     bottom = brief["bottom_line"]
@@ -637,7 +638,7 @@ def _method(document: Any, brief: Mapping[str, Any]) -> None:
     _heading(document, "How this brief was produced", level=2)
     lines = [
         f"{method['queries']} {method.get('queries_label') or 'queries'}, {method['signals']} pages, {method['kept']} kept by the deterministic keep rule, {method['shown_to_reader']} in this reader's view "
-        f"({method['hidden_by_routing']} outside the aperture, {method['hidden_by_memory']} hidden by the reader's memory of {method['memory_size']} decisions).",
+        f"({method['hidden_by_routing']} outside the aperture). {method['profile']} The profile reordered {method['moved_by_profile']} signal(s) within their tiers and hid none.",
         "Agents proposed the text. Deterministic checks rejected any sentence with an unquoted claim, a number not in its source, or a governed score word. "
         "Trend labels, confidence, priority, the harm verdict and RED status are computed by rule. Nothing here is approved or published.",
     ]

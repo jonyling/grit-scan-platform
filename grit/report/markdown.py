@@ -25,7 +25,7 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
     bottom = brief["bottom_line"]
     lines = [
         f"# {meta['title']}", "", f"{meta['subtitle']}", "",
-        f"*Scan window: {meta['window']} | Prepared for: {meta['prepared_for']} | Status: draft for review, not approved.*", "",
+        f"*Scan window: {meta['window']} | Prepared for: {meta['prepared_for']}" + (" | Status: draft for review, not approved.*" if meta.get("show_review_status", True) else "*"), "",
         f"> **{bottom['label']} — Bottom line.** {bottom['text']} {bottom.get('escalation') or ''}", "",
     ]
     number = 0

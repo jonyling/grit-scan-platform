@@ -29,13 +29,36 @@ def kpis(routed: Sequence[Mapping[str, Any]], brief: Mapping[str, Any], packages
     }
 
 
-def signal_rows(routed: Sequence[Mapping[str, Any]], decisions: Mapping[str, str]) -> list[dict[str, Any]]:
+def profile_in_force(profile: Any) -> list[str]:
+    """The sidebar lines: which reader profile shapes this view and what it moves up, down, or trusts."""
+    lines = [profile.in_force]
+    reader = profile.reader
+    if reader is None:
+        return lines
+    names = reader.names
+    for key, label in (("emphasis", "Moves up"), ("de_emphasis", "Moves down")):
+        section = reader.section(key)
+        items = [names.get(item, item) for item in section.get("conditions") or []] + list(section.get("topics") or []) + list(section.get("countries") or [])
+        if items:
+            lines.append(f"{label}: " + ", ".join(items[:12]) + (f", and {len(items) - 12} more" if len(items) > 12 else "") + ".")
+    sources = reader.section("sources")
+    if sources.get("trust"):
+        lines.append(f"Trusted sources: {len(sources['trust'])}.")
+    if sources.get("distrust"):
+        lines.append("Distrusted: " + ", ".join(sources["distrust"]) + ".")
+    lines.append("The profile reorders within a priority tier. It hides nothing and never moves a P1 or RED signal down.")
+    return lines
+
+
+def signal_rows(routed: Sequence[Mapping[str, Any]], decisions: Mapping[str, str] | None = None) -> list[dict[str, Any]]:
+    """decisions is None unless the reader's profile turns on the signal buttons; then a "Your decision" column appears."""
     return [
         {
             "Priority": row["route"]["priority"] or "", "Tier": row.get("tier"), "RED": "RED" if row.get("red") else "", "Title": row["title"],
             "Outlet": row.get("publisher"), "Published": (row.get("published_at") or "")[:10], "Rung": row.get("rung") or "",
             "Conditions": ", ".join(row.get("condition_ids") or []), "Named items": ", ".join(hit["item_name"] for hit in row.get("exposure") or [] if hit.get("strong")),
-            "Your decision": decisions.get(row["signal_id"], ""), "Shown": "yes" if row["shown"] else "no", "signal_id": row["signal_id"],
+            **({"Your decision": decisions.get(row["signal_id"], "")} if decisions is not None else {}),
+            "Your profile": " ".join(row["preference"]["reasons"])[:120], "Shown": "yes" if row["shown"] else "no", "signal_id": row["signal_id"],
         }
         for row in routed
     ]
@@ -55,6 +78,6 @@ def signal_detail(row: Mapping[str, Any]) -> list[tuple[str, str]]:
         ("Evidence confidence", shown(row.get("evidence_confidence"))),
         ("Harm scorer", f"verdict {shown((harm.get('verdict') or {}).get('verdict'))}; transmission {shown((harm.get('transmission') or {}).get('rung'))}; severity {shown(severity)}; opportunity cost {shown(row.get('opportunity_cost'))}"),
         ("RED rule", " ".join((row.get("red_rule") or {}).get("reasons") or []) or "No RED pattern matched."),
-        ("Your memory", " ".join(row["memory"]["reasons"]) or "No effect yet."),
+        ("Your profile", " ".join(row["preference"]["reasons"]) or "Your profile does not move this signal."),
     ]
     return [(label, value) for label, value in lines if value]

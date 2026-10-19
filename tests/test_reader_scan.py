@@ -139,6 +139,8 @@ def test_reader_pack_review_and_airis_handoff(tmp_path: Path, monkeypatch) -> No
     from grit.report.package import write_pack
     from grit.workflow.packages import review_package
 
+    with pool.transaction() as conn:  # the fixture's Blue Line tender is tier 3; as tier 2 it is a priority finding
+        conn.execute("UPDATE assessments SET tier = 2 WHERE run_id = ? AND rung = 'DIRECT'", (run.run_id,))
     profiles = load_profiles()
     wilson, gareth, ksyong = profiles["wilson"], profiles["gareth"], profiles["ksyong"]
     pack = write_pack(pool, run.run_id, wilson, folder=tmp_path / "wilson")
@@ -165,14 +167,18 @@ def test_reader_pack_review_and_airis_handoff(tmp_path: Path, monkeypatch) -> No
     assert approved["outcome"] == "APPROVE"
     assert all(pool.current_states()[(signal_id, execution)] == "APPROVED" for signal_id in package["members"])
 
-    assert export_to_airis(pool, gareth, folder=tmp_path / "airis")["exported"] == 0, "nothing goes to AIRIS without the BA head's own approval"
-    chosen = package["members"][0]
-    pool.add_feedback("gareth", chosen, "APPROVE", "Material to Taiwan rail.")
+    from grit.workflow.packages import REGISTER_RUNGS
+
+    assessed = {row["signal_id"]: row for row in pool.assessments(run.run_id)}
+    eligible = [signal_id for signal_id in package["members"] if (assessed[signal_id].get("tier") or 9) <= 2 and assessed[signal_id].get("rung") in REGISTER_RUNGS]
+    assert eligible, "the Blue Line tender is a tier 1-2 member linked to a register"
+    assert len(eligible) < len(package["members"]), "a member with no register link stays out of AIRIS"
     exported = export_to_airis(pool, gareth, folder=tmp_path / "airis")
-    assert exported["exported"] == 1
-    assert pool.current_states()[(chosen, execution)] == "AIRIS_HANDOFF_READY"
+    assert exported["exported"] == len(eligible), "the BA head's approval of the package sends its register-linked tier 1-2 members"
+    assert all(pool.current_states()[(signal_id, execution)] == "AIRIS_HANDOFF_READY" for signal_id in eligible)
     payload = json.loads(Path(exported["path"]).read_text())
     assert payload["signals"][0]["package_hash"] == package["content_hash"]
+    assert export_to_airis(pool, gareth, folder=tmp_path / "airis")["exported"] == 0, "a signal goes to AIRIS once"
 
 
 def _scanned(tmp_path: Path, monkeypatch):
@@ -216,20 +222,23 @@ def test_a_signal_goes_to_airis_once_under_its_own_approval(tmp_path: Path, monk
     from grit.workflow.packages import review_package
 
     pool, run = _scanned(tmp_path, monkeypatch)
+    with pool.transaction() as conn:  # the fixture's Blue Line tender is tier 3; as tier 2 it is a priority finding
+        conn.execute("UPDATE assessments SET tier = 2 WHERE run_id = ? AND rung = 'DIRECT'", (run.run_id,))
     profiles = load_profiles()
     wilson = write_pack(pool, run.run_id, profiles["wilson"], folder=tmp_path / "w")["package"]
     hwaimay = write_pack(pool, run.run_id, profiles["hwaimay"], folder=tmp_path / "h")["package"]
-    shared = sorted(set(wilson["members"]) & set(hwaimay["members"]))[0]
-    pool.add_feedback("gareth", shared, "APPROVE")
     review_package(pool, package_id=wilson["package_id"], version=1, reviewer=profiles["gareth"], intent="APPROVE")
-    assert export_to_airis(pool, profiles["gareth"], folder=tmp_path / "a")["exported"] == 1
+    first = export_to_airis(pool, profiles["gareth"], folder=tmp_path / "a")["exported"]
+    assert first >= 1
     review_package(pool, package_id=hwaimay["package_id"], version=1, reviewer=profiles["gareth"], intent="APPROVE")
-    assert export_to_airis(pool, profiles["gareth"], folder=tmp_path / "a")["exported"] == 0
+    export_to_airis(pool, profiles["gareth"], folder=tmp_path / "a")
     rows = [row["row"] for row in pool.rows("SELECT row_json FROM workflow_states WHERE state = 'AIRIS_HANDOFF_READY'")]
-    assert len(rows) == 1 and rows[0]["trigger_record_id"] == wilson["package_id"]
+    signals = [row["signal_id"] for row in rows]
+    assert len(signals) == len(set(signals)), "a signal both packages carry goes to AIRIS once"
+    assert {row["trigger_record_id"] for row in rows if row["signal_id"] in set(wilson["members"])} == {wilson["package_id"]}, "under the first approval that carried it"
 
 
-def test_memory_carries_across_weeks_and_watchpoint_reruns_keep_their_count(tmp_path: Path, monkeypatch) -> None:
+def test_a_rejection_never_hides_and_watchpoint_reruns_keep_their_count(tmp_path: Path, monkeypatch) -> None:
     from grit.profiles import load_profiles
     from grit.report.brief import routed_signals
 
@@ -241,7 +250,9 @@ def test_memory_carries_across_weeks_and_watchpoint_reruns_keep_their_count(tmp_
         pool.add_sighting(row["signal_id"], later.run_id, query_id="q", query="q", lane="CONDITION", target_id=None, rank=1)
         pool.save_assessment({"signal_id": row["signal_id"], "run_id": later.run_id, "pack": "urs-tw", "decision": "KEEP", "tier": row["tier"], "link_json": row["link"], "themes_json": row["themes"]})
     routed = {row["signal_id"]: row for row in routed_signals(pool, later.run_id, load_profiles()["wilson"])}
-    assert routed[kept[0]["signal_id"]]["memory"]["hidden"], "a rejection in week 1 still applies in week 2"
+    rejected = routed[kept[0]["signal_id"]]
+    assert rejected["shown"] and not rejected["preference"]["hidden"], "a rejection never hides a signal"
+    assert rejected["preference"]["affinity"] == 0, "without signal buttons in the reader's profile, a stored decision has no effect"
 
     before = {row["watchpoint_id"]: row["cycles_without_update"] for row in pool.watchpoints("urs-tw")}
     rows = pool.assessments(run.run_id, kept_only=True)

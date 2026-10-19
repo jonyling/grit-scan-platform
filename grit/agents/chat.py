@@ -68,7 +68,7 @@ def _view(row: Mapping[str, Any]) -> dict[str, Any]:
         "link_rung": row.get("rung"), "tier": row.get("tier"), "news_priority": (row.get("route") or {}).get("priority"),
         "standing_conditions": row.get("condition_ids") or [], "named_items": [hit["item_name"] for hit in row.get("exposure") or [] if hit.get("strong")],
         "risk_register": [f"{hit['level']} {hit['name']}" for hit in (row.get("risk_cascade") or [])[:3]], "harm_verdict": row.get("harm_verdict") or "not established",
-        "red": bool(row.get("red")), "this_reader_decided": (row.get("memory") or {}).get("reasons") or [],
+        "red": bool(row.get("red")), "this_reader_profile": (row.get("preference") or {}).get("reasons") or [],
     }
 
 

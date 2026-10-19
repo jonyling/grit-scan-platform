@@ -25,7 +25,7 @@ A deterministic layer sits under seven agent roles:
 | Researcher | Search results, and one follow-up search for a thin finding. | The query plan, the monthly search guard, and the dedupe rule. |
 | Assessor | A draft for each standing condition or theme, the implication of each key risk for the business area, and the answers on a finding card. | Quote, number, citation, and banned-word checks. An implication must name the business area's own lines of business, entities, customers, or suppliers. Confidence is a rule. |
 | Critic | Stale, unsupported, or contradictory claims in the drafts. | An issue counts only with a verbatim quote from a supplied source. |
-| Profiler | The reader's preferences from their approve and reject decisions. | A bounded memory rule. It reorders within a tier and never hides a P1 or RED signal. |
+| Profiler | The reader's notes, distilled into a `profile.md` that cites them. | `grit profile check`, then a bounded emphasis rule. It reorders within a tier, hides nothing, and never moves a P1 or RED signal down. |
 | Reporter | Entries for named items, the bottom line, and chat answers. | The same checks, then one brief model rendered to every format. |
 | Proposer | Two to four options for management to consider on a key risk that is escalating or has material evidence. | Each option must name an owner role, quote the key control or action plan it builds on, and cite its sources. The Proposer's reasoning goes to the execution log, never to the brief (spec 36). |
 
@@ -103,7 +103,7 @@ One weekly run for a reader pack has these stages. Each stage reads and writes t
 3. **Embed.** Gemini embeds each page once. Vectors are cached by text hash.
 4. **Assess.** With no model: document type, the link ladder, reader-pack hits, the keep rule, briefing priority, the risk cascade, the harm scorer, relevance labels, and the RED rule.
 5. **Agents.** The Assessor drafts each standing condition or theme, the Critic reviews the drafts, and the Reporter writes the named-item entries and the bottom line. Watchpoints update by rule. The finding loop writes cards for the strongest register-linked signals.
-6. **Report.** Each reader's routing and memory pick and order the signals. The brief renders to Word, PowerPoint, Excel, and Markdown, and enters review.
+6. **Report.** Each reader's routing picks the signals and their reader profile orders them. The brief renders to Word, PowerPoint, Excel, and Markdown, and enters review.
 
 ## Repository layout
 
@@ -116,7 +116,7 @@ One weekly run for a reader pack has these stages. Each stage reads and writes t
 | `grit/agents/` | The Gemini client, the reader agents, the chat agent, their checks, and the finding loop (`loop/`). |
 | `grit/pool/` | The signal pool: `schema.sql` and its repository class. |
 | `grit/pipeline/` | The reader scan stages and the harm-scorer adapter. |
-| `grit/profiles/` | Reader profiles and the Profiler's memory. |
+| `grit/profiles/` | Reader profiles, reader notes, and emphasis (spec 39). |
 | `grit/report/` | The brief model and its Word, PowerPoint, Excel, and Markdown renderers, RED drafts, the AIRIS export, and the business-area digest. |
 | `grit/workflow/` | The Supervisor, the theme register, and reader packages through review. |
 | `grit/dataverse/` | The Dataverse gateway and the pool-to-`grit_signals` sync. |
@@ -194,19 +194,13 @@ The Urban Solutions brief follows the same style at BA level: the bottom line, t
 
 Each reader's pack is a package in the workflow. Every member signal runs `NEW` to `PENDING_REVIEW` through `TransitionGuard()`, in an execution of its own for that reader.
 
-1. Record a reader's decision on a signal. This feeds the reader's memory and never changes the shared signal.
-
-   ```bash
-   .venv/bin/python -m grit feedback --profile wilson --signal SIGNAL_ID --decision APPROVE --rationale "Material to Taiwan rail"
-   ```
-
-2. Decide on a package. `ReviewGate()` decides; the Supervisor writes the ledger. Intents are `APPROVE`, `REQUEST_REWORK`, `HOLD`, and `REJECT`. A reader-only profile is refused.
+1. Decide on a package. `ReviewGate()` decides; the Supervisor writes the ledger. Intents are `APPROVE`, `REQUEST_REWORK`, `HOLD`, and `REJECT`. A reader-only profile is refused.
 
    ```bash
    .venv/bin/python -m grit review --package PKG-DATE-urs-tw-gareth --version 1 --profile gareth --intent APPROVE
    ```
 
-3. Export to AIRIS. Only signals that the BA head (Gareth) approved, inside an approved package, move to `AIRIS_HANDOFF_READY`. The export is JSON and Excel in `output/airis/`, and each row names the package version and hash.
+2. Export to AIRIS. When the BA head (Gareth) approves a package, its tier 1–2 members that are linked to a register (direct, perimeter, or counterparty rung) move to `AIRIS_HANDOFF_READY`. A signal goes once. The export is JSON and Excel in `output/airis/`, and each row names the package version and hash.
 
    ```bash
    .venv/bin/python -m grit airis --dry-run
@@ -226,7 +220,7 @@ Start the dashboard, then open the URL it prints (port 8501 by default). From VS
 Pick a reader and a run in the sidebar. The tabs show:
 
 - **Dashboard:** the bottom line, the ten conditions, named items, watchpoints, and the QA log.
-- **Signals:** every signal in the reader's view, with why it is there, its link, risk register entries, harm verdict, and the reader's memory. Approve, reject, or watch a signal here.
+- **Signals:** every signal in the reader's view, with why it is there, its link, risk register entries, harm verdict, and how the reader's profile moved it. Approve, reject, and watch buttons appear only when the reader's profile turns them on.
 - **Packs and review:** download the files, write this week's pack, and decide on a pending package.
 - **Management requests:** propose a concern, topic, trend, or keyword. A reviewer activates it. An active request adds queries to the next scan and assigns P1 to matching signals.
 - **RED and AIRIS:** RED drafts to send or dismiss, and the BA head's AIRIS export.
@@ -251,7 +245,14 @@ A profile lists its packs in `packs` and one brief per pack under `briefs`. Each
 
 A wide-aperture reader sees every kept signal. A material-aperture reader sees a signal only with P1, P2, or P4 priority, or a standing-condition match (spec 24). News priority is P1 for an active management request, P2 for a direct exposure path, P3 for a competitor, sector, footprint, or theme match, and P4 for a customer (spec 29).
 
-Memory counts the reader's latest decision on each signal against its features: themes, register names, LOB, conditions, reader-pack items, and outlet. It moves a signal by at most three per feature, inside its tier. It hides a signal the reader rejected, and an outlet the reader rejected three times and never approved. It never hides a P1 or RED signal.
+A reader's own preferences come from what they say, not from buttons (spec 39). Save what the reader said as a note, write their `profile.md` with every line citing a note, and check it. The notes and profiles live in `secrets/readers/`, which git ignores.
+
+```bash
+.venv/bin/python -m grit notes add --profile wilson --file PATH --source email --date 2026-10-09 --move
+.venv/bin/python -m grit profile check --profile wilson
+```
+
+`PATH` is the saved note. The profile's front matter can set the aperture, the brief's sections, length and formats, the review label, and the conditions, topics, countries and sources to move up or down. Emphasis moves a signal within its tier by at most six, hides nothing, and never moves a P1 or RED signal down. A profile with a problem stops the brief and the dashboard from loading, and the error names the file.
 
 ## Registers
 

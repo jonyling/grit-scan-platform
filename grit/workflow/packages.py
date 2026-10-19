@@ -136,19 +136,27 @@ def review_package(pool: Pool, *, package_id: str, version: int, reviewer: Profi
     return {"outcome": decision["review_outcome"], "status": package.status, "decision": decision}
 
 
+REGISTER_RUNGS = {"DIRECT", "PERIMETER", "COUNTERPARTY"}
+
+
 def airis_ready(pool: Pool, ba_head: Profile) -> list[dict[str, Any]]:
-    """Signals the BA head approved that sit in an approved package and are not yet handed off."""
+    """Members of a package the BA head approved that are tier 1 or 2 and linked to a register (a named entity, site,
+    customer or supplier), not yet handed off. The approval of the package is the decision; no signal-by-signal approval
+    is needed (spec 39)."""
     if ba_head.review_role != "BA_HEAD":
-        raise PermissionError(f"{ba_head.label} is not a BA head. Only a BA head's approvals go to AIRIS.")
-    approved = {signal_id for (profile_id, signal_id), decision in pool.latest_decisions(ba_head.profile_id).items() if decision == "APPROVE"}
+        raise PermissionError(f"{ba_head.label} is not a BA head. Only packages a BA head approved go to AIRIS.")
     states = pool.current_states()
-    # A signal goes to AIRIS once, whichever reader's package carried it.
+    # A signal goes to AIRIS once, whichever package carried it.
     seen = {signal_id for (signal_id, _execution), state in states.items() if state == "AIRIS_HANDOFF_READY"}
     ready = []
-    for row in pool.rows("SELECT * FROM packages WHERE status = 'APPROVED' ORDER BY created_at"):
+    rows = pool.rows("SELECT * FROM packages WHERE status = 'APPROVED' AND decided_by = ? ORDER BY created_at", (ba_head.profile_id,))
+    for row in rows:
         execution_id = execution_for(row["run_id"], row["profile_id"])
+        assessed = {item["signal_id"]: item for item in pool.assessments(row["run_id"])}
         for signal_id in row["membership"]["members"]:
-            if signal_id in approved and signal_id not in seen and states.get((signal_id, execution_id)) == "APPROVED":
+            item = assessed.get(signal_id) or {}
+            eligible = (item.get("tier") or 9) <= 2 and item.get("rung") in REGISTER_RUNGS
+            if eligible and signal_id not in seen and states.get((signal_id, execution_id)) == "APPROVED":
                 seen.add(signal_id)
                 ready.append({"signal_id": signal_id, "package_id": row["package_id"], "version": row["version"], "run_id": row["run_id"], "profile_id": row["profile_id"]})
     return ready

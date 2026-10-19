@@ -1,8 +1,8 @@
 """The brief model: one reader's weekly brief as plain data, built from the pool. Renderers turn it into Word, PowerPoint,
 Excel, or Markdown, so every format says the same thing.
 
-The model applies the reader's routing (spec 24 aperture and spec 29 priority) and memory to the shared signals. It never
-changes a shared fact. Citations stay as signal ids until a renderer prints the outlet, the date, and the link.
+The model applies the reader's routing (spec 24 aperture and spec 29 priority) and reader profile (spec 39) to the shared
+signals. The profile orders signals within a priority tier and hides none. It never changes a shared fact. Citations stay as signal ids until a renderer prints the outlet, the date, and the link.
 """
 
 from __future__ import annotations
@@ -17,7 +17,8 @@ from grit.core.routing import aperture_routing
 from grit.ontology.pack import load_ontology_pack
 from grit.pool import Pool
 from grit.profiles import Profile
-from grit.profiles.memory import apply_memory, build_memory
+from grit.profiles.emphasis import profile_effect
+from grit.profiles.memory import build_memory
 from grit.settings import CONFIG_DIR
 
 CITE = re.compile(r"\[((?:SIG-[0-9a-f]{16})(?:\s*,\s*SIG-[0-9a-f]{16})*)\]")
@@ -113,18 +114,21 @@ def _cited_ids(*texts: str | None) -> set[str]:
 
 
 def routed_signals(pool: Pool, run_id: str, profile: Profile) -> list[dict[str, Any]]:
-    """Every kept signal with this reader's route and memory effect. Excluded signals stay in the list with the reason."""
+    """Every kept signal with this reader's route and profile effect. Signals outside the aperture stay in the list with the
+    reason; the profile only reorders."""
     rows = pool.assessments(run_id, kept_only=True)
-    feedback = pool.feedback(profile.profile_id)
-    memory = build_memory(profile.profile_id, feedback, pool.latest_assessments(row["signal_id"] for row in feedback))
+    memory = None
+    if profile.signal_buttons:
+        feedback = pool.feedback(profile.profile_id)
+        memory = build_memory(profile.profile_id, feedback, pool.latest_assessments(row["signal_id"] for row in feedback))
     requests = pool.management_requests(active_only=True)
     out = []
     for row in rows:
         route = aperture_routing(row, aperture=profile.aperture, packs=profile.packs, requests=requests)
-        effect = apply_memory(row, memory, protected=bool(row.get("red")) or route.priority == "P1")
-        out.append({**row, "route": route.as_record(), "memory": effect.as_record(), "shown": route.include and not effect.hidden})
+        effect = profile_effect(row, profile, protected=bool(row.get("red")) or route.priority == "P1", memory=memory)
+        out.append({**row, "route": route.as_record(), "preference": effect.as_record(), "shown": route.include})
     out.sort(key=lambda row: str(row.get("published_at") or ""), reverse=True)
-    out.sort(key=lambda row: (not row["shown"], row["route"]["priority"] or "P9", row.get("tier") or 9, not row.get("condition_ids"), -row["memory"]["affinity"], -(row.get("corroboration") or 1)))
+    out.sort(key=lambda row: (not row["shown"], row["route"]["priority"] or "P9", row.get("tier") or 9, not row.get("condition_ids"), -row["preference"]["affinity"], -(row.get("corroboration") or 1)))
     return out
 
 
@@ -246,7 +250,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             "signal_id": row["signal_id"], "title": row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"],
             "priority": row["route"]["priority"], "tier": row.get("tier"), "rung": row.get("rung"), "why": row["route"]["matched"][:2] or [row.get("relevance_basis")],
             "risks": [f"{hit['level'].title()}: {hit['name']}" for hit in (row.get("risk_cascade") or [])[:3]],
-            "corroboration": row.get("corroboration"), "red": bool(row.get("red")), "harm": _harm_line(row), "memory": row["memory"]["reasons"],
+            "corroboration": row.get("corroboration"), "red": bool(row.get("red")), "harm": _harm_line(row), "preference": row["preference"]["reasons"],
             "card": _card_summary(card) if card else None,
         })
     others = [row for row in shown if row not in priority_rows][:25] if "OTHER_SIGNALS" in sections else []
@@ -314,7 +318,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             "title": brief_config.get("title") or f"GRIT-Scan: {pack_name}", "subtitle": brief_config.get("subtitle") or "Weekly scan",
             "prepared_for": brief_config.get("preparedFor") or profile.role, "reader": profile.label, "profile_id": profile.profile_id, "aperture": profile.aperture,
             "run_id": run_id, "run_date": run["run_date"], "window": window_label(run_date, window), "prior_run_date": fmt_date(previous["run_date"]) if previous else None,
-            "grounded_in": _grounded_in(pack), "status": STATUS, "sections": list(brief_config.get("sections") or []),
+            "grounded_in": _grounded_in(pack), "status": STATUS, "show_review_status": bool(brief_config.get("showReviewStatus", True)), "sections": list(brief_config.get("sections") or []),
             "pack": pack_name, "pack_label": pack.label, "pack_short": str((pack.manifest or {}).get("shortLabel") or pack.label), "level": pack.level, "section_titles": dict(plan_config.get("sectionTitles") or {}),
             "standing_label": "risk theme" if any(row.get("group") for row in condition_rows) else "condition",
         },
@@ -325,8 +329,8 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         "conditions": condition_rows, "findings": findings, "other_signals": other_signals, "qa": qa_rows, "watchpoints": watch_rows, "red": red,
         "method": {
             "queries": queries.get("queries") or 0, "queries_label": "queries returned pages", "signals": counts.get("signals") or 0, "kept": counts.get("kept") or 0, "shown_to_reader": len(shown),
-            "hidden_by_routing": sum(1 for row in routed if not row["route"]["include"]), "hidden_by_memory": sum(1 for row in routed if row["route"]["include"] and row["memory"]["hidden"]),
-            "memory_size": len(pool.latest_decisions(profile.profile_id)), "agents": agents,
+            "hidden_by_routing": sum(1 for row in routed if not row["route"]["include"]), "profile": profile.in_force,
+            "moved_by_profile": sum(1 for row in shown if row["preference"]["affinity"]), "agents": agents,
         },
         "membership": membership,
     }

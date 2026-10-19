@@ -1,4 +1,5 @@
-"""AIRIS handoff: signals the BA head approved, packaged for import into AIRIS (AI Risk Intelligence System).
+"""AIRIS handoff: the register-linked tier 1-2 members of packages the BA head approved, for import into AIRIS (AI Risk
+Intelligence System). Spec 39.
 
 The export is JSON plus an Excel sheet with the same rows. Every row names the approved package version and hash it came
 from, the register links, and the source. No score that GRIT-Scan does not compute is added.
@@ -39,7 +40,7 @@ def _record(pool: Pool, item: Mapping[str, Any], ba_head: Profile) -> dict[str, 
 def export_to_airis(pool: Pool, ba_head: Profile, *, folder: Path | None = None) -> dict[str, Any]:
     items = airis_ready(pool, ba_head)
     if not items:
-        return {"exported": 0, "reason": "No signal is both approved by the BA head and in an approved package."}
+        return {"exported": 0, "reason": "No package the BA head approved holds a register-linked tier 1-2 signal that has not gone to AIRIS already."}
     records = [_record(pool, item, ba_head) for item in items]
     results = hand_off(pool, ba_head, items)
     allowed = {result["signal_id"] for result in results if result["decision"] in {"ALLOW", "ALREADY_APPLIED"}}

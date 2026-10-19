@@ -4,7 +4,7 @@ Run from the repository root:
 
     .venv/bin/python -m grit ui
 
-The screen reads the signal pool. Its buttons call governed functions: feedback goes to the reader's memory, a package
+The screen reads the signal pool. Its buttons call governed functions: the reader's profile.md shapes the order (spec 39), a package
 decision goes through ReviewGate(), and a management request waits for a reviewer to activate it. The screen never writes
 a workflow row itself.
 """
@@ -32,11 +32,10 @@ def main() -> None:
     from grit.agents.chat import add_request, parse_command
     from grit.pool import Pool, utc_now
     from grit.profiles import load_profiles
-    from grit.profiles.memory import build_memory
     from grit.report.brief import build_brief, routed_signals
     from grit.report.markdown import render_markdown
     from grit.ui import actions
-    from grit.ui.view_model import kpis, signal_detail, signal_rows
+    from grit.ui.view_model import kpis, profile_in_force, signal_detail, signal_rows
 
     load_local_env()
     st.set_page_config(page_title="GRIT-Scan", layout="wide")
@@ -59,24 +58,20 @@ def main() -> None:
             return
         run_id = st.selectbox("Run", [row["run_id"] for row in runs])
         st.caption(f"Aperture: {profile.aperture.replace('_', ' ').lower()}. Packs: {', '.join(profile.packs)}. Review role: {profile.review_role.replace('_', ' ').lower()}.")
-        feedback = db.feedback(profile.profile_id)
-        memory = build_memory(profile.profile_id, feedback, db.latest_assessments(row["signal_id"] for row in feedback))
-        st.subheader("Memory")
-        st.caption(f"{memory.size} decision(s) recorded. Memory reorders within a tier and hides what you rejected. It never hides P1 or RED, and never edits a shared fact.")
-        summary = memory.summary()
-        if summary["prefers"]:
-            st.write("Prefers: " + ", ".join(f"{name} ({weight:+d})" for name, weight in summary["prefers"]))
-        if summary["avoids"]:
-            st.write("Avoids: " + ", ".join(f"{name} ({weight:+d})" for name, weight in summary["avoids"]))
+        st.subheader("Profile in force")
+        lines = profile_in_force(profile)
+        st.write(lines[0])
+        for line in lines[1:]:
+            st.caption(line)
 
     brief = build_brief(db, run_id, profile)
     routed = routed_signals(db, run_id, profile)
     packages = db.rows("SELECT * FROM packages WHERE run_id = ? AND profile_id = ? ORDER BY version DESC", (run_id, profile.profile_id))
-    decisions = {signal_id: decision for (_profile, signal_id), decision in db.latest_decisions(profile.profile_id).items()}
+    decisions = {signal_id: decision for (_profile, signal_id), decision in db.latest_decisions(profile.profile_id).items()} if profile.signal_buttons else None
 
     meta, bottom = brief["meta"], brief["bottom_line"]
     st.header(meta["title"])
-    st.caption(f"{meta['subtitle']} | Scan window {meta['window']} | Prepared for {meta['prepared_for']} | Draft for review, not approved")
+    st.caption(f"{meta['subtitle']} | Scan window {meta['window']} | Prepared for {meta['prepared_for']}" + (" | Draft for review, not approved" if meta.get("show_review_status", True) else ""))
     st.markdown(
         f"<div style='background:{BOX.get(bottom['label'], '#FFF2CC')};padding:14px 18px;border-radius:6px;border:1px solid #1F3864'>"
         f"<b style='color:#1F3864'>{bottom['label']} — Bottom line</b><br>{bottom['text']} {bottom.get('escalation') or ''}</div>",
@@ -128,11 +123,12 @@ def main() -> None:
             st.write(row.get("text") or "")
             for label, value in signal_detail(row):
                 st.markdown(f"**{label}.** {value}")
-            rationale = st.text_input("Why (optional)", key=f"why-{row['signal_id']}")
-            for column, decision in zip(st.columns(3), ("APPROVE", "REJECT", "WATCH")):
-                if column.button(decision.title(), key=f"{decision}-{row['signal_id']}"):
-                    actions.record_feedback(db, profile, row["signal_id"], decision, rationale)
-                    st.rerun()
+            if profile.signal_buttons:
+                rationale = st.text_input("Why (optional)", key=f"why-{row['signal_id']}")
+                for column, decision in zip(st.columns(3), ("APPROVE", "REJECT", "WATCH")):
+                    if column.button(decision.title(), key=f"{decision}-{row['signal_id']}"):
+                        actions.record_feedback(db, profile, row["signal_id"], decision, rationale)
+                        st.rerun()
 
     with packs_tab:
         if st.toggle("Preview this week's brief", value=False):
@@ -201,13 +197,13 @@ def main() -> None:
             from grit.report.airis import export_to_airis, preview
 
             ready = preview(db, profile)
-            st.caption(f"{len(ready)} signal(s) you approved sit in an approved package.")
+            st.caption(f"{len(ready)} tier 1-2 signal(s) linked to a register sit in packages you approved and are not yet handed off.")
             if ready:
                 st.dataframe(pd.DataFrame(ready), hide_index=True, width="stretch")
                 if st.button("Export to AIRIS"):
                     st.json(export_to_airis(db, profile))
         else:
-            st.caption("Only the BA head's approvals go to AIRIS.")
+            st.caption("Packages the BA head approves send their register-linked tier 1-2 signals to AIRIS.")
 
     st.divider()
     st.subheader("Ask GRIT-Scan")

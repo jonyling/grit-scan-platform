@@ -27,6 +27,7 @@ class Profile:
     briefs: dict[str, dict[str, Any]]
     note: str = ""
     raw: dict[str, Any] = field(default_factory=dict, compare=False, repr=False)
+    reader: Any = field(default=None, compare=False, repr=False)  # the ReaderProfile distilled from the reader's notes, if any
 
     @property
     def label(self) -> str:
@@ -36,6 +37,18 @@ class Profile:
     @property
     def receives_red(self) -> bool:
         return bool(self.red_alerts.get("receive"))
+
+    @property
+    def signal_buttons(self) -> bool:
+        """Approve, Reject and Watch on single signals. Off unless the reader's profile turns them on."""
+        return bool(self.reader is not None and self.reader.settings.get("signal_buttons"))
+
+    @property
+    def in_force(self) -> str:
+        """What shapes this reader's view, for the screen and the brief."""
+        if self.reader is None:
+            return "No reader profile yet. The defaults apply until the reader's first note."
+        return f"Reader profile v{self.reader.version}" + (f", updated {self.reader.updated}" if self.reader.updated else "") + (f", from notes {', '.join(self.reader.based_on)}" if self.reader.based_on else "") + "."
 
     def brief_for(self, pack: str) -> dict[str, Any] | None:
         """The brief this reader receives for a pack, or None when they receive no brief for it."""
@@ -71,7 +84,29 @@ def _profile(raw: dict[str, Any], source: Path) -> Profile:
     )
 
 
-def load_profiles(directory: Path = PROFILES_DIR) -> dict[str, Profile]:
+def load_profiles(directory: Path = PROFILES_DIR, readers: Path | None = None) -> dict[str, Profile]:
+    """Every profile in config/profiles, each with its reader profile applied when secrets/readers holds one. A reader
+    profile that fails its checks stops the load and names the file, as a broken JSON profile does."""
+    from grit.profiles.reader import apply, check, load_reader_profile, notes, vocabulary
+
+    profiles = _load_json_profiles(directory)
+    known = None
+    for profile_id, profile in profiles.items():
+        reader = load_reader_profile(profile_id, readers)
+        if reader is None:
+            continue
+        known = known or vocabulary(directory.parent if directory.name == "profiles" else None)
+        try:
+            problems = check(reader, known, notes(profile_id, readers))
+        except Exception as exc:  # a shape check() did not foresee still names the file
+            raise ValueError(f"{reader.path}: {type(exc).__name__}: {exc}") from exc
+        if problems:
+            raise ValueError(f"{reader.path} has {len(problems)} problem(s): " + " | ".join(problems[:8]))
+        profiles[profile_id] = apply(profile, reader, known)
+    return profiles
+
+
+def _load_json_profiles(directory: Path) -> dict[str, Profile]:
     profiles: dict[str, Profile] = {}
     for path in sorted(directory.glob("*.json")):
         try:
@@ -85,8 +120,8 @@ def load_profiles(directory: Path = PROFILES_DIR) -> dict[str, Profile]:
     return profiles
 
 
-def load_profile(profile_id: str, directory: Path = PROFILES_DIR) -> Profile:
-    profiles = load_profiles(directory)
+def load_profile(profile_id: str, directory: Path = PROFILES_DIR, readers: Path | None = None) -> Profile:
+    profiles = load_profiles(directory, readers)
     if profile_id not in profiles:
         raise KeyError(f"Unknown profile '{profile_id}'. Known: {', '.join(sorted(profiles))}")
     return profiles[profile_id]

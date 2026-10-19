@@ -145,7 +145,7 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
         _shape(cover, x, 4.6, 0.05, 1.2, GOLD)
         _words(cover, x + 0.25, 4.83, 3.4, 0.25, [(caption, 11, True, EYEBROW)])
         _words(cover, x + 0.25, 5.15, 3.4, 0.5, [(fit(value, 60), 15, True, INK)])
-    _words(cover, 0.5, 6.1, 12.3, 0.3, [(f"Draft for review. Not approved. Reader: {meta['reader']}. Run {meta['run_id']}.", 10, False, MUTED)])
+    _words(cover, 0.5, 6.1, 12.3, 0.3, [(("Draft for review. Not approved. " if meta.get("show_review_status", True) else "") + f"Reader: {meta['reader']}. Run {meta['run_id']}.", 10, False, MUTED)])
 
     # Executive summary.
     _words(summary, 0.5, 0.24, 8.0, 0.3, [("EXECUTIVE SUMMARY  \u00b7  GRIT-SCAN", 13, True, EYEBROW)])
@@ -272,14 +272,14 @@ def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], 
     workbook.remove(workbook.active)
     _sheet(
         workbook, "Signals",
-        ("Shown", "Priority", "Tier", "Rung", "RED", "Title", "Outlet", "Published", "Outlets", "Conditions", "Named items", "Risk register", "Harm verdict", "Evidence", "Why", "Hidden because", "URL", "Signal id"),
+        ("Shown", "Priority", "Tier", "Rung", "RED", "Title", "Outlet", "Published", "Outlets", "Conditions", "Named items", "Risk register", "Harm verdict", "Evidence", "Why", "Not shown because", "URL", "Signal id"),
         [
             (
                 "yes" if row["shown"] else "no", row["route"]["priority"], row.get("tier"), row.get("rung"), "RED" if row.get("red") else "", row["title"], row["publisher"], row["published_at"],
                 row.get("corroboration"), ", ".join(row.get("condition_ids") or []), ", ".join(hit["item_name"] for hit in row.get("exposure") or [] if hit.get("strong")),
                 "; ".join(f"{hit['level']} {hit['risk_id']} {hit['name']}" for hit in (row.get("risk_cascade") or [])[:4]), row.get("harm_verdict") or "not established",
                 row.get("evidence_confidence"), " ".join(row["route"]["matched"][:2]) or row.get("relevance_basis"),
-                row["route"]["suppression_reason"] or " ".join(reason for reason in row["memory"]["reasons"] if reason.startswith("Hidden")), row["url"], row["signal_id"],
+                row["route"]["suppression_reason"] or "", row["url"], row["signal_id"],
             )
             for row in signals
         ],

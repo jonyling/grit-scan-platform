@@ -20,5 +20,6 @@ Specs 13–33 state the rules. Spec 34 states the rebuild order. Spec 35 describ
 | [36](36_Key_Risks_Implications_and_Proposer.md) | Key risk focus, the implication for the business area, and the Proposer's response options. |
 | [37](37_STE_Group_Pack.md) | The STE Group pack: 12 standing conditions, the footprint rung, baseline drafting, scenarios, the monthly radar, and the Currents fallback. |
 | [38](38_Report_Library_and_State_of_the_Situation.md) | The thought-leadership report library, and the State of the Situation documents that ground forecasts and options. |
+| [39](39_Reader_Notes_and_Profiles.md) | Reader notes, the `profile.md` distilled from them, emphasis, and the AIRIS rule by package. |
 
 `archive/` holds an early draft of spec 17 for reference. It does not govern.

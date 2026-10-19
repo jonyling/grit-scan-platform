@@ -360,6 +360,8 @@ def _delegates() -> dict[str, tuple[str, Callable[[], Callable[..., Any]], str]]
         "pack-show": ("Print what a reader pack contains.", lambda: __import__("grit.ontology.pack", fromlist=["_main"])._main, "grit pack-show"),
         "library-ingest": ("Read the reports in secrets/reports/ into the library and embed their passages.", lambda: __import__("grit.library.sots", fromlist=["_ingest_main"])._ingest_main, "grit library-ingest"),
         "sots": ("Draft State of the Situation documents from the report library, for sign-off.", lambda: __import__("grit.library.sots", fromlist=["_main"])._main, "grit sots"),
+        "notes": ("File a reader's note, or list the notes on file.", lambda: __import__("grit.profiles.commands", fromlist=["notes_main"]).notes_main, "grit notes"),
+        "profile": ("Check a reader's profile.md against the packs, sections and filed notes.", lambda: __import__("grit.profiles.commands", fromlist=["profile_main"]).profile_main, "grit profile"),
         "pack-init": ("Write the Group pack's starting registers and reader profiles. Existing files are kept.", lambda: __import__("grit.ontology.group_seed", fromlist=["_main"])._main, "grit pack-init"),
         "gaps": ("Export or import the BA relationship and alias questions.", lambda: __import__("grit.ontology.relationship_gaps", fromlist=["main"]).main, "grit gaps"),
         "digest-plan": ("Print the business-area query plan for a date.", lambda: __import__("grit.ontology.query_plan", fromlist=["_main"])._main, "grit digest-plan"),
@@ -408,7 +410,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--profile", nargs="*", default=["all"])
     sub.add_argument("--no-submit", action="store_true")
 
-    sub = commands.add_parser("feedback", help="Record a reader's approve, reject, or watch decision on a signal.")
+    sub = commands.add_parser("feedback", help="Record a reader's approve, reject, or watch decision on a signal. It counts only when the reader's profile turns on signal buttons.")
     sub.add_argument("--profile", required=True)
     sub.add_argument("--signal", required=True)
     sub.add_argument("--decision", required=True, choices=("APPROVE", "REJECT", "WATCH"))
@@ -435,7 +437,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--profile", default="wilson", help="The reviewer who activates or closes.")
     sub.set_defaults(handler=cmd_requests)
 
-    sub = commands.add_parser("airis", help="Export the BA head's approved signals for AIRIS.")
+    sub = commands.add_parser("airis", help="Export the register-linked tier 1-2 members of packages the BA head approved, for AIRIS.")
     sub.add_argument("--profile", default="gareth")
     sub.add_argument("--dry-run", action="store_true")
     sub.set_defaults(handler=cmd_airis)
