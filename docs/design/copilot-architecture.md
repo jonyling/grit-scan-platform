@@ -1,6 +1,6 @@
 # GRIT-Scan Co-Pilot: architecture proposal
 
-**Status:** Proposal for review, 18 October 2026. Decisions of 19 October 2026 are in section 12. Nothing here is built yet.
+**Status:** Phase 1 built, 19 October 2026 ([spec 40](../../specs/40_Copilot_Core.md)). Decisions of 19 October 2026 are in section 12. Web search, the daily lane and the nightly index are not built yet.
 **Purpose:** Design a chat assistant beside the GRIT-Scan dashboard that answers from the signals the program collects, searches the web when the pool is not enough, and reasons to a clear, cited answer. It must keep working as the signal pool grows every day.
 **Read with:** Gemini's proposal (`Gem_GRIT-Scan_Co-Pilot_Architecture & UI_Spec.md`), and specs 35 to 38.
 

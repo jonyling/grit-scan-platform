@@ -360,6 +360,7 @@ def _delegates() -> dict[str, tuple[str, Callable[[], Callable[..., Any]], str]]
         "pack-show": ("Print what a reader pack contains.", lambda: __import__("grit.ontology.pack", fromlist=["_main"])._main, "grit pack-show"),
         "library-ingest": ("Read the reports in secrets/reports/ into the library and embed their passages.", lambda: __import__("grit.library.sots", fromlist=["_ingest_main"])._ingest_main, "grit library-ingest"),
         "sots": ("Draft State of the Situation documents from the report library, for sign-off.", lambda: __import__("grit.library.sots", fromlist=["_main"])._main, "grit sots"),
+        "ask": ("Ask the Co-Pilot a question as a named reader.", lambda: __import__("grit.copilot.commands", fromlist=["main"]).main, "grit ask"),
         "notes": ("File a reader's note, or list the notes on file.", lambda: __import__("grit.profiles.commands", fromlist=["notes_main"]).notes_main, "grit notes"),
         "profile": ("Check a reader's profile.md against the packs, sections and filed notes.", lambda: __import__("grit.profiles.commands", fromlist=["profile_main"]).profile_main, "grit profile"),
         "pack-init": ("Write the Group pack's starting registers and reader profiles. Existing files are kept.", lambda: __import__("grit.ontology.group_seed", fromlist=["_main"])._main, "grit pack-init"),

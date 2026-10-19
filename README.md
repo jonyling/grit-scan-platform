@@ -1,6 +1,6 @@
 # GRIT-Scan
 
-GRIT-Scan tracks external risks that could affect ST Engineering's business performance. Every week it searches the web for each reader's standing conditions, named projects, suppliers, customers, and hazards. It binds what it finds to the STE register and writes each executive a brief in Word, PowerPoint, and Excel. A dashboard with a chat sits on top.
+GRIT-Scan tracks external risks that could affect ST Engineering's business performance. Every week it searches the web for each reader's standing conditions, named projects, suppliers, customers, and hazards. It binds what it finds to the STE register and writes each executive a brief in Word, PowerPoint, and Excel. A dashboard sits on top, with a Co-Pilot that answers questions from GRIT-Scan's records.
 
 This repository is the proof of concept (POC) for the Group Head of Risk & Assurance (Wilson) and the Urban Solutions (URS) R&A business partner (Hwaimay). It runs two reader packs: Urban Solutions, the first business-area (BA) pack, and URS Taiwan, an entity pack under it. Wilson, Hwaimay, and the URS head (Gareth) receive both weekly briefs; the URS Taiwan head (KS Yong) receives the URS Taiwan brief. To add the other business areas, follow [Add a business area](docs/add-a-business-area.md). The POC is the baseline for the MVP, which follows Specifications-Driven Development: [spec 35](specs/35_GRIT_Scan_POC_Architecture.md) describes the system as built, and [specs/README.md](specs/README.md) lists the governing specs.
 
@@ -26,7 +26,7 @@ A deterministic layer sits under seven agent roles:
 | Assessor | A draft for each standing condition or theme, the implication of each key risk for the business area, and the answers on a finding card. | Quote, number, citation, and banned-word checks. An implication must name the business area's own lines of business, entities, customers, or suppliers. Confidence is a rule. |
 | Critic | Stale, unsupported, or contradictory claims in the drafts. | An issue counts only with a verbatim quote from a supplied source. |
 | Profiler | The reader's notes, distilled into a `profile.md` that cites them. | `grit profile check`, then a bounded emphasis rule. It reorders within a tier, hides nothing, and never moves a P1 or RED signal down. |
-| Reporter | Entries for named items, the bottom line, and chat answers. | The same checks, then one brief model rendered to every format. |
+| Reporter | Entries for named items, the bottom line, and Co-Pilot answers. | The same checks, then one brief model rendered to every format. Co-Pilot answers also need cited sentences, attributed forecasts and hedged inferences (spec 40). |
 | Proposer | Two to four options for management to consider on a key risk that is escalating or has material evidence. | Each option must name an owner role, quote the key control or action plan it builds on, and cite its sources. The Proposer's reasoning goes to the execution log, never to the brief (spec 36). |
 
 ## Reader packs
@@ -113,14 +113,15 @@ One weekly run for a reader pack has these stages. Each stage reads and writes t
 | `grit/ontology/` | Pack manifests and loader, the pack builder, the typed graph, the link ladder, the reader index, the risk cascade, both query plans, workbook readers, and matchers. |
 | `grit/acquisition/` | Brave News, Currents, and GDELT adapters. They emit candidates and never score. |
 | `grit/retrieval/` | Embeddings, the vector cache, similarity, and the business-area digest filter. |
-| `grit/agents/` | The Gemini client, the reader agents, the chat agent, their checks, and the finding loop (`loop/`). |
+| `grit/agents/` | The Gemini client, the reader agents, their checks, the chat commands, and the finding loop (`loop/`). |
+| `grit/copilot/` | The Co-Pilot: scope, hybrid search, tools, the bounded agent loop, and its checks (spec 40). |
 | `grit/pool/` | The signal pool: `schema.sql` and its repository class. |
 | `grit/pipeline/` | The reader scan stages and the harm-scorer adapter. |
 | `grit/profiles/` | Reader profiles, reader notes, and emphasis (spec 39). |
 | `grit/report/` | The brief model and its Word, PowerPoint, Excel, and Markdown renderers, RED drafts, the AIRIS export, and the business-area digest. |
 | `grit/workflow/` | The Supervisor, the theme register, and reader packages through review. |
 | `grit/dataverse/` | The Dataverse gateway and the pool-to-`grit_signals` sync. |
-| `grit/ui/` | The Streamlit dashboard and chat. |
+| `grit/ui/` | The Streamlit dashboard and the Co-Pilot drawer. |
 | `grit/cli.py` | The command line: `python -m grit`. |
 | `config/` | Registers: the `urs/` and `urs-tw/` packs with their `pack.json` manifests, `profiles/`, `risk/`, `red-patterns.json`, and `registry_aliases.json`. |
 | `specs/` | Governing specifications. |
@@ -209,7 +210,7 @@ Each reader's pack is a package in the workflow. Every member signal runs `NEW` 
 
 A changed brief cannot replace a package that is still pending. Return the pending version for rework, then write the pack again; the new version gets its own folder.
 
-## Use the dashboard and chat
+## Use the dashboard and Co-Pilot
 
 Start the dashboard, then open the URL it prints (port 8501 by default). From VS Code on a remote host, forward the port first.
 
@@ -225,7 +226,17 @@ Pick a reader and a run in the sidebar. The tabs show:
 - **Management requests:** propose a concern, topic, trend, or keyword. A reviewer activates it. An active request adds queries to the next scan and assigns P1 to matching signals.
 - **RED and AIRIS:** RED drafts to send or dismiss, and the BA head's AIRIS export.
 
-The chat sits under the tabs. It answers from the reader's own signals, cites them with links, and withholds an answer that fails its checks. Type `/concern TITLE: keyword, keyword` (or `/topic`, `/trend`, `/keyword`) to propose a management request.
+The Co-Pilot sits in the right-hand drawer (spec 40). It answers from the briefs' state, every run's signals, the report library, and the registers in the reader's reach. Wilson, the CEO, and the Chairman search every pack; other readers search their own. Each answer gives the answer, the evidence, what it means for STE, and what is uncertain, with every claim cited. An answer that fails its checks is withheld. Each reader's conversation is private to them.
+
+- Select a row in the standing-conditions table to focus the Co-Pilot on it.
+- Type `/concern TITLE: keyword, keyword` (or `/topic`, `/trend`, `/keyword`) to propose a management request.
+- Type `/note TEXT` to leave a note for your profile. It goes to `secrets/readers/<profile>/inbox/` for filing.
+
+To ask a question from the command line as a named reader:
+
+```bash
+.venv/bin/python -m grit ask --profile wilson "What is driving the risk to our GPU and HBM access?"
+```
 
 ## Reader profiles
 

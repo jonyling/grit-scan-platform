@@ -34,7 +34,7 @@ _TOP = {"profile", "version", "updated", "based_on", "packs", "aperture", "brief
 _BRIEF = {"sections", "add_sections", "remove_sections", "formats", "length", "show_review_status"}
 _EMPHASIS = {"conditions", "topics", "countries"}
 _SOURCES = {"trust", "distrust"}
-_COPILOT = {"web_searches_per_day", "answer_length"}
+_COPILOT = {"web_searches_per_day", "answer_length", "show_review_status"}
 
 
 def readers_dir() -> Path:
@@ -243,6 +243,8 @@ def check(reader: ReaderProfile, known: Vocabulary, filed: Iterable[Note]) -> li
             problems.append("copilot.web_searches_per_day: a whole number from 0 to 50.")
         if copilot.get("answer_length") is not None and (not isinstance(copilot["answer_length"], str) or copilot["answer_length"] not in {"short", "standard"}):
             problems.append("copilot.answer_length: short or standard.")
+        if copilot.get("show_review_status") is not None and not isinstance(copilot["show_review_status"], bool):
+            problems.append("copilot.show_review_status: true or false.")
     if front.get("signal_buttons") is not None and not isinstance(front["signal_buttons"], bool):
         problems.append("signal_buttons: true or false.")
     problems += body_problems(reader.body, note_ids)

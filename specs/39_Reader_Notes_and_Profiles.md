@@ -1,6 +1,6 @@
 # 39. Reader notes and profiles
 
-**Status:** Built (Step 1 of the merged plan), 2026-10-20. Replaces the per-signal memory of spec 22 as the way a reader's preferences reach the brief.
+**Status:** Built (Step 1 of the merged plan), 2026-10-19. Replaces the per-signal memory of spec 22 as the way a reader's preferences reach the brief.
 **Trigger:** The R&A team's decision of 19 October 2026: readers write general notes and do not approve or reject single signals. The design is [docs/design/reader-notes.md](../docs/design/reader-notes.md).
 
 ## 1. The cycle
@@ -34,11 +34,11 @@ A key the profile leaves out keeps the value in the JSON profile.
 | `profile`, `version`, `updated`, `based_on` | The folder name; a whole number from 1; a date; filed note ids | Named in every reason the reader sees, such as "profile v1, from N1". |
 | `packs` | Pack ids, or `[all]` | Which packs the reader is routed. A brief still needs an entry in the JSON profile. |
 | `aperture` | `WIDE` or `MATERIAL` | Spec 24 aperture. |
-| `brief`, `briefs.<pack>` | `sections`, `add_sections`, `remove_sections`, `formats`, `length` (`short` 5, `standard` 8, `full` 15 findings), `show_review_status` | `brief` applies to every pack; `briefs.<pack>` then applies to one. |
+| `brief`, `briefs.<pack>` | `sections`, `add_sections`, `remove_sections`, `formats`, `length` (`short` 5, `standard` 8, `full` 15 findings), `show_review_status` | `brief` applies to every pack; `briefs.<pack>` then applies to one. For a pack the JSON profile has no brief for, `briefs.<pack>` adds the pack's default brief; today only the Group radar has one. |
 | `emphasis`, `de_emphasis` | `conditions` (condition or theme ids), `topics`, `countries` | See section 4. A topic has four or more letters, or is an acronym in capitals. |
 | `sources` | `trust`, `distrust` (web domains) | See section 4. |
 | `signal_buttons` | `true` or `false` (default) | Shows Approve, Reject and Watch on single signals. |
-| `copilot` | `web_searches_per_day` (0 to 50), `answer_length` (`short`, `standard`) | Read by the Co-Pilot (Step 2). |
+| `copilot` | `web_searches_per_day` (0 to 50), `answer_length` (`short`, `standard`), `show_review_status` | `answer_length` and `show_review_status` shape Co-Pilot answers (spec 40). `web_searches_per_day` waits for web search (Step 3). |
 
 The body must cite a note on every line, for example `(N1)`. Lines under a heading that starts with "Open questions" can stand without a citation.
 
@@ -85,4 +85,4 @@ To file a note and check the profile:
 
 - The Profiler agent, which drafts `profile.md` from new notes for a person to accept (Step 3).
 - The fit report, which shows how well last month's briefs matched the profile (Step 3).
-- The Co-Pilot's use of the `copilot` settings (Step 2).
+- The Co-Pilot's web search budget, `web_searches_per_day` (Step 3).

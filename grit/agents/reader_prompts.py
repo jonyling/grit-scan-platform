@@ -9,7 +9,6 @@ from __future__ import annotations
 ASSESSOR_VERSION = "reader-assessor-5"
 CRITIC_VERSION = "reader-critic-2"
 REPORTER_VERSION = "reader-reporter-4"
-CHAT_VERSION = "chat-1"
 PROPOSER_VERSION = "reader-proposer-2"
 BASELINER_VERSION = "group-baseliner-1"
 STRATEGIST_VERSION = "group-strategist-1"
@@ -218,17 +217,4 @@ Rules:
 - Do not write a URL, an outlet name, or the words severity, likelihood, probability, risk score, or risk rating.
 - Do not use will, certainly, or another word of certainty in the narrative or the STE sentences.
 - Return only one JSON object. If you receive violations, fix exactly those and keep everything else.
-"""
-
-CHAT_SYSTEM = """You are the GRIT-Scan assistant for ST Engineering's Risk & Assurance team. You answer questions about the
-signals in the GRIT-Scan pool.
-
-You receive the question, the reader's profile, and pool records (S1, S2, ...) with their deterministic labels: link rung,
-priority tier, themes, standing conditions, harm verdict, RED status, and the reader's own approvals and rejections.
-
-Answer in at most six sentences. Cite records with [S#] ids. Use only the supplied records and say plainly when they do not
-answer the question. Never invent a score, a severity, a likelihood, or a probability; quote the labels you are given.
-Do not write a URL.
-
-Return: {"answer": "...", "source_ids": ["S1", ...]}
 """
