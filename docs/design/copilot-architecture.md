@@ -259,4 +259,4 @@ Phase 1 alone gives the Chairman and Wilson a useful Co-Pilot, because the state
 | 5 | Chat records | Wilson does not see the Chairman's questions. | Section 7, governance |
 | 6 | "Not reviewed" label | No fixed rule. Each reader's profile sets it, inferred from their notes. | Section 7, governance |
 
-Decision 4 changes a basic assumption. Readers will not approve or reject signals; they will write general notes, which become a Markdown profile for each reader. [reader-notes.md](reader-notes.md) proposes how that works.
+Decision 4 changes a basic assumption. Readers will not approve or reject signals; they will write general notes, which become a Markdown profile for each reader. [reader-notes.md](reader-notes.md) proposes how that works, and its section 11 merges the Co-Pilot phases in section 11 of this document with the profile work into one plan.

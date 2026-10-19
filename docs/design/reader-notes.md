@@ -1,6 +1,6 @@
 # Reader notes: profiles written from what readers say
 
-**Status:** Proposal for review, 19 October 2026. Nothing here is built yet.
+**Status:** Proposal for review, 19 October 2026. Decisions of 19 October are in section 11; the merged delivery plan is in section 12. Nothing here is built yet.
 **Purpose:** Replace the assumption that readers approve or reject individual signals. Readers write general notes in their own words. GRIT-Scan distils the notes into a reader profile written in Markdown, and the profile shapes each reader's brief and Co-Pilot answers.
 **Read with:** [copilot-architecture.md](copilot-architecture.md), spec 24 (reader profiles and aperture), and `grit/profiles/memory.py`.
 
@@ -212,20 +212,33 @@ The Chairman and the CEO have no notes yet, so their profiles keep today's defau
 | Dashboard | The Approve, Reject and Watch buttons are switched off by default. A "Profile in force" line shows the version and the notes it follows. |
 | Co-Pilot | Adds `/note`. Its system prompt includes the compiled guidance. Its web budget comes from the profile. |
 | Package review | Unchanged: `ReviewGate()` still approves or returns a whole package. |
-| **AIRIS handoff** | **Needs a decision.** Today a signal goes to AIRIS only if the BA head approved that signal and it sits in an approved package. Without per-signal approval, I propose that an approved package sends to AIRIS its tier 1 and 2 members that link to the register (DIRECT, PERIMETER, or COUNTERPARTY). The BA head's package approval then covers them. |
+| AIRIS handoff | An approved package sends to AIRIS its tier 1 and 2 members that link to the register (DIRECT, PERIMETER, or COUNTERPARTY). The BA head's package approval covers them. Per-signal approval is no longer needed. |
 
-## 10. Delivery in phases
+## 10. Decisions of 19 October 2026
 
-| Phase | Scope | Rough effort |
+| # | Question | Decision |
 |---|---|---|
-| 1 | Notes folders; the `profile.md` format; the compiler; emphasis replacing memory; Wilson's profile from N1; the "Profile in force" line | 3 to 5 days |
-| 2 | The Profiler agent with its checks; `/note` in the Co-Pilot | 3 to 4 days |
-| 3 | The fit report, the guidance blocks in the Reporter and Co-Pilot prompts, and the AIRIS rule | 3 to 4 days |
+| 1 | AIRIS | An approved package sends its register-linked tier 1 and 2 members to AIRIS. |
+| 2 | Note channel | Jony collects and saves the notes. No shared mailbox or Teams channel for now. |
+| 3 | Hiding | No profile hides an item. The rule applies to every profile, the Chairman's included. |
 
-Phase 1 needs no new model calls. It turns what we already know about Wilson into a working profile, so you can test the idea with him in the next brief cycle.
+## 11. Merged delivery plan with the Co-Pilot
 
-## 11. Decisions needed
+The profile work and the Co-Pilot ([copilot-architecture.md](copilot-architecture.md)) share their foundations, so they are delivered as one plan, profile first.
 
-1. **AIRIS.** Should an approved package send its register-linked tier 1 and 2 members to AIRIS (section 9)?
-2. **Note channel.** You collect and save the notes for now. Should readers later write to a shared mailbox or Teams channel that GRIT-Scan reads?
-3. **Hiding.** Under this proposal a profile never hides an item; it only moves it down. Is that right for the Chairman, or should a profile be allowed to hide a whole topic below tier 2?
+- **The Co-Pilot reads the profile.** Its scope, emphasis, web budget and review label all come from the compiled profile. Building the Co-Pilot first would mean building those settings twice.
+- **The profile needs the Co-Pilot to close its loop.** `/note` is a Co-Pilot command. The fit report counts the topics a reader asks the Co-Pilot about.
+- **Each step is useful on its own.** Step 1 changes the briefs Wilson already receives, so the profile idea can be tested with him before the Co-Pilot exists.
+
+| Step | Scope | Rough effort | What you can test |
+|---|---|---|---|
+| 1. Profile foundation | Notes folders; the `profile.md` format and compiler; emphasis replacing per-signal memory; the AIRIS rule; Wilson's profile from N1; "Profile in force" on the dashboard | 3 to 5 days | Wilson's next brief, ordered by his profile, with the reasons shown |
+| 2. Co-Pilot core | The right-hand drawer; the state, condition-history, signal, library and register tools; scope by packs; the answer shape and checks; private logging; `/note`; all settings read from the profile | 1 to 2 weeks | Questions from Wilson and the Chairman over all runs, the briefs and the State of the Situation documents |
+| 3. The loop and the web | The Profiler agent; the fit report; `web_search` with 17 a day per reader and Currents first near Brave's limit; "Add to pool" | 1 to 1.5 weeks | A note becomes a reviewed profile change; the first fit reports; questions about events after the last run |
+| 4. Daily lane and nightly index | Feeds, event clustering, digests, retention, and `whats_new` | 1 to 2 weeks | Answers on what is new since yesterday |
+
+Step 4 waits until the readers' notes show which daily sources they need (Co-Pilot decision 4). The other steps do not depend on it.
+
+Before step 1 starts:
+- the notes, profiles and fit reports go under `secrets/readers/`, which I can read and write, unlike `config/`;
+- you save Wilson's 9 October email as his first note.
