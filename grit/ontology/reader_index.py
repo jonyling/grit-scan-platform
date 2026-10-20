@@ -122,12 +122,14 @@ class ReaderIndex:
             self.keyword_sets.append((WATCHPOINT, watchpoint_id, row["title"], [k for k in subject or [] if _usable_keyword(k)]))
         self._patterns: dict[str, re.Pattern[str]] = {}
 
-    def _find(self, alias: str, whole: str, title_end: int, *, transit: bool = False, exact_case: bool = False) -> tuple[str, int] | None:
+    def _find(self, alias: str, whole: str, title_end: int, *, transit: bool = False, exact_case: bool = False, name: bool = True) -> tuple[str, int] | None:
+        """name: the alias is a proper name, so a match that runs into another capitalised word ("Leonardo DiCaprio") is a
+        different name. A topic keyword is not a name: "Houthi" counts in the Title Case headline "Houthi Attacks in ..."."""
         key = f"{transit}|{exact_case}|{alias}"
         pattern = self._patterns.get(key)
         if pattern is None:
             pattern = self._patterns[key] = _pattern(alias, transit=transit, exact_case=exact_case)
-        starts = [match.start() for match in pattern.finditer(whole) if not _longer_name(whole, match.end())]
+        starts = [match.start() for match in pattern.finditer(whole) if not (name and _longer_name(whole, match.end()))]
         if not starts:
             return None
         first = starts[0]
@@ -163,7 +165,7 @@ class ReaderIndex:
         for item_type, item_id, name, keywords in self.keyword_sets:
             matched: list[tuple[str, str, int]] = []
             for keyword in keywords:
-                place = self._find(keyword, whole, title_end)
+                place = self._find(keyword, whole, title_end, name=False)
                 if place is not None:
                     matched.append((keyword, *place))
             if not matched:
@@ -174,7 +176,7 @@ class ReaderIndex:
             if item_type == HAZARD and not place:
                 strong = False
             if item_type == WATCHPOINT and self.issue_words.get(item_id):
-                issue = next((word for word in self.issue_words[item_id] if self._find(word, whole, title_end) is not None), None)
+                issue = next((word for word in self.issue_words[item_id] if self._find(word, whole, title_end, name=False) is not None), None)
                 strong = strong and issue is not None
                 keyword = f"{keyword} + {issue}" if issue else keyword
             found.append(ReaderHit(item_type, item_id, name, keyword, where, sum(item[2] for item in matched), strong))

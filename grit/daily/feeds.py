@@ -8,7 +8,10 @@ official notices are read from the Federal Register, which publishes them.
 |---|---|
 | ACTIVE | Read every day. |
 | STALE | The feed answers, but its newest item is months old. Not read. |
-| BLOCKED | The site refuses automated readers, or has no feed. Not read. Reach it through a weekly search or by hand. |
+| BLOCKED | The site refuses automated readers, or has no feed. Not read. |
+
+A stale or blocked source with a sweep query is reached once a week by the source sweep instead: one Brave News query
+restricted to the site (spec 42, section 2).
 
 Checked on 20 October 2026 with grit feeds --check.
 """
@@ -39,6 +42,7 @@ class Feed:
     basis: str  # the reader's note that names the source
     status: str = ACTIVE
     note: str = ""
+    sweep: str | None = None  # the weekly Brave query for a stale or blocked source, such as "site:rusi.org"
 
 
 GROUP, TECH = ("ste",), ("ste", "dsc")
@@ -56,22 +60,27 @@ FEEDS: tuple[Feed, ...] = (
     Feed("quantum-insider", "The Quantum Insider", "https://thequantuminsider.com/feed/", TECH, WILSON),
     Feed("fr-bis", "US BIS, Federal Register notices", FEDERAL_REGISTER + "industry-and-security-bureau", TECH, WILSON, note="bis.gov blocks automated readers."),
     Feed("fr-ofac", "US OFAC, Federal Register notices", FEDERAL_REGISTER + "foreign-assets-control-office", TECH, WILSON, note="OFAC's own feed stopped in February 2025."),
-    Feed("cisa", "US CISA", None, TECH, WILSON, BLOCKED, "cisa.gov refuses automated readers (HTTP 403), and the Federal Register files CISA notices under all of Homeland Security."),
-    Feed("trendforce", "TrendForce", "https://www.trendforce.com/news/feed/", TECH, WILSON, STALE, "The feed's newest item is from July 2026."),
-    Feed("csis", "CSIS", "https://www.csis.org/rss.xml", GROUP, WILSON, STALE, "The feed's newest item is from 2016."),
-    Feed("isw", "Institute for the Study of War", None, GROUP, WILSON, BLOCKED, "understandingwar.org refuses automated readers (HTTP 403)."),
-    Feed("rusi", "RUSI", None, GROUP, WILSON, BLOCKED, "rusi.org returns no feed."),
-    Feed("breaking-defense", "Breaking Defense", None, GROUP, WILSON, BLOCKED, "breakingdefense.com refuses automated readers (HTTP 403)."),
-    Feed("janes", "Janes", None, GROUP, WILSON, BLOCKED, "Subscription; no public feed."),
-    Feed("tsmc", "TSMC investor relations", None, TECH, WILSON, BLOCKED, "investor.tsmc.com refuses automated readers (HTTP 403)."),
-    Feed("pif", "Saudi Public Investment Fund", None, GROUP, WILSON, BLOCKED, "pif.gov.sa refuses automated readers (HTTP 403)."),
-    Feed("neom", "NEOM", None, GROUP, WILSON, BLOCKED, "No public feed."),
-    Feed("uae-gov", "UAE Government (u.ae)", None, GROUP, WILSON, BLOCKED, "No public feed."),
-    Feed("anthropic", "Anthropic research", None, TECH, WILSON, BLOCKED, "No public feed."),
-    Feed("ibm-quantum", "IBM Quantum", None, TECH, WILSON, BLOCKED, "No public feed."),
-    Feed("world-bank", "World Bank news", None, GROUP, WILSON, BLOCKED, "worldbank.org returns an empty feed."),
-    Feed("imf", "IMF news", None, GROUP, WILSON, BLOCKED, "imf.org refuses automated readers (HTTP 403)."),
+    Feed("cisa", "US CISA", None, TECH, WILSON, BLOCKED, "cisa.gov refuses automated readers (HTTP 403), and the Federal Register files CISA notices under all of Homeland Security.", "site:cisa.gov"),
+    Feed("trendforce", "TrendForce", "https://www.trendforce.com/news/feed/", TECH, WILSON, STALE, "The feed's newest item is from July 2026.", "site:trendforce.com"),
+    Feed("csis", "CSIS", "https://www.csis.org/rss.xml", GROUP, WILSON, STALE, "The feed's newest item is from 2016.", "site:csis.org"),
+    Feed("isw", "Institute for the Study of War", None, GROUP, WILSON, BLOCKED, "understandingwar.org refuses automated readers (HTTP 403).", "site:understandingwar.org"),
+    Feed("rusi", "RUSI", None, GROUP, WILSON, BLOCKED, "rusi.org returns no feed.", "site:rusi.org"),
+    Feed("breaking-defense", "Breaking Defense", None, GROUP, WILSON, BLOCKED, "breakingdefense.com refuses automated readers (HTTP 403).", "site:breakingdefense.com"),
+    Feed("janes", "Janes", None, GROUP, WILSON, BLOCKED, "Subscription; no public feed.", "site:janes.com"),
+    Feed("tsmc", "TSMC", None, TECH, WILSON, BLOCKED, "investor.tsmc.com refuses automated readers (HTTP 403).", "site:tsmc.com"),
+    Feed("pif", "Saudi Public Investment Fund", None, GROUP, WILSON, BLOCKED, "pif.gov.sa refuses automated readers (HTTP 403).", "site:pif.gov.sa"),
+    Feed("neom", "NEOM", None, GROUP, WILSON, BLOCKED, "No public feed.", "site:neom.com"),
+    Feed("uae-gov", "UAE Government (u.ae)", None, GROUP, WILSON, BLOCKED, "No public feed.", "site:u.ae"),
+    Feed("anthropic", "Anthropic research", None, TECH, WILSON, BLOCKED, "No public feed.", "site:anthropic.com"),
+    Feed("ibm-quantum", "IBM Quantum", None, TECH, WILSON, BLOCKED, "No public feed.", "site:ibm.com quantum"),
+    Feed("world-bank", "World Bank news", None, GROUP, WILSON, BLOCKED, "worldbank.org returns an empty feed.", "site:worldbank.org"),
+    Feed("imf", "IMF news", None, GROUP, WILSON, BLOCKED, "imf.org refuses automated readers (HTTP 403).", "site:imf.org"),
 )
+
+
+def swept(packs: tuple[str, ...] | list[str] | None = None) -> list[Feed]:
+    """Stale and blocked sources reached by the weekly source sweep."""
+    return [feed for feed in FEEDS if feed.status != ACTIVE and feed.sweep and (not packs or set(feed.packs) & set(packs))]
 
 
 def active(packs: tuple[str, ...] | list[str] | None = None) -> list[Feed]:

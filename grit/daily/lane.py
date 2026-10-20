@@ -3,8 +3,8 @@ condition and active management request. No model, apart from one embedding per 
 
 For each pack and day:
 1. Start the run DATE-PACK-daily (kind DAILY). Weekly and monthly code ignores DAILY runs.
-2. Read each active feed for the pack, and send the pack's daily Currents queries. Every item becomes a signal and a
-   sighting in the run, as a scanned page does.
+2. Read each active feed for the pack, add the week's source-sweep results for its stale and blocked sources, and send the
+   pack's daily Currents queries. Every item becomes a signal and a sighting in the run, as a scanned page does.
 3. Embed new pages, then run the same deterministic assessment as a weekly scan: link ladder, keep rule, tier, conditions,
    harm and RED.
 4. Queue every kept page for the pack's next weekly or monthly scan, whose rules assess it again for the brief.
@@ -17,13 +17,15 @@ import hashlib
 import os
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
-from grit.daily.feeds import Feed, active, read_feed
+from grit.daily.feeds import FEEDS, Feed, active, read_feed, swept
 from grit.pool import Pool, utc_now
 
 LOOKBACK_DAYS = 2  # a missed day is caught up the next day
 CURRENTS_DAILY_MAX = 20
+SWEEP_DAYS = 7  # each stale or blocked source is swept once a week
+SWEEP_RESULTS = 20
 
 
 def daily_run_id(day: date, pack: str) -> str:
@@ -34,6 +36,60 @@ def daily_packs(packs: Sequence[str] | None = None) -> list[str]:
     """The packs with a daily run: those an active feed serves, plus the Group pack's Currents queries."""
     found = sorted({pack for feed in active() for pack in feed.packs} | {"ste"})
     return [pack for pack in found if not packs or pack in packs]
+
+
+def due_sweeps(pool: Pool, day: date, feeds: Sequence[Feed] | None = None) -> list[Feed]:
+    """Stale and blocked sources not swept in the last SWEEP_DAYS. A failed sweep is tried again the next day."""
+    due = []
+    for feed in feeds if feeds is not None else swept():
+        row = pool.one("SELECT MAX(day) AS last FROM source_sweeps WHERE feed_id = ? AND status != 'FAILED'", (feed.feed_id,))
+        last = (row or {}).get("last")
+        if last is None or (day - date.fromisoformat(last)).days >= SWEEP_DAYS:
+            due.append(feed)
+    return due
+
+
+def sweep_sources(pool: Pool, day: date, *, feeds: Sequence[Feed] | None = None, getter: Callable[..., Any] | None = None, usage_path: Any = None,
+                  log: Callable[[str], None] = print) -> dict[str, list[dict[str, Any]]]:
+    """The weekly source sweep: one Brave News query restricted to each due source's site, for the last week. Returns
+    feed id -> pages from that site. Skipped without a Brave key, and when Brave is within 10% of its monthly limit."""
+    from types import SimpleNamespace
+    from urllib.parse import urlparse
+
+    from grit.acquisition.brave import BraveFetchError
+    from grit.acquisition.brave_plan import canonical_url, collect_plan
+    from grit.copilot.web import brave_near_limit
+
+    due = due_sweeps(pool, day, feeds)
+    if not due:
+        return {}
+    if getter is None and not os.environ.get("BRAVE_SEARCH_API_KEY", "").strip():
+        log("  Source sweep skipped: BRAVE_SEARCH_API_KEY is not set.")
+        return {}
+    if getter is None and brave_near_limit(usage_path):
+        log("  Source sweep skipped: Brave is within 10% of its monthly limit.")
+        return {}
+    answered: dict[str, list[dict[str, Any]]] = {}
+    specs = [SimpleNamespace(query_id=f"sweep-{feed.feed_id}", query=feed.sweep, exact=False) for feed in due]
+    try:
+        collect_plan(specs, fetched_at=utc_now(), freshness="pw", count=SWEEP_RESULTS, getter=getter,
+                     on_search=lambda entry: answered.__setitem__(entry["query_id"], entry["results"]), **({"usage_path": usage_path} if usage_path else {}))
+    except BraveFetchError as exc:
+        log(f"  Source sweep stopped: {exc}")
+    out: dict[str, list[dict[str, Any]]] = {}
+    for feed in due:
+        results = answered.get(f"sweep-{feed.feed_id}")
+        site = feed.sweep.split()[0].removeprefix("site:")
+        pages = [
+            {"url": canonical_url(item["url"]), "title": item["title"], "text": item.get("text") or "", "publisher": item.get("publisher"), "published_at": item.get("published_at")}
+            for item in results or [] if item.get("url") and item.get("title") and (urlparse(item["url"]).netloc.lower() == site or urlparse(item["url"]).netloc.lower().endswith(f".{site}"))
+        ]
+        status = "FAILED" if results is None else "OK" if pages else "EMPTY"
+        pool.upsert("source_sweeps", {"feed_id": feed.feed_id, "day": day.isoformat(), "query": feed.sweep, "results": len(pages), "status": status}, ["feed_id", "day"])
+        if pages:
+            out[feed.feed_id] = pages
+        log(f"  sweep {feed.feed_id:18} {len(pages):>3} pages" + ("  (not answered; tried again tomorrow)" if status == "FAILED" else ""))
+    return out
 
 
 def currents_specs(pool: Pool, run: Any) -> list[Any]:
@@ -81,7 +137,9 @@ def run_daily(
     pool: Pool, pack: str, day: date, *, feeds: Sequence[Feed] | None = None, feed_getter: Callable[[str], bytes] | None = None,
     currents_getter: Callable[..., Any] | None = None, use_currents: bool = True, lookback_days: int = LOOKBACK_DAYS, embedder: Any | None = None,
     score_harm_fn: Callable[..., dict[str, Any]] | None = None, profiles: Sequence[Any] | None = None, log: Callable[[str], None] = print,
+    swept_pages: Mapping[str, Sequence[dict[str, Any]]] | None = None,
 ) -> DailyResult:
+    """swept_pages: the source sweep's results, feed id -> pages, shared by every pack the source serves."""
     from grit.pipeline import reader_scan
     from grit.pipeline.reader_scan import ReaderRun, target_of
 
@@ -104,6 +162,14 @@ def run_daily(
             _add(pool, run.run_id, item, lane="FEED", query_id=f"feed-{feed.feed_id}", query=feed.name, sighting_lane="FEED", target_id=None, rank=rank, result=result)
         result.feeds[feed.feed_id] = len(items)
         log(f"  {pack:7} feed {feed.feed_id:18} {len(items):>3} items")
+    by_id = {feed.feed_id: feed for feed in FEEDS}
+    for feed_id, pages in (swept_pages or {}).items():
+        feed = by_id.get(feed_id)
+        if feed is None or pack not in feed.packs:
+            continue
+        for rank, item in enumerate(pages, start=1):
+            _add(pool, run.run_id, dict(item), lane="BRAVE", query_id=f"sweep-{feed_id}", query=feed.sweep or feed.name, sighting_lane="SWEEP", target_id=None, rank=rank, result=result)
+        result.feeds[f"sweep:{feed_id}"] = len(pages)
     have_currents = currents_getter is not None or bool(os.environ.get("CURRENTS_API_KEY", "").strip())
     if use_currents and have_currents:
         from grit.acquisition.currents import CurrentsFetchError, collect_currents

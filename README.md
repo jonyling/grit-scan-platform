@@ -152,7 +152,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-20, 516 tests pass. They make no network call.
+   As of 2026-10-20, 518 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 
@@ -200,9 +200,9 @@ The Urban Solutions brief follows the same style at BA level: the bottom line, t
 
 ## Run the daily lane
 
-Once a day, GRIT-Scan reads the primary-source feeds that readers named and sends one Currents query for each Group standing condition and active management request. The scan's own rules assess every page, and kept pages are queued for the next weekly or monthly scan. A nightly index then groups pages into events and writes a digest per pack for the Co-Pilot's "what's new" (spec 42). It spends no Brave queries.
+Once a day, GRIT-Scan reads the primary-source feeds that readers named and sends one Currents query for each Group standing condition and active management request. The scan's own rules assess every page, and kept pages are queued for the next weekly or monthly scan. Once a week it also sweeps the named sources that block feed readers (ISW, RUSI, the World Bank, the IMF and others), with one Brave `site:` query each, about 15 a week. A nightly index then groups pages into events and writes a digest per pack for the Co-Pilot's "what's new" (spec 42).
 
-1. List the feed register: each feed's packs, status (active, stale, or blocked), and the reader's note that names it.
+1. List the feed register: each feed's packs, status (active, stale, or blocked), the reader's note that names it, and the sweep query for a stale or blocked source.
 
    ```bash
    .venv/bin/python -m grit feeds

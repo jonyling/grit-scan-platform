@@ -9,7 +9,7 @@ from datetime import date
 def daily_main(argv: list[str] | None = None) -> int:
     from grit.daily.feeds import active
     from grit.daily.index import nightly
-    from grit.daily.lane import daily_packs, run_daily
+    from grit.daily.lane import daily_packs, due_sweeps, run_daily, sweep_sources
     from grit.pool import Pool
     from grit.profiles import load_profiles
     from grit.settings import load_local_env
@@ -18,7 +18,8 @@ def daily_main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pack", nargs="+", help="Packs. Default: every pack an active feed serves, and the Group pack.")
     parser.add_argument("--date", type=date.fromisoformat, default=date.today(), help="Day, YYYY-MM-DD. Default today.")
     parser.add_argument("--lookback-days", type=int, default=2, help="Read feed items published this many days before the day. Use 7 to catch up.")
-    parser.add_argument("--no-currents", action="store_true", help="Read the feeds only.")
+    parser.add_argument("--no-currents", action="store_true", help="Send no Currents query.")
+    parser.add_argument("--no-sweep", action="store_true", help="Skip the weekly source sweep of stale and blocked sources.")
     parser.add_argument("--dry-run", action="store_true", help="Print the packs and feeds. Fetch nothing.")
     args = parser.parse_args(argv)
     load_local_env()
@@ -26,12 +27,16 @@ def daily_main(argv: list[str] | None = None) -> int:
     if args.dry_run:
         for pack in packs:
             print(f"{pack}: feeds {', '.join(feed.feed_id for feed in active([pack])) or 'none'}" + ("" if args.no_currents else "; Currents: one query per standing condition and active request"))
+        if not args.no_sweep:
+            due = due_sweeps(Pool(), args.date)
+            print(f"Source sweep due: {', '.join(feed.feed_id for feed in due) or 'none'} ({len(due)} Brave queries).")
         return 0
     pool = Pool()
+    swept_pages = {} if args.no_sweep else sweep_sources(pool, args.date)
     profiles = list(load_profiles().values())
     for pack in packs:
         print(f"== {pack} daily, {args.date}")
-        result = run_daily(pool, pack, args.date, use_currents=not args.no_currents, lookback_days=args.lookback_days, profiles=profiles)
+        result = run_daily(pool, pack, args.date, use_currents=not args.no_currents, lookback_days=args.lookback_days, profiles=profiles, swept_pages=swept_pages)
         print(f"  {result.signals} pages ({result.new_signals} new), {result.kept} kept, {result.queued} queued for the next scan, {result.red_drafts} RED drafts.")
     index = nightly(pool, args.date)
     print(f"Index: {index['fts_added']} pages indexed; events {index['events']}; digests {index['digests']}; {index['retained']} old dropped pages trimmed.")

@@ -156,3 +156,14 @@ def test_a_demoted_generic_name_falls_down_the_link_ladder() -> None:
     link = generic_name_rule(link_candidate(candidate, index, pack.lob_profiles), f"{candidate['title']}\n{candidate['text']}", rule, graph)
     assert link.rung == "COMPETITOR", link.reasons
     assert not any(item.strong and item.cls == "Customer" for item in link.involves)
+
+
+def test_a_topic_keyword_counts_in_a_title_case_headline_but_a_name_does_not_run_into_another() -> None:
+    from grit.ontology.reader_index import CONDITION, ReaderIndex
+
+    plan = {"conditions": [{"conditionId": "GC-02", "keywords": ["Houthi", "Taiwan Strait"]}]}
+    index = ReaderIndex({"suppliers": [{"supplierId": "S1", "supplierName": "Leonardo SpA", "aliases": ["Leonardo"]}]}, plan, {"conditions": [{"id": "GC-02", "name": "Middle East security"}]})
+    hits = index.hits("Houthi Attacks in Saudi Arabia as of October 18", "A map of Houthi Attacks.")
+    assert [(hit.item_type, hit.item_id, hit.strong) for hit in hits] == [(CONDITION, "GC-02", True)]
+    assert any(hit.item_id == "GC-02" for hit in index.hits("Taiwan Strait Blockade Fears Grow", ""))
+    assert not any(hit.item_id == "S1" for hit in index.hits("Leonardo DiCaprio Film Premieres", "")), "a name still stops at a longer name"

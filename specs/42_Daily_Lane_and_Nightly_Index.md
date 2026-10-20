@@ -6,7 +6,7 @@
 
 ## 1. What it does
 
-Once a day, GRIT-Scan reads the primary-source feeds that readers named, and sends one Currents query for each Group standing condition and each active management request. Every page goes through the same deterministic assessment as a weekly scan. A nightly index then groups pages into events and writes a digest per pack, so the Co-Pilot can answer "what's new". The weekly and monthly scans are unchanged, and the daily lane uses no Brave queries.
+Once a day, GRIT-Scan reads the primary-source feeds that readers named, and sends one Currents query for each Group standing condition and each active management request. Once a week, it sweeps the named sources that have no usable feed. Every page goes through the same deterministic assessment as a weekly scan. A nightly index then groups pages into events and writes a digest per pack, so the Co-Pilot can answer "what's new". The weekly and monthly scans are unchanged. The daily lane uses no Brave queries, apart from the weekly source sweep.
 
 To run it once a day, for example at 05:30 Singapore time from `cron`:
 
@@ -20,7 +20,7 @@ A crontab line for the host:
 30 5 * * * cd /home/khengaikjony.ling/grit-scan-platform && .venv/bin/grit daily >> output/daily.log 2>&1
 ```
 
-`--lookback-days 7` catches up after a gap; the default reads two days. `--no-currents` reads the feeds only, and `--dry-run` prints the packs and feeds without fetching.
+`--lookback-days 7` catches up after a gap; the default reads two days. `--no-currents` sends no Currents query, `--no-sweep` skips the source sweep, and `--dry-run` prints the packs, feeds and due sweeps without fetching.
 
 ## 2. The feed register
 
@@ -41,7 +41,17 @@ To list the register, or to read every feed now and report its newest item:
 .venv/bin/grit feeds --check
 ```
 
-A blocked source can still reach a brief through the weekly search, or through **Add to pool** in the Co-Pilot.
+### Source sweep for stale and blocked sources
+
+Each stale or blocked source has a sweep query, such as `site:understandingwar.org`. Once every 7 days, `grit daily` sends one Brave News query per source for the last week, about 15 queries a week. A source whose query failed is tried again the next day. The sweep is skipped without a Brave key, and when Brave is within 10% of its monthly limit; `--no-sweep` turns it off.
+
+Only the source's own pages are kept from the results. They enter the daily runs of every pack the source serves, so the same rules decide on them and kept pages are queued for the next weekly or monthly scan. On 20 October 2026, 11 of the 15 sources returned 115 pages, and the rules kept 18. CISA, RUSI, PIF and u.ae returned nothing that week.
+
+A page from a source not in the register, such as an article a reader forwards, can reach the pool through **Add to pool** under a web citation in the Co-Pilot, or with `grit pool-add` (spec 41).
+
+### Topic keywords in Title Case headlines
+
+The sweep found a fault in the matching rule. A name stops at another capitalised word, so "Leonardo" does not match "Leonardo DiCaprio". That guard also applied to topic keywords, so a condition keyword never matched a Title Case headline: "Houthi" did not count in "Houthi Attacks in Saudi Arabia". Condition, hazard and watchpoint keywords now skip the name guard. Names keep it. The fix applies to runs assessed from 20 October 2026. Earlier weekly runs were not reassessed, because their briefs are already written.
 
 ## 3. The daily run
 
@@ -49,10 +59,11 @@ For each pack an active feed serves, and the Group pack:
 
 1. The run `DATE-PACK-daily` starts, with kind `DAILY`.
 2. Each active feed's items from the lookback window become signals with a sighting in the run. An item without a date is skipped, because its age cannot be checked.
-3. Currents receives one query per standing condition and per active management request, from the pack's scan plan. The sightings carry the query's lane and target, as in a weekly scan. `CURRENTS_DAILY_MAX` caps the queries per pack and day (default 20). A query already answered that day is not sent again.
-4. New pages are embedded. The run's deterministic assessment then applies the link ladder, keep rule, tier, conditions, harm scorer and RED rule.
-5. Every kept page is queued for the pack's next weekly or monthly scan (`pool_additions`, added by `daily-lane`). That scan's rules assess it again before it can reach a brief.
-6. RED drafts are written for a named person to send, as the weekly report does. A page gets one draft per pack, whichever run reads it first. Drafts from daily runs show in the dashboard's RED tab beside the selected run's own.
+3. The week's source-sweep pages for the pack's stale and blocked sources join the run.
+4. Currents receives one query per standing condition and per active management request, from the pack's scan plan. The sightings carry the query's lane and target, as in a weekly scan. `CURRENTS_DAILY_MAX` caps the queries per pack and day (default 20). A query already answered that day is not sent again.
+5. New pages are embedded. The run's deterministic assessment then applies the link ladder, keep rule, tier, conditions, harm scorer and RED rule.
+6. Every kept page is queued for the pack's next weekly or monthly scan (`pool_additions`, added by `daily-lane`). That scan's rules assess it again before it can reach a brief.
+7. RED drafts are written for a named person to send, as the weekly report does. A page gets one draft per pack, whichever run reads it first. Drafts from daily runs show in the dashboard's RED tab beside the selected run's own.
 
 Weekly and monthly code ignores `DAILY` runs. This covers the previous-run comparison, the dashboard's run list, the Co-Pilot's `get_state`, and the fit report. The Co-Pilot's signal search includes daily pages.
 

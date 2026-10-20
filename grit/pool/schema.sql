@@ -336,3 +336,13 @@ CREATE TABLE IF NOT EXISTS digests (
     created_at      TEXT NOT NULL,
     PRIMARY KEY (pack, day)
 );
+
+-- The weekly source sweep (spec 42): one Brave query per stale or blocked source, at most once in SWEEP_DAYS.
+CREATE TABLE IF NOT EXISTS source_sweeps (
+    feed_id         TEXT NOT NULL,
+    day             TEXT NOT NULL,
+    query           TEXT NOT NULL,
+    results         INTEGER NOT NULL DEFAULT 0,
+    status          TEXT NOT NULL,            -- OK, EMPTY, FAILED
+    PRIMARY KEY (feed_id, day)
+);

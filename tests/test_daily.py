@@ -183,3 +183,34 @@ def test_the_nightly_index_rebuilds_recent_days_so_a_late_run_reaches_its_digest
         conn.execute("UPDATE assessments SET tier = 2")
     nightly(pool, DAY + timedelta(days=1), packs=["urs-tw"])
     assert digests(pool, ["urs-tw"], DAY, DAY)[0]["tier_1_2_events"], "yesterday's digest was rebuilt with what changed after it was first written"
+
+
+def test_the_weekly_sweep_reaches_blocked_sources_once_a_week_for_every_pack_they_serve(tmp_path: Path, monkeypatch) -> None:
+    from grit.acquisition.brave_plan import BraveResponse
+    from grit.daily.lane import due_sweeps, sweep_sources
+
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    pool = Pool(tmp_path / "grit.sqlite")
+    isw = Feed("isw-test", "ISW", None, ("urs-tw",), "test", "BLOCKED", "403", "site:understandingwar.org")
+    rusi = Feed("rusi-test", "RUSI", None, ("urs-tw",), "test", "BLOCKED", "no feed", "site:rusi.org")
+    sent: list[str] = []
+
+    def brave(_url: str, params: dict) -> BraveResponse:
+        sent.append(params["q"])
+        if "rusi" in params["q"]:
+            return BraveResponse(500, None, {})
+        results = [{"title": "Russian Offensive Campaign Assessment", "url": "https://understandingwar.org/research/russia-ukraine/assessment-1/", "description": "PLA aircraft near Taiwan Strait.",
+                    "page_age": f"{DAY.isoformat()}T01:00:00", "meta_url": {"hostname": "understandingwar.org"}},
+                   {"title": "Off-site copy", "url": "https://mirror.example/isw", "description": "x", "page_age": f"{DAY.isoformat()}T01:00:00", "meta_url": {"hostname": "mirror.example"}}]
+        return BraveResponse(200, {"results": results}, {"x-ratelimit-limit": "50"})
+
+    pages = sweep_sources(pool, DAY, feeds=[isw, rusi], getter=brave, usage_path=tmp_path / "u.json", log=lambda _m: None)
+    assert sent == ["site:understandingwar.org", "site:rusi.org"]
+    assert list(pages) == ["isw-test"] and [page["url"] for page in pages["isw-test"]] == ["https://understandingwar.org/research/russia-ukraine/assessment-1"], "only the site's own pages"
+    assert {row["feed_id"]: row["status"] for row in pool.rows("SELECT feed_id, status FROM source_sweeps")} == {"isw-test": "OK", "rusi-test": "FAILED"}
+    assert [feed.feed_id for feed in due_sweeps(pool, DAY + timedelta(days=1), [isw, rusi])] == ["rusi-test"], "a failed sweep is retried; a done one waits a week"
+    assert [feed.feed_id for feed in due_sweeps(pool, DAY + timedelta(days=7), [isw, rusi])] == ["isw-test", "rusi-test"]
+    monkeypatch.setattr("grit.daily.lane.FEEDS", (isw, rusi))
+    result = run_daily(pool, "urs-tw", DAY, feeds=[], use_currents=False, embedder=_Embedder(), score_harm_fn=lambda *a, **k: {"status": "NOT_RUN"}, log=lambda _m: None, swept_pages=pages)
+    assert result.feeds == {"sweep:isw-test": 1}
+    assert pool.one("SELECT lane, query FROM sightings WHERE query_id = 'sweep-isw-test'") == {"lane": "SWEEP", "query": "site:understandingwar.org"}
