@@ -9,13 +9,14 @@ governed score word and no URL appear anywhere.
 from __future__ import annotations
 
 import re
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from grit.agents.checks import BANNED, text_problems
 from grit.agents.situation import FORECAST, sentences
 
 MARK = re.compile(r"\[([SBRDGW]\d{1,3}(?:\s*,\s*[SBRDGW]\d{1,3})*)\]")
 MARKUP = re.compile(r"\]\(|//|<\s*[a-zA-Z/!]|javascript:", re.I)  # a link, a protocol-relative URL, or an HTML tag
+IDENTIFIER = re.compile(r"\b[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*\b")  # codes in capitals: STE-GC-01, H200, HBM3E; only those with a digit are removed
 HEDGE = re.compile(r"\b(could|may|might|would|possibly|potentially|if)\b", re.I)
 PARTS = ("answer", "evidence", "implications", "uncertain", "next_step")
 LIMITS = {"short": {"answer": 2, "evidence": 4}, "standard": {"answer": 3, "evidence": 8}}
@@ -47,8 +48,27 @@ def _haystack(sources: Mapping[str, Any], ids: list[str]) -> str:
     return " ".join(sources[item].text for item in ids if item in sources)
 
 
-def check_answer(draft: Any, sources: Mapping[str, Any], *, length: str = "standard") -> list[str]:
-    """sources: id -> Source (with text and names). An empty list means the answer may be shown."""
+def _plain(text: str, dates: Sequence[Any] = ()) -> str:
+    """The text the number check reads: citation marks removed, codes in capitals that carry a digit (STE-GC-01, H200)
+    removed, and phrases naming one of the given dates (19 October 2026, 2026-10-19) removed. Every other number stays."""
+    text = IDENTIFIER.sub(lambda match: " " if any(char.isdigit() for char in match.group(0)) else match.group(0), strip_marks(text))
+    for day in dates:
+        month = day.strftime("%B")
+        for pattern in (rf"\b{day.day}\s+{month}(?:\s+{day.year})?\b", rf"\b{month}\s+{day.day}(?:,?\s+{day.year})?\b", rf"\b{day.isoformat()}\b"):
+            text = re.sub(pattern, " ", text, flags=re.I)
+    return text
+
+
+def answer_dates(today: Any) -> tuple[Any, ...]:
+    """Today and yesterday: dates an answer may name without a source, such as "since 19 October"."""
+    from datetime import timedelta
+
+    return (today, today - timedelta(days=1))
+
+
+def check_answer(draft: Any, sources: Mapping[str, Any], *, length: str = "standard", dates: Sequence[Any] = ()) -> list[str]:
+    """sources: id -> Source (with text and names). dates: dates a sentence may name without a source (today and
+    yesterday). An empty list means the answer may be shown."""
     if not isinstance(draft, Mapping):
         return ["BAD_SHAPE: the answer is a JSON object with answer, evidence, implications, uncertain and next_step."]
     problems: list[str] = []
@@ -83,7 +103,7 @@ def check_answer(draft: Any, sources: Mapping[str, Any], *, length: str = "stand
                 if not ids:
                     if nothing_found and key == "answer":
                         # An uncited "nothing found" answer still carries no number, forecast, score word or URL.
-                        problems += text_problems(sentence, "", where)
+                        problems += text_problems(_plain(sentence, dates), "", where)
                         if FORECAST.search(sentence):
                             problems.append(f"UNATTRIBUTED_FORECAST: {where}: a nothing-found answer makes no forecast.")
                     else:
@@ -92,7 +112,7 @@ def check_answer(draft: Any, sources: Mapping[str, Any], *, length: str = "stand
                 unknown = [item for item in ids if item not in sources]
                 if unknown:
                     problems.append(f"UNKNOWN_SOURCE: {where}: {', '.join(unknown)} was not supplied.")
-                problems += text_problems(strip_marks(sentence), _haystack(sources, ids), where)
+                problems += text_problems(_plain(sentence, dates), _haystack(sources, ids), where)
                 forecast = FORECAST.search(strip_marks(sentence))
                 if forecast and key != "implications":
                     names = [name for item in ids if item in sources for name in sources[item].names]
@@ -107,7 +127,7 @@ def check_answer(draft: Any, sources: Mapping[str, Any], *, length: str = "stand
             unknown = [item for item in marks(line) if item not in sources]
             if unknown:
                 problems.append(f"UNKNOWN_SOURCE: {key} {number}: {', '.join(unknown)} was not supplied.")
-            problems += text_problems(strip_marks(line), everything, f"{key} {number}")
+            problems += text_problems(_plain(line, dates), everything, f"{key} {number}")
     if BANNED.search(str(draft.get("title") or "")):
         problems.append("BANNED_TERM: title")
     return problems

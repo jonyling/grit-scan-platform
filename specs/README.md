@@ -23,5 +23,6 @@ Specs 13–33 state the rules. Spec 34 states the rebuild order. Spec 35 describ
 | [39](39_Reader_Notes_and_Profiles.md) | Reader notes, the `profile.md` distilled from them, emphasis, and the AIRIS rule by package. |
 | [40](40_Copilot_Core.md) | The Co-Pilot: scope, hybrid search, tools, the checked answer, privacy, and the dashboard drawer. |
 | [41](41_Profiler_Fit_Report_and_Web_Search.md) | The Profiler's checked profile proposals, the fit report, the Co-Pilot's web search and budget, and Add to pool. |
+| [42](42_Daily_Lane_and_Nightly_Index.md) | The daily feed register and lane, events, daily digests, retention, and the Co-Pilot's `whats_new`. |
 
 `archive/` holds an early draft of spec 17 for reference. It does not govern.

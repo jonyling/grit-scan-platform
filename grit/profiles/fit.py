@@ -144,7 +144,7 @@ def fit_report(pool: Pool, run_id: str, profile: Any) -> str:
         candidates.append(f"{len(silent)} profile lines matched nothing in this run. Ask whether they still matter, or whether GRIT-Scan should search their sources.")
     lines.append("")
     # What the reader asked
-    previous = pool.latest_run(run["pack"], before=run["run_date"])
+    previous = pool.latest_run(run["pack"], before=run["run_date"], kind="READER_SCAN")
     counts = asked(pool, profile, previous["run_date"] if previous else None, None)
     lines += ["## What the reader asked", "", f"Co-Pilot questions since {previous['run_date'] if previous else 'the start'}, by topic:"]
     lines += [f"- {name}: {count}" for name, count in counts.most_common()] or ["- No Co-Pilot question on a known topic."]

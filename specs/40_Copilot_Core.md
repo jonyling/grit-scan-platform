@@ -104,4 +104,4 @@ Selecting a row in the standing-conditions table focuses the Co-Pilot on that it
 ## 9. Not yet built
 
 - Web search, Add to pool, the Profiler and the fit report are built in spec 41.
-- The daily feed lane, the nightly index job, and `whats_new` (Step 4).
+- The daily feed lane, the nightly index job, and `whats_new` are built in spec 42.

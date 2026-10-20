@@ -51,7 +51,7 @@ def main() -> None:
     with st.sidebar:
         st.title("GRIT-Scan")
         profile = readers[st.selectbox("Reader", labels, index=default)]
-        runs = [row for row in db.rows("SELECT run_id, pack FROM runs WHERE status = 'COMPLETE' ORDER BY run_date DESC, pack, started_at DESC") if profile.brief_for(row["pack"])]
+        runs = [row for row in db.rows("SELECT run_id, pack FROM runs WHERE status = 'COMPLETE' AND kind != 'DAILY' ORDER BY run_date DESC, pack, started_at DESC") if profile.brief_for(row["pack"])]
         if not runs:
             st.info("No run yet for this reader's packs. Start one with: .venv/bin/python -m grit weekly --dry-run")
             return
@@ -180,7 +180,10 @@ def main() -> None:
                         st.rerun()
 
         with alerts_tab:
-            alerts = db.rows("SELECT * FROM alerts WHERE run_id = ? ORDER BY created_at", (run_id,))
+            alerts = db.rows(
+                "SELECT a.* FROM alerts a JOIN runs r ON r.run_id = a.run_id WHERE a.run_id = ? OR (r.kind = 'DAILY' AND r.pack = ? AND a.status = 'DRAFT') ORDER BY a.created_at",
+                (run_id, db.run(run_id)["pack"]),
+            )
             st.subheader("RED alert drafts")
             if not alerts:
                 st.caption("No RED pattern fired this week.")
@@ -233,6 +236,8 @@ def copilot_drawer(db, profile, run_id, brief, *, focus=None):  # noqa: ANN001, 
     st.caption(f"Searches {', '.join(scope.label(pack) for pack in scope.packs)}." + (f" Web searches left today: {web.remaining()}." if web else "")
                + " Your conversation is private to you. Type /note to leave a note for your profile, or /concern TITLE: keywords to propose a management request.")
     pending = None
+    if st.button("What's new since yesterday?", key="starter-whats-new"):
+        pending = "What's new since yesterday?"
     if focus:
         name = next((row["name"] for row in brief["conditions"] if row["condition_id"] == focus), focus)
         st.caption(f"Focus: {name}")

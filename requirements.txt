@@ -9,5 +9,6 @@ python-pptx
 pypdf
 pyyaml
 openpyxl
+feedparser
 # Tests
 pytest

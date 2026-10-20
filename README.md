@@ -114,10 +114,11 @@ One weekly run for a reader pack has these stages. Each stage reads and writes t
 | `grit/acquisition/` | Brave News, Currents, and GDELT adapters. They emit candidates and never score. |
 | `grit/retrieval/` | Embeddings, the vector cache, similarity, and the business-area digest filter. |
 | `grit/agents/` | The Gemini client, the reader agents, their checks, the chat commands, and the finding loop (`loop/`). |
-| `grit/copilot/` | The Co-Pilot: scope, hybrid search, tools, the bounded agent loop, and its checks (spec 40). |
+| `grit/copilot/` | The Co-Pilot: scope, hybrid search, tools, web search, the bounded agent loop, and its checks (specs 40 and 41). |
+| `grit/daily/` | The daily feed register and lane, and the nightly index: events, digests, and retention (spec 42). |
 | `grit/pool/` | The signal pool: `schema.sql` and its repository class. |
 | `grit/pipeline/` | The reader scan stages and the harm-scorer adapter. |
-| `grit/profiles/` | Reader profiles, reader notes, and emphasis (spec 39). |
+| `grit/profiles/` | Reader profiles, reader notes, emphasis, the Profiler, and the fit report (specs 39 and 41). |
 | `grit/report/` | The brief model and its Word, PowerPoint, Excel, and Markdown renderers, RED drafts, the AIRIS export, and the business-area digest. |
 | `grit/workflow/` | The Supervisor, the theme register, and reader packages through review. |
 | `grit/dataverse/` | The Dataverse gateway and the pool-to-`grit_signals` sync. |
@@ -151,7 +152,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-20, 505 tests pass. They make no network call.
+   As of 2026-10-20, 516 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 
@@ -197,6 +198,28 @@ The URS Taiwan brief follows the 2 Oct 2026 reference brief in `docs/reference/`
 
 The Urban Solutions brief follows the same style at BA level: the bottom line, the 14 risk themes in register order (each key risk, and any escalating theme, as a row of the key-risk table: development, source, date and time, relevance to the business area, proposed response, and priority and trend; the rest as one row of the theme table), management-requested topics with the signals that matched each one, the URS Taiwan summary, STE entities by line of business, customer, supplier, and competitor watch, priority findings, the QA log, and the watchpoints. Each reader's profile chooses which of these sections they receive.
 
+## Run the daily lane
+
+Once a day, GRIT-Scan reads the primary-source feeds that readers named and sends one Currents query for each Group standing condition and active management request. The scan's own rules assess every page, and kept pages are queued for the next weekly or monthly scan. A nightly index then groups pages into events and writes a digest per pack for the Co-Pilot's "what's new" (spec 42). It spends no Brave queries.
+
+1. List the feed register: each feed's packs, status (active, stale, or blocked), and the reader's note that names it.
+
+   ```bash
+   .venv/bin/python -m grit feeds
+   ```
+
+2. Run the lane and the index. Add `--lookback-days 7` to catch up after a gap.
+
+   ```bash
+   .venv/bin/python -m grit daily
+   ```
+
+3. Optional: schedule it. This crontab line runs it at 05:30 each day:
+
+   ```text
+   30 5 * * * cd /home/khengaikjony.ling/grit-scan-platform && .venv/bin/grit daily >> output/daily.log 2>&1
+   ```
+
 ## Review packs and hand off to AIRIS
 
 Each reader's pack is a package in the workflow. Every member signal runs `NEW` to `PENDING_REVIEW` through `TransitionGuard()`, in an execution of its own for that reader.
@@ -236,6 +259,7 @@ The Co-Pilot sits in the right-hand drawer (spec 40). It answers from the briefs
 
 When the records are silent or older than the question needs, the Co-Pilot searches the web: Brave first, Currents first when Brave nears its monthly limit, 17 searches a day for each reader (spec 41). Web results are marked unvetted. **Add to pool** under a web citation queues the page for the next scan, whose rules decide whether it is kept.
 
+- Select **What's new since yesterday?** for the daily digests.
 - Select a row in the standing-conditions table to focus the Co-Pilot on it.
 - Type `/concern TITLE: keyword, keyword` (or `/topic`, `/trend`, `/keyword`) to propose a management request.
 - Type `/note TEXT` to leave a note for your profile. It goes to `secrets/readers/<profile>/inbox/` for filing.

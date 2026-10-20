@@ -73,8 +73,9 @@ def candidates(pool: Pool, scope: Any, *, include_dropped: bool = False) -> dict
         where.append("r.run_date >= ?")
         params.append(scope.since)
     rows = pool.rows(
-        f"""SELECT a.*, r.run_date, s.title, s.url, s.publisher, s.published_at, s.text, s.lane
+        f"""SELECT a.*, r.run_date, s.title, s.url, s.publisher, s.published_at, s.text, s.lane, m.event_id
             FROM assessments a JOIN runs r ON r.run_id = a.run_id JOIN signals s ON s.signal_id = a.signal_id
+            LEFT JOIN event_members m ON m.signal_id = a.signal_id
             WHERE {' AND '.join(where)}""",
         params,
     )
@@ -163,7 +164,8 @@ def _title_key(title: str | None) -> str:
 
 
 def collapse(fused: Sequence[tuple[str, float]], rows: Mapping[str, Mapping[str, Any]], vectors: Mapping[str, Any]) -> list[Event]:
-    """Join a page to an earlier, better-ranked event when it tells the same story."""
+    """Join a page to an earlier, better-ranked event when it tells the same story: the nightly index put both in one
+    event, or they share a title, or their vectors are 0.90 or more similar within 8 days."""
     import numpy as np
 
     events: list[Event] = []
@@ -172,8 +174,9 @@ def collapse(fused: Sequence[tuple[str, float]], rows: Mapping[str, Mapping[str,
         joined = None
         for event in events:
             same_title = _title_key(row.get("title")) and _title_key(row.get("title")) == _title_key(event.row.get("title"))
-            near = False
-            if signal_id in vectors and event.row["signal_id"] in vectors:
+            same_event = bool(row.get("event_id")) and any(row["event_id"] == member.get("event_id") for member in [event.row, *event.members])
+            near = same_event
+            if not near and signal_id in vectors and event.row["signal_id"] in vectors:
                 close_in_time = abs(_ordinal(row.get("published_at")) - _ordinal(event.row.get("published_at"))) <= SAME_STORY_DAYS
                 near = close_in_time and float(np.dot(vectors[signal_id], vectors[event.row["signal_id"]])) >= SAME_STORY
             if same_title or near:

@@ -1,6 +1,6 @@
 # GRIT-Scan Co-Pilot: architecture proposal
 
-**Status:** Phases 1 and 2 built, 20 October 2026 ([spec 40](../../specs/40_Copilot_Core.md), [spec 41](../../specs/41_Profiler_Fit_Report_and_Web_Search.md)). Decisions of 19 October 2026 are in section 12. The daily lane and the nightly index are not built yet.
+**Status:** Phases 1 to 3 built, 20 October 2026 ([spec 40](../../specs/40_Copilot_Core.md), [spec 41](../../specs/41_Profiler_Fit_Report_and_Web_Search.md), [spec 42](../../specs/42_Daily_Lane_and_Nightly_Index.md)). Decisions of 19 October 2026 are in section 12. Phase 4 is the MVP.
 **Purpose:** Design a chat assistant beside the GRIT-Scan dashboard that answers from the signals the program collects, searches the web when the pool is not enough, and reasons to a clear, cited answer. It must keep working as the signal pool grows every day.
 **Read with:** Gemini's proposal (`Gem_GRIT-Scan_Co-Pilot_Architecture & UI_Spec.md`), and specs 35 to 38.
 

@@ -310,3 +310,29 @@ CREATE TABLE IF NOT EXISTS pool_additions (
     run_id          TEXT,                     -- the run that assessed it
     PRIMARY KEY (signal_id, pack)
 );
+
+-- Events (spec 42): pages that tell the same story, so retrieval returns one item per story with all its outlets.
+CREATE TABLE IF NOT EXISTS events (
+    event_id        TEXT PRIMARY KEY,
+    lead_signal_id  TEXT NOT NULL REFERENCES signals (signal_id),  -- the best-labelled member: lowest tier, then earliest
+    first_date      TEXT,
+    last_date       TEXT,
+    members         INTEGER NOT NULL DEFAULT 1,
+    created_at      TEXT NOT NULL,
+    updated_at      TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS event_members (
+    signal_id       TEXT PRIMARY KEY REFERENCES signals (signal_id),
+    event_id        TEXT NOT NULL REFERENCES events (event_id),
+    joined_at       TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_event_members_event ON event_members (event_id);
+
+-- Daily digests (spec 42): per pack and day, what is new. The Co-Pilot's whats_new tool reads them.
+CREATE TABLE IF NOT EXISTS digests (
+    pack            TEXT NOT NULL,
+    day             TEXT NOT NULL,
+    digest_json     TEXT NOT NULL,
+    created_at      TEXT NOT NULL,
+    PRIMARY KEY (pack, day)
+);

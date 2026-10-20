@@ -126,7 +126,7 @@ def _fit(args: argparse.Namespace) -> int:
     if args.run:
         runs = [args.run]
     else:
-        runs = [row["run_id"] for pack in profile.briefs if (row := pool.latest_run(pack))]
+        runs = [row["run_id"] for pack in profile.briefs if (row := pool.latest_run(pack, kind="READER_SCAN"))]
     for run_id in runs:
         print(f"Wrote {write_fit_report(pool, run_id, profile)}")
     return 0

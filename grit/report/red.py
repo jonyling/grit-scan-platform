@@ -26,7 +26,8 @@ def draft_red_alerts(pool: Pool, run_id: str, pack: str, profiles: Sequence[Any]
         if not row.get("red"):
             continue
         alert_id = f"RED-{run_id}-{row['signal_id']}"
-        if pool.one("SELECT 1 FROM alerts WHERE alert_id = ?", (alert_id,)):
+        # One draft per signal and pack: a page read again by a later daily run, or by the weekly scan, is not drafted twice.
+        if pool.one("SELECT 1 FROM alerts a JOIN runs r ON r.run_id = a.run_id WHERE a.signal_id = ? AND r.pack = ?", (row["signal_id"], pack)):
             continue
         rule: Mapping[str, Any] = row.get("red_rule") or {}
         message = EmailMessage()

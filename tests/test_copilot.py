@@ -190,3 +190,15 @@ def test_conversations_are_private_and_commands_are_handled_by_code(scanned, tmp
     assert noted["status"] == "COMMAND" and len(saved) == 1 and "five lines" in saved[0].read_text()
     proposed = handle(pool, scope, "/concern Strait closure: blockade, quarantine", answer=never)
     assert proposed["status"] == "COMMAND" and pool.management_requests()[-1]["status"] == "PROPOSED"
+
+
+def test_codes_and_todays_date_phrases_are_not_numbers_but_everything_else_is_checked() -> None:
+    from grit.copilot.checks import answer_dates
+
+    dates = answer_dates(date(2026, 10, 20))
+    ok = {**GOOD, "answer": "Since 19 October, PLA activity under TW-GLOBAL-03 eased, with H200 exports unchanged [B1, S1]."}
+    assert check_answer(ok, _sources(), dates=dates) == []
+    assert any(item.startswith("UNGROUNDED_NUMBER") for item in check_answer(ok, _sources())), "without the dates, 19 is ungrounded"
+    for invented in ("Taiwan counted 20 PLA aircraft [S1].", "Exports fell 10 per cent [S1].", "The fine was $12bn [S1].", "Output rose 3x [S1].", "A 40-year high [S1].", "Needs reach US$1.2bn [R1]."):
+        found = check_answer({**GOOD, "evidence": [invented]}, _sources(), dates=dates)
+        assert any(item.startswith("UNGROUNDED_NUMBER") for item in found), invented

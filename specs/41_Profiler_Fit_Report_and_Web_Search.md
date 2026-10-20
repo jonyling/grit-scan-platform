@@ -90,5 +90,5 @@ To queue a page from the command line:
 
 ## 6. Not yet built
 
-- The daily feed lane, the nightly index job, and `whats_new` (Step 4).
+- The daily feed lane, the nightly index job, and `whats_new` are built in spec 42.
 - Guidance from the profile body in the Reporter's prompt. The bottom line is shared by every reader of a run, so per-reader guidance needs per-reader writing, which is an MVP decision.

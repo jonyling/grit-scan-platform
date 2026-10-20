@@ -18,7 +18,7 @@ from datetime import datetime
 from typing import Any, Callable, Mapping, Sequence
 
 from grit.agents.loop.llm import LoopError, call_json
-from grit.copilot.checks import MARK, PARTS, check_answer, split_lines
+from grit.copilot.checks import MARK, PARTS, answer_dates, check_answer, split_lines
 from grit.copilot.tools import Toolbox
 from grit.core.canonical import canonical_hash
 from grit.pool import Pool, utc_now
@@ -51,6 +51,9 @@ Lookups you can request, with their args:
   sections: history, context, structural drivers and published forecasts. Topic ids: SOTS-MIDEAST, SOTS-UKRAINE, SOTS-SEMIS, SOTS-QUANTUM,
   SOTS-AI-AUTONOMY, SOTS-SOVEREIGN-AI, SOTS-TECH-BLOCS, SOTS-HMT, SOTS-CHINA-TAIWAN, SOTS-DEFENCE-BUDGETS,
   SOTS-COMPETITORS.
+- "whats_new", optional args "since" (YYYY-MM-DD; default the last 7 days) and "pack": the daily digests: new tier 1 and
+  2 events, RED patterns, moved standing items and watchpoint updates, per pack and day. Start here for "what's new",
+  "since Monday" or "this week".
 - "lookup_register", args "kind" (entities, customers, suppliers or competitors) and optional "name", "country", "pack".
 - "web_search", arg "query": live web news, only when "web_searches_left" in the scope is above 0. When the request has
   "web_search_suggested", run web_search in your first round as well as reading the records. Use it when the records
@@ -92,7 +95,7 @@ FORCE = "No tool rounds are left. Return {\"final\": ANSWER} from the results yo
 def _context(pool: Pool, scope: Any, web: Any | None = None) -> dict[str, Any]:
     packs = []
     for pack in scope.packs:
-        run = pool.one("SELECT run_id, run_date FROM runs WHERE pack = ? AND status = 'COMPLETE' ORDER BY run_date DESC, started_at DESC LIMIT 1", (pack,))
+        run = pool.one("SELECT run_id, run_date FROM runs WHERE pack = ? AND status = 'COMPLETE' AND kind != 'DAILY' ORDER BY run_date DESC, started_at DESC LIMIT 1", (pack,))
         packs.append({"pack": pack, "label": scope.label(pack), "latest_run": run["run_id"] if run else None, "latest_run_date": run["run_date"] if run else None})
     return {"packs": packs, "window": scope.window, "run_on_screen": scope.run_id, "focus": scope.focus, "today": scope.today.isoformat(),
             "web_searches_left": min(web.remaining(), 2) if web is not None else 0}
@@ -178,13 +181,14 @@ def ask(
                     continue
                 name, args = str(request.get("tool") or ""), request.get("args") if isinstance(request.get("args"), Mapping) else {}
                 results.append({"tool": name, "args": dict(args), "result": tools.call(name, args)})
-        problems = check_answer(draft, tools.sources.by_id, length=options["answer_length"])
+        dates = answer_dates(scope.today)
+        problems = check_answer(draft, tools.sources.by_id, length=options["answer_length"], dates=dates)
         attempts.append({"violations": problems})
         if problems:
             raw = call_json(client, model=model, system=SYSTEM, payload={**base, "results": results, "draft": draft, "violations": problems, "instruction": REDRAFT}, retries=RETRIES, pause=1.0)
             calls += 1
             draft = _final(raw)
-            problems = check_answer(draft, tools.sources.by_id, length=options["answer_length"])
+            problems = check_answer(draft, tools.sources.by_id, length=options["answer_length"], dates=dates)
             attempts.append({"violations": problems})
     except LoopError as exc:
         return _result("LLM_ERROR", f"The model call failed: {exc}", None, tools, plans, attempts, base, model, calls)
@@ -200,7 +204,7 @@ def steps(tools: Toolbox) -> str:
     for call in tools.calls:
         counts[call["tool"]] = counts.get(call["tool"], 0) + 1
     names = {"get_state": "read a brief", "condition_history": "read a condition's history", "search_signals": "searched the signals",
-             "search_library": "searched the library", "lookup_register": "looked up a register", "web_search": "searched the web"}
+             "search_library": "searched the library", "lookup_register": "looked up a register", "web_search": "searched the web", "whats_new": "read the daily digests"}
     parts = [f"{names.get(tool, tool)}" + (f" ×{count}" if count > 1 else "") for tool, count in counts.items()]
     kinds: dict[str, int] = {}
     for source in tools.sources.by_id.values():

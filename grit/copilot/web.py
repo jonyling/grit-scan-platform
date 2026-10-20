@@ -27,6 +27,7 @@ PER_QUESTION = 2
 RESULTS = 8
 NEAR_LIMIT = 0.9
 UNVETTED = "Web results are unvetted: GRIT-Scan's rules have not assessed them."
+DAILY_LANE = "daily-lane"  # pool_additions.added_by for pages the daily lane kept, queued for the next weekly or monthly scan
 
 
 def budget(profile: Any) -> int:
@@ -163,7 +164,9 @@ def take_additions(pool: Pool, run_id: str, pack: str) -> int:
     """Give each pending page a sighting in this run, so the run's assessment decides on it. Called by the scan."""
     rows = pending_additions(pool, pack)
     for row in rows:
-        pool.add_sighting(row["signal_id"], run_id, query_id=f"chat-{row['signal_id']}", query="Added from the Co-Pilot", lane="CHAT", target_id=None, rank=None)
+        daily = row["added_by"] == DAILY_LANE
+        pool.add_sighting(row["signal_id"], run_id, query_id=f"{'daily' if daily else 'chat'}-{row['signal_id']}", query="Kept by the daily lane" if daily else "Added from the Co-Pilot",
+                          lane="DAILY" if daily else "CHAT", target_id=None, rank=None)
         with pool.transaction() as conn:
             conn.execute("UPDATE pool_additions SET status = 'SCANNED', run_id = ? WHERE signal_id = ? AND pack = ?", (run_id, row["signal_id"], pack))
     return len(rows)

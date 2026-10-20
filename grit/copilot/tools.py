@@ -124,8 +124,8 @@ class Toolbox:
     def _latest_run(self, pack: str, run_id: str | None = None) -> dict[str, Any] | None:
         if run_id:
             run = self.pool.run(run_id)
-            return run if run and run["pack"] == pack and run["status"] == "COMPLETE" else None
-        return self.pool.one("SELECT * FROM runs WHERE pack = ? AND status = 'COMPLETE' ORDER BY run_date DESC, started_at DESC LIMIT 1", (pack,))
+            return run if run and run["pack"] == pack and run["status"] == "COMPLETE" and run["kind"] != "DAILY" else None
+        return self.pool.one("SELECT * FROM runs WHERE pack = ? AND status = 'COMPLETE' AND kind != 'DAILY' ORDER BY run_date DESC, started_at DESC LIMIT 1", (pack,))
 
     def _allowed(self, pack: str) -> str | None:
         if pack not in self.scope.packs:
@@ -244,6 +244,56 @@ class Toolbox:
             rows.append({"id": source.source_id, "title": item.get("title"), "outlet": outlet, "published": when, "text": str(item.get("text") or "")[:LEAD]})
         return {"results": rows, "engine": found.get("engine"), "unvetted": True, "searches_left_today": found.get("remaining_today"),
                 "note": None if rows else "The web search found nothing." + (" " + "; ".join(found.get("tried") or []) if found.get("engine") == "NONE" else "")}
+
+    def whats_new(self, since: str | None = None, pack: str | None = None) -> dict[str, Any]:
+        """The daily digests since a date (default: the last 7 days): new tier 1 and 2 events, RED patterns, moved standing
+        items and watchpoint updates, per pack and day."""
+        from datetime import date as _date_type, timedelta
+
+        from grit.daily.index import digests
+
+        packs = [pack] if pack else list(self.scope.packs)
+        refused = [item for item in packs if item not in self.scope.packs]
+        if refused:
+            return {"error": f"{', '.join(refused)} is outside this reader's packs."}
+        try:
+            start = _date_type.fromisoformat(since) if since else self.scope.today - timedelta(days=7)
+        except ValueError:
+            return {"error": "since is a date, YYYY-MM-DD."}
+        rows = digests(self.pool, packs, start)
+        if not rows:
+            return {"days": [], "note": f"No daily digest since {start.isoformat()}. The daily lane may not have run."}
+        out, budget = [], 24
+        for digest in rows:
+            events = []
+            for item in digest.get("tier_1_2_events") or []:
+                if budget <= 0:
+                    break
+                signal = self.pool.signal(item["signal_id"])
+                if not signal:
+                    continue
+                source = self._signal(signal)
+                events.append({"id": source.source_id, "title": item["title"], "outlet": item.get("outlet"), "published": item.get("published"), "tier": item.get("tier"),
+                               "outlets_carrying_it": item.get("outlets"), "standing_items": item.get("standing_items"), "red": item.get("red")})
+                budget -= 1
+            moved = []
+            for item in digest.get("moved") or []:
+                row = self.pool.one("SELECT c.*, r.run_date FROM condition_assessments c JOIN runs r ON r.run_id = c.run_id WHERE c.run_id = ? AND c.condition_id = ?", (item["run_id"], item["condition_id"]))
+                if row:
+                    summary = self._cite_signals(row.get("summary"))
+                    source = self._state(f"COND:{row['run_id']}:{row['condition_id']}", f"{row['condition_name']} {summary}", f"{self.scope.label(row['pack'])} brief, {row['run_date']}",
+                                         condition_id=row["condition_id"], name=row["condition_name"])
+                    moved.append({"id": source.source_id, "name": row["condition_name"], "trend": row.get("trend_label"), "summary": summary})
+            label = self.scope.label(digest["pack"])
+            counts = (f"{label} daily digest for {digest['day']}: {digest.get('kept_new') or 0} newly kept pages; {len(digest.get('tier_1_2_events') or [])} new tier 1 or 2 events; "
+                      f"{digest.get('red_patterns') or 0} RED patterns; {len(digest.get('red_drafts') or [])} RED drafts; {len(digest.get('moved') or [])} standing items moved; "
+                      f"{len(digest.get('watchpoint_updates') or [])} watchpoint updates.")
+            source = self.sources.add("STATE", f"DIGEST:{digest['pack']}:{digest['day']}", text=counts, names=("GRIT-Scan", "the daily digest"),
+                                      badge=f"{label} daily digest, {digest['day']}", detail={"digest": digest["day"], "pack": digest["pack"]})
+            out.append({"id": source.source_id, "summary": counts, "pack": digest["pack"], "label": label, "day": digest["day"], "new_kept_pages": digest.get("kept_new"),
+                        "tier_1_2_events": events, "red_patterns": digest.get("red_patterns"), "red_drafts": len(digest.get("red_drafts") or []),
+                        "moved_standing_items": moved, "watchpoint_updates": len(digest.get("watchpoint_updates") or [])})
+        return {"since": start.isoformat(), "days": out}
 
     def newest_signal(self) -> str | None:
         marks = ", ".join("?" for _ in self.scope.packs)
@@ -389,6 +439,7 @@ class Toolbox:
         "search_library": ("query", "topic"),
         "lookup_register": ("kind", "name", "country", "pack"),
         "web_search": ("query",),
+        "whats_new": ("since", "pack"),
     }
 
     def call(self, name: str, args: Mapping[str, Any] | None) -> dict[str, Any]:
