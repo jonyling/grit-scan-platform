@@ -139,13 +139,19 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/pip install -r requirements.txt
    ```
 
-2. Run the tests.
+2. Optional: install the `grit` command, so that `grit ...` works wherever this README writes `.venv/bin/python -m grit ...`. The command is available after you activate the environment with `source .venv/bin/activate`.
+
+   ```bash
+   .venv/bin/pip install -e . --no-deps
+   ```
+
+3. Run the tests.
 
    ```bash
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-07, 389 tests pass. They make no network call.
+   As of 2026-10-20, 505 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 

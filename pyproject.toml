@@ -1,8 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "grit-scan"
 version = "0.6.0"
 description = "GRIT-Scan: a governed risk tracker for ST Engineering executives, business areas, and lines of business."
 requires-python = ">=3.11"
+
+[project.scripts]
+grit = "grit.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["grit*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
