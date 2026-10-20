@@ -14,7 +14,7 @@ from typing import Any, Mapping
 from grit.agents.checks import BANNED, text_problems
 from grit.agents.situation import FORECAST, sentences
 
-MARK = re.compile(r"\[([SBRDG]\d{1,3}(?:\s*,\s*[SBRDG]\d{1,3})*)\]")
+MARK = re.compile(r"\[([SBRDGW]\d{1,3}(?:\s*,\s*[SBRDGW]\d{1,3})*)\]")
 MARKUP = re.compile(r"\]\(|//|<\s*[a-zA-Z/!]|javascript:", re.I)  # a link, a protocol-relative URL, or an HTML tag
 HEDGE = re.compile(r"\b(could|may|might|would|possibly|potentially|if)\b", re.I)
 PARTS = ("answer", "evidence", "implications", "uncertain", "next_step")

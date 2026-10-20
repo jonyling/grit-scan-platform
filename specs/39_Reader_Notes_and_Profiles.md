@@ -38,7 +38,7 @@ A key the profile leaves out keeps the value in the JSON profile.
 | `emphasis`, `de_emphasis` | `conditions` (condition or theme ids), `topics`, `countries` | See section 4. A topic has four or more letters, or is an acronym in capitals. |
 | `sources` | `trust`, `distrust` (web domains) | See section 4. |
 | `signal_buttons` | `true` or `false` (default) | Shows Approve, Reject and Watch on single signals. |
-| `copilot` | `web_searches_per_day` (0 to 50), `answer_length` (`short`, `standard`), `show_review_status` | `answer_length` and `show_review_status` shape Co-Pilot answers (spec 40). `web_searches_per_day` waits for web search (Step 3). |
+| `copilot` | `web_searches_per_day` (0 to 50), `answer_length` (`short`, `standard`), `show_review_status` | `answer_length` and `show_review_status` shape Co-Pilot answers (spec 40). `web_searches_per_day` sets the reader's daily web searches (spec 41). |
 
 The body must cite a note on every line, for example `(N1)`. Lines under a heading that starts with "Open questions" can stand without a citation.
 
@@ -83,6 +83,4 @@ To file a note and check the profile:
 
 ## 7. Not yet built
 
-- The Profiler agent, which drafts `profile.md` from new notes for a person to accept (Step 3).
-- The fit report, which shows how well last month's briefs matched the profile (Step 3).
-- The Co-Pilot's web search budget, `web_searches_per_day` (Step 3).
+- The Profiler, the fit report, and the web search budget `web_searches_per_day` are built in spec 41.

@@ -271,6 +271,12 @@ def acquire(
             found["currents_fallback"] = _currents_fallback(thin, fetched_at=fetched_at, getter=currents_getter, on_search=on_search, limit=fallback_max, log=log)
     if currents_queries:
         found["currents"] = _currents(pool, run, currents_queries[:2], currents_getter, fetched_at)
+    from grit.copilot.web import take_additions
+
+    added = take_additions(pool, run.run_id, run.pack)
+    if added:
+        found["added_from_copilot"] = added
+        log(f"  {'CHAT':10} {added:>3} pages added from the Co-Pilot")
     found["stopped"] = stopped
     pool.log(actor_type="AGENT", actor="Researcher", status="SUCCEEDED" if not stopped else stopped, run_id=run.run_id, version="brave-news-1", detail=found)
     return found

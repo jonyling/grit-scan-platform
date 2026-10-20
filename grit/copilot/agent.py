@@ -29,6 +29,8 @@ MAX_CALLS = 4
 MAX_HISTORY = 3
 RETRIES = 2  # the model now and then returns broken JSON or an empty function call; a retry clears it
 NOTE = re.compile(r"^/note\s+(.+)$", re.IGNORECASE | re.DOTALL)
+RECENT = re.compile(r"\b(today|yesterday|this week|latest|newest|now|currently|still|since|any update|so far|recent(?:ly)?|postponed|happening)\b", re.I)
+STALE_DAYS = 2
 
 SYSTEM = """You are the GRIT-Scan Co-Pilot for ST Engineering's Risk & Assurance team. You answer one reader's question from
 GRIT-Scan's records: the briefs' assessed state, the signal pool, the report library, and the business-area registers.
@@ -50,9 +52,13 @@ Lookups you can request, with their args:
   SOTS-AI-AUTONOMY, SOTS-SOVEREIGN-AI, SOTS-TECH-BLOCS, SOTS-HMT, SOTS-CHINA-TAIWAN, SOTS-DEFENCE-BUDGETS,
   SOTS-COMPETITORS.
 - "lookup_register", args "kind" (entities, customers, suppliers or competitors) and optional "name", "country", "pack".
+- "web_search", arg "query": live web news, only when "web_searches_left" in the scope is above 0. When the request has
+  "web_search_suggested", run web_search in your first round as well as reading the records. Use it when the records
+  are silent, when the question is about something after the newest signal, or when it names an organisation the records
+  do not hold. At most 2 per question. Results are unvetted: GRIT-Scan's rules have not assessed them.
 
 Every lookup result gives each item an id: S (signal), B (brief state), R (report passage), D (State of the Situation
-section), G (register row). You may cite only ids you have been given.
+section), G (register row), W (web result, unvetted). You may cite only ids you have been given.
 
 ANSWER is an object:
   "answer": one to three sentences that answer the question directly, each citing ids, e.g. "... [B2, S4]."
@@ -72,6 +78,8 @@ Rules:
   state only what has happened.
 - Never write a URL. Never use the words severity, likelihood, probability, risk score or risk rating.
 - Prefer the brief's state over raw signals; use signals as the evidence behind it.
+- Cite a web result [W#] only for what the records lack. A web result never overrides a brief's assessment; when they
+  differ, say so under "uncertain".
 - "history" holds this reader's earlier turns, for follow-up questions only; cite nothing from it.
 - Plain, direct English for a senior executive. Follow the reader's profile on what they want and how they like it written.
 - Internal reports may be quoted; the access note is added for you.
@@ -81,12 +89,26 @@ REDRAFT = "Your answer failed its checks. Fix every violation listed and return 
 FORCE = "No tool rounds are left. Return {\"final\": ANSWER} from the results you have."
 
 
-def _context(pool: Pool, scope: Any) -> dict[str, Any]:
+def _context(pool: Pool, scope: Any, web: Any | None = None) -> dict[str, Any]:
     packs = []
     for pack in scope.packs:
         run = pool.one("SELECT run_id, run_date FROM runs WHERE pack = ? AND status = 'COMPLETE' ORDER BY run_date DESC, started_at DESC LIMIT 1", (pack,))
         packs.append({"pack": pack, "label": scope.label(pack), "latest_run": run["run_id"] if run else None, "latest_run_date": run["run_date"] if run else None})
-    return {"packs": packs, "window": scope.window, "run_on_screen": scope.run_id, "focus": scope.focus, "today": scope.today.isoformat()}
+    return {"packs": packs, "window": scope.window, "run_on_screen": scope.run_id, "focus": scope.focus, "today": scope.today.isoformat(),
+            "web_searches_left": min(web.remaining(), 2) if web is not None else 0}
+
+
+def web_trigger(question: str, newest: str | None, today: Any) -> str | None:
+    """A deterministic reason to search the web: the question asks about now, and the newest signal is older than two days."""
+    if not RECENT.search(question or ""):
+        return None
+    try:
+        age = (today - datetime.fromisoformat(str(newest)[:10]).date()).days if newest else None
+    except ValueError:
+        age = None
+    if age is None or age > STALE_DAYS:
+        return f"The question asks about the present, and the newest signal in scope is from {newest or 'no date'}. Run web_search before answering."
+    return None
 
 
 def _profile_view(profile: Any) -> dict[str, Any]:
@@ -122,12 +144,19 @@ def _final(raw: Mapping[str, Any]) -> Any:
 
 def ask(
     pool: Pool, scope: Any, question: str, *, client: Any, model: str, embed: Callable[[str], Sequence[float]] | None = None,
-    embedder: Any | None = None, toolbox: Toolbox | None = None, past: Sequence[Mapping[str, str]] = (), max_rounds: int = MAX_ROUNDS,
+    embedder: Any | None = None, toolbox: Toolbox | None = None, past: Sequence[Mapping[str, str]] = (), max_rounds: int = MAX_ROUNDS, web: Any | None = None,
 ) -> dict[str, Any]:
-    """Returns {status, markdown, draft, citations, steps, log}. status is VALIDATED, WITHHELD or LLM_ERROR."""
-    tools = toolbox or Toolbox(pool, scope, embed=embed, embedder=embedder)
+    """Returns {status, markdown, draft, citations, steps, log}. status is VALIDATED, WITHHELD or LLM_ERROR. web is a
+    grit.copilot.web.WebSearch for this reader, or None to keep the web off."""
+    tools = toolbox or Toolbox(pool, scope, embed=embed, embedder=embedder, web=web)
     options = settings(scope.profile)
-    base = {"question": question, "reader": _profile_view(scope.profile), "scope": _context(pool, scope), "answer_length": options["answer_length"], "history": list(past)}
+    base = {"question": question, "reader": _profile_view(scope.profile), "scope": _context(pool, scope, tools.web), "answer_length": options["answer_length"], "history": list(past)}
+    if tools.web is not None and base["scope"]["web_searches_left"]:
+        newest = tools.newest_signal()
+        trigger = web_trigger(question, newest, scope.today)
+        base["scope"]["newest_signal"] = newest
+        if trigger:
+            base["web_search_suggested"] = trigger
     results: list[dict[str, Any]] = []
     plans: list[str] = []
     draft: Any = None
@@ -171,17 +200,17 @@ def steps(tools: Toolbox) -> str:
     for call in tools.calls:
         counts[call["tool"]] = counts.get(call["tool"], 0) + 1
     names = {"get_state": "read a brief", "condition_history": "read a condition's history", "search_signals": "searched the signals",
-             "search_library": "searched the library", "lookup_register": "looked up a register"}
+             "search_library": "searched the library", "lookup_register": "looked up a register", "web_search": "searched the web"}
     parts = [f"{names.get(tool, tool)}" + (f" ×{count}" if count > 1 else "") for tool, count in counts.items()]
     kinds: dict[str, int] = {}
     for source in tools.sources.by_id.values():
         kinds[source.kind] = kinds.get(source.kind, 0) + 1
-    seen = ", ".join(f"{count} {label}" for kind, label in (("STATE", "brief items"), ("SIGNAL", "signals"), ("REPORT", "report passages"), ("SOTS", "SotS sections"), ("REGISTER", "register rows")) if (count := kinds.get(kind)))
+    seen = ", ".join(f"{count} {label}" for kind, label in (("STATE", "brief items"), ("SIGNAL", "signals"), ("REPORT", "report passages"), ("SOTS", "SotS sections"), ("REGISTER", "register rows"), ("WEB", "web results")) if (count := kinds.get(kind)))
     return ("Steps: " + "; ".join(parts) + "." if parts else "Steps: no tool was used.") + (f" Read {seen}." if seen else "")
 
 
 def _badge(source: Any) -> str:
-    if source.kind == "SIGNAL" and source.url:
+    if source.kind in {"SIGNAL", "WEB"} and source.url:
         return f"[{source.badge}]({source.url})"
     return source.badge
 

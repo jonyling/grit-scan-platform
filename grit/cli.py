@@ -171,6 +171,13 @@ def report_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
     for profile in _profiles(args.profile):
         result = write_pack(pool, run.run_id, profile, submit=not args.no_submit)
         print(json.dumps({key: value for key, value in result.items() if key != "package"} | {"package": {k: v for k, v in (result.get("package") or {}).items() if k != "members"}}, indent=2, default=str))
+        if profile.brief_for(pack):
+            from grit.profiles.fit import write_fit_report
+
+            try:
+                print(f"Fit report: {write_fit_report(pool, run.run_id, profile)}")
+            except Exception as exc:  # the fit report is for Jony; it never stops a brief
+                print(f"Fit report for {profile.profile_id} not written: {type(exc).__name__}: {exc}")
     drafts = draft_red_alerts(pool, run.run_id, pack, list(load_profiles().values()), run.folder / "alerts")
     print(f"RED drafts written: {len(drafts)}")
     return 0
@@ -361,6 +368,7 @@ def _delegates() -> dict[str, tuple[str, Callable[[], Callable[..., Any]], str]]
         "library-ingest": ("Read the reports in secrets/reports/ into the library and embed their passages.", lambda: __import__("grit.library.sots", fromlist=["_ingest_main"])._ingest_main, "grit library-ingest"),
         "sots": ("Draft State of the Situation documents from the report library, for sign-off.", lambda: __import__("grit.library.sots", fromlist=["_main"])._main, "grit sots"),
         "ask": ("Ask the Co-Pilot a question as a named reader.", lambda: __import__("grit.copilot.commands", fromlist=["main"]).main, "grit ask"),
+        "pool-add": ("Queue a web page from a Co-Pilot answer for the next scan of a reader's packs.", lambda: __import__("grit.copilot.commands", fromlist=["pool_add_main"]).pool_add_main, "grit pool-add"),
         "notes": ("File a reader's note, or list the notes on file.", lambda: __import__("grit.profiles.commands", fromlist=["notes_main"]).notes_main, "grit notes"),
         "profile": ("Check a reader's profile.md against the packs, sections and filed notes.", lambda: __import__("grit.profiles.commands", fromlist=["profile_main"]).profile_main, "grit profile"),
         "pack-init": ("Write the Group pack's starting registers and reader profiles. Existing files are kept.", lambda: __import__("grit.ontology.group_seed", fromlist=["_main"])._main, "grit pack-init"),

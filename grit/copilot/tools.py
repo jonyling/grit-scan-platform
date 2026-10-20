@@ -9,6 +9,7 @@ The model sees sources by short id and never a URL:
 | R | a report passage from the library | report, edition and page |
 | D | a State of the Situation section (a draft until Wilson signs it off) | the document |
 | G | a register row | the pack's register |
+| W | a web search result (unvetted) | "Web, unvetted", outlet and date, linked |
 
 No tool writes anything. Rendering adds outlets, dates and links from the pool, never from the model.
 """
@@ -36,7 +37,7 @@ MAX_REGISTER = 15
 @dataclass
 class Source:
     source_id: str
-    kind: str  # SIGNAL, STATE, REPORT, SOTS, REGISTER
+    kind: str  # SIGNAL, STATE, REPORT, SOTS, REGISTER, WEB
     key: str
     text: str  # what numbers and quotes are checked against
     names: tuple[str, ...] = ()  # names a sentence may use to attribute a forecast to this source
@@ -47,7 +48,7 @@ class Source:
 
 
 class Sources:
-    PREFIX = {"SIGNAL": "S", "STATE": "B", "REPORT": "R", "SOTS": "D", "REGISTER": "G"}
+    PREFIX = {"SIGNAL": "S", "STATE": "B", "REPORT": "R", "SOTS": "D", "REGISTER": "G", "WEB": "W"}
 
     def __init__(self) -> None:
         self.by_id: dict[str, Source] = {}
@@ -81,8 +82,9 @@ class Toolbox:
     """The tools for one question, over one scope. Tool results go to the model as plain data with source ids."""
 
     def __init__(self, pool: Pool, scope: Any, *, embed: Callable[[str], Sequence[float]] | None = None, embedder: Any | None = None,
-                 config_dir: Path = CONFIG_DIR, sots_dir: Path | None = None, library_dir: Path | None = None) -> None:
+                 config_dir: Path = CONFIG_DIR, sots_dir: Path | None = None, library_dir: Path | None = None, web: Any | None = None) -> None:
         self.pool, self.scope, self.embed, self.embedder = pool, scope, embed, embedder
+        self.web = web  # a grit.copilot.web.WebSearch, or None when the web is off
         self.config_dir = config_dir
         self.sots_dir = sots_dir or OUTPUT_DIR / "sots"
         self.library_dir = library_dir
@@ -212,10 +214,36 @@ class Toolbox:
                 "link_rung": row.get("rung"), "standing_items": row.get("condition_ids") or [], "red": bool(row.get("red")),
                 "kept": row.get("decision") == "KEEP", "text": str(row.get("text") or "")[:LEAD],
             })
-        return {
+        out = {
             "events": events, "signals_in_scope": result.in_scope, "runs_in_scope": result.runs, "events_matched": result.matched,
             "outside_aperture": result.outside_aperture, "newest_signal": self.newest_signal(),
         }
+        if not events and self.web is not None:
+            out["web_search_suggested"] = "No event in GRIT-Scan's records matches. web_search can look further."
+        return out
+
+    def web_search(self, query: str) -> dict[str, Any]:
+        """Live web results, each an unvetted source."""
+        from grit.copilot.web import UNVETTED
+
+        if self.web is None:
+            return {"error": "Web search is off for this conversation."}
+        found = self.web(query)
+        if found.get("error"):
+            return found
+        rows = []
+        for item in found["results"]:
+            outlet = item.get("publisher") or "outlet not stated"
+            when = _date(item.get("published_at")) or "date not stated"
+            source = self.sources.add(
+                "WEB", f"WEB:{item['url']}", text=f"{item.get('title') or ''} {str(item.get('text') or '')[:LEAD]}", names=(outlet,),
+                badge=f"Web, unvetted: {outlet}, {when}", url=item["url"], note=UNVETTED,
+                detail={"title": item.get("title"), "outlet": outlet, "date": when, "text": str(item.get("text") or "")[:2000],
+                        "publisher": item.get("publisher"), "published_at": item.get("published_at"), "packs": list(self.scope.packs)},
+            )
+            rows.append({"id": source.source_id, "title": item.get("title"), "outlet": outlet, "published": when, "text": str(item.get("text") or "")[:LEAD]})
+        return {"results": rows, "engine": found.get("engine"), "unvetted": True, "searches_left_today": found.get("remaining_today"),
+                "note": None if rows else "The web search found nothing." + (" " + "; ".join(found.get("tried") or []) if found.get("engine") == "NONE" else "")}
 
     def newest_signal(self) -> str | None:
         marks = ", ".join("?" for _ in self.scope.packs)
@@ -360,6 +388,7 @@ class Toolbox:
         "search_signals": ("query", "include_dropped"),
         "search_library": ("query", "topic"),
         "lookup_register": ("kind", "name", "country", "pack"),
+        "web_search": ("query",),
     }
 
     def call(self, name: str, args: Mapping[str, Any] | None) -> dict[str, Any]:

@@ -285,3 +285,28 @@ CREATE TABLE IF NOT EXISTS sync_state (
     dataverse_id    TEXT,
     synced_at       TEXT NOT NULL
 );
+
+-- Co-Pilot web searches (spec 41): one row per search, for the per-reader daily budget. Private to the reader's own screen.
+CREATE TABLE IF NOT EXISTS copilot_web_searches (
+    search_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    profile_id      TEXT NOT NULL,
+    day             TEXT NOT NULL,            -- YYYY-MM-DD, local date of the search
+    engine          TEXT NOT NULL,            -- BRAVE, CURRENTS, NONE
+    query           TEXT NOT NULL,
+    results         INTEGER NOT NULL DEFAULT 0,
+    status          TEXT NOT NULL,            -- OK, EMPTY, FAILED
+    searched_at     TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_copilot_web_day ON copilot_web_searches (profile_id, day);
+
+-- Web pages a reader added to the pool from a Co-Pilot answer (spec 41). The next scan of each pack assesses them like any
+-- other page; nothing here keeps or ranks a page.
+CREATE TABLE IF NOT EXISTS pool_additions (
+    signal_id       TEXT NOT NULL REFERENCES signals (signal_id),
+    pack            TEXT NOT NULL,
+    added_by        TEXT NOT NULL,
+    added_at        TEXT NOT NULL,
+    status          TEXT NOT NULL,            -- PENDING, SCANNED
+    run_id          TEXT,                     -- the run that assessed it
+    PRIMARY KEY (signal_id, pack)
+);

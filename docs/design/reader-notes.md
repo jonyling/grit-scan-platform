@@ -1,6 +1,6 @@
 # Reader notes: profiles written from what readers say
 
-**Status:** Steps 1 and 2 built, 19 October 2026 (specs 39 and 40). Decisions of 19 October are in section 10; the merged delivery plan is in section 11. Steps 3 and 4 are not built yet.
+**Status:** Steps 1 to 3 built, 20 October 2026 (specs 39 to 41). Decisions of 19 October are in section 10; the merged delivery plan is in section 11. Step 4 is not built yet.
 **Purpose:** Replace the assumption that readers approve or reject individual signals. Readers write general notes in their own words. GRIT-Scan distils the notes into a reader profile written in Markdown, and the profile shapes each reader's brief and Co-Pilot answers.
 **Read with:** [copilot-architecture.md](copilot-architecture.md), spec 24 (reader profiles and aperture), and `grit/profiles/memory.py`.
 

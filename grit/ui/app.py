@@ -219,6 +219,8 @@ def copilot_drawer(db, profile, run_id, brief, *, focus=None):  # noqa: ANN001, 
 
     from grit.copilot.agent import ask, handle, history, record
     from grit.copilot.scope import WINDOWS, pack_labels, reach, scope_for
+    from grit.acquisition.brave_plan import canonical_url
+    from grit.copilot.web import WebSearch, add_to_pool
 
     st.subheader("Co-Pilot")
     labels = pack_labels()
@@ -226,7 +228,10 @@ def copilot_drawer(db, profile, run_id, brief, *, focus=None):  # noqa: ANN001, 
     window = st.segmented_control("Window", list(WINDOWS), format_func=WINDOWS.get, default="90d", key="copilot_window") or "90d"
     narrowed = st.selectbox("Packs", ["all", *packs], format_func=lambda pack: "Every pack you can search" if pack == "all" else labels.get(pack, {}).get("label", pack), key="copilot_pack")
     scope = scope_for(profile, window=window, run_id=run_id, pack=None if narrowed == "all" else narrowed, focus=focus, labels=labels)
-    st.caption(f"Searches {', '.join(scope.label(pack) for pack in scope.packs)}. Your conversation is private to you. Type /note to leave a note for your profile, or /concern TITLE: keywords to propose a management request.")
+    use_web = st.toggle("Search the web when the records are silent", value=True, key="copilot_web")
+    web = WebSearch(db, profile, today=scope.today) if use_web else None
+    st.caption(f"Searches {', '.join(scope.label(pack) for pack in scope.packs)}." + (f" Web searches left today: {web.remaining()}." if web else "")
+               + " Your conversation is private to you. Type /note to leave a note for your profile, or /concern TITLE: keywords to propose a management request.")
     pending = None
     if focus:
         name = next((row["name"] for row in brief["conditions"] if row["condition_id"] == focus), focus)
@@ -236,9 +241,19 @@ def copilot_drawer(db, profile, run_id, brief, *, focus=None):  # noqa: ANN001, 
                 pending = question
     box = st.container(height=560)
     with box:
-        for message in db.rows("SELECT role, content FROM chat_messages WHERE profile_id = ? ORDER BY message_id DESC LIMIT 20", (profile.profile_id,))[::-1]:
+        for message in db.rows("SELECT message_id, role, content, citations_json FROM chat_messages WHERE profile_id = ? ORDER BY message_id DESC LIMIT 20", (profile.profile_id,))[::-1]:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
+                for item in [row for row in message.get("citations") or [] if row.get("kind") == "WEB" and row.get("url")]:
+                    wanted = [pack for pack in item.get("packs") or scope.packs if pack in packs]
+                    queued_packs = {row["pack"] for row in db.rows("SELECT a.pack FROM pool_additions a JOIN signals s ON s.signal_id = a.signal_id WHERE s.url = ? AND a.status = 'PENDING'", (canonical_url(item["url"]),))}
+                    remaining = [pack for pack in wanted if pack not in queued_packs]
+                    name = f"{item.get('outlet')}, {(item.get('title') or '')[:50]}"
+                    if not remaining:
+                        st.caption(f"Queued for the next scan: {name}")
+                    elif st.button(f"Add to pool: {name}", key=f"add-{message['message_id']}-{item['id']}", help="The next scan of each pack assesses it like any other page."):
+                        add_to_pool(db, profile, item, remaining)
+                        st.rerun()
     question = st.chat_input("Ask the Co-Pilot", key="copilot_input") or pending
     if not question:
         return
@@ -254,7 +269,7 @@ def copilot_drawer(db, profile, run_id, brief, *, focus=None):  # noqa: ANN001, 
 
             def answer():  # noqa: ANN202
                 return ask(db, scope, question, client=client, model=model, embedder=embedder,
-                           embed=lambda text: embedder.embed([text], task="RETRIEVAL_QUERY")[0], past=history(db, profile.profile_id))
+                           embed=lambda text: embedder.embed([text], task="RETRIEVAL_QUERY")[0], past=history(db, profile.profile_id), web=web)
 
             result = handle(db, scope, question, answer=answer)
             status.update(label=result.get("steps") or result["status"].title(), state="complete" if result["status"] in {"VALIDATED", "COMMAND"} else "error")

@@ -107,6 +107,7 @@ def collect_plan(
     run = PlanRun()
     pause = 0.0
     for spec in queries:
+        used = max(used, _load_usage(usage_path, month))  # another process may have searched since the last query
         if used >= limit:
             run.stopped = "MONTHLY_LIMIT"
             break
@@ -129,9 +130,8 @@ def collect_plan(
             break
         if response.status != 200 or response.payload is None:
             raise BraveFetchError(f"Brave returned HTTP {response.status}")
-        used += 1
+        used = _increment_usage(usage_path, month)
         run.queries_sent += 1
-        _save_usage(usage_path, month, used)
         per_second = _first_number(response.headers.get("x-ratelimit-limit"))
         pause = 1.0 / per_second if per_second else 1.0
         entry = {
@@ -204,6 +204,22 @@ def _load_usage(path: Path, month: str) -> int:
     except (OSError, ValueError):
         return 0
     return int(data.get("used", 0)) if isinstance(data, dict) and data.get("month") == month else 0
+
+
+def _increment_usage(path: Path, month: str) -> int:
+    """Add one search to the month's count. The file is re-read under a lock, so a scan and the Co-Pilot searching at the
+    same time both count."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path.with_suffix(path.suffix + ".lock"), "a+") as lock:
+        try:
+            import fcntl
+
+            fcntl.flock(lock, fcntl.LOCK_EX)
+        except ImportError:  # no flock on this platform: the count can drift under concurrent searches
+            pass
+        used = _load_usage(path, month) + 1
+        _save_usage(path, month, used)
+    return used
 
 
 def _save_usage(path: Path, month: str, used: int) -> None:

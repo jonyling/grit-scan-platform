@@ -25,7 +25,7 @@ A deterministic layer sits under seven agent roles:
 | Researcher | Search results, and one follow-up search for a thin finding. | The query plan, the monthly search guard, and the dedupe rule. |
 | Assessor | A draft for each standing condition or theme, the implication of each key risk for the business area, and the answers on a finding card. | Quote, number, citation, and banned-word checks. An implication must name the business area's own lines of business, entities, customers, or suppliers. Confidence is a rule. |
 | Critic | Stale, unsupported, or contradictory claims in the drafts. | An issue counts only with a verbatim quote from a supplied source. |
-| Profiler | The reader's notes, distilled into a `profile.md` that cites them. | `grit profile check`, then a bounded emphasis rule. It reorders within a tier, hides nothing, and never moves a P1 or RED signal down. |
+| Profiler | The next version of a reader's `profile.md`, from their notes, each change with a quote (spec 41). | Version, vocabulary, quote and grounding checks; Jony accepts it. Then a bounded emphasis rule that reorders within a tier, hides nothing, and never moves a P1 or RED signal down. |
 | Reporter | Entries for named items, the bottom line, and Co-Pilot answers. | The same checks, then one brief model rendered to every format. Co-Pilot answers also need cited sentences, attributed forecasts and hedged inferences (spec 40). |
 | Proposer | Two to four options for management to consider on a key risk that is escalating or has material evidence. | Each option must name an owner role, quote the key control or action plan it builds on, and cite its sources. The Proposer's reasoning goes to the execution log, never to the brief (spec 36). |
 
@@ -228,6 +228,8 @@ Pick a reader and a run in the sidebar. The tabs show:
 
 The Co-Pilot sits in the right-hand drawer (spec 40). It answers from the briefs' state, every run's signals, the report library, and the registers in the reader's reach. Wilson, the CEO, and the Chairman search every pack; other readers search their own. Each answer gives the answer, the evidence, what it means for STE, and what is uncertain, with every claim cited. An answer that fails its checks is withheld. Each reader's conversation is private to them.
 
+When the records are silent or older than the question needs, the Co-Pilot searches the web: Brave first, Currents first when Brave nears its monthly limit, 17 searches a day for each reader (spec 41). Web results are marked unvetted. **Add to pool** under a web citation queues the page for the next scan, whose rules decide whether it is kept.
+
 - Select a row in the standing-conditions table to focus the Co-Pilot on it.
 - Type `/concern TITLE: keyword, keyword` (or `/topic`, `/trend`, `/keyword`) to propose a management request.
 - Type `/note TEXT` to leave a note for your profile. It goes to `secrets/readers/<profile>/inbox/` for filing.
@@ -263,7 +265,14 @@ A reader's own preferences come from what they say, not from buttons (spec 39). 
 .venv/bin/python -m grit profile check --profile wilson
 ```
 
-`PATH` is the saved note. The profile's front matter can set the aperture, the brief's sections, length and formats, the review label, and the conditions, topics, countries and sources to move up or down. Emphasis moves a signal within its tier by at most six, hides nothing, and never moves a P1 or RED signal down. A profile with a problem stops the brief and the dashboard from loading, and the error names the file.
+`PATH` is the saved note. To have the Profiler draft the next version from new notes, review its proposal, and then put it in force:
+
+```bash
+.venv/bin/python -m grit profile propose --profile wilson
+.venv/bin/python -m grit profile accept --profile wilson
+```
+
+The proposal and a review file, with each change's quote and a diff, go to `secrets/readers/<profile>/proposals/`. After each brief, `grit report` writes a fit report for each reader to `secrets/readers/<profile>/fit/`: what the profile changed, which of its lines never fired, the topics the reader asked the Co-Pilot about (counts only), and questions to raise with the reader (spec 41). The profile's front matter can set the aperture, the brief's sections, length and formats, the review label, and the conditions, topics, countries and sources to move up or down. Emphasis moves a signal within its tier by at most six, hides nothing, and never moves a P1 or RED signal down. A profile with a problem stops the brief and the dashboard from loading, and the error names the file.
 
 ## Registers
 

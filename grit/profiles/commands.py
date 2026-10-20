@@ -33,6 +33,9 @@ def notes_main(argv: list[str] | None = None) -> int:
         print(f"{profile_id}: {len(filed)} note(s)")
         for note in filed:
             print(f"  {note.note_id}  {note.on}  {note.source:<8}  {note.path.name}")
+        inbox = sorted((root / profile_id / "inbox").glob("*.md")) if (root / profile_id / "inbox").is_dir() else []
+        for path in inbox:
+            print(f"  inbox     {path.name}  (file it: grit notes add --profile {profile_id} --file \"{path}\" --source copilot --date {path.name[:10]} --move)")
     if not profiles:
         print(f"No notes yet in {root}.")
     return 0
@@ -43,7 +46,26 @@ def profile_main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="action", required=True)
     checking = commands.add_parser("check", help="List every problem with the profile. Exit code 1 if there is one.")
     checking.add_argument("--profile", required=True)
+    proposing = commands.add_parser("propose", help="The Profiler drafts the next profile version from the filed notes, for review. It changes nothing.")
+    proposing.add_argument("--profile", required=True)
+    proposing.add_argument("--force", action="store_true", help="Propose even when no note is new since the current version.")
+    proposing.add_argument("--model")
+    accepting = commands.add_parser("accept", help="Make the latest proposal the reader's profile, after its checks. The current one goes to history/.")
+    accepting.add_argument("--profile", required=True)
+    fitting = commands.add_parser("fit", help="Write the fit report for a reader and a run.")
+    fitting.add_argument("--profile", required=True)
+    fitting.add_argument("--run", help="Run id. Default: the latest completed run of each pack the reader has a brief for.")
     args = parser.parse_args(argv)
+    if args.action == "propose":
+        return _propose(args)
+    if args.action == "accept":
+        from grit.profiles.profiler import accept
+
+        result = accept(args.profile, known=vocabulary())
+        print(f"Profile v{result['version']} is now in force for {args.profile}" + (f"; v{result['previous']} is kept in history/." if result["previous"] else "."))
+        return 0
+    if args.action == "fit":
+        return _fit(args)
     reader = load_reader_profile(args.profile)
     if reader is None:
         print(f"No profile.md for {args.profile} in {readers_dir()}. The defaults apply.")
@@ -65,4 +87,46 @@ def profile_main(argv: list[str] | None = None) -> int:
             print(f"  - {problem}")
         return 1
     print("No problems. The profile applies to the next brief.")
+    return 0
+
+
+def _propose(args: argparse.Namespace) -> int:
+    from grit.cli import _client, _model
+    from grit.pool import Pool
+    from grit.profiles import _load_json_profiles
+    from grit.profiles.profiler import propose
+    from grit.settings import CONFIG_DIR
+
+    profiles = _load_json_profiles(CONFIG_DIR / "profiles")
+    if args.profile not in profiles:
+        raise SystemExit(f"Unknown profile {args.profile}.")
+    result = propose(profiles[args.profile], client=_client(), model=_model(args.model), known=vocabulary(), pool=Pool(), force=args.force)
+    messages = {"NO_NOTES": "No notes are filed for this reader. File one with grit notes add.",
+                "NO_NEW_NOTES": "Every filed note is already in the profile. Use --force to propose anyway."}
+    if result["status"] in messages:
+        print(messages[result["status"]])
+        return 0
+    print(f"{result['status']}: {result['path']}")
+    if result.get("review"):
+        print(f"Review: {result['review']}")
+    for problem in result["problems"]:
+        print(f"  - {problem}")
+    return 0 if result["status"] == "PROPOSED" else 1
+
+
+def _fit(args: argparse.Namespace) -> int:
+    from grit.pool import Pool
+    from grit.profiles import load_profiles
+    from grit.profiles.fit import write_fit_report
+
+    pool = Pool()
+    profile = load_profiles().get(args.profile)
+    if profile is None:
+        raise SystemExit(f"Unknown profile {args.profile}.")
+    if args.run:
+        runs = [args.run]
+    else:
+        runs = [row["run_id"] for pack in profile.briefs if (row := pool.latest_run(pack))]
+    for run_id in runs:
+        print(f"Wrote {write_fit_report(pool, run_id, profile)}")
     return 0
