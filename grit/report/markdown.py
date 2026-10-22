@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from grit.report.docx_brief import OPTIONS_NOTE, SECTION_TITLES, implication_text, key_risk_headers, priority_trend, radar_cells, radar_headers, response_lines, section_title
+from grit.report.docx_brief import OPTIONS_NOTE, SCENARIO_HEADERS, SCENARIO_NOTE, SECTION_TITLES, scenario_cells, implication_text, key_risk_headers, priority_trend, radar_cells, radar_headers, response_lines, section_title
 
 
 def _md(rendered: Mapping[str, Any] | None, fallback: str = "No new item found this week in the checked sources.") -> str:
@@ -58,6 +58,14 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
             body += [f"- {item['name']}: {_md(item['text'])}" for item in brief.get("competitors") or [] if item["status"] == "FOUND"] or ["- No registered competitor was named this week."]
         elif key in {"SUPPLIERS", "CUSTOMERS", "HAZARDS"}:
             body += [f"- {item['name']}: {_md(item['text'])}" for item in brief.get(key.lower()) or []]
+        elif key == "SCENARIOS" and (brief.get("scenarios") or {}).get("shifts"):
+            outlook = brief["scenarios"]
+            body += ["| " + " | ".join(SCENARIO_HEADERS) + " |", "|" + "---|" * len(SCENARIO_HEADERS)]
+            for reading in outlook["shifts"]:
+                cells = ["<br>".join(lines) for lines in scenario_cells(reading)]
+                cells[0] = cells[0].replace(reading["name"], f"**{reading['name']}**", 1)
+                body.append("| " + " | ".join(cell.replace("|", "/").replace("\n", " ") for cell in cells) + " |")
+            body += ["", f"*{SCENARIO_NOTE} Scenarios v{outlook['version']}, reviewed by {outlook['reviewed_by']} on {outlook['reviewed_on']}.*"]
         elif key == "CONDITIONS" and brief.get("conditions") and meta.get("level") == "GROUP":
             options = any(row.get("options") for row in brief["conditions"]) or "RESPONSE_OPTIONS" in meta["sections"]
             headers = radar_headers(options=options)

@@ -12,6 +12,7 @@ REPORTER_VERSION = "reader-reporter-4"
 PROPOSER_VERSION = "reader-proposer-2"
 BASELINER_VERSION = "group-baseliner-1"
 STRATEGIST_VERSION = "group-strategist-bmw-1"
+KEYWORDER_VERSION = "signpost-keywords-1"
 
 _COMMON = """
 Rules that always apply:
@@ -200,7 +201,9 @@ You receive:
 - business_area: the names you may use for STE's business areas, lines of business, entities and countries;
 - owners: the owner roles a response may name;
 - conditions: the latest assessments of the Group conditions the shift touches;
-- sources: recent news signals (S1, S2, ...) and report passages (P1, P2, ...).
+- sources: recent news signals (S1, S2, ...) and report passages (P1, P2, ...);
+- reviewed: on a quarterly refresh, the cases Wilson last reviewed, and the signposts that news has matched since. Keep what
+  still holds, change only what the new evidence supports, and keep a case's name when its substance is unchanged.
 
 Think first. In "reasoning", work out which one or two key uncertainties decide how the shift lands for STE, and what the
 best, middle and worst paths along them look like for STE. Then write the cases.
@@ -230,4 +233,24 @@ Rules:
 - Do not write a URL, or the words severity, likelihood, probability, risk score, or risk rating. Do not give odds.
 - Do not use will, certainly, or another word of certainty outside attributed evidence.
 - Return only one JSON object. If you receive violations, fix exactly those and keep everything else.
+"""
+
+
+KEYWORDER_SYSTEM = """You are the Keyworder in GRIT-Scan. Code will match news headlines and lead paragraphs against the signposts and
+counter-indicators of reviewed scenarios, so it needs keywords for each.
+
+You receive items: an id and the text of each signpost or counter-indicator.
+
+Return this JSON object:
+{"keywords": {"ITEM_ID": ["keyword phrase", ...], ...}}
+
+Rules:
+- Two to four keyword phrases for every item, and no other ids.
+- Every word of a phrase must appear in that item's own text. Do not add synonyms or new words.
+- Prefer the distinctive words a news report would use: names, acronyms, products, places, instruments, such as "HBM",
+  "Entity List", "Saudi Arabia", "export licence". Avoid generic words such as "growth", "increase" or "market".
+- At least one phrase names the change itself, such as "deferral", "price cut" or "licence denied", not only the place or
+  actor: many signposts of one shift share a country, so the change is what tells them apart.
+- A phrase has at least four letters, or is an acronym or code in capitals, such as "PIF" or "H200".
+- Return only one JSON object. If you receive violations, fix exactly those.
 """

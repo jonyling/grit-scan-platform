@@ -1,6 +1,6 @@
 # 43. Best, medium and worst case scenarios
 
-**Status:** Step 1 built, 2026-10-22: the Best–Medium–Worst Strategist. Steps 2 to 5 (sign-off, signpost tracker, radar and Co-Pilot, quarterly refresh) are planned.
+**Status:** Built, 2026-10-22: the Strategist (step 1), approval with signpost keywords (step 2), the signpost tracker (step 3), the scenario outlook in the Group radar, deck and Co-Pilot (step 4), and the quarterly refresh (step 5). Wilson's approval of the first draft was relayed by Jony on 22 October 2026.
 **Trigger:** Level 3 of Jony's 9 October 2026 email to Wilson: "predicted scenarios … following the BMW framework". The R&A team agreed the plan on 22 October 2026.
 **Replaces:** the free-form scenarios of spec 37, section 6.
 
@@ -66,11 +66,51 @@ The Strategist's reasoning goes to the execution log, never to the draft.
 
 On the 13 October Group run, the first pass proposed cases for 7 of the 8 shifts. Export controls and technology blocs was withheld, because a draft used numbers that no source held. `--redraft` then proposed it. All 8 shifts now have three cases, 24 in all, each built on State of the Situation drafts that Wilson has not yet signed off.
 
-## 6. Next steps
+## 6. Approval and the scenario register
 
-| Step | Scope |
+Once the reviewer has approved the draft, record the approval:
+
+```bash
+.venv/bin/grit scenarios-approve --pack ste --date 2026-10-13 --by "Wilson Yeo"
+```
+
+`--draft PATH` names the edited JSON when the reviewer's edits were saved to another file. The approval:
+
+1. Asks the Keyworder for two to four keyword phrases for every signpost and counter-indicator. Every word of a phrase must come from the item's own text, and at least one phrase should name the change itself, not only the place.
+2. Writes the register `config/ste/STE-Scenarios.json` with the status `REVIEWED`, the version, the reviewer and the date. The previous version is kept in `config/ste/history/`.
+3. Keeps the last reviewed keywords for any item whose text is unchanged when the Keyworder's call fails, so a failed call never leaves the tracker blind.
+
+The reviewer can edit any keyword in the register. Shifts whose draft was withheld are listed under `notReviewed`.
+
+## 7. Signpost tracker
+
+`grit scenarios-track --pack ste --date DATE` shows where each shift is heading for a run. The Group brief computes the same reading.
+
+| Rule | Behaviour |
 |---|---|
-| 2. Review and sign-off | Wilson edits the Word draft. The reviewed cases become `config/ste/STE-Scenarios.json`, with keywords on each signpost so code can detect it. |
-| 3. Signpost tracker | Each month, count the kept signals that match each case's signposts, and show which case the evidence leans to and how that changes. Counts only, never odds. |
-| 4. Radar, deck and Co-Pilot | A scenario outlook in the monthly Group radar and deck; a Co-Pilot tool for "which case is this shift heading to?" |
-| 5. Quarterly refresh | Redraft each quarter, with the changes shown against the reviewed version |
+| Period | The pack's kept signals from the run and every run since the previous weekly or monthly run, daily runs included |
+| Relevance | A signal must touch the shift: a strong hit on the shift, or a hit on a Group condition the shift covers |
+| Match | The signal's title and first 800 characters name at least two of an item's keywords, or its only keyword |
+| Distinctive | At least one matched keyword is used by no other item of the shift, and by no more than 8% (at least 5) of the period's shift signals. A place or programme every headline names does not show which case is unfolding. An item without a distinctive keyword needs all its keywords. |
+| Lean | The case with the most signposts seen. A tie reads "mixed"; none reads "no signpost seen". The previous run's lean is shown beside it. |
+| Responses | A planned response is "now triggered" when its trigger signpost is seen |
+
+Leans are counts of signposts seen, never odds. The tracker writes nothing; every brief recomputes it from the pool.
+
+## 8. Scenario outlook in briefs and the Co-Pilot
+
+When the Group pack has a reviewed register, the Group radar brief adds a "Scenario outlook" section right after the standing conditions:
+
+- **Word, Markdown and Excel:** one row per shift, with the three case names, where the signposts lean, the signposts and counter-indicators seen with their sources, and the responses now triggered.
+- **PowerPoint:** a scenario outlook slide after the executive summary.
+- **Package:** the signals the outlook cites join the package membership, so review covers them.
+
+The Co-Pilot's `get_scenarios` tool returns the reviewed cases, the current lean, the signposts seen with their signals, and the responses triggered. The Co-Pilot is told never to turn a lean into odds.
+
+## 9. Quarterly refresh
+
+Each quarter, run `grit scenarios` again on the latest Group run. When a reviewed register exists, the Strategist receives the reviewed cases and the signposts seen since. It keeps what still holds and changes only what the new evidence supports. The draft lists, for each shift, the changes from the reviewed version: renamed cases, changed narratives, and new or dropped signposts. Approving it makes the next register version.
+
+## 10. First live results, 22 October 2026
+
+On the 13 October run, the first keywords matched too loosely: one Middle East signpost counted 14 Saudi headlines that named only "Saudi Arabia" and "Vision 2030". The distinctive-keyword rule removed them. The tracker now shows one Middle East best-case signpost seen, and no signpost for the other shifts. A single run before the register existed is a thin base. The monthly reading becomes meaningful from the next Group run.

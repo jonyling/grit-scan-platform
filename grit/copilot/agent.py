@@ -54,6 +54,9 @@ Lookups you can request, with their args:
 - "whats_new", optional args "since" (YYYY-MM-DD; default the last 7 days) and "pack": the daily digests: new tier 1 and
   2 events, RED patterns, moved standing items and watchpoint updates, per pack and day. Start here for "what's new",
   "since Monday" or "this week".
+- "get_scenarios", optional arg "shift" (a shift name or id, such as "semiconductor" or "STE-SHIFT-03"): the reviewed best,
+  medium and worst case for STE under each strategic shift, where the latest signposts lean, the signposts seen with their
+  signals, and the planned responses they trigger. Use it for "where is this heading", "what if", or "what should we prepare".
 - "lookup_register", args "kind" (entities, customers, suppliers or competitors) and optional "name", "country", "pack".
 - "web_search", arg "query": live web news, only when "web_searches_left" in the scope is above 0. When the request has
   "web_search_suggested", run web_search in your first round as well as reading the records. Use it when the records
@@ -81,6 +84,7 @@ Rules:
   state only what has happened.
 - Never write a URL. Never use the words severity, likelihood, probability, risk score or risk rating.
 - Prefer the brief's state over raw signals; use signals as the evidence behind it.
+- A scenario lean is a count of signposts seen. Never turn it into odds or a forecast; say which signposts were seen.
 - Cite a web result [W#] only for what the records lack. A web result never overrides a brief's assessment; when they
   differ, say so under "uncertain".
 - "history" holds this reader's earlier turns, for follow-up questions only; cite nothing from it.
@@ -204,7 +208,7 @@ def steps(tools: Toolbox) -> str:
     for call in tools.calls:
         counts[call["tool"]] = counts.get(call["tool"], 0) + 1
     names = {"get_state": "read a brief", "condition_history": "read a condition's history", "search_signals": "searched the signals",
-             "search_library": "searched the library", "lookup_register": "looked up a register", "web_search": "searched the web", "whats_new": "read the daily digests"}
+             "search_library": "searched the library", "lookup_register": "looked up a register", "web_search": "searched the web", "whats_new": "read the daily digests", "get_scenarios": "read the scenarios"}
     parts = [f"{names.get(tool, tool)}" + (f" ×{count}" if count > 1 else "") for tool, count in counts.items()]
     kinds: dict[str, int] = {}
     for source in tools.sources.by_id.values():

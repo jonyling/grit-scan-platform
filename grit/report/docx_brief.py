@@ -32,6 +32,7 @@ SECTION_TITLES = {
     "COMPETITORS": "Competitor and industry watch",
     "HAZARDS": "Natural disasters and public health",
     "CONDITIONS": "Findings mapped to the standing items",
+    "SCENARIOS": "Scenario outlook: best, medium and worst case for STE",
     "PRIORITY_FINDINGS": "Priority findings for this reader",
     "OTHER_SIGNALS": "Other signals in this reader's scope",
     "QA_LOG": "QA and correction log",
@@ -612,6 +613,48 @@ def _qa(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bo
     return True
 
 
+SCENARIO_HEADERS = ("Strategic shift", "Where the signposts lean", "Signposts seen, with sources", "Counter-indicators seen", "Responses now triggered")
+SCENARIO_NOTE = ("Each shift has a reviewed best, medium and worst case for STE. A signpost counts as seen when a kept signal in the period touches the "
+                 "shift and names its keywords. These are counts of signposts, not odds.")
+
+
+def _ref_text(item: Mapping[str, Any]) -> str:
+    refs = "; ".join(f"{ref['outlet']}, {ref['date'] or 'date not stated'}" for ref in item.get("sources") or [])
+    more = f"; and {item['more']} more" if item.get("more") else ""
+    return f"({refs}{more})" if refs else ""
+
+
+def scenario_cells(reading: Mapping[str, Any]) -> list[list[str]]:
+    """One row of the scenario outlook, as lines per cell: shared by the Word, Markdown, Excel and deck renderers."""
+    from grit.pipeline.scenarios import lean_text
+
+    seen = [f"{case['title'].split(' case')[0]}: {item['text']} {_ref_text(item)}".strip() for case in reading["cases"] for item in case["signposts_seen"]]
+    against = [f"{case['title'].split(' case')[0]}: {item['text']} {_ref_text(item)}".strip() for case in reading["cases"] for item in case["counter_indicators_seen"]]
+    triggered = [f"{response['action']} Owner: {response['owner']}." for case in reading["cases"] for response in case["responses_triggered"]]
+    names = [f"{case['title'].split(' for')[0]}: {case['name']}" for case in reading["cases"]]
+    return [[reading["name"], *names], [lean_text(reading)], seen or ["None this period."], against or ["None this period."], triggered or ["None."]]
+
+
+def _scenarios(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    outlook = brief.get("scenarios")
+    if dry:
+        return bool(outlook and outlook.get("shifts"))
+    _orient(document, landscape=True)
+    _heading(document, title)
+    widths = (5.2, 3.6, 7.6, 4.4, 4.4)
+    table = _table(document, SCENARIO_HEADERS, widths)
+    for reading in outlook["shifts"]:
+        cells = table.add_row().cells
+        for cell, width, lines in zip(cells, widths, scenario_cells(reading)):
+            cell.width = Cm(width)
+            _cell_lines(cell, lines, bold_first=cell is cells[0])
+    note = document.add_paragraph()
+    run = note.add_run(f"{SCENARIO_NOTE} Scenarios v{outlook['version']}, reviewed by {outlook['reviewed_by']} on {outlook['reviewed_on']}.")
+    run.italic, run.font.size, run.font.color.rgb = True, Pt(8), LIGHT
+    _orient(document, landscape=False)
+    return True
+
+
 def _watchpoints(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
     if dry:
         return True
@@ -665,6 +708,7 @@ _SECTIONS = {
     "CUSTOMERS": _customers,
     "HAZARDS": _hazards,
     "CONDITIONS": _conditions,
+    "SCENARIOS": _scenarios,
     "PRIORITY_FINDINGS": _findings,
     "OTHER_SIGNALS": _others,
     "QA_LOG": _qa,

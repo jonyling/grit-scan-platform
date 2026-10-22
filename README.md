@@ -28,6 +28,7 @@ A deterministic layer sits under seven agent roles:
 | Profiler | The next version of a reader's `profile.md`, from their notes, each change with a quote (spec 41). | Version, vocabulary, quote and grounding checks; Jony accepts it. Then a bounded emphasis rule that reorders within a tier, hides nothing, and never moves a P1 or RED signal down. |
 | Reporter | Entries for named items, the bottom line, and Co-Pilot answers. | The same checks, then one brief model rendered to every format. Co-Pilot answers also need cited sentences, attributed forecasts and hedged inferences (spec 40). |
 | Proposer | Two to four options for management to consider on a key risk that is escalating or has material evidence. | Each option must name an owner role, quote the key control or action plan it builds on, and cite its sources. The Proposer's reasoning goes to the execution log, never to the brief (spec 36). |
+| Strategist | A best, medium and worst case for STE under each strategic shift, with signposts and planned responses; the Keyworder adds signpost keywords once Wilson approves. | Grounding, citation, forecast-attribution, possibility, anchor, owner and trigger checks; Wilson approves before any reader sees a case. Leans are counts of signposts seen, never odds (spec 43). |
 
 ## Reader packs
 
@@ -70,6 +71,13 @@ The Group pack (`ste`) briefs the CEO and the Chairman each month on the geopoli
 
    ```bash
    .venv/bin/python -m grit scenarios --pack ste --date DATE
+   ```
+
+6. Record Wilson's approval. The draft becomes the scenario register, with keywords for every signpost, and the monthly radar then shows where each shift is heading: which case its signposts lean to, the signposts seen with their sources, and the planned responses they trigger. These are counts of signposts, never odds.
+
+   ```bash
+   .venv/bin/python -m grit scenarios-approve --pack ste --date DATE --by "Wilson Yeo"
+   .venv/bin/python -m grit scenarios-track --pack ste --date DATE
    ```
 
 The monthly brief is the Group Strategic Radar: one row for each condition, with what changed, its sources, the risk and opportunity for STE, the business areas it touches, the counter-indicator, the options, and the trend. Wilson reviews it before it is released.
@@ -152,7 +160,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-20, 518 tests pass. They make no network call.
+   As of 2026-10-22, 522 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 

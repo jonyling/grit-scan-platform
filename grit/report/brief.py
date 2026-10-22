@@ -309,7 +309,17 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
     bottom_text = bottom.get("bottom_line") if bottom.get("status") == "VALIDATED" else fallback_bottom_line(condition_rows, checks, watch_rows, red, pack.label)
     escalation = bottom.get("escalation") if bottom.get("status") == "VALIDATED" else ("RED drafts are waiting for a named sender." if red else "Nothing new this week independently warrants escalation before the next weekly cycle.")
 
-    membership = sorted({*ids, *request_ids, *(row["signal_id"] for row in priority_rows), *(row["signal_id"] for row in others)})
+    scenarios = None
+    sections = list(brief_config.get("sections") or [])
+    if pack.level == "GROUP":
+        from grit.pipeline.scenarios import outlook
+
+        scenarios = outlook(pool, run_id, pack)
+        if scenarios and "SCENARIOS" not in sections:
+            sections.insert(sections.index("CONDITIONS") + 1 if "CONDITIONS" in sections else len(sections), "SCENARIOS")
+    seen_ids = {signal_id for shift in (scenarios or {}).get("shifts") or [] for case in shift["cases"]
+                for item in [*case["signposts_seen"], *case["counter_indicators_seen"]] for signal_id in item["signal_ids"]}
+    membership = sorted({*ids, *request_ids, *(row["signal_id"] for row in priority_rows), *(row["signal_id"] for row in others), *seen_ids})
     counts = pool.one("SELECT COUNT(*) AS signals, SUM(decision = 'KEEP') AS kept FROM assessments WHERE run_id = ?", (run_id,)) or {}
     queries = pool.one("SELECT COUNT(DISTINCT query_id) AS queries FROM sightings WHERE run_id = ?", (run_id,)) or {}
     agents = pool.rows("SELECT actor, version, model, status, COUNT(*) AS calls FROM execution_log WHERE run_id = ? AND actor_type = 'AGENT' GROUP BY actor, version, model, status ORDER BY actor", (run_id,))
@@ -318,7 +328,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             "title": brief_config.get("title") or f"GRIT-Scan: {pack_name}", "subtitle": brief_config.get("subtitle") or "Weekly scan",
             "prepared_for": brief_config.get("preparedFor") or profile.role, "reader": profile.label, "profile_id": profile.profile_id, "aperture": profile.aperture,
             "run_id": run_id, "run_date": run["run_date"], "window": window_label(run_date, window), "prior_run_date": fmt_date(previous["run_date"]) if previous else None,
-            "grounded_in": _grounded_in(pack), "status": STATUS, "show_review_status": bool(brief_config.get("showReviewStatus", True)), "sections": list(brief_config.get("sections") or []),
+            "grounded_in": _grounded_in(pack), "status": STATUS, "show_review_status": bool(brief_config.get("showReviewStatus", True)), "sections": sections,
             "pack": pack_name, "pack_label": pack.label, "pack_short": str((pack.manifest or {}).get("shortLabel") or pack.label), "level": pack.level, "section_titles": dict(plan_config.get("sectionTitles") or {}),
             "standing_label": "risk theme" if any(row.get("group") for row in condition_rows) else "condition",
         },
@@ -326,7 +336,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         "order_book": pack.order_book,
         "projects": groups, "suppliers": suppliers, "customers": customers, "hazards": hazards, "entities": entities, "competitors": competitors,
         "management_requests": request_rows, "entity_packs": entity_packs,
-        "conditions": condition_rows, "findings": findings, "other_signals": other_signals, "qa": qa_rows, "watchpoints": watch_rows, "red": red,
+        "conditions": condition_rows, "scenarios": scenarios, "findings": findings, "other_signals": other_signals, "qa": qa_rows, "watchpoints": watch_rows, "red": red,
         "method": {
             "queries": queries.get("queries") or 0, "queries_label": "queries returned pages", "signals": counts.get("signals") or 0, "kept": counts.get("kept") or 0, "shown_to_reader": len(shown),
             "hidden_by_routing": sum(1 for row in routed if not row["route"]["include"]), "profile": profile.in_force,

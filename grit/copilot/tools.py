@@ -295,6 +295,47 @@ class Toolbox:
                         "moved_standing_items": moved, "watchpoint_updates": len(digest.get("watchpoint_updates") or [])})
         return {"since": start.isoformat(), "days": out}
 
+    def get_scenarios(self, shift: str | None = None) -> dict[str, Any]:
+        """The reviewed best, medium and worst case for STE under each strategic shift, and where the latest run's signposts
+        lean. Only for packs with a reviewed scenario register (the Group pack)."""
+        from grit.ontology.pack import load_ontology_pack
+        from grit.pipeline.scenarios import lean_text, load_register, outlook
+
+        out = []
+        for pack_name in self.scope.packs:
+            pack = self._packs.get(pack_name) or load_ontology_pack(self.config_dir, pack_name)
+            self._packs[pack_name] = pack
+            register = load_register(pack_name, self.config_dir) if pack.level == "GROUP" else None
+            run = self._latest_run(pack_name)
+            if register is None or run is None:
+                continue
+            reading = {item["themeId"]: item for item in (outlook(self.pool, run["run_id"], pack, config_dir=self.config_dir) or {}).get("shifts") or []}
+            for item in register["shifts"]:
+                if shift and shift.casefold() not in f"{item['themeId']} {item['name']}".casefold():
+                    continue
+                now = reading.get(item["themeId"])
+                lean = lean_text(now) if now else "Not tracked in the latest run."
+                tracker = self._state(f"TRACK:{run['run_id']}:{item['themeId']}", f"{item['name']}: {lean}", f"Scenario tracker, {run['run_date']}", shift=item["themeId"])
+                cases = []
+                for case in item["cases"]:
+                    text = " ".join([case["name"], case["narrative"], *[sign["text"] for sign in case["signposts"]], *case.get("impact", []),
+                                     *[f"{response['action']} {response['owner']}" for response in case.get("responses") or []]])
+                    source = self._state(f"SCN:{register.get('version')}:{item['themeId']}:{case['case']}", text,
+                                         f"Reviewed scenarios v{register.get('version')}, {case['title'] if 'title' in case else case['case']}", shift=item["themeId"], case=case["case"])
+                    seen_case = next((row for row in (now or {}).get("cases") or [] if row["case"] == case["case"]), None)
+                    seen = []
+                    for sign in (seen_case or {}).get("signposts_seen") or []:
+                        ids = [self._signal(signal).source_id for signal in (self.pool.signal(signal_id) for signal_id in sign["signal_ids"][:3]) if signal]
+                        seen.append({"signpost": sign["text"], "signals": ids})
+                    cases.append({"id": source.source_id, "case": case["case"], "name": case["name"], "narrative": case["narrative"],
+                                  "signposts": [sign["text"] for sign in case["signposts"]], "impact": case.get("impact"), "responses": case.get("responses"),
+                                  "signposts_seen": seen, "responses_triggered": (seen_case or {}).get("responses_triggered") or []})
+                out.append({"pack": pack_name, "shift": item["themeId"], "name": item["name"], "tracker_id": tracker.source_id, "lean": lean,
+                            "reviewed": f"v{register.get('version')} by {register.get('reviewedBy')} on {register.get('reviewedOn')}", "cases": cases})
+        if not out:
+            return {"shifts": [], "note": "No reviewed scenario register in this reader's packs" + (f" for '{shift}'." if shift else ".")}
+        return {"shifts": out, "note": "Leans are counts of signposts seen, not odds."}
+
     def newest_signal(self) -> str | None:
         marks = ", ".join("?" for _ in self.scope.packs)
         row = self.pool.one(f"SELECT MAX(s.published_at) AS newest FROM assessments a JOIN signals s ON s.signal_id = a.signal_id WHERE a.pack IN ({marks}) AND a.decision = 'KEEP'", self.scope.packs)
@@ -440,6 +481,7 @@ class Toolbox:
         "lookup_register": ("kind", "name", "country", "pack"),
         "web_search": ("query",),
         "whats_new": ("since", "pack"),
+        "get_scenarios": ("shift",),
     }
 
     def call(self, name: str, args: Mapping[str, Any] | None) -> dict[str, Any]:

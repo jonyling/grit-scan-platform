@@ -376,6 +376,8 @@ def _delegates() -> dict[str, tuple[str, Callable[[], Callable[..., Any]], str]]
         "index": ("Run the nightly index only: full text, events, digests and retention.", lambda: __import__("grit.daily.commands", fromlist=["index_main"]).index_main, "grit index"),
         "feeds": ("List the daily feed register, or check every feed.", lambda: __import__("grit.daily.commands", fromlist=["feeds_main"]).feeds_main, "grit feeds"),
         "pool-add": ("Queue a web page from a Co-Pilot answer for the next scan of a reader's packs.", lambda: __import__("grit.copilot.commands", fromlist=["pool_add_main"]).pool_add_main, "grit pool-add"),
+        "scenarios-approve": ("Record the reviewer's approval of a BMW scenario draft: it becomes the pack's register, with signpost keywords.", lambda: __import__("grit.pipeline.scenarios", fromlist=["approve_main"]).approve_main, "grit scenarios-approve"),
+        "scenarios-track": ("Show which case each strategic shift's signposts lean to for a run.", lambda: __import__("grit.pipeline.scenarios", fromlist=["track_main"]).track_main, "grit scenarios-track"),
         "notes": ("File a reader's note, or list the notes on file.", lambda: __import__("grit.profiles.commands", fromlist=["notes_main"]).notes_main, "grit notes"),
         "profile": ("Check a reader's profile.md against the packs, sections and filed notes.", lambda: __import__("grit.profiles.commands", fromlist=["profile_main"]).profile_main, "grit profile"),
         "pack-init": ("Write the Group pack's starting registers and reader profiles. Existing files are kept.", lambda: __import__("grit.ontology.group_seed", fromlist=["_main"])._main, "grit pack-init"),

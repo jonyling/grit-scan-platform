@@ -74,6 +74,7 @@ from grit.agents.reader_prompts import (
     CRITIC_SYSTEM,
     PROPOSER_SYSTEM,
     REPORTER_BOTTOM_LINE_SYSTEM,
+    KEYWORDER_SYSTEM,
     REPORTER_ITEMS_SYSTEM,
     STRATEGIST_SYSTEM,
 )
@@ -171,6 +172,8 @@ def _group_model(system: str, payload: dict) -> dict:
         if "S1" not in payload["sources"]:
             return {"reasoning": REASONING, "builds_on": [], "cases": []}
         return {"reasoning": REASONING, "builds_on": payload["uncertainties"][:1], "cases": [_case(name, anchor, owners[-1], number) for number, name in enumerate(("BEST", "MEDIUM", "WORST"))]}
+    if system == KEYWORDER_SYSTEM:
+        return {"keywords": {item["id"]: [" ".join(item["text"].split()[:2]), " ".join(item["text"].split()[-2:])] for item in payload["items"]}}
     if system == REPORTER_ITEMS_SYSTEM:
         return {"items": []}
     if system == REPORTER_BOTTOM_LINE_SYSTEM:
@@ -252,6 +255,37 @@ def test_the_group_pack_runs_end_to_end(tmp_path: Path, monkeypatch) -> None:
     kept = json.loads(Path(again["files"]["json"]).read_text(encoding="utf-8"))
     assert next(item for item in kept["shifts"] if item["themeId"] == memory["themeId"]) == memory, "--redraft keeps a proposed shift unchanged"
 
+    from grit.pipeline.scenarios import approve, load_register, outlook
+
+    approved = approve(pool, "ste", GROUP_DATE, reviewed_by="Wilson Yeo", client=reader_scan.stub_client(_group_model), model="stub", config_dir=config, log=lambda _m: None)
+    assert approved["version"] == 1 and approved["shifts"] == 1 and approved["keywords_withheld"] == []
+    register = load_register("ste", config)
+    case = register["shifts"][0]["cases"][2]
+    assert register["reviewedBy"] == "Wilson Yeo" and case["case"] == "WORST" and case["signposts"][0] == {"text": "Worst signpost one", "keywords": ["Worst signpost", "signpost one"]}
+    assert outlook(pool, run.run_id, reader_scan._load_pack("ste"))["shifts"][0]["lean"] == "NONE", "no signal names a signpost yet"
+    signal = pool.add_signal(url="https://example.com/worst", title="Worst signpost three is reported", text="", publisher="example.com", published_at="2026-10-30T00:00:00Z", lane="BRAVE", content_hash="w")
+    pool.save_assessment({"signal_id": signal, "run_id": run.run_id, "pack": "ste", "decision": "KEEP", "tier": 3, "themes_json": [{"theme_id": memory["themeId"], "strong": True}]})
+    reading = outlook(pool, run.run_id, reader_scan._load_pack("ste"))["shifts"][0]
+    worst = reading["cases"][2]
+    assert reading["lean"] == "WORST" and [item["number"] for item in worst["signposts_seen"]] == [3], "two keywords must match, so only signpost 3 is seen"
+    assert worst["signposts_seen"][0]["signal_ids"] == [signal] and worst["signposts_seen"][0]["sources"][0]["outlet"] == "example.com"
+    assert [item["trigger"] for item in worst["responses_triggered"]] == [3], "the worst case's response triggered by signpost 3 fires"
+    off_shift = pool.add_signal(url="https://example.com/other", title="Best signpost one elsewhere", text="", publisher="example.com", published_at="2026-10-30T00:00:00Z", lane="BRAVE", content_hash="o")
+    pool.save_assessment({"signal_id": off_shift, "run_id": run.run_id, "pack": "ste", "decision": "KEEP", "tier": 3, "themes_json": []})
+    assert outlook(pool, run.run_id, reader_scan._load_pack("ste"))["shifts"][0]["lean"] == "WORST", "a signal that does not touch the shift is not counted"
+
+    from grit.copilot.scope import scope_for
+    from grit.copilot.tools import Toolbox
+
+    labels = {"ste": {"label": "ST Engineering Group", "level": "GROUP"}, "urs": {"label": "Urban Solutions", "level": "BA"}}
+    tools = Toolbox(pool, scope_for(load_profiles(config / "profiles")["vschong"], labels=labels), config_dir=config)
+    answer = tools.call("get_scenarios", {"shift": "semiconductor"})
+    assert answer["shifts"][0]["lean"].startswith("Leaning towards the worst case (1 of 3") and answer["shifts"][0]["cases"][2]["signposts_seen"][0]["signals"] == ["S1"]
+
+    refreshed = propose_scenarios(pool, run, client=reader_scan.stub_client(_group_model), model="stub", log=lambda _m: None, sots_dir=_sots(tmp_path / "refresh"))
+    shift = next(item for item in json.loads(Path(refreshed["files"]["json"]).read_text(encoding="utf-8"))["shifts"] if item["themeId"] == memory["themeId"])
+    assert shift["changes"] == ["No change from the reviewed version."]
+
     ceo = load_profiles(config / "profiles")["vschong"]
     files = write_pack(pool, run.run_id, ceo, folder=tmp_path / "ceo", submit=False)["files"]
     document = Document(files["docx"])
@@ -260,8 +294,22 @@ def test_the_group_pack_runs_end_to_end(tmp_path: Path, monkeypatch) -> None:
     assert len(radar) == 13, "one row for each of the 12 conditions"
     row = next(item for item in radar[1:] if item[0].startswith("2. "))
     assert "Urban Solutions" in row[3] and row[4].startswith("A durable ceasefire") and "Consider reviewing site security plans" in row[5]
+    outlook_table = next([[cell.text for cell in row.cells] for row in table.rows] for table in document.tables if table.rows[0].cells[0].text == "Strategic shift")
+    assert len(outlook_table) == 2 and outlook_table[1][1].startswith("Leaning towards the worst case") and "example.com" in outlook_table[1][2]
     deck = Presentation(files["pptx"])
-    assert len(deck.slides) == 3, "a cover, the summary, and one appendix slide for the one condition with evidence"
+    assert len(deck.slides) == 4, "a cover, the summary, the scenario outlook, and one appendix slide for the one condition with evidence"
+    assert any("SCENARIO OUTLOOK" in shape.text_frame.text for shape in deck.slides[2].shapes if shape.has_text_frame)
+    from openpyxl import load_workbook
+
+    from grit.report.brief import build_brief
+    from grit.report.markdown import render_markdown
+    from grit.report.office import render_xlsx
+
+    model = build_brief(pool, run.run_id, ceo)
+    assert model["meta"]["sections"].index("SCENARIOS") == model["meta"]["sections"].index("CONDITIONS") + 1 and signal in model["membership"]
+    assert "Scenario outlook" in load_workbook(render_xlsx(model, [], tmp_path / "radar.xlsx")).sheetnames
+    text = render_markdown(model)
+    assert "## 1. Scenario outlook: best, medium and worst case for STE" in text and "| **Semiconductor/GPU access**<br>Best case: Best path<br>" in text
 
 
 def test_a_country_alone_or_outside_a_group_pack_is_not_on_the_footprint_rung(tmp_path: Path, monkeypatch) -> None:
@@ -375,3 +423,55 @@ def test_pack_init_never_overwrites_a_file(tmp_path: Path) -> None:
     themes = json.loads((tmp_path / "ste" / "STE-Group-Themes.json").read_text(encoding="utf-8"))
     assert len(themes["themes"]) == 8
     assert all(len(keyword) >= 6 or " " in keyword for theme in themes["themes"] for keyword in theme["keywords"]), "every shift keyword can match"
+
+
+def test_a_signpost_needs_a_distinctive_keyword_not_only_a_shared_place() -> None:
+    from grit.pipeline.scenarios import matches_item
+
+    shared = frozenset({"saudi arabia", "vision 2030"})
+    keywords = ["Saudi Arabia", "Vision 2030", "mega-projects", "deferrals"]
+    assert not matches_item("Saudi Arabia says Vision 2030 programmes hit 93% of targets", keywords, shared), "two shared phrases are not enough"
+    assert matches_item("Saudi Arabia announces deferrals of Vision 2030 mega-projects", keywords, shared)
+    assert matches_item("Saudi Arabia defers luxury mega-projects", keywords, shared), "a plural or one distinctive phrase with a shared one counts"
+    assert matches_item("Saudi Arabia and Vision 2030", ["Saudi Arabia", "Vision 2030"], shared), "an item with only shared phrases needs all of them"
+    assert not matches_item("Saudi Arabia alone", ["Saudi Arabia", "Vision 2030"], shared)
+
+
+def test_news_wide_keywords_do_not_count_as_distinctive_and_failed_keywords_carry_forward(tmp_path: Path) -> None:
+    from grit.pipeline.scenarios import _earlier_keywords, _everyday, register_path
+
+    shift = {"cases": [{"signposts": [{"text": "a", "keywords": ["Vision 2030", "deferrals"]}], "counter_indicators": []}]}
+    texts = [f"Vision 2030 story {number}" for number in range(10)] + ["Deferrals announced"]
+    assert _everyday(shift, texts) == frozenset({"vision 2030"}), "a keyword in 10 of 11 signals is everyday news"
+    path = register_path("ste", tmp_path)
+    (path.parent / "history").mkdir(parents=True)
+    (path.parent / "history" / f"{path.stem}_v1.json").write_text(json.dumps({"shifts": [{"cases": [{"signposts": [{"text": "a", "keywords": ["old"]}]}]}]}))
+    path.write_text(json.dumps({"shifts": [{"cases": [{"signposts": [{"text": "a", "keywords": []}, {"text": "b", "keywords": ["new"]}]}]}]}))
+    assert _earlier_keywords("ste", tmp_path) == {"a": ["old"], "b": ["new"]}, "an empty list never hides the last good keywords"
+
+
+def test_approval_keeps_reviewed_shifts_a_refresh_could_not_redraft_and_never_overwrites_history(tmp_path: Path, monkeypatch) -> None:
+    from grit.pipeline import scenarios
+
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path / "output")
+    pool = Pool(tmp_path / "grit.sqlite")
+    folder = tmp_path / "output" / "runs" / "2026-10-31-ste" / "scenarios"
+    folder.mkdir(parents=True)
+
+    def draft(status: str) -> None:
+        cases = [{"case": name, "title": name, "name": f"{name} path", "narrative": "x", "evidence": [], "impact": [], "responses": [],
+                  "signposts": ["Alpha signpost one"], "counter_indicators": ["Alpha counter one"]} for name in ("BEST", "MEDIUM", "WORST")]
+        (folder / "STE-Scenarios-BMW-Proposed_2026-10-31.json").write_text(json.dumps({"shifts": [{"themeId": "STE-SHIFT-01", "name": "AI", "status": status, "cases": cases if status == "PROPOSED" else []}]}))
+
+    client = reader_scan.stub_client(_group_model)
+    draft("PROPOSED")
+    first = scenarios.approve(pool, "ste", GROUP_DATE, reviewed_by="Wilson Yeo", client=client, model="stub", config_dir=tmp_path, log=lambda _m: None)
+    draft("WITHHELD")
+    second = scenarios.approve(pool, "ste", GROUP_DATE, reviewed_by="Wilson Yeo", client=client, model="stub", config_dir=tmp_path, log=lambda _m: None)
+    assert (first["version"], second["version"]) == (1, 2) and second["carried_forward"] == ["STE-SHIFT-01"] and second["shifts"] == 1
+    path = scenarios.register_path("ste", tmp_path)
+    edited = json.loads(path.read_text())
+    path.write_text(json.dumps({**edited, "status": "EDITING"}))
+    third = scenarios.approve(pool, "ste", GROUP_DATE, reviewed_by="Wilson Yeo", client=client, model="stub", config_dir=tmp_path, log=lambda _m: None)
+    assert third["version"] == 3 and sorted(item.name for item in (path.parent / "history").iterdir()) == ["STE-Scenarios_v1.json", "STE-Scenarios_v2.json"]
+    assert json.loads((path.parent / "history" / "STE-Scenarios_v1.json").read_text())["version"] == 1, "history is never overwritten"

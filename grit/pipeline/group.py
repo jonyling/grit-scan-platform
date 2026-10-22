@@ -149,6 +149,7 @@ def propose_scenarios(pool: Pool, run: ReaderRun, *, client: Any, model: str, lo
     of the Situation and the run's signals that hit the shift strongly (spec 43). redraft keeps the shifts already proposed
     in this run's draft and redoes only the others."""
     from grit.agents import reader as agents
+    from grit.pipeline.scenarios import changes, reviewed_view
 
     stem = f"{run.pack.upper()}-Scenarios-BMW-Proposed_{run.run_date.isoformat()}"
     kept_shifts: dict[str, dict[str, Any]] = {}
@@ -177,8 +178,9 @@ def propose_scenarios(pool: Pool, run: ReaderRun, *, client: Any, model: str, lo
              "assessment": agents.strip_marks(str((latest.get(condition["id"]) or {}).get("summary") or ""))[:600] or None}
             for condition in (pack.baseline or {}).get("conditions") or [] if shift["themeName"] in (condition.get("steThemes") or [])
         ]
+        reviewed = reviewed_view(pool, run.run_id, pack, shift["themeId"])
         result, call = agents.propose_scenarios(client, model, shift=shift, business_area=area, owners=owners, conditions=touched,
-                                                situation=situation, uncertainties=uncertainties, sources=sources)
+                                                situation=situation, uncertainties=uncertainties, sources=sources, reviewed=reviewed)
         pool.log(actor_type="AGENT", run_id=run.run_id, **call.as_record())
         log(f"  Strategist {shift['themeId']:14} {result['status']:12} cases {len(result['cases'])}  signals {len(table)}  passages {len(passages)}")
         cases = []
@@ -193,6 +195,7 @@ def propose_scenarios(pool: Pool, run: ReaderRun, *, client: Any, model: str, lo
         proposed.append({
             "themeId": shift["themeId"], "name": shift["themeName"], "horizon": "1-5 years", "status": result["status"],
             "situation": (situation or {}).get("name"), "builds_on": result.get("builds_on") or [], "cases": cases, "violations": result.get("violations") or [],
+            "changes": changes(reviewed, {"cases": cases}) if cases else [],
         })
     document = {
         "registerId": f"{run.pack.upper()}-SCENARIOS", "pack": run.pack, "run": run.run_id, "proposedOn": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
@@ -264,6 +267,10 @@ def _scenarios_docx(document: Mapping[str, Any], path: Path) -> None:
             continue
         if shift.get("situation"):
             doc.add_paragraph(f"Built on the State of the Situation: {shift['situation']}. Key uncertainties: {'; '.join(shift['builds_on']) or 'not named'}.")
+        if shift.get("changes"):
+            doc.add_paragraph("Changes from the reviewed version:")
+            for text in shift["changes"]:
+                doc.add_paragraph(text, style="List Bullet")
         for item in shift["cases"]:
             doc.add_heading(f"{item['title']}: {item['name']}", level=2)
             doc.add_paragraph(item["narrative"])

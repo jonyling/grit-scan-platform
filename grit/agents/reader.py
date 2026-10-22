@@ -17,6 +17,8 @@ from grit.agents.loop.llm import LoopError, call_json
 from grit.agents.reader_prompts import (
     ASSESSOR_SYSTEM,
     ASSESSOR_VERSION,
+    KEYWORDER_SYSTEM,
+    KEYWORDER_VERSION,
     BASELINER_SYSTEM,
     BASELINER_VERSION,
     CRITIC_SYSTEM,
@@ -664,7 +666,7 @@ def check_scenarios(draft: Any, sources: Mapping[str, Mapping[str, Any]], anchor
 
 def propose_scenarios(
     client: Any, model: str, *, shift: Mapping[str, Any], business_area: Mapping[str, Any], owners: Sequence[str], conditions: Sequence[Mapping[str, Any]],
-    situation: Mapping[str, Any] | None, uncertainties: Sequence[str], sources: Mapping[str, Mapping[str, Any]],
+    situation: Mapping[str, Any] | None, uncertainties: Sequence[str], sources: Mapping[str, Mapping[str, Any]], reviewed: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], CallLog]:
     """Returns {status, builds_on, cases, violations}. status is PROPOSED, WITHHELD or NO_EVIDENCE. The reasoning goes to the
     log entry only."""
@@ -676,6 +678,8 @@ def propose_scenarios(
         "owners": list(owners), "conditions": [dict(item) for item in conditions],
         "sources": {key: {k: v for k, v in value.items() if k not in {"aliases", "report_id", "page", "page_label"}} for key, value in sources.items()},
     }
+    if reviewed:
+        payload["reviewed"] = dict(reviewed)
     log = CallLog("Strategist", STRATEGIST_VERSION, model, str(shift.get("themeId")), canonical_hash(payload))
     if not sources:
         log.status = "SKIPPED_NO_SOURCES"
@@ -699,3 +703,52 @@ def propose_scenarios(
     if log.status != "LLM_ERROR":
         log.status = "WITHHELD"
     return {"status": "WITHHELD", "builds_on": [], "cases": [], "violations": violations or log.violations}, log
+
+
+_KEY_WORD = re.compile(r"[A-Za-z0-9]+")
+
+
+def _words_of(text: str) -> set[str]:
+    return {word.casefold() for word in _KEY_WORD.findall(text or "")}
+
+
+def check_keywords(draft: Any, items: Mapping[str, str]) -> list[str]:
+    """Two to four phrases per item, every word drawn from the item's own text, each long enough to match safely."""
+    if not isinstance(draft, Mapping) or not isinstance(draft.get("keywords"), Mapping):
+        return ["BAD_SHAPE: return {\"keywords\": {ITEM_ID: [phrases]}}."]
+    keywords = draft["keywords"]
+    found = [f"UNKNOWN_ITEM: {key} is not an item." for key in keywords if key not in items]
+    for key, text in items.items():
+        phrases = keywords.get(key)
+        if not isinstance(phrases, list) or not all(isinstance(item, str) and item.strip() for item in phrases) or not 2 <= len(phrases) <= 4:
+            found.append(f"BAD_COUNT: {key}: two to four keyword phrases.")
+            continue
+        own = _words_of(text)
+        for phrase in phrases:
+            missing = sorted(_words_of(phrase) - own)
+            if missing:
+                found.append(f"NOT_IN_TEXT: {key}: '{phrase}' uses {', '.join(missing)}, which the item's text does not.")
+            stripped = phrase.strip()
+            if len(stripped) < 4 and not (stripped.isupper() or any(char.isdigit() for char in stripped)):
+                found.append(f"TOO_SHORT: {key}: '{phrase}' needs four or more letters, or capitals.")
+    return found
+
+
+def propose_keywords(client: Any, model: str, *, subject: str, items: Mapping[str, str]) -> tuple[dict[str, Any], CallLog]:
+    """Returns {status, keywords}. status is PROPOSED or WITHHELD."""
+    payload: dict[str, Any] = {"items": [{"id": key, "text": text} for key, text in items.items()]}
+    log = CallLog("Keyworder", KEYWORDER_VERSION, model, subject, canonical_hash(payload))
+    violations: list[str] = []
+    for _attempt in range(3):
+        draft = _call(client, model, KEYWORDER_SYSTEM, payload, log)
+        if draft is None:
+            break
+        violations = check_keywords(draft, items)
+        if not violations:
+            log.status = "VALIDATED"
+            return {"status": "PROPOSED", "keywords": {key: [phrase.strip() for phrase in draft["keywords"][key]] for key in items}}, log
+        log.violations.extend(violations)
+        payload = payload | {"previous_draft": draft, "violations": violations}
+    if log.status != "LLM_ERROR":
+        log.status = "WITHHELD"
+    return {"status": "WITHHELD", "keywords": {}, "violations": violations or log.violations}, log

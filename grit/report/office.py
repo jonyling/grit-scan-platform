@@ -15,7 +15,7 @@ from pptx.enum.shapes import MSO_CONNECTOR, MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
-from grit.report.docx_brief import implication_text, key_risk_headers, opportunity_text, priority_trend, radar_cells, radar_headers, response_lines
+from grit.report.docx_brief import implication_text, key_risk_headers, opportunity_text, priority_trend, radar_cells, radar_headers, response_lines, SCENARIO_HEADERS, SCENARIO_NOTE, scenario_cells
 
 # The reference deck's palette (docs/reference/GRIT-Scan_Executive_Summary.pptx).
 GOLD, EYEBROW, INK, MUTED, BODY = RGBColor(0xC0, 0x8A, 0x1E), RGBColor(0xA9, 0x74, 0x07), RGBColor(0x12, 0x21, 0x3F), RGBColor(0x5A, 0x68, 0x84), RGBColor(0x2C, 0x3A, 0x55)
@@ -128,6 +128,8 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
     deck = Presentation(str(TEMPLATE))
     items = deck_items(brief)
     cover, summary = _blank(deck, COVER_LAYOUT), _blank(deck, CONTENT_LAYOUT)
+    outlook = brief.get("scenarios") if meta.get("level") == "GROUP" else None
+    scenario_slide = _blank(deck, CONTENT_LAYOUT) if outlook and outlook.get("shifts") else None
     appendix = [_blank(deck, CONTENT_LAYOUT) for _ in items]
 
     # Cover.
@@ -192,6 +194,9 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
         _link(summary, 0.5, 6.5, f"Full supporting detail \u2014 Appendix A1\u2013A{len(appendix)}" if len(appendix) > 1 else "Full supporting detail \u2014 Appendix A1", appendix[0], dot=GOLD)
     _link(summary, 9.08, 6.5, "Ask GRIT-Scan chat about this full report", None, colour=EYEBROW, dot=GOLD, w=3.55)
 
+    if scenario_slide is not None:
+        _scenario_slide(scenario_slide, outlook)
+
     # One appendix slide per item.
     options_on = "RESPONSE_OPTIONS" in (meta.get("sections") or [])
     for number, (slide, row) in enumerate(zip(appendix, items), start=1):
@@ -248,6 +253,31 @@ def cell_text(value: Any) -> Any:
     if isinstance(value, str) and value[:1] in {"=", "+", "-", "@", "\t", "\r"}:
         return "'" + value
     return value
+
+
+LEAN_COLOURS = {"BEST": "Easing", "WORST": "Escalating"}
+
+
+def _scenario_slide(slide: Any, outlook: Mapping[str, Any]) -> None:
+    """One row per strategic shift: where the signposts lean, and the first signpost seen."""
+    from grit.pipeline.scenarios import lean_text
+
+    _words(slide, 0.5, 0.24, 9.0, 0.3, [("SCENARIO OUTLOOK  \u00b7  BEST, MEDIUM AND WORST CASE FOR STE", 13, True, EYEBROW)])
+    _words(slide, 0.5, 0.52, 12.3, 0.62, [("Where the strategic shifts are heading", 28, True, INK)])
+    _rule(slide, 1.3)
+    shifts = list(outlook["shifts"])[:8]
+    height = min(0.62, 5.0 / max(1, len(shifts)))
+    for number, reading in enumerate(shifts):
+        y = 1.45 + number * (height + 0.06)
+        trend = LEAN_COLOURS.get(reading["lean"])
+        _tag, colour, fill, bar = TRENDS.get(trend, STEADY) if trend else STEADY
+        _shape(slide, 0.5, y, 12.33, height, CARD)
+        _shape(slide, 0.5, y, 0.05, height, bar)
+        _words(slide, 0.68, y, 3.6, height, [(fit(reading["name"], 60), 12, True, INK)], middle=True)
+        _badge(slide, 4.35, y + 0.08, 3.1, height - 0.16, fit(lean_text(reading).rstrip("."), 60), colour, fill, size=10)
+        seen = [f"{case['title'].split(' case')[0]}: {item['text']}" for case in reading["cases"] for item in case["signposts_seen"]]
+        _words(slide, 7.6, y, 5.15, height, [(fit("; ".join(seen) or "No signpost seen this period.", 150), 10, False, BODY)], middle=True)
+    _words(slide, 0.5, 6.62, 12.3, 0.5, [(f"{SCENARIO_NOTE} Scenarios v{outlook['version']}, reviewed by {outlook['reviewed_by']} on {outlook['reviewed_on']}.", 9, False, MUTED)])
 
 
 def _sheet(workbook: Workbook, title: str, headers: Sequence[str], rows: Sequence[Sequence[Any]], widths: Sequence[int]) -> None:
@@ -315,6 +345,8 @@ def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], 
             rows.append(values)
         widths = (60, 40, 22, 50, 70, 22) if options else (70, 45, 22, 60, 22)
         _sheet(workbook, "Key risks", key_risk_headers(brief["meta"], options=options), rows, widths)
+    if (brief.get("scenarios") or {}).get("shifts"):
+        _sheet(workbook, "Scenario outlook", SCENARIO_HEADERS, [["\n".join(lines) for lines in scenario_cells(reading)] for reading in brief["scenarios"]["shifts"]], (50, 40, 90, 60, 60))
     if brief.get("management_requests"):
         _sheet(
             workbook, "Management requests", ("Request", "Status", "Source", "Signals this week"),
