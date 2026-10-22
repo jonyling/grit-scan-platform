@@ -15,6 +15,16 @@ from typing import Any, Mapping
 from grit.settings import load_local_env
 
 
+DEFAULT_TIMEOUT_SECONDS = 180  # a call the server never answers fails after this, and the caller's retry takes over
+
+
+def timeout_ms(values: Mapping[str, str]) -> int:
+    """GEMINI_TIMEOUT_SECONDS, else 180 seconds, in the milliseconds the SDK expects."""
+    raw = str(values.get("GEMINI_TIMEOUT_SECONDS") or "").strip()
+    seconds = int(raw) if raw.isdigit() and int(raw) > 0 else DEFAULT_TIMEOUT_SECONDS
+    return seconds * 1000
+
+
 _JSON_CONTRACT = (
     "Return one JSON object with cited_entity_ids, evidence_references, claims, and rationale. "
     "Each claim has statement and established. Do not include a score, severity, likelihood, or workflow transition."
@@ -67,12 +77,12 @@ def _client(values: Mapping[str, str]) -> Any:
             vertexai=True,
             project=values["GOOGLE_CLOUD_PROJECT"],
             location=values.get("GOOGLE_CLOUD_LOCATION") or "global",
-            http_options=types.HttpOptions(api_version="v1"),
+            http_options=types.HttpOptions(api_version="v1", timeout=timeout_ms(values)),
         )
     key = _api_key(values)
     if not key:
         raise RuntimeError(_missing_message())
-    return genai.Client(vertexai=True, api_key=key)
+    return genai.Client(vertexai=True, api_key=key, http_options=types.HttpOptions(timeout=timeout_ms(values)))
 
 
 def _proposal(client: Any, agent_name: str, prompt: str, task: dict[str, Any], model: str) -> dict[str, Any]:
