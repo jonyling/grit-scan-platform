@@ -64,19 +64,7 @@ The output goes to `output/runs/RUN/baseline-draft/`. It holds a Word document f
 
 ## 6. Scenarios
 
-`grit scenarios --pack ste --date DATE` reads a completed run. For each strategic shift, the Strategist proposes two to four scenarios. Each scenario has:
-
-- a name;
-- a narrative written as possibility;
-- a horizon;
-- two to four signposts that would show it is happening;
-- one or two counter-indicators;
-- the risk and opportunity for STE;
-- the sources that motivate it.
-
-The checks reject a scenario with no signpost, a narrative that reads as a forecast, an implication that names no business area or country, or a number not in the sources. The Strategist reasons first. The reasoning goes to the execution log only, as with the Proposer.
-
-The output goes to `output/runs/RUN/scenarios/`, with the status `PROPOSED_FOR_REVIEW`. A person edits the scenarios and saves them to `config/ste/STE-Scenarios.json` with the status `REVIEWED`. Run it each quarter.
+Spec 43 replaces this section. For each strategic shift, the Strategist now proposes a best, a medium and a worst case for STE, built on the shift's State of the Situation. `grit scenarios --pack ste --date DATE` drafts them for Wilson's review.
 
 ## 7. Monthly Group Strategic Radar
 

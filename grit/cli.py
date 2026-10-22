@@ -205,7 +205,7 @@ def baseline_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
 
 
 def scenarios_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
-    """Propose scenarios for each strategic shift, for a person to review (spec 37)."""
+    """Propose the best, medium and worst case for STE under each strategic shift, for a person to review (spec 43)."""
     from grit.pipeline.group import propose_scenarios
     from grit.pipeline.reader_scan import ReaderRun, run_id_for
 
@@ -217,7 +217,7 @@ def scenarios_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
     run = ReaderRun(run_id_for(args.date, pack), args.date, pack)
     if pool.run(run.run_id) is None:
         raise SystemExit(f"No run {run.run_id}. Run grit weekly --pack {pack} --date {args.date} first.")
-    print(json.dumps(propose_scenarios(pool, run, client=_client(), model=_model(args.model)), indent=2))
+    print(json.dumps(propose_scenarios(pool, run, client=_client(), model=_model(args.model), redraft=args.redraft), indent=2))
     return 0
 
 
@@ -417,7 +417,9 @@ def build_parser() -> argparse.ArgumentParser:
             sub.add_argument("--no-submit", action="store_true", help="Write the packs without putting them into review.")
     reader("assess", cmd_assess, "Rerun the deterministic assessment on a scanned run. No network.")
     reader("baseline-draft", cmd_baseline, "Draft a Group pack's baseline for sign-off from a completed run.").add_argument("--model")
-    reader("scenarios", cmd_scenarios, "Propose scenarios for a Group pack's strategic shifts from a completed run, for review.").add_argument("--model")
+    sub = reader("scenarios", cmd_scenarios, "Propose the best, medium and worst case for STE under each strategic shift, from a completed run, for review.")
+    sub.add_argument("--model")
+    sub.add_argument("--redraft", action="store_true", help="Keep the shifts already proposed in this run's draft; redo only the withheld ones.")
     sub = reader("agents", cmd_agents, "Run the Assessor, Critic and Reporter, then the finding loop.")
     sub.add_argument("--model")
     sub.add_argument("--findings", type=int, default=6)

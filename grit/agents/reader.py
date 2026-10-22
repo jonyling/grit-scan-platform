@@ -474,7 +474,6 @@ def canonical_text(value: Any) -> str:
 
 
 NO_POSITION = "The sources in this run do not establish the current position."
-HORIZONS = frozenset({"1-5 years", "5-10 years"})
 
 
 def check_baseline(draft: Any, sources: Mapping[str, Mapping[str, Any]], indicators: Sequence[str]) -> list[str]:
@@ -540,82 +539,163 @@ def draft_baseline(client: Any, model: str, *, condition: Mapping[str, Any], sou
     return {"status": "WITHHELD", "position": None, "indicators": [], "gaps": None, "source_ids": [], "violations": violations or log.violations}, log
 
 
-def check_scenarios(draft: Any, sources: Mapping[str, Mapping[str, Any]], anchors: Sequence[str]) -> list[str]:
-    """Proposed scenarios: possibility, not forecast; observable signposts; STE sentences that name the Group's own anchors; and
-    no number that the cited sources do not contain."""
+CASES = ("BEST", "MEDIUM", "WORST")
+_CASE_MARK = re.compile(r"\[([SP]\d{1,3}(?:\s*,\s*[SP]\d{1,3})*)\]")
+
+
+def _case_marks(text: str) -> list[str]:
+    found: list[str] = []
+    for group in _CASE_MARK.findall(text or ""):
+        found += [part.strip() for part in group.split(",")]
+    return found
+
+
+def _strings(value: Any) -> list[str] | None:
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        return None
+    return [item.strip() for item in value if item.strip()]
+
+
+def check_scenarios(draft: Any, sources: Mapping[str, Mapping[str, Any]], anchors: Sequence[str], owners: Sequence[str], uncertainties: Sequence[str]) -> list[str]:
+    """Best, medium and worst cases for STE (spec 43): one of each; cited evidence with attributed forecasts and grounded
+    numbers; observable signposts no two cases share; impacts that name STE's own anchors and read as possibility; and
+    responses with a known owner and a trigger among the case's signposts. sources holds signals (S#) and passages (P#)."""
+    from grit.agents.situation import FORECAST, sentences
+
     if not isinstance(draft, Mapping):
         return ["BAD_SHAPE: the draft is not an object"]
     found: list[str] = []
     if not isinstance(draft.get("reasoning"), str) or not draft["reasoning"].strip():
         found.append("NO_REASONING: reasoning: think first, in plain sentences.")
-    scenarios = draft.get("scenarios")
-    if not isinstance(scenarios, list) or not 2 <= len(scenarios) <= 4:
-        return found + ["BAD_COUNT: scenarios: two to four scenarios."]
-    for number, item in enumerate(scenarios, start=1):
-        where = f"scenario {number}"
-        if not isinstance(item, Mapping) or not isinstance(item.get("name"), str) or not isinstance(item.get("narrative"), str):
-            found.append(f"BAD_SHAPE: {where}: needs a name and a narrative")
+    raw_builds_on = draft.get("builds_on")
+    builds_on = _strings(raw_builds_on) if raw_builds_on is not None else []
+    known = {normalise(item): item for item in uncertainties}
+    if builds_on is None:
+        found.append("BAD_SHAPE: builds_on: a list of key uncertainty names.")
+    elif uncertainties:
+        if not 1 <= len(builds_on) <= 2:
+            found.append("BAD_COUNT: builds_on: one or two key uncertainties.")
+        else:
+            found += [f"UNKNOWN_UNCERTAINTY: builds_on: '{item}' is not one of the key uncertainties; copy a name exactly." for item in builds_on if normalise(item) not in known]
+    elif builds_on:
+        found.append("UNKNOWN_UNCERTAINTY: builds_on: no key uncertainties were supplied, so builds_on is an empty list.")
+    cases = draft.get("cases")
+    if not isinstance(cases, list) or [item.get("case") if isinstance(item, Mapping) else None for item in cases] != list(CASES):
+        return found + ["BAD_CASES: cases: exactly three, BEST, MEDIUM and WORST, in that order."]
+    seen_signposts: dict[str, str] = {}
+    names: set[str] = set()
+    for item in cases:
+        where = f"{item['case']} case"
+        name, narrative = item.get("name"), item.get("narrative")
+        if not isinstance(name, str) or not name.strip() or not isinstance(narrative, str) or not narrative.strip():
+            found.append(f"BAD_SHAPE: {where}: needs a name and a narrative.")
             continue
-        if item.get("horizon") not in HORIZONS:
-            found.append(f"BAD_VALUE: {where}: horizon must be one of {sorted(HORIZONS)}")
-        signposts, counters = item.get("signposts"), item.get("counter_indicators")
-        if not isinstance(signposts, list) or not 2 <= len([text for text in signposts if isinstance(text, str) and text.strip()]) <= 4:
-            found.append(f"BAD_COUNT: {where}: two to four signposts.")
-        if not isinstance(counters, list) or not 1 <= len([text for text in counters if isinstance(text, str) and text.strip()]) <= 2:
-            found.append(f"BAD_COUNT: {where}: one or two counter-indicators.")
-        ids = item.get("source_ids")
-        found += source_problems(ids, sources, where)
-        ids = [ref for ref in ids if ref in sources] if isinstance(ids, list) else []
-        if not ids:
-            found.append(f"UNCITED: {where}: cite in source_ids the sources the scenario starts from.")
-        for field_name in ("narrative", "risk_for_ste"):
-            text = item.get(field_name)
-            if not isinstance(text, str) or not _MODAL.search(text):
-                found.append(f"NOT_CONDITIONAL: {where}: {field_name} uses could, may or might.")
-            elif _CERTAIN.search(text):
-                found.append(f"CERTAINTY_CLAIM: {where}: {field_name}: '{_CERTAIN.search(text).group(0)}'.")
-        for field_name in ("risk_for_ste", "opportunity_for_ste"):
-            text = item.get(field_name)
-            if field_name == "opportunity_for_ste" and text in (None, ""):
+        if normalise(name) in names:
+            found.append(f"DUPLICATE: {where}: each case needs its own name.")
+        names.add(normalise(name))
+        if not _MODAL.search(narrative):
+            found.append(f"NOT_CONDITIONAL: {where}: narrative uses could, may or might.")
+        elif _CERTAIN.search(narrative):
+            found.append(f"CERTAINTY_CLAIM: {where}: narrative: '{_CERTAIN.search(narrative).group(0)}'.")
+        evidence = _strings(item.get("evidence"))
+        cited: list[str] = []
+        if not evidence or not 1 <= len(evidence) <= 3:
+            found.append(f"BAD_COUNT: {where}: one to three evidence lines.")
+        for number, line in enumerate(evidence or [], start=1):
+            ids = _case_marks(line)
+            plain_line = _CASE_MARK.sub("", line).strip()
+            if not ids:
+                found.append(f"UNCITED: {where}: evidence {number} ends with its ids, such as [S1] or [P3].")
                 continue
-            if not isinstance(text, str) or not anchor_hits(text, anchors):
-                found.append(f"NO_ANCHOR: {where}: {field_name} names a business area, line of business, entity or country as business_area lists it.")
-        if any(marked_ids(str(item.get(key) or "")) for key in ("narrative", "risk_for_ste", "opportunity_for_ste")):
-            found.append(f"MARK_IN_TEXT: {where}: put citations in source_ids, not [S#] in the text.")
-        texts = [item.get("narrative"), item.get("risk_for_ste"), item.get("opportunity_for_ste"), *(signposts or []), *(counters or [])]
-        found += text_problems(" ".join(str(text) for text in texts if isinstance(text, str)), haystack(sources, ids), where)
+            unknown = [ref for ref in ids if ref not in sources]
+            if unknown:
+                found.append(f"UNKNOWN_SOURCE: {where}: evidence {number}: {', '.join(unknown)} was not supplied.")
+            ids = [ref for ref in ids if ref in sources]
+            cited += ids
+            found += text_problems(plain_line, haystack(sources, ids), f"{where} evidence {number}")
+            for sentence in sentences(line):
+                forecast = FORECAST.search(_CASE_MARK.sub("", sentence))
+                if not forecast:
+                    continue
+                names_ok = [str(alias) for ref in ids for alias in (sources[ref].get("publisher"), sources[ref].get("outlet"), *(sources[ref].get("aliases") or [])) if alias]
+                if "according to" not in sentence.casefold() and not any(alias.casefold() in sentence.casefold() for alias in names_ok):
+                    found.append(f"UNATTRIBUTED_FORECAST: {where}: evidence {number} uses '{forecast.group(0)}'. Name who makes the forecast.")
+        signposts, counters = _strings(item.get("signposts")), _strings(item.get("counter_indicators"))
+        if not signposts or not 3 <= len(signposts) <= 4:
+            found.append(f"BAD_COUNT: {where}: three or four signposts.")
+        if not counters or not 1 <= len(counters) <= 2:
+            found.append(f"BAD_COUNT: {where}: one or two counter-indicators.")
+        for text in signposts or []:
+            key = normalise(text)
+            if key in seen_signposts and seen_signposts[key] != item["case"]:
+                found.append(f"SHARED_SIGNPOST: {where}: '{text[:60]}' is also a {seen_signposts[key]} signpost. Each case needs its own.")
+            seen_signposts.setdefault(key, item["case"])
+        impact = _strings(item.get("impact"))
+        if not impact or not 1 <= len(impact) <= 3:
+            found.append(f"BAD_COUNT: {where}: one to three impact sentences.")
+        for number, text in enumerate(impact or [], start=1):
+            if not _MODAL.search(text):
+                found.append(f"NOT_CONDITIONAL: {where}: impact {number} uses could, may or might.")
+            elif _CERTAIN.search(text):
+                found.append(f"CERTAINTY_CLAIM: {where}: impact {number}: '{_CERTAIN.search(text).group(0)}'.")
+            if not anchor_hits(text, anchors):
+                found.append(f"NO_ANCHOR: {where}: impact {number} names a business area, line of business, entity or country as business_area lists it.")
+        responses = item.get("responses")
+        if not isinstance(responses, list) or not 1 <= len(responses) <= 2:
+            found.append(f"BAD_COUNT: {where}: one or two responses.")
+            responses = []
+        for number, response in enumerate(responses, start=1):
+            if not isinstance(response, Mapping) or not isinstance(response.get("action"), str) or not response["action"].strip():
+                found.append(f"BAD_SHAPE: {where}: response {number} needs an action, an owner and a trigger.")
+                continue
+            if response.get("owner") not in owners:
+                found.append(f"UNKNOWN_OWNER: {where}: response {number}: owner must be one of owners.")
+            trigger = response.get("trigger")
+            if not isinstance(trigger, int) or isinstance(trigger, bool) or not 1 <= trigger <= len(signposts or []):
+                found.append(f"BAD_TRIGGER: {where}: response {number}: trigger is the number of one of this case's signposts.")
+            if _CERTAIN.search(response["action"]):
+                found.append(f"CERTAINTY_CLAIM: {where}: response {number}: '{_CERTAIN.search(response['action']).group(0)}'.")
+        loose = [narrative, *(signposts or []), *(counters or []), *(impact or []), *[str(r.get("action")) for r in responses if isinstance(r, Mapping)]]
+        if any(_case_marks(text) for text in loose):
+            found.append(f"MARK_IN_TEXT: {where}: [S#] and [P#] marks belong in evidence only.")
+        found += text_problems(" ".join(loose), haystack(sources, cited), where)
     return found
 
 
 def propose_scenarios(
-    client: Any, model: str, *, shift: Mapping[str, Any], business_area: Mapping[str, Any], conditions: Sequence[Mapping[str, Any]], sources: Mapping[str, Mapping[str, Any]]
+    client: Any, model: str, *, shift: Mapping[str, Any], business_area: Mapping[str, Any], owners: Sequence[str], conditions: Sequence[Mapping[str, Any]],
+    situation: Mapping[str, Any] | None, uncertainties: Sequence[str], sources: Mapping[str, Mapping[str, Any]],
 ) -> tuple[dict[str, Any], CallLog]:
-    """Returns {status, scenarios, violations}. status is PROPOSED or WITHHELD. The reasoning goes to the log entry only."""
+    """Returns {status, builds_on, cases, violations}. status is PROPOSED, WITHHELD or NO_EVIDENCE. The reasoning goes to the
+    log entry only."""
     anchors = [str(item) for item in business_area.get("anchors") or []]
     payload: dict[str, Any] = {
         "shift": {key: shift.get(key) for key in ("themeId", "themeName", "keywords")},
+        "situation": situation, "uncertainties": list(uncertainties),
         "business_area": {key: value for key, value in business_area.items() if key != "anchors"},
-        "conditions": [dict(item) for item in conditions],
-        "sources": sources,
+        "owners": list(owners), "conditions": [dict(item) for item in conditions],
+        "sources": {key: {k: v for k, v in value.items() if k not in {"aliases", "report_id", "page", "page_label"}} for key, value in sources.items()},
     }
     log = CallLog("Strategist", STRATEGIST_VERSION, model, str(shift.get("themeId")), canonical_hash(payload))
     if not sources:
         log.status = "SKIPPED_NO_SOURCES"
-        return {"status": "NO_EVIDENCE", "scenarios": [], "violations": []}, log
+        return {"status": "NO_EVIDENCE", "builds_on": [], "cases": [], "violations": []}, log
     violations: list[str] = []
-    for _attempt in range(2):
+    for _attempt in range(3):
         draft = _call(client, model, STRATEGIST_SYSTEM, payload, log)
         if draft is None:
             break
         if isinstance(draft, Mapping) and isinstance(draft.get("reasoning"), str):
             log.reasoning = draft["reasoning"].strip()
-        violations = check_scenarios(draft, sources, anchors)
+        violations = check_scenarios(draft, sources, anchors, owners, uncertainties)
         if not violations:
             log.status = "VALIDATED"
-            keep = ("name", "horizon", "narrative", "signposts", "counter_indicators", "risk_for_ste", "opportunity_for_ste", "source_ids")
-            return {"status": "PROPOSED", "scenarios": [{key: item.get(key) for key in keep} for item in draft["scenarios"]], "violations": []}, log
+            keep = ("case", "name", "narrative", "evidence", "signposts", "counter_indicators", "impact", "responses")
+            known = {normalise(item): item for item in uncertainties}
+            return {"status": "PROPOSED", "builds_on": [known[normalise(item)] for item in _strings(draft.get("builds_on") or []) or []],
+                    "cases": [{key: item.get(key) for key in keep} for item in draft["cases"]], "violations": []}, log
         log.violations.extend(violations)
         payload = payload | {"previous_draft": {key: value for key, value in dict(draft).items() if key != "reasoning"} if isinstance(draft, Mapping) else draft, "violations": violations}
     if log.status != "LLM_ERROR":
         log.status = "WITHHELD"
-    return {"status": "WITHHELD", "scenarios": [], "violations": violations or log.violations}, log
+    return {"status": "WITHHELD", "builds_on": [], "cases": [], "violations": violations or log.violations}, log

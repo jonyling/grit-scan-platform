@@ -115,6 +115,31 @@ def _articles(country: str) -> dict[str, list[dict]]:
     }
 
 
+def _case(case: str, anchor: str, owner: str, number: int) -> dict:
+    return {
+        "case": case, "name": f"{case.title()} path", "narrative": f"Memory supply could move along the {case.lower()} path for STE.",
+        "evidence": ["DRAM contract prices rose for a third quarter. [S1]", "According to PwC, HBM demand is projected to keep growing. [P1]"],
+        "signposts": [f"{case.title()} signpost {item}" for item in ("one", "two", "three")], "counter_indicators": [f"{case.title()} counter-indicator"],
+        "impact": [f"Memory costs could shift project margins for STE in {anchor}."],
+        "responses": [{"action": "Consider reviewing memory supply terms.", "owner": owner, "trigger": 1 + number % 3}],
+    }
+
+
+def _sots(folder: Path) -> Path:
+    """A State of the Situation fixture for the semiconductor shift, so the test never reads output/."""
+    day = folder / "sots" / "2026-10-15"
+    day.mkdir(parents=True)
+    document = {
+        "topicId": "SOTS-SEMIS", "name": "Semiconductor and GPU access", "status": "DRAFT_FOR_SIGN_OFF",
+        "sections": [{"key": "UNCERTAINTIES", "title": "Key uncertainties", "status": "DRAFTED",
+                      "draft": {"items": [{"uncertainty": "Whether HBM capacity catches up with AI demand", "why_it_matters": "Prices follow it. [P1]"}]}}],
+        "passages": {"P1": {"report_id": "PWC-SEMI-2026", "report": "PwC Semiconductor and Beyond", "publisher": "PwC", "aliases": ["PwC"], "edition": "Nov 2025",
+                            "page": 64, "page_label": "p.", "text": "HBM demand is projected to keep growing through 2030."}},
+    }
+    (day / "SOTS-SEMIS.json").write_text(json.dumps(document), encoding="utf-8")
+    return folder / "sots"
+
+
 def _group_model(system: str, payload: dict) -> dict:
     if system == ASSESSOR_SYSTEM:
         sources = payload["sources"]
@@ -141,14 +166,11 @@ def _group_model(system: str, payload: dict) -> dict:
                     "gaps": "The other indicators are not covered.", "source_ids": ["S1"], "quotes": [{"source_id": "S1", "quote": "A missile attack struck an industrial area"}]}
         return {"position": "The sources in this run do not establish the current position.", "indicators": [], "gaps": "None.", "source_ids": [], "quotes": []}
     if system == STRATEGIST_SYSTEM:
-        area = payload["business_area"]
+        area, owners = payload["business_area"], payload["owners"]
         anchor = area["countries"][0] if area.get("countries") else area["business_areas"][0]
-        scenario = {"horizon": "1-5 years", "signposts": ["Memory makers announce new capacity", "HBM contract prices fall"], "counter_indicators": ["Prices keep rising"],
-                    "risk_for_ste": f"Memory costs could squeeze project margins for STE in {anchor}.", "opportunity_for_ste": None, "source_ids": ["S1"]}
-        return {"reasoning": REASONING, "scenarios": [
-            {**scenario, "name": "Persistent premium", "narrative": "HBM could stay scarce as AI demand grows."},
-            {**scenario, "name": "Capacity catch-up", "narrative": "New capacity may ease memory prices."},
-        ]}
+        if "S1" not in payload["sources"]:
+            return {"reasoning": REASONING, "builds_on": [], "cases": []}
+        return {"reasoning": REASONING, "builds_on": payload["uncertainties"][:1], "cases": [_case(name, anchor, owners[-1], number) for number, name in enumerate(("BEST", "MEDIUM", "WORST"))]}
     if system == REPORTER_ITEMS_SYSTEM:
         return {"items": []}
     if system == REPORTER_BOTTOM_LINE_SYSTEM:
@@ -206,12 +228,29 @@ def test_the_group_pack_runs_end_to_end(tmp_path: Path, monkeypatch) -> None:
     assert entry["currentAssessment"].startswith("A missile attack struck an industrial area") and "SIG-" not in entry["currentAssessment"]
     assert entry["sources"][0]["url"].startswith("https://www.reuters.com/") and Path(baseline["files"]["docx"]).is_file()
 
-    scenarios = propose_scenarios(pool, run, client=reader_scan.stub_client(_group_model), model="stub", log=lambda _m: None)
+    scenarios = propose_scenarios(pool, run, client=reader_scan.stub_client(_group_model), model="stub", log=lambda _m: None, sots_dir=_sots(tmp_path))
     proposed = json.loads(Path(scenarios["files"]["json"]).read_text(encoding="utf-8"))
     memory = next(item for item in proposed["shifts"] if item["name"] == "Semiconductor/GPU access")
-    assert memory["status"] == "PROPOSED" and [item["name"] for item in memory["scenarios"]] == ["Persistent premium", "Capacity catch-up"]
+    assert memory["status"] == "PROPOSED" and [item["case"] for item in memory["cases"]] == ["BEST", "MEDIUM", "WORST"]
+    assert memory["builds_on"] == ["Whether HBM capacity catches up with AI demand"] and memory["situation"] == "Semiconductor and GPU access"
+    best = memory["cases"][0]
+    assert best["title"] == "Best case for STE" and best["signals"][0]["url"].startswith("https://www.trendforce.com/")
+    assert "(trendforce.com," in best["evidence"][0] and "PwC" in best["evidence"][1] and "[P1]" not in best["evidence"][1], "marks become readable citations"
+    assert scenarios["proposed"] == 1, "only the shift with a State of the Situation or signals gets cases"
     assert REASONING not in json.dumps(proposed), "the Strategist's reasoning stays in the execution log"
     assert any(REASONING in str((row.get("detail") or {}).get("reasoning")) for row in pool.execution_log(run.run_id) if row["actor"] == "Strategist")
+    assert Path(scenarios["files"]["docx"]).is_file()
+    asked: list[str] = []
+
+    def counting(system: str, payload: dict) -> dict:
+        if system == STRATEGIST_SYSTEM:
+            asked.append(payload["shift"]["themeId"])
+        return _group_model(system, payload)
+
+    again = propose_scenarios(pool, run, client=reader_scan.stub_client(counting), model="stub", log=lambda _m: None, sots_dir=_sots(tmp_path / "again"), redraft=True)
+    assert asked == [], "a proposed shift is kept; the others have no evidence in this fixture, so no model call is made"
+    kept = json.loads(Path(again["files"]["json"]).read_text(encoding="utf-8"))
+    assert next(item for item in kept["shifts"] if item["themeId"] == memory["themeId"]) == memory, "--redraft keeps a proposed shift unchanged"
 
     ceo = load_profiles(config / "profiles")["vschong"]
     files = write_pack(pool, run.run_id, ceo, folder=tmp_path / "ceo", submit=False)["files"]
@@ -283,25 +322,44 @@ def test_each_baseline_and_scenario_check_names_its_violation() -> None:
     assert "UNGROUNDED_NUMBER" in " ".join(check_baseline({**good, "position": "Prices rose 12 percent. [S1]"}, sources, indicators))
     assert "NO_EVIDENCE" in " ".join(check_baseline({**good, "quotes": []}, sources, indicators))
 
-    anchors = ["Digital Systems & Cyber"]
-    scenario = {"name": "Persistent premium", "horizon": "1-5 years", "narrative": "HBM could stay scarce.", "signposts": ["New capacity", "Prices fall"],
-                "counter_indicators": ["Prices keep rising"], "risk_for_ste": "Costs could rise for Digital Systems & Cyber.", "opportunity_for_ste": None, "source_ids": ["S1"]}
-    draft = {"reasoning": "Prices rose.", "scenarios": [scenario, {**scenario, "name": "Catch-up"}]}
-    assert check_scenarios(draft, sources, anchors) == []
+    anchors, owners = ["Digital Systems & Cyber"], ["Group Risk & Assurance"]
+    uncertainties = ["Whether HBM capacity catches up"]
+    sources = {**sources, "P1": {"title": "PwC report, p. 64", "publisher": "PwC", "aliases": ["PwC"], "text": "HBM demand is projected to double by 2028."}}
+
+    def case(name: str, number: int) -> dict:
+        return {"case": name, "name": f"{name.title()} path", "narrative": "HBM could stay scarce.",
+                "evidence": ["DRAM contract prices rose 8 percent this quarter. [S1]", "According to PwC, HBM demand is projected to double by 2028. [P1]"],
+                "signposts": [f"{name} signpost {item}" for item in ("one", "two", "three")], "counter_indicators": ["Prices fall"],
+                "impact": ["Costs could rise for Digital Systems & Cyber."], "responses": [{"action": "Consider reviewing supply terms.", "owner": "Group Risk & Assurance", "trigger": 1}]}
+
+    cases = [case(name, number) for number, name in enumerate(("BEST", "MEDIUM", "WORST"))]
+    draft = {"reasoning": "Prices rose.", "builds_on": uncertainties, "cases": cases}
+    assert check_scenarios(draft, sources, anchors, owners, uncertainties) == []
 
     def problems(**changes) -> str:
-        return " | ".join(check_scenarios({**draft, "scenarios": [{**scenario, **changes}, scenario]}, sources, anchors))
+        return " | ".join(check_scenarios({**draft, "cases": [{**cases[0], **changes}, *cases[1:]]}, sources, anchors, owners, uncertainties))
 
     assert "NOT_CONDITIONAL" in problems(narrative="HBM stays scarce.")
     assert "CERTAINTY_CLAIM" in problems(narrative="HBM could and will stay scarce.")
-    assert "BAD_COUNT" in problems(signposts=["Only one"])
-    assert "NO_ANCHOR" in problems(risk_for_ste="Costs could rise for the company.")
-    assert "UNCITED" in problems(source_ids=[])
-    assert "MARK_IN_TEXT" in problems(narrative="HBM could stay scarce. [S1]")
+    assert "UNATTRIBUTED_FORECAST" in problems(evidence=["HBM demand is projected to double by 2028. [P1]"])
+    assert "UNCITED" in problems(evidence=["DRAM contract prices rose."])
+    assert "UNKNOWN_SOURCE" in problems(evidence=["DRAM prices rose. [S9]"])
+    assert "UNGROUNDED_NUMBER" in problems(evidence=["DRAM contract prices rose 30 percent. [S1]"])
     assert "UNGROUNDED_NUMBER" in problems(narrative="HBM could stay 30 percent dearer.")
-    assert "BAD_VALUE" in problems(horizon="next year")
-    assert "BAD_COUNT" in " ".join(check_scenarios({**draft, "scenarios": [scenario]}, sources, anchors))
-    assert "NO_REASONING" in " ".join(check_scenarios({**draft, "reasoning": ""}, sources, anchors))
+    assert "BAD_COUNT" in problems(signposts=["Only one"])
+    assert "SHARED_SIGNPOST" in problems(signposts=cases[1]["signposts"])
+    assert "NO_ANCHOR" in problems(impact=["Costs could rise for the company."])
+    assert "UNKNOWN_OWNER" in problems(responses=[{"action": "Consider it.", "owner": "Someone", "trigger": 1}])
+    assert "BAD_TRIGGER" in problems(responses=[{"action": "Consider it.", "owner": "Group Risk & Assurance", "trigger": 9}])
+    assert "MARK_IN_TEXT" in problems(narrative="HBM could stay scarce. [S1]")
+    assert "BAD_CASES" in " ".join(check_scenarios({**draft, "cases": cases[:2]}, sources, anchors, owners, uncertainties))
+    assert "BAD_CASES" in " ".join(check_scenarios({**draft, "cases": [cases[2], cases[1], cases[0]]}, sources, anchors, owners, uncertainties))
+    assert "UNKNOWN_UNCERTAINTY" in " ".join(check_scenarios({**draft, "builds_on": ["Something else"]}, sources, anchors, owners, uncertainties))
+    assert "NO_REASONING" in " ".join(check_scenarios({**draft, "reasoning": ""}, sources, anchors, owners, uncertainties))
+    assert check_scenarios({**draft, "builds_on": []}, sources, anchors, owners, []) == [], "a shift without key uncertainties builds on none"
+    assert "UNKNOWN_UNCERTAINTY" in " ".join(check_scenarios({**draft, "builds_on": ["anything"]}, sources, anchors, owners, []))
+    assert "BAD_SHAPE" in " ".join(check_scenarios({**draft, "builds_on": "none"}, sources, anchors, owners, []))
+    assert "BAD_SHAPE" in " ".join(check_scenarios({**draft, "builds_on": [{"a": 1}]}, sources, anchors, owners, []))
 
 
 def test_pack_init_never_overwrites_a_file(tmp_path: Path) -> None:

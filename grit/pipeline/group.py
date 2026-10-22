@@ -1,4 +1,5 @@
-"""Group-pack drafts for human review (spec 37): the baseline for Wilson's sign-off, and proposed scenarios.
+"""Group-pack drafts for human review (spec 37): the baseline for Wilson's sign-off, and the best, medium and worst case
+for STE under each strategic shift (spec 43).
 
 Both read a completed run and write to output/runs/RUN/. Neither changes a register: a person edits the draft and saves it
 under config/ste/.
@@ -20,10 +21,12 @@ from grit.pipeline.reader_scan import (
     business_area_context,
     condition_sources,
     materiality_order,
+    owner_roles,
 )
 from grit.pool import Pool
 
-MAX_SHIFT_SOURCES = 12
+MAX_SHIFT_SOURCES = 8  # news signals per shift; the State of the Situation adds its report passages
+CASE_TITLES = {"BEST": "Best case for STE", "MEDIUM": "Medium case for STE", "WORST": "Worst case for STE"}
 REVIEW_NOTE = "Drafted by GRIT-Scan from cited evidence. Not reviewed. A named person edits and signs it off before it is used."
 
 
@@ -84,41 +87,124 @@ def draft_baseline(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: 
     return {**counts, "files": paths}
 
 
-def propose_scenarios(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Callable[[str], None] = print) -> dict[str, Any]:
-    """The Strategist proposes scenarios for each strategic shift, from the run's signals that hit it strongly."""
+def situation_for(shift_id: str, sots_dir: Path | None = None) -> dict[str, Any] | None:
+    """The latest State of the Situation document whose topic covers the shift, or None."""
+    from grit.library.catalogue import TOPICS
+    from grit.settings import OUTPUT_DIR
+
+    root = sots_dir or OUTPUT_DIR / "sots"
+    topic = next((item for item in TOPICS if shift_id in item.themes), None)
+    if topic is None or not root.is_dir():
+        return None
+    for folder in sorted((path for path in root.iterdir() if path.is_dir()), reverse=True):
+        path = folder / f"{topic.topic_id}.json"
+        if path.is_file():
+            return json.loads(path.read_text(encoding="utf-8"))
+    return None
+
+
+def situation_view(document: Mapping[str, Any] | None) -> tuple[dict[str, Any] | None, list[str], dict[str, dict[str, Any]]]:
+    """What the Strategist reads: the drafted sections (with [P#] marks), the key uncertainty names, and the passages."""
+    if not document:
+        return None, [], {}
+    sections, uncertainties = {}, []
+    for row in document.get("sections") or []:
+        if row.get("status") != "DRAFTED" or row["key"] == "HISTORY":
+            continue
+        draft = row.get("draft") or {}
+        if row["key"] == "UNCERTAINTIES":
+            uncertainties = [str(entry["uncertainty"]) for entry in draft.get("items") or [] if entry.get("uncertainty")]
+        sections[row["title"]] = draft.get("paragraphs") or [
+            f"{entry.get('uncertainty') or entry.get('indicator')}: {entry.get('why_it_matters') or entry.get('reading') or 'no reading in the library'}" for entry in draft.get("items") or []
+        ]
+    passages = {
+        key: {"title": f"{row.get('report')}, {row.get('page_label')} {row.get('page')}", "publisher": row.get("publisher"), "aliases": list(row.get("aliases") or []),
+              "text": str(row.get("text") or ""), "report_id": row.get("report_id"), "page": row.get("page"), "page_label": row.get("page_label")}
+        for key, row in (document.get("passages") or {}).items()
+    }
+    view = {"name": document.get("name"), "status": "draft, not signed off" if document.get("status") != "SIGNED_OFF" else "signed off", "sections": sections}
+    return view, uncertainties, passages
+
+
+def _evidence(pool: Pool, text: str, back: Mapping[str, str], passages: Mapping[str, Mapping[str, Any]]) -> str:
+    """Evidence marks for the reviewer: [S#] becomes (outlet, date), [P#] becomes (report, edition, page)."""
+    from grit.agents.reader import _CASE_MARK
+    from grit.library.sots import render_text
+
+    def swap(match: re.Match[str]) -> str:
+        parts = [part.strip() for part in match.group(1).split(",")]
+        signals = [back[ref] for ref in parts if ref in back]
+        reports = [ref for ref in parts if ref in passages]
+        labels = [f"{ref['outlet']}, {ref['when']}" for ref in _refs(pool, signals)]
+        if reports:
+            labels.append(render_text(f"[{', '.join(reports)}]", passages).strip("()"))
+        return f"({'; '.join(labels)})" if labels else ""
+
+    return re.sub(r"\s+([.,;])", r"\1", _CASE_MARK.sub(swap, text)).strip()
+
+
+def propose_scenarios(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Callable[[str], None] = print, sots_dir: Path | None = None,
+                      redraft: bool = False) -> dict[str, Any]:
+    """The Strategist proposes a best, a medium and a worst case for STE under each strategic shift, from the shift's State
+    of the Situation and the run's signals that hit the shift strongly (spec 43). redraft keeps the shifts already proposed
+    in this run's draft and redoes only the others."""
     from grit.agents import reader as agents
+
+    stem = f"{run.pack.upper()}-Scenarios-BMW-Proposed_{run.run_date.isoformat()}"
+    kept_shifts: dict[str, dict[str, Any]] = {}
+    previous = run.folder / "scenarios" / f"{stem}.json"
+    if redraft and previous.is_file():
+        kept_shifts = {item["themeId"]: item for item in json.loads(previous.read_text(encoding="utf-8"))["shifts"] if item["status"] == "PROPOSED"}
 
     pack = _load_pack(run.pack)
     shifts = list((pack.themes or {}).get("themes") or [])
     area = business_area_context(pack)
+    owners = owner_roles(pack)
     rows = _kept(pool, run)
     latest = {row["condition_id"]: row for row in pool.conditions(run.run_id)}
     proposed = []
     for shift in shifts:
+        if shift["themeId"] in kept_shifts:
+            proposed.append(kept_shifts[shift["themeId"]])
+            log(f"  Strategist {shift['themeId']:14} KEPT         cases 3  (proposed earlier)")
+            continue
         chosen = [row for row in rows if any(hit.get("theme_id") == shift["themeId"] and hit.get("strong") for hit in row.get("themes") or [])]
         table, back = agents.source_table(materiality_order(chosen)[:MAX_SHIFT_SOURCES])
+        situation, uncertainties, passages = situation_view(situation_for(shift["themeId"], sots_dir))
+        sources = {**table, **passages}
         touched = [
             {"id": condition["id"], "name": condition["name"], "trend": (latest.get(condition["id"]) or {}).get("trend_label"),
              "assessment": agents.strip_marks(str((latest.get(condition["id"]) or {}).get("summary") or ""))[:600] or None}
             for condition in (pack.baseline or {}).get("conditions") or [] if shift["themeName"] in (condition.get("steThemes") or [])
         ]
-        result, call = agents.propose_scenarios(client, model, shift=shift, business_area=area, conditions=touched, sources=table)
+        result, call = agents.propose_scenarios(client, model, shift=shift, business_area=area, owners=owners, conditions=touched,
+                                                situation=situation, uncertainties=uncertainties, sources=sources)
         pool.log(actor_type="AGENT", run_id=run.run_id, **call.as_record())
-        log(f"  Strategist {shift['themeId']:14} {result['status']:12} scenarios {len(result['scenarios'])}  sources {len(table)}")
-        scenarios = [{**item, "sources": _refs(pool, [back[ref] for ref in item.get("source_ids") or [] if ref in back])} for item in result["scenarios"]]
-        for item in scenarios:
-            item.pop("source_ids", None)
-        proposed.append({"themeId": shift["themeId"], "name": shift["themeName"], "status": result["status"], "scenarios": scenarios, "violations": result.get("violations") or []})
+        log(f"  Strategist {shift['themeId']:14} {result['status']:12} cases {len(result['cases'])}  signals {len(table)}  passages {len(passages)}")
+        cases = []
+        for item in result["cases"]:
+            ids = [ref for line in item.get("evidence") or [] for ref in agents._case_marks(line)]
+            cases.append({
+                **item, "title": CASE_TITLES[item["case"]],
+                "evidence": [_evidence(pool, line, back, passages) for line in item.get("evidence") or []],
+                "signals": _refs(pool, [back[ref] for ref in ids if ref in back]),
+                "reports": [{"report_id": passages[ref]["report_id"], "title": passages[ref]["title"]} for ref in dict.fromkeys(ids) if ref in passages],
+            })
+        proposed.append({
+            "themeId": shift["themeId"], "name": shift["themeName"], "horizon": "1-5 years", "status": result["status"],
+            "situation": (situation or {}).get("name"), "builds_on": result.get("builds_on") or [], "cases": cases, "violations": result.get("violations") or [],
+        })
     document = {
         "registerId": f"{run.pack.upper()}-SCENARIOS", "pack": run.pack, "run": run.run_id, "proposedOn": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        "status": "PROPOSED_FOR_REVIEW", "note": REVIEW_NOTE,
-        "instructions": "Edit, merge or delete scenarios, then save the file as the pack's STE-Scenarios.json with status REVIEWED, reviewedBy and reviewedOn.",
+        "status": "PROPOSED_FOR_REVIEW", "note": REVIEW_NOTE, "pointOfView": "Best and worst are judged for ST Engineering.",
+        "instructions": "Edit, merge or reject cases, then save the file as the pack's STE-Scenarios.json with status REVIEWED, reviewedBy and reviewedOn.",
         "shifts": proposed,
     }
     folder = run.folder / "scenarios"
-    paths = _write(folder, f"{run.pack.upper()}-Scenarios-Proposed_{run.run_date.isoformat()}", document, _scenarios_docx)
-    counts = {"shifts": len(proposed), "scenarios": sum(len(item["scenarios"]) for item in proposed), "withheld": sum(1 for item in proposed if item["status"] == "WITHHELD")}
-    pool.log(actor_type="FUNCTION", actor="ScenarioProposal", status="SUCCEEDED", run_id=run.run_id, version="scenarios-1", detail={**counts, "files": paths})
+    paths = _write(folder, stem, document, _scenarios_docx)
+    counts = {"shifts": len(proposed), "proposed": sum(1 for item in proposed if item["status"] == "PROPOSED"),
+              "withheld": sum(1 for item in proposed if item["status"] == "WITHHELD"), "no_evidence": sum(1 for item in proposed if item["status"] == "NO_EVIDENCE")}
+    pool.log(actor_type="FUNCTION", actor="ScenarioProposal", status="SUCCEEDED", run_id=run.run_id, version="scenarios-bmw-1", detail={**counts, "files": paths})
     return {**counts, "files": paths}
 
 
@@ -169,23 +255,35 @@ def _baseline_docx(document: Mapping[str, Any], path: Path) -> None:
 
 
 def _scenarios_docx(document: Mapping[str, Any], path: Path) -> None:
-    doc = _doc("Strategic shifts: proposed scenarios", document)
+    doc = _doc("Strategic shifts: best, medium and worst case for STE", document)
+    doc.add_paragraph(f"{document['pointOfView']} Horizon: 1 to 5 years. No case is a forecast; signposts show which one is unfolding.")
     for shift in document["shifts"]:
         doc.add_heading(f"{shift['themeId']}  {shift['name']}", level=1)
-        if not shift["scenarios"]:
-            doc.add_paragraph("No scenario proposed: " + ("; ".join(shift["violations"][:2]) or "no source in this run hits the shift strongly."))
-        for item in shift["scenarios"]:
-            doc.add_heading(f"{item['name']} ({item['horizon']})", level=2)
+        if not shift["cases"]:
+            doc.add_paragraph("No cases proposed: " + ("; ".join(shift["violations"][:2]) or "no State of the Situation and no source in this run."))
+            continue
+        if shift.get("situation"):
+            doc.add_paragraph(f"Built on the State of the Situation: {shift['situation']}. Key uncertainties: {'; '.join(shift['builds_on']) or 'not named'}.")
+        for item in shift["cases"]:
+            doc.add_heading(f"{item['title']}: {item['name']}", level=2)
             doc.add_paragraph(item["narrative"])
-            doc.add_paragraph("Signposts:")
-            for text in item.get("signposts") or []:
+            doc.add_paragraph("Why it is plausible:")
+            for text in item.get("evidence") or []:
                 doc.add_paragraph(text, style="List Bullet")
+            doc.add_paragraph("Signposts:")
+            for number, text in enumerate(item.get("signposts") or [], start=1):
+                doc.add_paragraph(f"{number}. {text}")
             doc.add_paragraph("Counter-indicators:")
             for text in item.get("counter_indicators") or []:
                 doc.add_paragraph(text, style="List Bullet")
-            doc.add_paragraph(f"Risk for STE: {item['risk_for_ste']}")
-            if item.get("opportunity_for_ste"):
-                doc.add_paragraph(f"Opportunity for STE: {item['opportunity_for_ste']}")
-            _sources(doc, item["sources"])
+            doc.add_paragraph("What it could mean for STE:")
+            for text in item.get("impact") or []:
+                doc.add_paragraph(text, style="List Bullet")
+            doc.add_paragraph("Planned responses:")
+            for response in item.get("responses") or []:
+                doc.add_paragraph(f"{response['action']} Owner: {response['owner']}. Trigger: signpost {response['trigger']}.", style="List Bullet")
+            if item.get("signals"):
+                doc.add_paragraph("News sources:")
+                _sources(doc, item["signals"])
             doc.add_paragraph("Reviewer decision: keep / edit / reject    Reviewer: ____________")
     doc.save(str(path))

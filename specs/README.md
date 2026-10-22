@@ -24,5 +24,6 @@ Specs 13–33 state the rules. Spec 34 states the rebuild order. Spec 35 describ
 | [40](40_Copilot_Core.md) | The Co-Pilot: scope, hybrid search, tools, the checked answer, privacy, and the dashboard drawer. |
 | [41](41_Profiler_Fit_Report_and_Web_Search.md) | The Profiler's checked profile proposals, the fit report, the Co-Pilot's web search and budget, and Add to pool. |
 | [42](42_Daily_Lane_and_Nightly_Index.md) | The daily feed register and lane, events, daily digests, retention, and the Co-Pilot's `whats_new`. |
+| [43](43_Best_Medium_Worst_Scenarios.md) | The best, medium and worst case for STE under each strategic shift: grounding, checks, and the steps to sign-off, tracking and the radar. |
 
 `archive/` holds an early draft of spec 17 for reference. It does not govern.

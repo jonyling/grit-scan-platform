@@ -66,7 +66,7 @@ The Group pack (`ste`) briefs the CEO and the Chairman each month on the geopoli
    .venv/bin/python -m grit baseline-draft --pack ste --date DATE
    ```
 
-5. Each quarter, propose scenarios for the eight strategic shifts. A person edits them and saves them as `config/ste/STE-Scenarios.json`.
+5. Each quarter, propose the best, medium and worst case for STE under each of the eight strategic shifts (spec 43). Wilson edits them and saves them as `config/ste/STE-Scenarios.json`. Add `--redraft` to redo only the shifts whose draft was withheld.
 
    ```bash
    .venv/bin/python -m grit scenarios --pack ste --date DATE
