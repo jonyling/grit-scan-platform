@@ -27,3 +27,31 @@ def test_screen_modules_do_not_write_the_ledger() -> None:
         text = (root / name).read_text(encoding="utf-8")
         assert "ledger.append" not in text and "WorkflowRow(" not in text and "append_workflow_row" not in text
     assert "review_package" in (root / "actions.py").read_text(encoding="utf-8")
+
+
+def test_a_command_without_a_colon_keeps_the_titles_distinctive_terms() -> None:
+    from grit.core.routing import match_request
+
+    draft = parse_command("/concern Bugs in PHP, Node.js and GitLab.")
+    assert draft == {"kind": "CONCERN", "title": "Bugs in PHP, Node.js and GitLab", "keywords": ["PHP", "Node.js", "GitLab"]}
+    assert parse_command("/concern PHP flaws: PHP2Shell, CVE-2026-109618.")["keywords"] == ["PHP2Shell", "CVE-2026-109618"], "trailing punctuation is dropped"
+    headline = {"title": "CVE-2026-109618 and CVE-2026-109619 (PHP2Shell): Patch PHP Now", "text": ""}
+    request = {"request_id": "MR-1", "status": "ACTIVE", "keywords": draft["keywords"]}
+    assert match_request(headline, [request], ["dsc"]) == ("MR-1", "PHP"), "the request now matches the headlines it was meant to catch"
+
+
+def test_every_parsed_keyword_can_match_and_none_is_lost() -> None:
+    from grit.core.routing import _usable
+
+    cases = {
+        "/concern AI chips": ["AI chips"],
+        "/concern Q3 outages at Microsoft": ["Microsoft"],
+        "/concern Huawei and ZTE export curbs": ["Huawei", "ZTE"],
+        "/concern Taiwan blockade:": ["Taiwan"],
+        "/keyword platform screen doors": ["platform screen doors"],
+    }
+    for command, keywords in cases.items():
+        draft = parse_command(command)
+        assert draft["keywords"] == keywords, command
+        assert all(_usable(keyword) for keyword in draft["keywords"]), command
+    assert parse_command("/concern .") is None, "a command needs a title"

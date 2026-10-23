@@ -301,7 +301,10 @@ def handle(pool: Pool, scope: Any, message: str, *, answer: Callable[[], dict[st
     command = parse_command(message)
     if command:
         request_id = add_request(pool, command, profile_id=profile.profile_id, requested_by=profile.label)
-        return {"status": "COMMAND", "markdown": f"Proposed {request_id}: {command['title']} (keywords: {', '.join(command['keywords'])}). A reviewer activates it on the Management requests tab.",
+        long = [keyword for keyword in command["keywords"] if len(keyword.split()) > 3]
+        warning = (f" Keywords of more than three words rarely appear word for word in a headline: {', '.join(long)}." if long else "")
+        return {"status": "COMMAND", "markdown": f"Proposed {request_id}: {command['title']}. Keywords: {', '.join(command['keywords'])}. A page is kept for this request only when its "
+                f"headline or lead names one of these exactly.{warning} To set the keywords yourself, write /concern TITLE: keyword, keyword. A reviewer activates it on the Management requests tab.",
                 "citations": [], "log": {"actor": "ManagementRequest", "status": "PROPOSED", "detail": {"request_id": request_id}}}
     note = NOTE.match(message.strip())
     if note:

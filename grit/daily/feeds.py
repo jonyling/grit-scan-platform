@@ -43,10 +43,14 @@ class Feed:
     status: str = ACTIVE
     note: str = ""
     sweep: str | None = None  # the weekly Brave query for a stale or blocked source, such as "site:rusi.org"
+    kind: str = "rss"  # rss (RSS or Atom), or kev (CISA's Known Exploited Vulnerabilities catalogue, JSON)
+    currents: str | None = None  # a daily Currents query for a source with no feed: news that reports the source's notices
 
 
-GROUP, TECH = ("ste",), ("ste", "dsc")
+GROUP, TECH, CYBER = ("ste",), ("ste", "dsc"), ("ste", "dsc", "urs")
 WILSON = "wilson N1 (9 Oct 2026)"
+REGISTERS = "DS&C and URS source registers; Jony Ling, 23 Oct 2026"
+KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 
 FEEDS: tuple[Feed, ...] = (
     Feed("atlantic-council", "Atlantic Council", "https://www.atlanticcouncil.org/feed/", GROUP, WILSON),
@@ -60,7 +64,12 @@ FEEDS: tuple[Feed, ...] = (
     Feed("quantum-insider", "The Quantum Insider", "https://thequantuminsider.com/feed/", TECH, WILSON),
     Feed("fr-bis", "US BIS, Federal Register notices", FEDERAL_REGISTER + "industry-and-security-bureau", TECH, WILSON, note="bis.gov blocks automated readers."),
     Feed("fr-ofac", "US OFAC, Federal Register notices", FEDERAL_REGISTER + "foreign-assets-control-office", TECH, WILSON, note="OFAC's own feed stopped in February 2025."),
-    Feed("cisa", "US CISA", None, TECH, WILSON, BLOCKED, "cisa.gov refuses automated readers (HTTP 403), and the Federal Register files CISA notices under all of Homeland Security.", "site:cisa.gov"),
+    Feed("cisa-kev", "US CISA Known Exploited Vulnerabilities", KEV_URL, CYBER, REGISTERS, kind="kev",
+         note="CISA's advisory pages refuse automated readers; its catalogue of exploited vulnerabilities is open."),
+    Feed("csa", "Cyber Security Agency of Singapore", None, CYBER, REGISTERS, BLOCKED, "csa.gov.sg publishes no feed; its advisories are read through the news that reports them.",
+         "site:csa.gov.sg", currents="Cyber Security Agency of Singapore"),
+    Feed("cisa", "US CISA advisories", None, CYBER, WILSON, BLOCKED, "cisa.gov refuses automated readers (HTTP 403), and the Federal Register files CISA notices under all of Homeland Security.",
+         "site:cisa.gov", currents="CISA advisory"),
     Feed("trendforce", "TrendForce", "https://www.trendforce.com/news/feed/", TECH, WILSON, STALE, "The feed's newest item is from July 2026.", "site:trendforce.com"),
     Feed("csis", "CSIS", "https://www.csis.org/rss.xml", GROUP, WILSON, STALE, "The feed's newest item is from 2016.", "site:csis.org"),
     Feed("isw", "Institute for the Study of War", None, GROUP, WILSON, BLOCKED, "understandingwar.org refuses automated readers (HTTP 403).", "site:understandingwar.org"),
@@ -107,6 +116,29 @@ def _published(entry: Any) -> str | None:
     return datetime.fromtimestamp(calendar.timegm(parsed), tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def read_kev(raw: bytes, since: datetime) -> list[dict[str, Any]]:
+    """One item per vulnerability CISA added to the catalogue on or after since. Each links to its NVD record."""
+    import json
+
+    items = []
+    for row in json.loads(raw).get("vulnerabilities") or []:
+        added = str(row.get("dateAdded") or "")
+        try:
+            when = datetime.strptime(added, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        if when < since or not row.get("cveID"):
+            continue
+        ransomware = " CISA lists known use in ransomware campaigns." if str(row.get("knownRansomwareCampaignUse") or "").casefold() == "known" else ""
+        items.append({
+            "url": f"https://nvd.nist.gov/vuln/detail/{row['cveID']}",
+            "title": f"CISA adds {row['cveID']} ({row.get('vendorProject')} {row.get('product')}) to Known Exploited Vulnerabilities: {row.get('vulnerabilityName')}",
+            "text": _clean(f"{row.get('shortDescription') or ''} Required action: {row.get('requiredAction') or 'not stated'} Due {row.get('dueDate') or 'not stated'}.{ransomware}")[:TEXT_CHARS],
+            "publisher": "cisa.gov", "published_at": when.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        })
+    return sorted(items, key=lambda item: item["published_at"], reverse=True)
+
+
 def read_feed(feed: Feed, *, since: datetime, getter: Callable[[str], bytes] | None = None) -> list[dict[str, Any]]:
     """Items published on or after since, newest first. An item without a date is skipped: its age cannot be checked."""
     import feedparser
@@ -114,6 +146,8 @@ def read_feed(feed: Feed, *, since: datetime, getter: Callable[[str], bytes] | N
 
     from grit.acquisition.brave_plan import canonical_url
 
+    if feed.kind == "kev":
+        return read_kev((getter or _get)(feed.url), since)
     parsed = feedparser.parse((getter or _get)(feed.url))
     items = []
     for entry in parsed.entries:
@@ -149,8 +183,13 @@ def check_feeds(getter: Callable[[str], bytes] | None = None, now: datetime | No
         try:
             if feed.url.startswith(FEDERAL_REGISTER) and getter is None and not _federal_register_agency(feed.url[len(FEDERAL_REGISTER):]):
                 raise RuntimeError("unknown Federal Register agency: the feed would return every agency's documents")
-            entries = feedparser.parse((getter or _get)(feed.url)).entries
-            dates = sorted(filter(None, (_published(entry) for entry in entries)))
+            if feed.kind == "kev":
+                raw = (getter or _get)(feed.url)
+                rows = read_kev(raw, datetime(1970, 1, 1, tzinfo=timezone.utc))
+                entries, dates = rows, sorted(row["published_at"] for row in rows)
+            else:
+                entries = feedparser.parse((getter or _get)(feed.url)).entries
+                dates = sorted(filter(None, (_published(entry) for entry in entries)))
             newest = dates[-1] if dates else None
             fresh = newest is not None and datetime.strptime(newest, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc) >= now - timedelta(days=30)
             out.append({"feed": feed.feed_id, "status": feed.status, "items": len(entries), "newest": newest, "error": None if fresh else "No item in the last 30 days."})

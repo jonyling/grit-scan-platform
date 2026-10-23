@@ -160,7 +160,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-22, 522 tests pass. They make no network call.
+   As of 2026-10-23, 527 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 
@@ -269,7 +269,7 @@ When the records are silent or older than the question needs, the Co-Pilot searc
 
 - Select **What's new since yesterday?** for the daily digests.
 - Select a row in the standing-conditions table to focus the Co-Pilot on it.
-- Type `/concern TITLE: keyword, keyword` (or `/topic`, `/trend`, `/keyword`) to propose a management request.
+- Type `/concern TITLE: keyword, keyword` (or `/topic`, `/trend`, `/keyword`) to propose a management request. A page is kept for a request only when its headline or lead names a keyword exactly, so give short keywords: `/concern PHP flaws: PHP2Shell, CVE-2026-109618, PHP`. Without a colon, the title's distinctive terms (acronyms and names such as PHP, Node.js, GitLab) become the keywords. A reviewer can correct them with `grit requests revise --id ID --keywords "..." --reason "..."`.
 - Type `/note TEXT` to leave a note for your profile. It goes to `secrets/readers/<profile>/inbox/` for filing.
 
 To ask a question from the command line as a named reader:

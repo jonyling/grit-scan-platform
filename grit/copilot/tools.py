@@ -274,6 +274,7 @@ class Toolbox:
                     continue
                 source = self._signal(signal)
                 events.append({"id": source.source_id, "title": item["title"], "outlet": item.get("outlet"), "published": item.get("published"), "tier": item.get("tier"),
+                               "management_request": item.get("request"),
                                "outlets_carrying_it": item.get("outlets"), "standing_items": item.get("standing_items"), "red": item.get("red")})
                 budget -= 1
             moved = []
@@ -285,7 +286,8 @@ class Toolbox:
                                          condition_id=row["condition_id"], name=row["condition_name"])
                     moved.append({"id": source.source_id, "name": row["condition_name"], "trend": row.get("trend_label"), "summary": summary})
             label = self.scope.label(digest["pack"])
-            counts = (f"{label} daily digest for {digest['day']}: {digest.get('kept_new') or 0} newly kept pages; {len(digest.get('tier_1_2_events') or [])} new tier 1 or 2 events; "
+            counts = (f"{label} daily digest for {digest['day']}: {digest.get('kept_new') or 0} newly kept pages; {len(digest.get('tier_1_2_events') or [])} new tier 1 or 2, RED or management-request events "
+                      f"({digest.get('request_events') or 0} matching a management request); "
                       f"{digest.get('red_patterns') or 0} RED patterns; {len(digest.get('red_drafts') or [])} RED drafts; {len(digest.get('moved') or [])} standing items moved; "
                       f"{len(digest.get('watchpoint_updates') or [])} watchpoint updates.")
             source = self.sources.add("STATE", f"DIGEST:{digest['pack']}:{digest['day']}", text=counts, names=("GRIT-Scan", "the daily digest"),

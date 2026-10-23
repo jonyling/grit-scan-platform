@@ -119,7 +119,7 @@ def build_digest(pool: Pool, pack: str, day: date) -> dict[str, Any]:
     if run_ids:
         marks = ", ".join("?" for _ in run_ids)
         rows = pool.rows(
-            f"""SELECT a.signal_id, MIN(COALESCE(a.tier, 9)) AS tier, a.rung, MAX(a.red) AS red, a.condition_ids_json, s.title, s.publisher, s.published_at, m.event_id
+            f"""SELECT a.signal_id, MIN(COALESCE(a.tier, 9)) AS tier, a.rung, MAX(a.red) AS red, a.condition_ids_json, s.title, s.text, s.publisher, s.published_at, m.event_id
                 FROM assessments a JOIN signals s ON s.signal_id = a.signal_id LEFT JOIN event_members m ON m.signal_id = a.signal_id
                 WHERE a.run_id IN ({marks}) AND a.decision = 'KEEP'
                 AND NOT EXISTS (SELECT 1 FROM assessments b JOIN runs q ON q.run_id = b.run_id
@@ -127,17 +127,26 @@ def build_digest(pool: Pool, pack: str, day: date) -> dict[str, Any]:
                 GROUP BY a.signal_id ORDER BY tier, red DESC, s.published_at DESC""",
             (*run_ids, pack, text_day),
         )
+    from grit.core.routing import match_request
+
+    requests = pool.management_requests(active_only=True)
     events: dict[str, dict[str, Any]] = {}
     for row in rows:
         key = row.get("event_id") or row["signal_id"]
+        request = match_request({**row, "pack": pack}, requests, [pack])
         held = events.get(key)
         if held is None:
             events[key] = {"signal_id": row["signal_id"], "title": row["title"], "outlet": row["publisher"], "published": (row["published_at"] or "")[:10] or None,
-                           "tier": row["tier"], "rung": row["rung"], "red": bool(row["red"]), "standing_items": row.get("condition_ids") or [], "outlets": {row["publisher"]}}
+                           "tier": row["tier"], "rung": row["rung"], "red": bool(row["red"]), "standing_items": row.get("condition_ids") or [], "outlets": {row["publisher"]},
+                           "request": request[0] if request else None}
         else:
             held["outlets"].add(row["publisher"])
             held["red"] = held["red"] or bool(row["red"])
-    top = [dict(item, outlets=len({outlet for outlet in item["outlets"] if outlet})) for item in events.values() if (item["tier"] or 9) <= 2][:DIGEST_EVENTS]
+            held["request"] = held["request"] or (request[0] if request else None)
+    # A management request makes its matches P1 for its readers, so they are new whatever their tier.
+    chosen = [item for item in events.values() if (item["tier"] or 9) <= 2 or item["request"] or item["red"]]
+    chosen.sort(key=lambda item: (not item["red"], not item["request"], item["tier"] or 9))
+    top = [dict(item, outlets=len({outlet for outlet in item["outlets"] if outlet})) for item in chosen][:DIGEST_EVENTS]
     moved, watch = [], []
     for run in [row for row in runs if row["kind"] != "DAILY"]:
         moved += [{"run_id": run["run_id"], "condition_id": row["condition_id"], "name": row["condition_name"], "trend": row["trend_label"]}
@@ -146,6 +155,7 @@ def build_digest(pool: Pool, pack: str, day: date) -> dict[str, Any]:
     red = [dict(row) for run_id in run_ids for row in pool.rows("SELECT alert_id, signal_id, status FROM alerts WHERE run_id = ?", (run_id,))]
     return {
         "pack": pack, "day": text_day, "runs": run_ids, "kept_new": len(rows), "events_new": len(events), "tier_1_2_events": top,
+        "request_events": sum(1 for item in top if item["request"]),
         "red_patterns": sum(1 for item in events.values() if item["red"]), "red_drafts": red, "moved": moved, "watchpoint_updates": watch,
     }
 

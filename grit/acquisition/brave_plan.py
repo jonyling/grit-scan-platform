@@ -128,6 +128,8 @@ def collect_plan(
         if response.status == 429:
             run.stopped = "RATE_LIMITED"
             break
+        if response.status == 402:
+            raise BraveFetchError("Brave returned HTTP 402: the subscription refused the query (its plan limit or payment). Check the Brave dashboard.")
         if response.status != 200 or response.payload is None:
             raise BraveFetchError(f"Brave returned HTTP {response.status}")
         used = _increment_usage(usage_path, month)

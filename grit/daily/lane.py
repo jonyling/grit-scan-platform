@@ -162,6 +162,23 @@ def run_daily(
             _add(pool, run.run_id, item, lane="FEED", query_id=f"feed-{feed.feed_id}", query=feed.name, sighting_lane="FEED", target_id=None, rank=rank, result=result)
         result.feeds[feed.feed_id] = len(items)
         log(f"  {pack:7} feed {feed.feed_id:18} {len(items):>3} items")
+    have_currents = currents_getter is not None or bool(os.environ.get("CURRENTS_API_KEY", "").strip())
+    if use_currents and have_currents:
+        from grit.acquisition.currents import CurrentsFetchError, collect_currents
+
+        answered = {row["query_id"] for row in pool.rows("SELECT DISTINCT query_id FROM sightings WHERE run_id = ?", (run.run_id,))}
+        for feed in [item for item in FEEDS if item.currents and pack in item.packs and f"source-{item.feed_id}" not in answered]:
+            try:
+                candidates = collect_currents(feed.currents, fetched_at=utc_now(), max_records=20, getter=currents_getter)
+            except (CurrentsFetchError, ValueError) as exc:
+                log(f"  {pack:7} source {feed.feed_id:16} Currents failed: {exc}")
+                continue
+            for rank, candidate in enumerate(candidates, start=1):
+                if candidate.url and candidate.title:
+                    item = {"url": candidate.url, "title": candidate.title, "text": candidate.text, "publisher": candidate.publisher, "published_at": candidate.published_at}
+                    _add(pool, run.run_id, item, lane="CURRENTS", query_id=f"source-{feed.feed_id}", query=feed.currents, sighting_lane="SOURCE", target_id=None, rank=rank, result=result)
+            result.feeds[f"currents:{feed.feed_id}"] = len(candidates)
+            log(f"  {pack:7} source {feed.feed_id:16} {len(candidates):>3} news items (Currents)")
     by_id = {feed.feed_id: feed for feed in FEEDS}
     for feed_id, pages in (swept_pages or {}).items():
         feed = by_id.get(feed_id)

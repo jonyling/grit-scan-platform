@@ -284,7 +284,19 @@ def cmd_requests(args: argparse.Namespace) -> int:
         return 0
     reviewer = _profiles([args.profile])[0]
     if reviewer.review_role not in {"REVIEWER", "BA_HEAD"}:
-        raise SystemExit(f"{reviewer.label} cannot activate a request.")
+        raise SystemExit(f"{reviewer.label} cannot change a request.")
+    if args.action == "revise":
+        row = next((item for item in pool.management_requests() if item["request_id"] == args.id), None)
+        if row is None:
+            raise SystemExit(f"No request {args.id}.")
+        keywords = [item.strip() for item in args.keywords.split(",") if item.strip()] or list(row.get("keywords") or [])
+        queries = [item.strip() for item in (args.queries or "").split(";") if item.strip()] or list(row.get("queries") or [])
+        with pool.transaction() as conn:
+            conn.execute("UPDATE management_requests SET keywords_json = ?, queries_json = ? WHERE request_id = ?", (json.dumps(keywords), json.dumps(queries), args.id))
+        pool.log(actor_type="FUNCTION", actor="ManagementRequestGate", status="REVISED", subject=args.id,
+                 detail={"by": reviewer.profile_id, "reason": args.reason, "keywords": {"before": row.get("keywords"), "after": keywords}, "queries": {"before": row.get("queries"), "after": queries}})
+        print(f"{args.id} revised. Keywords: {', '.join(keywords)}. Queries: {'; '.join(queries) or 'from the keywords'}.")
+        return 0
     status = "ACTIVE" if args.action == "activate" else "CLOSED"
     with pool.transaction() as conn:
         conn.execute("UPDATE management_requests SET status = ? WHERE request_id = ?", (status, args.id))
@@ -444,8 +456,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--intent", required=True, choices=("APPROVE", "REJECT", "HOLD", "REQUEST_REWORK"))
     sub.set_defaults(handler=cmd_review)
 
-    sub = commands.add_parser("requests", help="List, add, activate, or close management requests (spec 29).")
-    sub.add_argument("action", choices=("list", "add", "activate", "close"))
+    sub = commands.add_parser("requests", help="List, add, activate, close, or revise management requests (spec 29).")
+    sub.add_argument("action", choices=("list", "add", "activate", "close", "revise"))
+    sub.add_argument("--queries", help="For revise: search queries separated by semicolons. Default: the first two keywords.")
+    sub.add_argument("--reason", help="For revise: why the keywords changed. It goes to the execution log.")
     sub.add_argument("--id")
     sub.add_argument("--title")
     sub.add_argument("--description")

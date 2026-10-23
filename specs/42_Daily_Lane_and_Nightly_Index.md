@@ -41,6 +41,18 @@ To list the register, or to read every feed now and report its newest item:
 .venv/bin/grit feeds --check
 ```
 
+### Cyber sources (added 23 October 2026)
+
+CSA and CISA are rated sources in the DS&C and URS source registers, but the feed register only carried sources Wilson named in N1, so neither was read until 23 October 2026. Both now serve the Group, DS&C and URS daily runs:
+
+| Source | How it is read |
+|---|---|
+| CISA Known Exploited Vulnerabilities | The catalogue's JSON. Each vulnerability CISA adds becomes an item linked to its NVD record, with the required action and due date. |
+| CISA advisories | Blocked (HTTP 403). One daily Currents query, "CISA advisory", for the news that reports them. |
+| Cyber Security Agency of Singapore | No feed. One daily Currents query, "Cyber Security Agency of Singapore", for the news that reports its advisories. |
+
+A register entry with a `currents` query is read this way every day, whatever its status.
+
 ### Source sweep for stale and blocked sources
 
 Each stale or blocked source has a sweep query, such as `site:understandingwar.org`. Once every 7 days, `grit daily` sends one Brave News query per source for the last week, about 15 queries a week. A source whose query failed is tried again the next day. The sweep is skipped without a Brave key, and when Brave is within 10% of its monthly limit; `--no-sweep` turns it off.
@@ -81,7 +93,7 @@ Each step is deterministic and safe to repeat.
 |---|---|
 | Full text | Adds new signals to the FTS5 index. |
 | Events | Joins each newly kept signal to an event when it tells the same story: the same title within 8 days, or cosine 0.90 or more with a member published within 8 days. Otherwise it starts an event. The lead is the best-labelled member: lowest tier, then earliest. The Co-Pilot's search collapses pages of one event into one result. |
-| Digests | For each pack and day, from the runs dated that day: the newly kept pages, the new tier 1 and 2 events, RED patterns and drafts, moved standing items, and watchpoint updates. A page kept on an earlier day is not new again. Each night rebuilds the last three days, and `grit report` rebuilds its run date's digest, so a weekly run that finishes after the night's index still reaches its day. |
+| Digests | For each pack and day, from the runs dated that day: the newly kept pages, the new tier 1 and 2 events, the events that match an active management request (whatever their tier), RED patterns and drafts, moved standing items, and watchpoint updates. A page kept on an earlier day is not new again. Each night rebuilds the last three days, and `grit report` rebuilds its run date's digest, so a weekly run that finishes after the night's index still reaches its day. |
 | Retention | After 90 days, a page that no run kept keeps its title and the first 500 characters of its text. Kept pages and all vectors stay whole. |
 
 ## 5. whats_new and the Co-Pilot

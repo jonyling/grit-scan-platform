@@ -137,7 +137,7 @@ def test_events_join_the_same_story_and_digests_report_new_tier_1_2_events(tmp_p
     news = Toolbox(pool, scope_for(_profile(), today=DAY, labels=LABELS)).call("whats_new", {})
     day = news["days"][0]
     assert day["id"] == "B1" and day["tier_1_2_events"][0]["id"] == "S1" and day["label"] == "URS Taiwan"
-    assert "1 new tier 1 or 2 events" in day["summary"], "the digest is a citable source, so its counts can be cited"
+    assert "1 new tier 1 or 2, RED or management-request events" in day["summary"], "the digest is a citable source, so its counts can be cited"
     assert "outside" in Toolbox(pool, scope_for(_profile(), today=DAY, labels=LABELS)).call("whats_new", {"pack": "urs"})["error"]
     later = build_digest(pool, "urs-tw", DAY + timedelta(days=1))
     assert later["tier_1_2_events"] == [], "a page kept on an earlier day is not new again"
@@ -214,3 +214,46 @@ def test_the_weekly_sweep_reaches_blocked_sources_once_a_week_for_every_pack_the
     result = run_daily(pool, "urs-tw", DAY, feeds=[], use_currents=False, embedder=_Embedder(), score_harm_fn=lambda *a, **k: {"status": "NOT_RUN"}, log=lambda _m: None, swept_pages=pages)
     assert result.feeds == {"sweep:isw-test": 1}
     assert pool.one("SELECT lane, query FROM sightings WHERE query_id = 'sweep-isw-test'") == {"lane": "SWEEP", "query": "site:understandingwar.org"}
+
+
+def test_cisa_kev_entries_become_dated_items_linked_to_nvd() -> None:
+    import json as _json
+
+    from grit.daily.feeds import FEEDS, read_feed
+
+    kev = next(feed for feed in FEEDS if feed.feed_id == "cisa-kev")
+    raw = _json.dumps({"vulnerabilities": [
+        {"cveID": "CVE-2026-1", "vendorProject": "PHP Group", "product": "PHP", "vulnerabilityName": "PHP Remote Code Execution", "dateAdded": DAY.isoformat(),
+         "shortDescription": "PHP contains a flaw.", "requiredAction": "Apply updates.", "dueDate": "2026-11-12", "knownRansomwareCampaignUse": "Known"},
+        {"cveID": "CVE-2020-1", "vendorProject": "Old", "product": "Thing", "vulnerabilityName": "Old flaw", "dateAdded": "2020-01-01"},
+    ]}).encode()
+    items = read_feed(kev, since=datetime.combine(DAY - timedelta(days=2), datetime.min.time(), tzinfo=timezone.utc), getter=lambda _url: raw)
+    assert [item["url"] for item in items] == ["https://nvd.nist.gov/vuln/detail/CVE-2026-1"]
+    assert items[0]["title"].startswith("CISA adds CVE-2026-1 (PHP Group PHP)") and "ransomware" in items[0]["text"] and items[0]["publisher"] == "cisa.gov"
+
+
+def test_a_source_without_a_feed_is_read_daily_through_currents(tmp_path: Path, monkeypatch) -> None:
+    from grit.daily import lane
+
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    source = Feed("csa-test", "CSA", None, ("urs-tw",), "test", "BLOCKED", "no feed", None, currents="Cyber Security Agency of Singapore")
+    monkeypatch.setattr(lane, "FEEDS", (source,))
+    asked: list[str] = []
+
+    def currents(_url: str, params: dict) -> dict:
+        asked.append(params["keywords"])
+        return CURRENTS if params["keywords"] == "Cyber Security Agency of Singapore" else {"status": "ok", "news": []}
+
+    pool = Pool(tmp_path / "grit.sqlite")
+    result = run_daily(pool, "urs-tw", DAY, feeds=[], currents_getter=currents, embedder=_Embedder(), score_harm_fn=lambda *a, **k: {"status": "NOT_RUN"}, log=lambda _m: None)
+    assert asked[0] == "Cyber Security Agency of Singapore" and result.feeds["currents:csa-test"] == 1
+    assert pool.one("SELECT lane FROM sightings WHERE query_id = 'source-csa-test'") == {"lane": "SOURCE"}
+
+
+def test_a_page_matching_an_active_request_is_new_whatever_its_tier(tmp_path: Path, monkeypatch) -> None:
+    pool, _result = _daily(tmp_path, monkeypatch)
+    assert build_digest(pool, "urs-tw", DAY)["tier_1_2_events"] == [], "kept pages are tier 3 and 4 in this fixture"
+    pool.insert("management_requests", {"request_id": "MR-T", "title": "Strait", "requested_by": "test", "request_date": DAY.isoformat(), "kind": "CONCERN",
+                                        "keywords_json": ["PLA aircraft"], "status": "ACTIVE", "origin": "CHAT"})
+    digest = build_digest(pool, "urs-tw", DAY)
+    assert [item["request"] for item in digest["tier_1_2_events"]] == ["MR-T"] and digest["request_events"] == 1
