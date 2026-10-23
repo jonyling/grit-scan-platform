@@ -160,7 +160,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-23, 527 tests pass. They make no network call.
+   As of 2026-10-23, 530 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 
@@ -205,6 +205,32 @@ Run these commands from the repository root. `DATE` is the run date, `YYYY-MM-DD
 The URS Taiwan brief follows the 2 Oct 2026 reference brief in `docs/reference/`: a bottom-line box, the order-book baseline, named projects, suppliers, customers, natural hazards, the ten standing conditions with trend, confidence, and dated sources, the QA and correction log, and the watchpoints.
 
 The Urban Solutions brief follows the same style at BA level: the bottom line, the 14 risk themes in register order (each key risk, and any escalating theme, as a row of the key-risk table: development, source, date and time, relevance to the business area, proposed response, and priority and trend; the rest as one row of the theme table), management-requested topics with the signals that matched each one, the URS Taiwan summary, STE entities by line of business, customer, supplier, and competitor watch, priority findings, the QA log, and the watchpoints. Each reader's profile chooses which of these sections they receive.
+
+## Run the scans on a schedule
+
+To keep Brave within its free credit of about 1,000 queries a month, the weekly scans run on Mondays only, at different cadences:
+
+| Pack | Due | Brave queries a month |
+|---|---|---|
+| DS&C | Every Monday | 496 to 620 |
+| URS | First and third Monday | 234 |
+| URS Taiwan | First Monday | 60 |
+| STE Group | First Monday | 48 |
+
+With the monthly source sweep, the heaviest month comes to about 978 queries. To see which packs are due on a day without sending anything, or to run them:
+
+```bash
+.venv/bin/python -m grit scheduled --dry-run --date 2026-11-02
+.venv/bin/python -m grit scheduled
+```
+
+This crontab line runs the due scans at 06:30 each Monday, after the 05:30 daily lane:
+
+```text
+30 6 * * 1 cd /home/khengaikjony.ling/grit-scan-platform && .venv/bin/grit scheduled >> output/scheduled.log 2>&1
+```
+
+To change a cadence, edit `SCHEDULE` in `grit/schedule.py`.
 
 ## Run the daily lane
 
