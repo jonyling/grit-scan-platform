@@ -43,7 +43,8 @@ def _currents(news: list[dict]):  # noqa: ANN202
 CURRENTS_NEWS = [{"title": "Currents: Yellow Line bids", "url": "https://other.example/yellow", "description": "Bids close on 30 October.", "published": "2026-10-09 08:00:00 +0000"}]
 
 
-def test_brave_answers_first_and_currents_takes_over_near_the_limit_or_on_failure(tmp_path: Path) -> None:
+def test_brave_answers_first_and_currents_takes_over_near_the_limit_or_on_failure(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("COPILOT_WEB_ORDER", "brave")
     brave, brave_calls = _brave([ARTICLE])
     currents, currents_calls = _currents(CURRENTS_NEWS)
     usage = tmp_path / "usage.json"
@@ -148,7 +149,8 @@ def test_added_urls_are_canonical_so_a_known_page_keeps_one_signal(scanned) -> N
     assert added["signal_id"] == known
 
 
-def test_concurrent_searches_all_count_against_the_monthly_guard(tmp_path: Path) -> None:
+def test_concurrent_searches_all_count_against_the_monthly_guard(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("COPILOT_WEB_ORDER", "brave")
     from grit.acquisition.brave_plan import _load_usage
 
     usage = tmp_path / "usage.json"
@@ -164,3 +166,12 @@ def test_concurrent_searches_all_count_against_the_monthly_guard(tmp_path: Path)
     from datetime import datetime, timezone
 
     assert _load_usage(usage, datetime.now(timezone.utc).strftime("%Y-%m")) == 2
+
+
+def test_the_copilot_tries_currents_first_by_default_to_save_brave_queries(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("COPILOT_WEB_ORDER", raising=False)
+    brave, brave_calls = _brave([ARTICLE])
+    currents, _ = _currents(CURRENTS_NEWS)
+    assert search_web("Yellow Line bids", brave_getter=brave, currents_getter=currents, usage_path=tmp_path / "u.json", near_limit=False)["engine"] == "CURRENTS" and not brave_calls
+    empty, _ = _currents([])
+    assert search_web("x", brave_getter=brave, currents_getter=empty, usage_path=tmp_path / "u.json", near_limit=False)["engine"] == "BRAVE", "Brave answers when Currents has nothing"

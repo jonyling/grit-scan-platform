@@ -27,8 +27,9 @@ from grit.acquisition.candidate import Candidate
 from grit.settings import ROOT
 
 ENV_MONTHLY_LIMIT = "BRAVE_MONTHLY_LIMIT"
-# The key's rate-limit headers report no monthly figure, so this guard is local. Check the plan in the Brave dashboard.
-DEFAULT_MONTHLY_LIMIT = 2000
+# The key's rate-limit headers report no monthly figure, so this guard is local. Brave's free tier is $5 of credit a month at
+# $5 per 1,000 searches, so about 1,000 queries; above that, Brave refuses with HTTP 402 unless credit is prepaid.
+DEFAULT_MONTHLY_LIMIT = 1000
 MAX_RETRIES = 2
 
 DEFAULT_USAGE_PATH = ROOT / "output" / "brave-usage.json"

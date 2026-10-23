@@ -61,7 +61,7 @@ The Co-Pilot's `web_search` tool searches live news when GRIT-Scan's records are
 
 | Rule | Behaviour |
 |---|---|
-| Engines | Brave News answers first. Currents answers first when Brave's local monthly count is at 90% of `BRAVE_MONTHLY_LIMIT` or more (default 2,000). Currents also answers when Brave fails or returns nothing. A Co-Pilot search counts against Brave's monthly guard like a scan query. |
+| Engines | Currents answers first, to keep Brave's free monthly queries for the weekly scans; Brave answers when Currents fails or returns nothing. With `COPILOT_WEB_ORDER=brave`, Brave answers first unless its local monthly count is at 90% of `BRAVE_MONTHLY_LIMIT` (default 1,000). A Brave search from the Co-Pilot counts against the monthly guard like a scan query. |
 | Budget | 17 searches a day for each reader, or `copilot.web_searches_per_day` from their profile. At most 2 for one question. Each search is a row in `copilot_web_searches`. |
 | Trigger | The model may search whenever the records are silent. Two deterministic triggers also prompt it: a search of the signals that returns nothing, and a question about the present ("since", "latest", "this week", "now") when the newest signal in scope is more than two days old. |
 | Trust | A web result is a `W` source. Its badge reads "Web, unvetted", with the outlet and date, linked. The answer carries the note "Web results are unvetted: GRIT-Scan's rules have not assessed them." A web result never overrides a brief's assessment; a difference goes under "What is uncertain". |

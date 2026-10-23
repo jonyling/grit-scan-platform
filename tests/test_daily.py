@@ -190,6 +190,7 @@ def test_the_weekly_sweep_reaches_blocked_sources_once_a_week_for_every_pack_the
     from grit.daily.lane import due_sweeps, sweep_sources
 
     monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    monkeypatch.setattr("grit.daily.lane.SWEEP_DAYS", 7)
     pool = Pool(tmp_path / "grit.sqlite")
     isw = Feed("isw-test", "ISW", None, ("urs-tw",), "test", "BLOCKED", "403", "site:understandingwar.org")
     rusi = Feed("rusi-test", "RUSI", None, ("urs-tw",), "test", "BLOCKED", "no feed", "site:rusi.org")

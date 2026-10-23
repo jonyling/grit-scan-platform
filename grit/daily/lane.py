@@ -24,7 +24,7 @@ from grit.pool import Pool, utc_now
 
 LOOKBACK_DAYS = 2  # a missed day is caught up the next day
 CURRENTS_DAILY_MAX = 20
-SWEEP_DAYS = 7  # each stale or blocked source is swept once a week
+SWEEP_DAYS = int(os.environ.get("SWEEP_DAYS", "28") or 28)  # each stale or blocked source is swept once in this many days
 SWEEP_RESULTS = 20
 
 

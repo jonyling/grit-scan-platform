@@ -1,8 +1,9 @@
 """The Co-Pilot's web search, and adding a web page to the pool (spec 41).
 
 Web search:
-- Brave News answers first. Currents answers first when Brave's local monthly count is within 10% of its limit, and
-  answers instead when Brave fails or returns nothing.
+- Currents answers first, to keep Brave's monthly queries for the weekly scans; Brave answers when Currents fails or
+  returns nothing. Set COPILOT_WEB_ORDER=brave to put Brave first; Currents then still goes first when Brave is within 10%
+  of its monthly limit.
 - Each reader has a daily budget: copilot.web_searches_per_day in their profile, else 17. A question may use at most 2.
 - Results are sources of kind WEB, marked unvetted: GRIT-Scan's rules have not assessed them.
 
@@ -77,6 +78,7 @@ def search_web(
     """One web search. Returns {engine, results, tried}. Never raises for an engine failure."""
     fetched_at = (now or datetime.now(timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ")
     near = brave_near_limit(usage_path, now=now) if near_limit is None else near_limit
+    near = near or os.environ.get("COPILOT_WEB_ORDER", "currents").strip().casefold() != "brave"
     have_brave = brave_getter is not None or bool(os.environ.get("BRAVE_SEARCH_API_KEY", "").strip())
     have_currents = currents_getter is not None or bool(os.environ.get("CURRENTS_API_KEY", "").strip())
     order = [name for name, ready in (("CURRENTS", have_currents), ("BRAVE", have_brave)) if ready] if near else \

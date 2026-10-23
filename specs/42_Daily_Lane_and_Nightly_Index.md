@@ -55,7 +55,7 @@ A register entry with a `currents` query is read this way every day, whatever it
 
 ### Source sweep for stale and blocked sources
 
-Each stale or blocked source has a sweep query, such as `site:understandingwar.org`. Once every 7 days, `grit daily` sends one Brave News query per source for the last week, about 15 queries a week. A source whose query failed is tried again the next day. The sweep is skipped without a Brave key, and when Brave is within 10% of its monthly limit; `--no-sweep` turns it off.
+Each stale or blocked source has a sweep query, such as `site:understandingwar.org`. Once every 28 days (`SWEEP_DAYS`), `grit daily` sends one Brave News query per source for the last week: about 16 queries a month, within Brave's free credit. A source whose query failed is tried again the next day. The sweep is skipped without a Brave key, and when Brave is within 10% of its monthly limit; `--no-sweep` turns it off.
 
 Only the source's own pages are kept from the results. They enter the daily runs of every pack the source serves, so the same rules decide on them and kept pages are queued for the next weekly or monthly scan. On 20 October 2026, 11 of the 15 sources returned 115 pages, and the rules kept 18. CISA, RUSI, PIF and u.ae returned nothing that week.
 
