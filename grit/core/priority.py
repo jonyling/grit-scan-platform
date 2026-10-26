@@ -60,14 +60,11 @@ class Priority:
 
 
 def outlet_groups(publishers: Iterable[str | None]) -> list[str]:
-    groups: list[str] = []
-    for publisher in publishers:
-        if not publisher:
-            continue
-        group = WIRE_OUTLET if is_wire(publisher) else publisher.casefold().removeprefix("www.")
-        if group not in groups:
-            groups.append(group)
-    return groups
+    """Independent publisher families carrying a story (grit.core.publisher_family): one per owner, press-release wires as
+    one, and aggregators only when nothing else carries it."""
+    from grit.core.publisher_family import families
+
+    return families(publishers)
 
 
 def key_gate(themes: Sequence[ThemeHit]) -> tuple[str, ...]:
@@ -94,7 +91,7 @@ def assess(*, rung: str | None, themes: Sequence[ThemeHit], cues: ScaleCues, pub
     reasons: list[str] = []
     if len(groups) >= config.outlets_needed:
         met.append(OUTLETS)
-        reasons.append(f"{len(groups)} outlets carry it: {', '.join(groups[:5])}.")
+        reasons.append(f"{len(groups)} independent publishers carry it: {', '.join(groups[:5])}.")
     if cues.action_cue and gate and _repeats_the_gate(cues, themes):
         reasons.append(f"The action cue '{cues.action[0]}' repeats the theme word, so it does not count again.")
     elif cues.action_cue:

@@ -2,7 +2,8 @@ version: 1
 # Draft class and relation list for the ontology. No code loads this file; grit/ontology/graph.py follows it by hand
 # and adds the relations part_of, buys_from and competes_in, and the class Theme. See ontology-bind.md.
 descriptions:
-  STE: ST Engineering, a business area, a unit, or a registered legal entity.
+  STE: ST Engineering as a group, or one of its registered legal entities.
+  BA: A business area of ST Engineering, such as Urban Solutions or Digital Systems & Cyber. It groups lines of business and entities.
   LOB: A line of business that an STE entity operates in, such as Mobility Rail or Smart Sustainable Utilities.
   Customer: An organization that STE sells to.
   Supplier: An organization that STE buys from.
@@ -16,6 +17,7 @@ descriptions:
   ManagementRequest: An approved monitoring request from leadership or a LOB head (spec 29). It sets priority only and never links a page to STE on its own.
 classes:
   - STE
+  - BA
   - LOB
   - Customer
   - Supplier

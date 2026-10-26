@@ -52,7 +52,8 @@ def text_only(runs: Sequence[Mapping[str, Any]]) -> str:
 
 
 def window_label(run_date: date, days: int) -> str:
-    start = run_date - timedelta(days=days)
+    """The window the keep rule uses: the run date and the days - 1 days before it."""
+    start = run_date - timedelta(days=days - 1)
     if start.year == run_date.year:
         return f"{start.day} {start.strftime('%B')} – {run_date.day} {run_date.strftime('%B %Y')}"
     return f"{start.day} {start.strftime('%B %Y')} – {run_date.day} {run_date.strftime('%B %Y')}"
@@ -143,7 +144,9 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
     pack = load_ontology_pack(CONFIG_DIR, pack_name)
     plan_config = pack.scan_plan or {}
     run_date = date.fromisoformat(run["run_date"])
-    window = int((pack.scan_plan or {}).get("windowDays") or 8)
+    from grit.pipeline.reader_scan import scan_window
+
+    window = scan_window(pack)
     previous = pool.latest_run(pack_name, before=run["run_date"], kind="READER_SCAN")
 
     from grit.pipeline.reader_scan import standing_items

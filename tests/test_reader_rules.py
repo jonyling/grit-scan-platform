@@ -138,7 +138,8 @@ def test_the_printed_window_matches_the_keep_rule() -> None:
 
     from grit.report.brief import window_label
 
-    assert window_label(date(2026, 10, 7), 8) == "29 September – 7 October 2026"
+    assert window_label(date(2026, 10, 7), 7) == "1 October – 7 October 2026", "seven days, counting the run date"
+    assert window_label(date(2026, 10, 13), 31) == "13 September – 13 October 2026"
 
 
 def test_a_demoted_generic_name_falls_down_the_link_ladder() -> None:
@@ -167,3 +168,33 @@ def test_a_topic_keyword_counts_in_a_title_case_headline_but_a_name_does_not_run
     assert [(hit.item_type, hit.item_id, hit.strong) for hit in hits] == [(CONDITION, "GC-02", True)]
     assert any(hit.item_id == "GC-02" for hit in index.hits("Taiwan Strait Blockade Fears Grow", ""))
     assert not any(hit.item_id == "S1" for hit in index.hits("Leonardo DiCaprio Film Premieres", "")), "a name still stops at a longer name"
+
+
+def test_a_run_keeps_only_its_own_seven_days() -> None:
+    from datetime import date
+    from types import SimpleNamespace
+
+    from grit.core.doc_type import DocType
+    from grit.core.reader_filter import AFTER_RUN_DATE, STALE, filter_reader
+
+    def record(signal_id: str, published: str) -> dict:
+        hit = SimpleNamespace(strong=True, item_type="CONDITION")
+        return {"signal_id": signal_id, "title": signal_id, "publisher": "a.com", "published_at": published, "doc_type": DocType("NEWS", ()),
+                "link": SimpleNamespace(rung=None, themes=()), "hits": [hit]}
+
+    records = [record("on", "2026-10-16T09:00:00Z"), record("first", "2026-10-10T09:00:00Z"), record("old", "2026-10-09T09:00:00Z"), record("later", "2026-10-17T01:00:00Z")]
+    out = filter_reader(records, run_date=date(2026, 10, 16), vectors={})
+    assert {key: (row["decision"], row["reason"]) for key, row in out.items()} == {
+        "on": ("KEEP", None), "first": ("KEEP", None), "old": ("DROP", STALE), "later": ("DROP", AFTER_RUN_DATE)}
+
+
+def test_brave_is_asked_for_the_runs_own_dates(monkeypatch) -> None:
+    from datetime import date
+    from types import SimpleNamespace
+
+    from grit.pipeline import reader_scan
+
+    monkeypatch.setattr(reader_scan, "_load_pack", lambda _pack: SimpleNamespace(scan_plan={"windowDays": 8}))
+    assert reader_scan._freshness(reader_scan.ReaderRun("r", date(2026, 10, 16), "urs")) == "2026-10-10to2026-10-16", "a weekly pack is held to seven days"
+    monkeypatch.setattr(reader_scan, "_load_pack", lambda _pack: SimpleNamespace(scan_plan={"windowDays": 31}))
+    assert reader_scan._freshness(reader_scan.ReaderRun("r", date(2026, 10, 13), "ste")) == "2026-09-13to2026-10-13"

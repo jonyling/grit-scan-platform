@@ -1,6 +1,7 @@
 """Keep rule for a reader scan. Pure: it keeps or drops with a logged reason and never scores harm.
 
-1. A page older than the window is STALE. A page with no date is kept. A market report or listicle is NOT_AN_EVENT.
+1. A page older than the window is STALE, and one published after the run date is AFTER_RUN_DATE. The window is the run
+   date and the six days before it (seven days). A page with no date is kept. A market report or listicle is NOT_AN_EVENT.
 2. A page is relevant when it links to the business-area register, names a reader-pack item strongly, bears on a standing
    condition or hazard strongly, or hits a KEY theme in its title or lead. Anything else is NOT_RELEVANT.
 3. Pages with the same headline, or at cosine 0.95 or above, are one story (NEAR_DUPLICATE). A relevant page absorbs pages from other outlets at 0.90 or
@@ -23,12 +24,13 @@ from grit.ontology.link import COUNTERPARTY, DIRECT, rung_rank
 
 KEEP, DROP = "KEEP", "DROP"
 STALE, NOT_AN_EVENT, NOT_RELEVANT, NEAR_DUPLICATE, SAME_EVENT = "STALE", "NOT_AN_EVENT", "NOT_RELEVANT", "NEAR_DUPLICATE", "SAME_EVENT"
+AFTER_RUN_DATE = "AFTER_RUN_DATE"
 _READER_RUNG = {"PROJECT": DIRECT, "SITE": DIRECT, "SUPPLIER": COUNTERPARTY, "CUSTOMER": COUNTERPARTY}
 
 
 @dataclass(frozen=True)
 class ReaderFilterConfig:
-    window_days: int = 8
+    window_days: int = 7  # the run date and the six days before it
     near_duplicate: float = 0.95
     same_event: float = 0.90
     priority: PriorityConfig = PriorityConfig()
@@ -77,7 +79,10 @@ def filter_reader(
     alive: list[str] = []
     for signal_id, record in by_id.items():
         published = _published(record.get("published_at"))
-        if published is not None and (run_date - published.date()).days > config.window_days:
+        age = (run_date - published.date()).days if published is not None else None
+        if age is not None and age < 0:
+            drop(signal_id, AFTER_RUN_DATE)  # a run dated in the past keeps only what was published by its date
+        elif age is not None and age >= config.window_days:
             drop(signal_id, STALE)
         elif record["doc_type"].doc_type in NON_EVENT_TYPES:
             drop(signal_id, NOT_AN_EVENT)

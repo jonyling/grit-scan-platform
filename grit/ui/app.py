@@ -228,22 +228,23 @@ def copilot_drawer(db, profile, run_id, brief, *, focus=None):  # noqa: ANN001, 
     st.subheader("Co-Pilot")
     labels = pack_labels()
     packs = reach(profile, labels)
-    window = st.segmented_control("Window", list(WINDOWS), format_func=WINDOWS.get, default="90d", key="copilot_window") or "90d"
-    narrowed = st.selectbox("Packs", ["all", *packs], format_func=lambda pack: "Every pack you can search" if pack == "all" else labels.get(pack, {}).get("label", pack), key="copilot_pack")
+    window = st.segmented_control("Window", list(WINDOWS), format_func=WINDOWS.get, default="90d", key=f"copilot_window-{profile.profile_id}") or "90d"
+    narrowed = st.selectbox("Packs", ["all", *packs], format_func=lambda pack: "Every pack you can search" if pack == "all" else labels.get(pack, {}).get("label", pack), key=f"copilot_pack-{profile.profile_id}")
     scope = scope_for(profile, window=window, run_id=run_id, pack=None if narrowed == "all" else narrowed, focus=focus, labels=labels)
-    use_web = st.toggle("Search the web when the records are silent", value=True, key="copilot_web")
+    use_web = st.toggle("Search the web when the records are silent", value=True, key=f"copilot_web-{profile.profile_id}")
     web = WebSearch(db, profile, today=scope.today) if use_web else None
     st.caption(f"Searches {', '.join(scope.label(pack) for pack in scope.packs)}." + (f" Web searches left today: {web.remaining()}." if web else "")
                + " Your conversation is private to you. Type /note to leave a note for your profile, or /concern TITLE: keywords to propose a management request.")
     pending = None
-    if st.button("What's new since yesterday?", key="starter-whats-new"):
+    if st.button("What's new since yesterday?", key=f"starter-whats-new-{profile.profile_id}"):
         pending = "What's new since yesterday?"
     if focus:
         name = next((row["name"] for row in brief["conditions"] if row["condition_id"] == focus), focus)
         st.caption(f"Focus: {name}")
         for column, question in zip(st.columns(3), (f"Why did {name} move?", f"What changed on {name} since last month?", f"What should we consider on {name}?")):
-            if column.button(question.split(" on ")[0].split(" did ")[0] if len(question) > 40 else question, key=f"starter-{question}", help=question):
+            if column.button(question.split(" on ")[0].split(" did ")[0] if len(question) > 40 else question, key=f"starter-{profile.profile_id}-{question}", help=question):
                 pending = question
+    st.caption(f"Conversation of {profile.label}. Each reader sees only their own.")
     box = st.container(height=560)
     with box:
         for message in db.rows("SELECT message_id, role, content, citations_json FROM chat_messages WHERE profile_id = ? ORDER BY message_id DESC LIMIT 20", (profile.profile_id,))[::-1]:
@@ -259,7 +260,7 @@ def copilot_drawer(db, profile, run_id, brief, *, focus=None):  # noqa: ANN001, 
                     elif st.button(f"Add to pool: {name}", key=f"add-{message['message_id']}-{item['id']}", help="The next scan of each pack assesses it like any other page."):
                         add_to_pool(db, profile, item, remaining)
                         st.rerun()
-    question = st.chat_input("Ask the Co-Pilot", key="copilot_input") or pending
+    question = st.chat_input(f"Ask the Co-Pilot as {profile.name or profile.role}", key=f"copilot_input-{profile.profile_id}") or pending
     if not question:
         return
     with box:

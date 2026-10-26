@@ -15,7 +15,15 @@ _FIGURE = ScaleCues((Figure("$5 million", 5e6, "USD", True, None),), True, (), (
 
 
 def test_wire_services_collapse_to_one_outlet_and_duplicates_and_blanks_are_ignored() -> None:
-    assert outlet_groups(["www.reuters.com", "reuters.com", "globenewswire.com", "prnewswire.com", None, ""]) == ["reuters.com", WIRE_OUTLET]
+    assert outlet_groups(["www.reuters.com", "reuters.com", "globenewswire.com", "prnewswire.com", None, ""]) == ["Thomson Reuters", WIRE_OUTLET]
+
+
+def test_corroboration_counts_publisher_families_not_domains() -> None:
+    assert outlet_groups(["fortune.com", "sfgate.com", "timesunion.com"]) == ["fortune.com", "Hearst"], "two Hearst titles are one corroboration"
+    assert outlet_groups(["edition.cnn.com", "cnn.com", "www.straitstimes.com", "businesstimes.com.sg"]) == ["cnn.com", "SPH Media"]
+    assert outlet_groups(["news.yahoo.co.jp", "msn.com", "theverge.com"]) == ["Vox Media"], "aggregators add nothing beside an original"
+    assert outlet_groups(["news.yahoo.co.jp"]) == ["aggregator"], "an aggregator alone still counts once"
+    assert outlet_groups(["https://www.defensenews.com/x", "c4isrnet.com"]) == ["Sightline Media"]
 
 
 _ONE = PriorityConfig(min_cues=1)

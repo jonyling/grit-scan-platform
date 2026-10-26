@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, Iterable, Mapping, Sequence
@@ -282,10 +282,21 @@ def acquire(
     return found
 
 
+WEEKLY_WINDOW = 7
+
+
+def scan_window(pack: OntologyPack) -> int:
+    """Days a run covers, counting the run date: 7 for a weekly pack, the scan plan's windowDays for a monthly one."""
+    days = int((pack.scan_plan or {}).get("windowDays") or WEEKLY_WINDOW)
+    return days if days > 10 else WEEKLY_WINDOW
+
+
 def _freshness(run: ReaderRun) -> str:
-    """Brave's freshness window: a week, or a month for a pack whose scan window is longer than ten days."""
-    plan = (_load_pack(run.pack).scan_plan or {}) if run.pack else {}
-    return "pm" if int(plan.get("windowDays") or 8) > 10 else "pw"
+    """Brave's date range: exactly the run's window, ending on the run date, so a run dated in the past gets that week's
+    news and not today's."""
+    days = scan_window(_load_pack(run.pack)) if run.pack else WEEKLY_WINDOW
+    start = run.run_date - timedelta(days=days - 1)
+    return f"{start.isoformat()}to{run.run_date.isoformat()}"
 
 
 def _currents_fallback(
@@ -415,7 +426,7 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
     patterns = red_patterns if red_patterns is not None else json.loads((CONFIG_DIR / "red-patterns.json").read_text(encoding="utf-8"))
     conditions = {condition["id"]: condition for condition in reader.baseline.get("conditions") or []}
     registers = [reader.source_register, business.source_register]
-    window = int((reader.scan_plan or {}).get("windowDays") or 8)
+    window = scan_window(reader)
 
     signals = pool.signals_for_run(run.run_id)
     records: list[dict[str, Any]] = []

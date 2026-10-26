@@ -160,7 +160,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-23, 530 tests pass. They make no network call.
+   As of 2026-10-26, 534 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 
@@ -291,7 +291,7 @@ Pick a reader and a run in the sidebar. The tabs show:
 
 The Co-Pilot sits in the right-hand drawer (spec 40). It answers from the briefs' state, every run's signals, the report library, and the registers in the reader's reach. Wilson, the CEO, and the Chairman search every pack; other readers search their own. Each answer gives the answer, the evidence, what it means for STE, and what is uncertain, with every claim cited. An answer that fails its checks is withheld. Each reader's conversation is private to them.
 
-When the records are silent or older than the question needs, the Co-Pilot searches the web: Brave first, Currents first when Brave nears its monthly limit, 17 searches a day for each reader (spec 41). Web results are marked unvetted. **Add to pool** under a web citation queues the page for the next scan, whose rules decide whether it is kept.
+When the records are silent or older than the question needs, the Co-Pilot searches the web: Currents first, Brave when Currents finds nothing, 17 searches a day for each reader (spec 41). Web results are marked unvetted. **Add to pool** under a web citation queues the page for the next scan, whose rules decide whether it is kept.
 
 - Select **What's new since yesterday?** for the daily digests.
 - Select a row in the standing-conditions table to focus the Co-Pilot on it.
@@ -365,7 +365,7 @@ To add a reader pack for another business area or entity, follow [Add a business
 - A project alias without its city, such as "Purple Line", needs the city in the text and matches in its own case.
 - A watchpoint update needs a subject keyword and an issue keyword.
 
-**Keep rule** (`grit/core/reader_filter.py`). A page older than eight days is stale, and a market report or listicle is not an event. A page must link to the register, name a reader-pack item, bear on a condition or hazard, or hit a KEY theme. Pages with the same headline, or at cosine 0.95, are one story. A relevant page absorbs other outlets' pages at cosine 0.90, which then count as corroboration, with each wire service counted once.
+**Keep rule** (`grit/core/reader_filter.py`). A weekly run covers its run date and the six days before it; a monthly Group run covers its scan plan's window. A page older than the window is stale, a page published after the run date is dropped (so a run dated in the past keeps only that week's news, and Brave is asked for those dates only), and a market report or listicle is not an event. A page must link to the register, name a reader-pack item, bear on a condition or hazard, or hit a KEY theme. Pages with the same headline, or at cosine 0.95, are one story. A relevant page absorbs other outlets' pages at cosine 0.90, which then count as corroboration. Corroboration counts publisher families, not domains (`grit/core/publisher_family.py`): two Hearst titles count once, press-release wires count once, and an aggregator such as Yahoo or MSN counts only when nothing else carries the story.
 
 **Briefing priority** (`grit/core/priority.py`). A big event hits a KEY theme and meets two of three cues: three or more outlets, a regulator or government action, a war, or a pandemic, and a stated figure of at least one million in a major currency. Tier 1 is big and direct, tier 2 is big or direct and significant, tier 3 is linked, and tier 4 is not linked.
 

@@ -55,3 +55,12 @@ def test_every_parsed_keyword_can_match_and_none_is_lost() -> None:
         assert draft["keywords"] == keywords, command
         assert all(_usable(keyword) for keyword in draft["keywords"]), command
     assert parse_command("/concern .") is None, "a command needs a title"
+
+
+def test_every_copilot_widget_is_keyed_by_the_reader() -> None:
+    import re
+
+    text = (Path(__file__).parents[1] / "grit" / "ui" / "app.py").read_text(encoding="utf-8")
+    drawer = text[text.index("def copilot_drawer"):text.index("def _model_parts")]
+    keys = re.findall(r'key=(f?"[^"]*")', drawer)
+    assert keys and all("profile.profile_id" in key or "message_id" in key for key in keys), keys

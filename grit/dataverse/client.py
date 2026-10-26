@@ -67,6 +67,7 @@ def access_token(env: dict[str, str]) -> str:
         env["DATAVERSE_CLIENT_ID"],
         authority=authority,
         client_credential=env["DATAVERSE_CLIENT_SECRET"],
+        timeout=60,
     )
     result = app.acquire_token_for_client(scopes=[scope])
     token = result.get("access_token")
