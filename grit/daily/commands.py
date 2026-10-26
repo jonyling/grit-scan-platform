@@ -38,6 +38,7 @@ def daily_main(argv: list[str] | None = None) -> int:
         print(f"== {pack} daily, {args.date}")
         result = run_daily(pool, pack, args.date, use_currents=not args.no_currents, lookback_days=args.lookback_days, profiles=profiles, swept_pages=swept_pages)
         print(f"  {result.signals} pages ({result.new_signals} new), {result.kept} kept, {result.queued} queued for the next scan, {result.red_drafts} RED drafts.")
+        print(f"  Signals CSV: {result.csv}")
     index = nightly(pool, args.date)
     print(f"Index: {index['fts_added']} pages indexed; events {index['events']}; digests {index['digests']}; {index['retained']} old dropped pages trimmed.")
     return 0

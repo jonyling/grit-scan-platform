@@ -160,7 +160,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-26, 534 tests pass. They make no network call.
+   As of 2026-10-26, 541 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 
@@ -235,6 +235,10 @@ To change a cadence, edit `SCHEDULE` in `grit/schedule.py`.
 ## Run the daily lane
 
 Once a day, GRIT-Scan reads the primary-source feeds that readers named and sends one Currents query for each Group standing condition and active management request. The scan's own rules assess every page, and kept pages are queued for the next weekly or monthly scan. Once a week it also sweeps the named sources that block feed readers (ISW, RUSI, the World Bank, the IMF and others), with one Brave `site:` query each, about 15 a week. A nightly index then groups pages into events and writes a digest per pack for the Co-Pilot's "what's new" (spec 42).
+
+URS Taiwan has its own daily run, fed by official sources: USGS earthquakes, Taiwan NCDR disaster alerts (which carry the Central Weather Administration's warnings), Taiwan MND's daily PLA activity reports and NASA FIRMS fire detections. FIRMS needs a free key: request one at firms.modaps.eosdis.nasa.gov/api/map_key and set `FIRMS_MAP_KEY` in `.env`.
+
+Each daily run writes its kept signals to `output/runs/DATE-PACK-daily/DATE-PACK-daily-signals.csv`, which opens in Excel.
 
 1. List the feed register: each feed's packs, status (active, stale, or blocked), the reader's note that names it, and the sweep query for a stale or blocked source.
 
@@ -365,7 +369,7 @@ To add a reader pack for another business area or entity, follow [Add a business
 - A project alias without its city, such as "Purple Line", needs the city in the text and matches in its own case.
 - A watchpoint update needs a subject keyword and an issue keyword.
 
-**Keep rule** (`grit/core/reader_filter.py`). A weekly run covers its run date and the six days before it; a monthly Group run covers its scan plan's window. A page older than the window is stale, a page published after the run date is dropped (so a run dated in the past keeps only that week's news, and Brave is asked for those dates only), and a market report or listicle is not an event. A page must link to the register, name a reader-pack item, bear on a condition or hazard, or hit a KEY theme. Pages with the same headline, or at cosine 0.95, are one story. A relevant page absorbs other outlets' pages at cosine 0.90, which then count as corroboration. Corroboration counts publisher families, not domains (`grit/core/publisher_family.py`): two Hearst titles count once, press-release wires count once, and an aggregator such as Yahoo or MSN counts only when nothing else carries the story.
+**Keep rule** (`grit/core/reader_filter.py`). A weekly run covers its run date and the six days before it; a monthly Group run covers its scan plan's window. A page older than the window is stale, a page published after the run date is dropped (so a run dated in the past keeps only that week's news, and Brave is asked for those dates only), and a market report or listicle is not an event. A page must link to the register, name a reader-pack item, bear on a condition or hazard, or hit a KEY theme. Pages with the same headline, or at cosine 0.95, are one story. A relevant page absorbs other outlets' pages at cosine 0.90, which then count as corroboration. Reports of an official daily series, such as MND's, are never merged across days. Corroboration counts publisher families, not domains (`grit/core/publisher_family.py`): two Hearst titles count once, press-release wires count once, and an aggregator such as Yahoo or MSN counts only when nothing else carries the story.
 
 **Briefing priority** (`grit/core/priority.py`). A big event hits a KEY theme and meets two of three cues: three or more outlets, a regulator or government action, a war, or a pandemic, and a stated figure of at least one million in a major currency. Tier 1 is big and direct, tier 2 is big or direct and significant, tier 3 is linked, and tier 4 is not linked.
 

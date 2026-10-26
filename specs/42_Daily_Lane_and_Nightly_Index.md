@@ -53,6 +53,22 @@ CSA and CISA are rated sources in the DS&C and URS source registers, but the fee
 
 A register entry with a `currents` query is read this way every day, whatever its status.
 
+### URS Taiwan official hazard and cross-strait sources (added 26 October 2026)
+
+Improvement point 14 gives URS Taiwan its own daily run, fed by official sources. Each source is read in its own format, and each report becomes one item:
+
+| Source | How it is read |
+|---|---|
+| USGS earthquakes | The past-week GeoJSON feed. One item per earthquake of magnitude 5.0 or more (`USGS_MIN_MAG`) in the Taiwan region (longitude 118 to 123.5, latitude 21 to 26.5), with depth, PAGER alert level and tsunami flag. |
+| Taiwan NCDR official alerts | NCDR's Atom feed, which is public domain and carries the Central Weather Administration's warnings. One item per typhoon, tsunami, heavy-rain, flooding, debris-flow, work-and-school-closure, power, water or air-raid alert. The title gives the category in English; the alert text stays in Chinese as issued. Earthquakes come from USGS, which gives magnitudes. |
+| Taiwan Ministry of National Defense | The English PLA Activities list. One item per daily report, titled with its counts, for example "Taiwan MND: 3 PLA aircraft sorties, 6 PLAN ships, 9 official ships around Taiwan; 1 crossed the Strait median line". A report is dated 06:00 Taiwan time on its issue date. |
+| NASA FIRMS | The VIIRS area API for Taiwan. One item per day with 5 or more high-confidence fire detections (`FIRMS_MIN_DETECTIONS`), giving the strongest detection's location. It needs a free `FIRMS_MAP_KEY`; until one is set, each daily run reports the feed as failed. Error messages never show the key. |
+| Central Weather Administration | Blocked. Its RSS terms forbid parsing it into derived products, and its open-data API needs a key. Its warnings arrive through NCDR. |
+
+An official daily series repeats its wording every day, so the near-duplicate rule would merge a week of MND reports into one. Reports from the same series publisher (`SERIES_PUBLISHERS` in `grit/core/reader_filter.py`: MND, USGS, NCDR, NASA and CISA) dated on different days are therefore never merged. Other outlets' pages still merge into them as corroboration.
+
+On 26 October 2026, a dry run read three MND reports, and the URS Taiwan rules kept all three under the Taiwan Strait pressure condition. USGS had no earthquake of magnitude 5.0 or more that week, and NCDR's alerts were wind, road and reservoir notices, which GRIT-Scan does not read.
+
 ### Source sweep for stale and blocked sources
 
 Each stale or blocked source has a sweep query, such as `site:understandingwar.org`. Once every 28 days (`SWEEP_DAYS`), `grit daily` sends one Brave News query per source for the last week: about 16 queries a month, within Brave's free credit. A source whose query failed is tried again the next day. The sweep is skipped without a Brave key, and when Brave is within 10% of its monthly limit; `--no-sweep` turns it off.
@@ -76,6 +92,7 @@ For each pack an active feed serves, and the Group pack:
 5. New pages are embedded. The run's deterministic assessment then applies the link ladder, keep rule, tier, conditions, harm scorer and RED rule.
 6. Every kept page is queued for the pack's next weekly or monthly scan (`pool_additions`, added by `daily-lane`). That scan's rules assess it again before it can reach a brief.
 7. RED drafts are written for a named person to send, as the weekly report does. A page gets one draft per pack, whichever run reads it first. Drafts from daily runs show in the dashboard's RED tab beside the selected run's own.
+8. The run's kept signals are written to `output/runs/DATE-PACK-daily/DATE-PACK-daily-signals.csv` (improvement point 9), in the brief's order: tier, RED first, newest first. The columns are published time, tier, RED, risk level, trend, harm, link to STE, independent publishers, title, publisher, the feed or query that found it, why it was kept, and URL. The file is UTF-8 with a byte-order mark, so Excel shows Chinese titles correctly.
 
 Weekly and monthly code ignores `DAILY` runs. This covers the previous-run comparison, the dashboard's run list, the Co-Pilot's `get_state`, and the fit report. The Co-Pilot's signal search includes daily pages.
 

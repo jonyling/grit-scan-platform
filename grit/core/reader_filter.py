@@ -5,7 +5,9 @@
 2. A page is relevant when it links to the business-area register, names a reader-pack item strongly, bears on a standing
    condition or hazard strongly, or hits a KEY theme in its title or lead. Anything else is NOT_RELEVANT.
 3. Pages with the same headline, or at cosine 0.95 or above, are one story (NEAR_DUPLICATE). A relevant page absorbs pages from other outlets at 0.90 or
-   above (SAME_EVENT), so one event is one signal. Merged outlets count as corroboration, with every wire service counted once.
+   above (SAME_EVENT), so one event is one signal. Merged outlets count as corroboration, by publisher family. Two reports of
+   an official daily series (SERIES_PUBLISHERS, such as Taiwan MND's PLA activity reports) dated on different days are
+   separate observations and are never merged, however alike their text.
 4. Each survivor gets a briefing priority from grit.core.priority. A reader-pack project is a DIRECT link and a named supplier
    or customer is a COUNTERPARTY link, as the link ladder defines them.
 No cap applies here. The brief caps what it prints.
@@ -25,6 +27,8 @@ from grit.ontology.link import COUNTERPARTY, DIRECT, rung_rank
 KEEP, DROP = "KEEP", "DROP"
 STALE, NOT_AN_EVENT, NOT_RELEVANT, NEAR_DUPLICATE, SAME_EVENT = "STALE", "NOT_AN_EVENT", "NOT_RELEVANT", "NEAR_DUPLICATE", "SAME_EVENT"
 AFTER_RUN_DATE = "AFTER_RUN_DATE"
+# Official sources that publish one report per day or per event in near-identical words (grit.daily.feeds).
+SERIES_PUBLISHERS = frozenset({"mnd.gov.tw", "usgs.gov", "alerts.ncdr.nat.gov.tw", "nasa.gov", "cisa.gov"})
 _READER_RUNG = {"PROJECT": DIRECT, "SITE": DIRECT, "SUPPLIER": COUNTERPARTY, "CUSTOMER": COUNTERPARTY}
 
 
@@ -33,6 +37,7 @@ class ReaderFilterConfig:
     window_days: int = 7  # the run date and the six days before it
     near_duplicate: float = 0.95
     same_event: float = 0.90
+    series_publishers: frozenset[str] = SERIES_PUBLISHERS
     priority: PriorityConfig = PriorityConfig()
 
 
@@ -102,12 +107,22 @@ def filter_reader(
             signal_id,
         )
 
+    def separate_reports(first: str, second: str) -> bool:
+        one, two = by_id[first], by_id[second]
+        publisher = str(one.get("publisher") or "").casefold()
+        if publisher not in config.series_publishers or publisher != str(two.get("publisher") or "").casefold():
+            return False
+        days = {(_published(record.get("published_at")) or datetime.min.replace(tzinfo=timezone.utc)).date() for record in (one, two)}
+        return len(days) == 2
+
     kept: list[str] = []
     for signal_id in sorted(alive, key=strength):
         vector = vectors.get(signal_id)
         match = None
         title = str(by_id[signal_id].get("title") or "").strip().casefold()
         for other in kept:
+            if separate_reports(signal_id, other):
+                continue
             other_vector = vectors.get(other)
             if title and title == str(by_id[other].get("title") or "").strip().casefold():
                 match = (other, NEAR_DUPLICATE)

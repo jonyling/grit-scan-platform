@@ -9,11 +9,14 @@ For each pack and day:
    harm and RED.
 4. Queue every kept page for the pack's next weekly or monthly scan, whose rules assess it again for the brief.
 5. Draft RED alerts for a named person to send, as the weekly report does.
+6. Write the run's kept signals to output/runs/DATE-PACK-daily/DATE-PACK-daily-signals.csv, most important first.
 """
 
 from __future__ import annotations
 
+import csv
 import hashlib
+import json
 import os
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
@@ -119,6 +122,7 @@ class DailyResult:
     kept: int = 0
     queued: int = 0
     red_drafts: int = 0
+    csv: str | None = None
 
     def as_record(self) -> dict[str, Any]:
         return dict(self.__dict__)
@@ -217,12 +221,43 @@ def run_daily(
     pool.finish_run(run.run_id)
     result.kept = int(assessed.get("kept") or 0)
     result.queued = queue_kept(pool, run.run_id, pack)
+    result.csv = str(write_signals_csv(pool, run.run_id, run.folder))
     if profiles is not None:
         from grit.report.red import draft_red_alerts
 
         result.red_drafts = len(draft_red_alerts(pool, run.run_id, pack, list(profiles), run.folder / "alerts"))
     pool.log(actor_type="FUNCTION", actor="DailyLane", status="SUCCEEDED", run_id=run.run_id, detail=result.as_record())
     return result
+
+
+CSV_COLUMNS = ("Published (UTC)", "Tier", "RED", "Risk level", "Trend", "Harm", "Link to STE", "Independent publishers", "Title", "Publisher",
+               "Found by", "Why kept", "URL")
+
+
+def write_signals_csv(pool: Pool, run_id: str, folder: Any) -> Any:
+    """The run's kept signals, one row each, in the brief's order: tier, RED first, newest first. UTF-8 with a byte-order
+    mark, so Excel shows Chinese titles correctly."""
+    from pathlib import Path
+
+    path = Path(folder) / f"{run_id}-signals.csv"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    found = {row["signal_id"]: row["query"] for row in pool.rows(
+        "SELECT signal_id, MIN(query) AS query FROM sightings WHERE run_id = ? GROUP BY signal_id", (run_id,))}
+    with path.open("w", encoding="utf-8-sig", newline="") as handle:
+        out = csv.writer(handle)
+        out.writerow(CSV_COLUMNS)
+        for row in pool.assessments(run_id, kept_only=True):
+            priority = row.get("priority_json")
+            priority = json.loads(priority) if isinstance(priority, str) and priority else priority or {}
+            reasons = priority.get("reasons") if isinstance(priority, dict) else None
+            why = "; ".join(str(reason) for reason in reasons) if isinstance(reasons, list) and reasons else row.get("relevance_basis") or ""
+            out.writerow([
+                (row.get("published_at") or "")[:16].replace("T", " "), row.get("tier") or "", "RED" if row.get("red") else "",
+                row.get("risk_level") or "", row.get("trend") or "", row.get("harm_verdict") or "", row.get("rung") or "",
+                "" if row.get("corroboration") is None else row["corroboration"], row.get("title") or "", row.get("publisher") or "",
+                found.get(row["signal_id"], ""), why, row.get("url") or "",
+            ])
+    return path
 
 
 def queue_kept(pool: Pool, run_id: str, pack: str) -> int:

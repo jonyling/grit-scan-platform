@@ -258,3 +258,109 @@ def test_a_page_matching_an_active_request_is_new_whatever_its_tier(tmp_path: Pa
                                         "keywords_json": ["PLA aircraft"], "status": "ACTIVE", "origin": "CHAT"})
     digest = build_digest(pool, "urs-tw", DAY)
     assert [item["request"] for item in digest["tier_1_2_events"]] == ["MR-T"] and digest["request_events"] == 1
+
+
+def test_the_daily_run_writes_its_kept_signals_to_a_csv(tmp_path: Path, monkeypatch) -> None:
+    import csv
+
+    from grit.daily.lane import CSV_COLUMNS
+
+    pool, result = _daily(tmp_path, monkeypatch)
+    path = Path(result.csv)
+    assert path == tmp_path / "runs" / daily_run_id(DAY, "urs-tw") / f"{daily_run_id(DAY, 'urs-tw')}-signals.csv"
+    assert path.read_bytes().startswith(b"\xef\xbb\xbf"), "Excel needs the byte-order mark for Chinese titles"
+    rows = list(csv.DictReader(path.open(encoding="utf-8-sig")))
+    assert tuple(rows[0]) == CSV_COLUMNS and len(rows) == result.kept == 2
+    assert {row["Title"] for row in rows} == {"Taiwan reports 30 PLA aircraft near Taiwan Strait", "Taichung MRT Blue Line BC21 tender stays open until 12 October"}
+    assert all(row["URL"].startswith("https://") and row["Found by"] for row in rows)
+
+
+def _since(days: int) -> datetime:
+    return datetime.combine(DAY - timedelta(days=days), datetime.min.time(), tzinfo=timezone.utc)
+
+
+def test_usgs_keeps_taiwan_region_earthquakes_of_magnitude_5_or_more() -> None:
+    import json
+
+    from grit.daily.feeds import read_usgs
+
+    def quake(mag: float, lon: float, lat: float, days_ago: int, place: str) -> dict:
+        when = datetime.combine(DAY, datetime.min.time(), tzinfo=timezone.utc) - timedelta(days=days_ago) + timedelta(hours=5)
+        return {"properties": {"mag": mag, "place": place, "time": int(when.timestamp() * 1000), "url": f"https://earthquake.usgs.gov/earthquakes/eventpage/{place[:3]}{mag}", "alert": "yellow" if mag > 6 else None, "tsunami": 0},
+                "geometry": {"coordinates": [lon, lat, 15.0]}}
+
+    raw = json.dumps({"features": [quake(6.4, 121.7, 23.9, 0, "20 km E of Hualien City, Taiwan"), quake(4.8, 121.7, 24.0, 0, "Yilan small"),
+                                   quake(6.0, 140.0, 35.0, 0, "Tokyo, Japan"), quake(5.5, 121.0, 22.5, 9, "Taitung old")]}).encode()
+    items = read_usgs(raw, _since(2))
+    assert [item["title"] for item in items] == ["USGS: magnitude 6.4 earthquake, 20 km E of Hualien City, Taiwan"]
+    assert "PAGER alert level yellow" in items[0]["text"] and "15 km deep" in items[0]["text"] and items[0]["publisher"] == "usgs.gov"
+
+
+def test_ncdr_keeps_hazard_alerts_with_english_categories_and_skips_routine_notices() -> None:
+    from grit.daily.feeds import read_ncdr
+
+    when = (datetime.combine(DAY, datetime.min.time(), tzinfo=timezone.utc) + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def entry(title: str, term: str, author: str, ident: str) -> str:
+        return (f"<entry><id>{ident}</id><title>{title}</title><updated>{when}</updated><author><name>{author}</name></author>"
+                f'<link rel="alternate" href="https://alerts.ncdr.nat.gov.tw/Capstorage/{ident}.cap"/><summary type="html">{title}，花蓮縣</summary><category term="{term}"/></entry>')
+
+    raw = ('<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom"><title>NCDR</title>'
+           + entry("颱風警報", "颱風", "中央氣象署", "typhoon1") + entry("道路封閉", "道路封閉", "交通部公路局", "road1") + entry("停電", "停電", "台灣電力公司", "power1") + "</feed>").encode()
+    items = read_ncdr(raw, _since(2))
+    assert {item["title"] for item in items} == {"Taiwan official alert: Typhoon, issued by 中央氣象署", "Taiwan official alert: Power outage, issued by 台灣電力公司"}
+    assert all(item["url"].endswith(".cap") and item["publisher"] == "alerts.ncdr.nat.gov.tw" for item in items)
+
+
+MND_LIST = """<a href="/en/News/PLAAct/88069" class="news_list">
+    <div class="date headline-h5 h5">{today}</div><h2>PLA activities in the waters and airspace around Taiwan</h2></a>
+<a href="/en/News/PLAAct/88001" class="news_list">
+    <div class="date headline-h5 h5">{old}</div><h2>PLA activities in the waters and airspace around Taiwan</h2></a>"""
+MND_PAGE = """<nav>Menu</nav><span aria-current="page">PLA activities</span><script>var x = 1;</script>
+<p>1.Date: 6 a.m. Oct. 25 (Sun.) to 6 a.m. Oct. 26 (Mon.) (UTC+8)</p><p>2.PLA activities: 3 sorties of PLA aircraft, 1 PLAN ship and 9 official ships
+operating around Taiwan were detected as of 6 a.m. (UTC+8) today. 1 out of 3 sorties crossed the median line of the Taiwan Strait.</p><p>Keywords: Taiwan Strait</p>"""
+
+
+def test_mnd_reports_become_one_item_a_day_with_the_counts_in_the_title() -> None:
+    from grit.daily.feeds import FEEDS as REGISTER, read_feed
+
+    mnd = next(feed for feed in REGISTER if feed.kind == "mnd")
+    pages = {mnd.url: MND_LIST.format(today=DAY.strftime("%Y.%m.%d"), old=(DAY - timedelta(days=9)).strftime("%Y.%m.%d")).encode(),
+             "https://www.mnd.gov.tw/en/News/PLAAct/88069": MND_PAGE.encode()}
+    items = read_feed(mnd, since=_since(2), getter=lambda url: pages[url])
+    assert len(items) == 1 and items[0]["url"] == "https://www.mnd.gov.tw/en/News/PLAAct/88069"
+    assert items[0]["title"] == "Taiwan MND: 3 PLA aircraft sorties, 1 PLAN ship, 9 official ships around Taiwan; 1 crossed the Strait median line"
+    assert items[0]["text"].startswith("1.Date") and "Keywords" not in items[0]["text"] and "var x" not in items[0]["text"]
+    assert items[0]["published_at"] == (datetime.combine(DAY, datetime.min.time()) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ"), "06:00 Taiwan time"
+
+
+def test_firms_reports_days_with_enough_high_confidence_detections_and_never_shows_the_key(monkeypatch) -> None:
+    from grit.daily.feeds import FEEDS as REGISTER, read_feed
+
+    firms = next(feed for feed in REGISTER if feed.kind == "firms")
+    day, old = DAY.isoformat(), (DAY - timedelta(days=9)).isoformat()
+    rows = ["latitude,longitude,bright_ti4,acq_date,acq_time,confidence,frp"]
+    rows += [f"23.{i},120.{i},330,{day},0500,h,{10 + i}" for i in range(5)] + [f"24.0,121.0,300,{day},0500,n,99", f"22.5,120.5,330,{old},0500,h,50"] * 5
+    seen: list[str] = []
+    monkeypatch.setenv("FIRMS_MAP_KEY", "secret-key")
+    items = read_feed(firms, since=_since(2), getter=lambda url: seen.append(url) or "\n".join(rows).encode())
+    assert "secret-key" in seen[0] and len(items) == 1 and items[0]["title"] == f"NASA FIRMS: 5 high-confidence fire detections in Taiwan on {day}"
+    assert "14 MW" in items[0]["text"] and "lat=23.4" in items[0]["url"]
+
+    def fail(url: str) -> bytes:
+        raise ConnectionError(f"cannot reach {url}")
+
+    with pytest.raises(RuntimeError) as refused:
+        read_feed(firms, since=_since(2), getter=fail)
+    assert "secret-key" not in str(refused.value)
+    monkeypatch.delenv("FIRMS_MAP_KEY")
+    with pytest.raises(RuntimeError, match="FIRMS_MAP_KEY is not set"):
+        read_feed(firms, since=_since(2))
+
+
+def test_urs_taiwan_has_a_daily_run_fed_by_official_hazard_and_cross_strait_sources() -> None:
+    from grit.daily.lane import daily_packs
+
+    assert "urs-tw" in daily_packs()
+    assert {"usgs-taiwan", "ncdr-taiwan", "tw-mnd", "nasa-firms"} <= {feed.feed_id for feed in active(["urs-tw"])}
+    assert next(feed for feed in FEEDS if feed.feed_id == "cwa").status == "BLOCKED"

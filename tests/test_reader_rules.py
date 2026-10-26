@@ -198,3 +198,22 @@ def test_brave_is_asked_for_the_runs_own_dates(monkeypatch) -> None:
     assert reader_scan._freshness(reader_scan.ReaderRun("r", date(2026, 10, 16), "urs")) == "2026-10-10to2026-10-16", "a weekly pack is held to seven days"
     monkeypatch.setattr(reader_scan, "_load_pack", lambda _pack: SimpleNamespace(scan_plan={"windowDays": 31}))
     assert reader_scan._freshness(reader_scan.ReaderRun("r", date(2026, 10, 13), "ste")) == "2026-09-13to2026-10-13"
+
+
+def test_an_official_daily_series_is_never_merged_across_days_but_other_outlets_still_are() -> None:
+    from datetime import date
+    from types import SimpleNamespace
+
+    from grit.core.doc_type import DocType
+    from grit.core.reader_filter import NEAR_DUPLICATE, filter_reader
+
+    def record(signal_id: str, publisher: str, published: str) -> dict:
+        return {"signal_id": signal_id, "title": signal_id, "publisher": publisher, "published_at": published, "doc_type": DocType("NEWS", ()),
+                "link": SimpleNamespace(rung=None, themes=()), "hits": [SimpleNamespace(strong=True, item_type="CONDITION")]}
+
+    same = [1.0, 0.0]
+    records = [record("mnd-26", "mnd.gov.tw", "2026-10-15T22:00:00Z"), record("mnd-25", "mnd.gov.tw", "2026-10-14T22:00:00Z"),
+               record("news-a", "a.com", "2026-10-15T09:00:00Z"), record("news-b", "a.com", "2026-10-14T09:00:00Z")]
+    out = filter_reader(records, run_date=date(2026, 10, 16), vectors={key: same for key in ("mnd-26", "mnd-25", "news-a", "news-b")})
+    assert out["mnd-26"]["decision"] == out["mnd-25"]["decision"] == "KEEP", "each day's MND report is its own observation"
+    assert out["news-a"]["reason"] == NEAR_DUPLICATE or out["news-b"]["reason"] == NEAR_DUPLICATE, "ordinary pages still merge"
