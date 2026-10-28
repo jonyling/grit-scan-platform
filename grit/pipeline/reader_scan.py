@@ -423,7 +423,9 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
     requests = [row for row in pool.management_requests(active_only=True) if row.get("pack") in (None, run.pack)]
     themes_in_plan = {item["id"] for item in standing_items(reader)} if standing_set(reader) == "themes" else set()
     cascade = load_risk_cascade(pack=reader)
-    patterns = red_patterns if red_patterns is not None else json.loads((CONFIG_DIR / "red-patterns.json").read_text(encoding="utf-8"))
+    from grit.core.red_events import merge_red_patterns
+
+    patterns = red_patterns if red_patterns is not None else merge_red_patterns(json.loads((CONFIG_DIR / "red-patterns.json").read_text(encoding="utf-8")))
     conditions = {condition["id"]: condition for condition in reader.baseline.get("conditions") or []}
     registers = [reader.source_register, business.source_register]
     window = scan_window(reader)

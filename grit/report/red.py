@@ -1,6 +1,7 @@
 """RED alert drafts. One .eml file per RED signal, addressed to every profile that receives RED for the pack.
 
-A draft is never sent by code. A named person opens it, checks it, and sends or dismisses it from the dashboard.
+This module does not send the draft. A daily run may send it to the R&A duty team through Microsoft Graph when mail is
+configured (`grit.report.red_mail`). A named person forwards it or dismisses it. A weekly run leaves it as a draft.
 """
 
 from __future__ import annotations

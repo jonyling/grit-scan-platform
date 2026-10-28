@@ -126,6 +126,10 @@ def scan_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
         for spec in chosen:
             print(f"  {spec.lane:10} {spec.query}")
         return 0
+    from grit.core.red_events import report_synced
+    from grit.settings import CONFIG_DIR
+
+    report_synced(CONFIG_DIR / "red-patterns.json")
     print(f"Run {run.run_id}: searching.")
     found = reader_scan.acquire(pool, run, specs, limit=args.limit_queries, currents_queries=args.currents or [])
     print(f"Searched {found['queries_sent']} queries ({found['skipped_answered']} already answered). {found['results']} results, {found['signals_new']} new pages. Stopped: {found['stopped'] or 'no'}.")
@@ -136,8 +140,11 @@ def scan_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
 
 
 def assess_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
+    from grit.core.red_events import report_synced
     from grit.pipeline import reader_scan
+    from grit.settings import CONFIG_DIR
 
+    report_synced(CONFIG_DIR / "red-patterns.json")
     print(reader_scan.assess(pool, _run(pool, args, pack)))
     return 0
 

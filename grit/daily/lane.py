@@ -1,15 +1,16 @@
-"""The daily lane (spec 42): a rolling daily run per pack, fed by the feed register and one Currents query per standing
-condition and active management request. No model, apart from one embedding per new page.
+"""The daily lane (spec 42): a rolling daily run per pack, fed by the feed register, one GDELT artlist query per standing
+condition and active management request, and one Currents query for the same. No model, apart from one embedding per new page.
 
 For each pack and day:
 1. Start the run DATE-PACK-daily (kind DAILY). Weekly and monthly code ignores DAILY runs.
 2. Read each active feed for the pack, add the week's source-sweep results for its stale and blocked sources, and send the
    pack's daily Currents queries. Every item becomes a signal and a sighting in the run, as a scanned page does.
-3. Embed new pages, then run the same deterministic assessment as a weekly scan: link ladder, keep rule, tier, conditions,
+3. Ask GDELT's artlist for the same conditions and requests, capped, with a timeout. Sphera is not called.
+4. Embed new pages, then run the same deterministic assessment as a weekly scan: link ladder, keep rule, tier, conditions,
    harm and RED.
-4. Queue every kept page for the pack's next weekly or monthly scan, whose rules assess it again for the brief.
-5. Draft RED alerts for a named person to send, as the weekly report does.
-6. Write the run's kept signals to output/runs/DATE-PACK-daily/DATE-PACK-daily-signals.csv, most important first.
+5. Queue every kept page for the pack's next weekly or monthly scan, whose rules assess it again for the brief.
+6. Draft RED alerts. When mail is configured, send each new draft to the R&A duty team. A named person forwards it.
+7. Write the run's kept signals to output/runs/DATE-PACK-daily/DATE-PACK-daily-signals.csv, most important first.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ import csv
 import hashlib
 import json
 import os
+import time
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Any, Callable, Mapping, Sequence
@@ -27,6 +29,8 @@ from grit.pool import Pool, utc_now
 
 LOOKBACK_DAYS = 2  # a missed day is caught up the next day
 CURRENTS_DAILY_MAX = 20
+GDELT_DAILY_MAX = 8  # artlist queries per pack; the DOC API answers HTTP 429 when asked too often
+GDELT_PAUSE_SECONDS = 1.0
 SWEEP_DAYS = int(os.environ.get("SWEEP_DAYS", "28") or 28)  # each stale or blocked source is swept once in this many days
 SWEEP_RESULTS = 20
 
@@ -123,6 +127,8 @@ class DailyResult:
     queued: int = 0
     red_drafts: int = 0
     csv: str | None = None
+    gdelt: dict[str, Any] = field(default_factory=dict)
+    red_mail: dict[str, Any] = field(default_factory=dict)
 
     def as_record(self) -> dict[str, Any]:
         return dict(self.__dict__)
@@ -141,7 +147,8 @@ def run_daily(
     pool: Pool, pack: str, day: date, *, feeds: Sequence[Feed] | None = None, feed_getter: Callable[[str], bytes] | None = None,
     currents_getter: Callable[..., Any] | None = None, use_currents: bool = True, lookback_days: int = LOOKBACK_DAYS, embedder: Any | None = None,
     score_harm_fn: Callable[..., dict[str, Any]] | None = None, profiles: Sequence[Any] | None = None, log: Callable[[str], None] = print,
-    swept_pages: Mapping[str, Sequence[dict[str, Any]]] | None = None,
+    swept_pages: Mapping[str, Sequence[dict[str, Any]]] | None = None, use_gdelt: bool = False, gdelt_getter: Callable[..., Any] | None = None,
+    gdelt_pause: float = GDELT_PAUSE_SECONDS, send_mail: bool = False,
 ) -> DailyResult:
     """swept_pages: the source sweep's results, feed id -> pages, shared by every pack the source serves."""
     from grit.pipeline import reader_scan
@@ -215,6 +222,8 @@ def run_daily(
         log(f"  {pack:7} Currents {sent} queries")
     elif use_currents:
         result.currents["skipped"] = "CURRENTS_API_KEY is not set."
+    if use_gdelt:
+        _gdelt(pool, run, result, lookback_days=lookback_days, getter=gdelt_getter, pause=gdelt_pause, log=log)
     reader_scan.embed(pool, run, embedder=embedder)
     options = {"score_harm_fn": score_harm_fn} if score_harm_fn is not None else {}
     assessed = reader_scan.assess(pool, run, **options)
@@ -226,8 +235,56 @@ def run_daily(
         from grit.report.red import draft_red_alerts
 
         result.red_drafts = len(draft_red_alerts(pool, run.run_id, pack, list(profiles), run.folder / "alerts"))
+        if send_mail:
+            from grit.report.red_mail import send_daily_red_alerts
+
+            result.red_mail = send_daily_red_alerts(pool, run.run_id)
+            log(f"  {pack:7} RED mail {result.red_mail.get('status')} ({result.red_mail.get('sent', 0)} sent)")
     pool.log(actor_type="FUNCTION", actor="DailyLane", status="SUCCEEDED", run_id=run.run_id, detail=result.as_record())
     return result
+
+
+def _gdelt(pool: Pool, run: Any, result: DailyResult, *, lookback_days: int, getter: Callable[..., Any] | None, pause: float, log: Callable[[str], None]) -> None:
+    """One artlist query per standing condition and active request. GDELT's seen time is the page date, so the keep rule
+    can drop a page from after the run date or from outside the window. A transport failure stops the lane; a bad query does not."""
+    from grit.acquisition.gdelt import GdeltFetchError, collect_wild_scan
+    from grit.pipeline.reader_scan import target_of
+
+    cap = int(os.environ.get("GDELT_DAILY_MAX", GDELT_DAILY_MAX) or GDELT_DAILY_MAX)
+    answered = {row["query_id"] for row in pool.rows("SELECT DISTINCT query_id FROM sightings WHERE run_id = ?", (run.run_id,))}
+    specs = [spec for spec in currents_specs(pool, run) if f"gdelt-{spec.query_id}" not in answered][:cap]
+    sent = pages = skipped = 0
+    timespan = f"{max(1, lookback_days)}d"
+    stopped = None
+    for index, spec in enumerate(specs):
+        if index and pause:
+            time.sleep(pause)
+        try:
+            candidates = collect_wild_scan(spec.query, fetched_at=utc_now(), timespan=timespan, max_records=15, getter=getter, pause_seconds=0)
+        except ValueError as exc:
+            skipped += 1
+            log(f"  {run.pack:7} GDELT skipped a query: {exc}")
+            continue
+        except GdeltFetchError as exc:
+            text = str(exc)
+            if text.startswith("GDELT request failed") or "HTTP 429" in text or "HTTP 5" in text:
+                stopped = text[:80]
+                log(f"  {run.pack:7} GDELT stopped: {stopped}")
+                break
+            skipped += 1
+            log(f"  {run.pack:7} GDELT skipped a query: {text[:80]}")
+            continue
+        sent += 1
+        for rank, candidate in enumerate(candidates, start=1):
+            if not candidate.url or not candidate.title:
+                continue
+            # seendate is when GDELT saw the page. The artlist has no publication date, and the keep rule needs one.
+            item = {"url": candidate.url, "title": candidate.title, "text": candidate.text, "publisher": candidate.publisher, "published_at": candidate.seen_at}
+            _add(pool, run.run_id, item, lane="GDELT", query_id=f"gdelt-{spec.query_id}", query=spec.query, sighting_lane=spec.lane, target_id=target_of(spec), rank=rank, result=result)
+            pages += 1
+    result.gdelt = {"sent": sent, "queries": len(specs), "pages": pages, "skipped": skipped, "stopped": stopped}
+    if stopped is None:
+        log(f"  {run.pack:7} GDELT {sent} queries, {pages} pages")
 
 
 CSV_COLUMNS = ("Published (UTC)", "Tier", "RED", "Risk level", "Trend", "Harm", "Link to STE", "Independent publishers", "Title", "Publisher",

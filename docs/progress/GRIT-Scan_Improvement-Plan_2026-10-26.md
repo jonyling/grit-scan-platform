@@ -1,0 +1,151 @@
+# GRIT-Scan improvement plan, 26 October 2026
+
+This page lists the 30 points of improvement Jony Ling raised on 26 October 2026 and the batches that deliver them. Each point has its current status. Use the page to choose the next batch, and to hand the work to another coding agent.
+
+Status as of 28 October 2026: Batches A and B are done. Batches C to G are not started.
+
+## Rules for the next agent
+
+Every agent working on this repository must follow these rules:
+
+- Do not read or print anything in `config/`, `output/` or `.env`. Organisation content policy blocks them. Code can write to `config/` without reading it, as scenario approval does.
+- Do not stage `config/`, `output/` or `secrets/` in a commit.
+- Agents propose, deterministic checks decide, and named humans approve. A fact that is missing stays absent. Do not invent it.
+- Run the tests before each commit. They make no network call.
+
+  ```bash
+  .venv/bin/python -m pytest -q
+  ```
+
+  As of commit `fa9e79b`, 541 tests pass.
+
+- End each commit message with this trailer:
+
+  ```text
+  Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+  ```
+
+- Update `README.md` and the matching spec in `specs/` when behaviour changes.
+- Keep Brave Search use within its free credit of about 1,000 queries a month. The `grit scheduled` timetable already uses about 978 in its busiest month. Brave's credit renews on 1 November.
+
+## Points of improvement
+
+| # | Point | Batch | Status |
+|---|---|---|---|
+| 1 | Add more URS and DS&C entity information to the ontology, and update it before upload to Google and each pack run. | F | Not started |
+| 2 | Get entity information from the six BAs that have not sent it: Commercial Aerospace, Satcom, Defence Aerospace, Marine, Land and Homeland. | None | Organisational. Needs higher authority. |
+| 3 | Add RED events: pandemic, China attacks Taiwan, earthquake above 8.0, financial meltdown, major corruption cases, workplace accidents, Middle East attacks needing evacuation, AI and quantum cyber attacks, sanctions on linked entities, bankruptcy of key customers, suppliers or projects, trade barriers and tariffs, sudden loss of key personnel, EHS incidents causing the death of STE staff, labour incidents and strikes, disruption of basic services, legal disputes affecting STE entities, and major riots where STE entities or projects are. | B | Done. Patterns are in `grit/core/red_events.py` and merge at assessment. Magnitude 8.0 or greater. Linked events need a direct or counterparty link. `RED-PANDEMIC` was already in the register and was left as written. `grit daily`, `grit scan`, and `grit assess` append missing ids to `config/red-patterns.json` without replacing an existing rule. That file is not committed. |
+| 4 | Email RED alerts from daily scans to the relevant people at once, for example the PHP vulnerabilities. | B | Built. A daily draft is sent to `GRIT_RED_MAIL_TO` when Graph mail is configured. No address is invented. Until those settings exist, the draft stays unsent. Wilson still chooses who is on the duty list. |
+| 5 | Add GDELT and Sphera acquisition lanes. | B | GDELT artlist is on the daily lane, with a timeout and the keep rule. Sphera stays closed: `secrets/sphera.env` is the placeholder, and nothing is fetched until an API contract exists. |
+| 6 | Make table rows tall enough to show all text. Colour trend labels: Escalating red, Easing green, Unchanged neutral. | C | Not started |
+| 7 | Let the reader open and close the Co-Pilot panel, as in Microsoft 365 Copilot, and resize its width. | C | Not started |
+| 8 | Make the Co-Pilot read the tab the reader has open, such as Signals, and not always the Dashboard. | C | Not started |
+| 9 | Write a CSV of signals for each daily pack. | B | Done, commit `fa9e79b` |
+| 10 | In `docs/design/schema.yaml`, list BA right after STE, then LOB. | A | Done, commit `7140799` |
+| 11 | Add an Approve button for packages in the UI. | C | Not started |
+| 12 | Keep a weekly run strictly to its 7 days ending on the run date. | A | Done, commit `7140799` |
+| 13 | Count corroboration by publisher family, not by number of sources. | A | Done, commit `7140799` |
+| 14 | Add official hazard and cross-strait sources for URS Taiwan: USGS, NASA FIRMS, Taiwan MND and the Taiwan weather service. | B | Done, commit `fa9e79b`. FIRMS needs a key. |
+| 15 | State in each report and deck that the content is GRIT-Scan AI-generated suggestions for consideration, with a disclaimer on AI limits and the need for human review. | D | Not started |
+| 16 | Improve executive summary slide 2: remove truncation marks ("…") and say what each point means for DS&C. | D | Not started |
+| 17 | Move to a newer, more capable Gemini model, such as Gemini 4 Argon. | G | Not started |
+| 18 | Put a timeout on every call to an outside server. | A | Done, commit `7140799` |
+| 19 | In State of the Situation (SotS) and Group packs, add for each scenario a hypothesis on where STE could gain, marked for BAs to validate. | E | Not started |
+| 20 | In SotS, give an exposure table for every BA: Taiwan and China entities, staff and key suppliers, chip or component dependence, revenue and asset concentration, and a High, Medium or Low rating per scenario. Mark each as BA-confirmed or proposed. | E | Not started |
+| 21 | Turn indicators into leading signals with green, amber and red thresholds: PLA activity, shipping and insurance, export controls and sanctions, cross-strait politics, and overseas fab ramp-up. | E | Not started |
+| 22 | Do not repeat the same figures or points within one report. | D | Not started |
+| 23 | Make the SotS history section fuller, citing authoritative sources beyond the report library. | E | Not started |
+| 24 | Map Group risks down to BA and LOB, and BA risks up to Group. | E | Not started |
+| 25 | Recommend actions down to specific signals, scenarios (Best, Medium, Worst) and predictions. | D | Not started |
+| 26 | Base profiles on each BA's business partner, not the office holders. Business partners filter signals to office holders. | F | Blocked. Profiles are in `config/`. |
+| 27 | Add Wilson's Group-level daily adverse news agent, and make its output deterministic. | F | Blocked. Needs Wilson's prompt. |
+| 28 | Support four feedback routes: the UI's package review, management requests, Co-Pilot chat, and Jony through VS Code chat with uploaded documents. | F | Not started |
+| 29 | Allow 2 or 3 summary slides when the period has many critical signals. | D | Not started |
+| 30 | Fix Co-Pilot chat history that seems shared between profiles. | A | Done, commit `7140799` |
+
+## Batch plan
+
+Batches are ordered by value. Do one batch per session.
+
+### Batch A: correctness (done)
+
+Commit `7140799`.
+
+- **Point 12.** The keep rule drops pages dated after the run date (`AFTER_RUN_DATE`), and a weekly run keeps its run date and the 6 days before it. Brave is asked for the run's own date range, not "past week". The 16 October URS and URS Taiwan runs had kept 245 and 229 pages from after their date. Rebuild them after Brave's credit renews on 1 November.
+- **Point 13.** `grit/core/publisher_family.py` maps domains to owners. Press-release wires count once. Aggregators count only when nothing else carries the story. Corroboration counts can fall, so some items drop below the RED threshold.
+- **Point 18.** Every HTTP and Gemini call already had a timeout. Microsoft sign-in (MSAL) now has a 60-second timeout.
+- **Point 30.** Stored history was already per profile. The Co-Pilot widgets shared one key across readers. Every widget key now includes the profile, and the panel names whose conversation it shows.
+- **Point 10.** BA follows STE in `docs/design/schema.yaml`.
+
+### Batch B: alerts and daily lane (done)
+
+Commit `fa9e79b` delivered points 9 and 14. Points 3, 4, and 5 are in the commit that adds `grit/core/red_events.py`, `grit/report/red_mail.py`, and the GDELT step in `grit/daily/lane.py`.
+
+- **Point 9 (done).** Each daily run writes `output/runs/DATE-PACK-daily/DATE-PACK-daily-signals.csv`, in the brief's order, UTF-8 with a byte-order mark for Excel.
+- **Point 14 (done).** URS Taiwan has its own daily run, fed by:
+  - USGS earthquakes of magnitude 5.0 or more in the Taiwan region;
+  - Taiwan NCDR official alerts, which carry the Central Weather Administration's warnings;
+  - Taiwan MND's daily PLA activity reports, with counts in the title;
+  - NASA FIRMS fire detections, which need a free `FIRMS_MAP_KEY` in `.env`.
+
+  The Central Weather Administration is registered as blocked, because its RSS terms forbid derived products. Reports from an official daily series are never merged with each other across days.
+- **Point 3 (done).** The new events are in `grit/core/red_events.py`. Assessment merges them after the rules already in `config/red-patterns.json`. A rule id that is already there is not replaced, so an edited rule stays. `grit daily`, `grit scan`, and `grit assess` append any missing ids. The file is not committed. Each pattern has a test. An earthquake is magnitude 8.0 or greater. A sanction, bankruptcy, tariff, strike, corruption case, workplace accident, or loss of key personnel needs a direct or counterparty link. Death of STE staff, a legal dispute, and a riot need a direct link.
+- **Point 4 (done as far as code can go).** A daily run sends each new RED draft through Microsoft Graph to the mailboxes in `GRIT_RED_MAIL_TO`, and to nobody else. The status becomes `SENT_TO_DUTY`. A named person forwards it. If the Graph settings or the duty list are missing, or an address is not a mailbox, nothing is sent. This still needs a mail-enabled app registration and Wilson's list of duty mailboxes.
+- **Point 5 (done for GDELT).** The daily lane asks GDELT's artlist, with a timeout and the same keep rule. The page date is GDELT's seen time. Sphera is not called. `secrets/sphera.env` is created when missing, and a filled file still fetches nothing until an API contract exists.
+
+### Batch C: user interface
+
+- **Point 6.** Let table rows wrap and grow to fit their text. Colour trend labels: Escalating red, Easing green, Unchanged neutral. Pair each colour with its text label, so meaning does not rely on colour alone.
+- **Point 7.** Add a toggle to open and close the Co-Pilot panel, and a width control. Keep the Dashboard full width when the panel is closed.
+- **Point 8.** Pass the active tab and its visible records to the Co-Pilot as context, in place of the fixed Dashboard context.
+- **Point 11.** Add an Approve button to package review that calls `ReviewGate()` with intent `APPROVE`, and refuse it for reader-only profiles.
+
+### Batch D: reports
+
+- **Point 15.** Add an AI-generated content statement and a limitations disclaimer to every Word report and slide deck, on the cover and in the footer.
+- **Point 16.** Rewrite the slide 2 template to fit text without truncation marks, and add a "What it means for DS&C" line to each point. Generalise the line to the pack's BA.
+- **Point 29.** Choose 1 to 3 summary slides from the number of critical signals.
+- **Point 22.** Check each report for repeated figures and sentences before rendering, and keep the first use only.
+- **Point 25.** Attach recommended actions to signals, scenarios and predictions, each marked as a suggestion for the BA to consider.
+
+### Batch E: State of the Situation and scenarios
+
+- **Point 19.** Add a "where STE could gain" hypothesis to each scenario, marked "Hypothesis: to validate with BAs".
+- **Point 20.** Build a BA exposure table for SotS with the fields in point 20. Mark each cell BA-confirmed or proposed, and leave missing facts blank.
+- **Point 21.** Define leading indicators with green, amber and red thresholds, and track them in the scenario tracker (spec 43).
+- **Point 23.** Widen the SotS history section with cited authoritative sources.
+- **Point 24.** Link each Group risk to the BA and LOB risks under it, and roll BA risks up to Group.
+
+### Batch F: data and governance
+
+- **Point 1.** Refresh the URS and DS&C entity information in the ontology before upload and pack runs. The latest workbooks are in `secrets/`.
+- **Point 26.** Re-base profiles on BA business partners. Needs `config/` access or Jony's edits.
+- **Point 27.** Add Wilson's daily adverse news agent as a lane whose output passes the same deterministic checks. Needs Wilson's prompt.
+- **Point 28.** Record all four feedback routes in one feedback table, with the route, the person and the date.
+
+### Batch G: model
+
+- **Point 17.** Check which newer Gemini models the Vertex AI project can use, then make the model a setting and test it on one pack before switching. The current model is `gemini-3.8-flash`. Gemini 4 Argon availability is not yet confirmed.
+
+## Decisions and inputs needed
+
+| Input | Needed for | From |
+|---|---|---|
+| Microsoft 365 mail app credentials and the R&A duty mailboxes (`GRIT_RED_MAIL_TO`) | Point 4, so mail leaves the draft | Jony, Wilson |
+| Sphera licence and API access | Point 5 | R&A |
+| Free NASA FIRMS key in `.env` | Point 14 | Jony |
+| Business-partner profile edits | Point 26 | Jony |
+| Wilson's daily adverse news prompt | Point 27 | Wilson |
+| Entity information from six BAs | Point 2 | Wilson or higher authority |
+
+## Credit projection
+
+Projected on 26 October 2026, measured in working sessions of one batch each:
+
+| Scope | Sessions |
+|---|---|
+| Essentials: batches A to D | About 4.5 to 5 |
+| All batches, A to G | About 10 to 13 |
+| Used so far: batches A and B | About 2.5 |
+
+Batches E and F cost the most, because they change report generation and need the inputs listed in the decisions table.

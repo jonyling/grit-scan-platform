@@ -364,3 +364,61 @@ def test_urs_taiwan_has_a_daily_run_fed_by_official_hazard_and_cross_strait_sour
     assert "urs-tw" in daily_packs()
     assert {"usgs-taiwan", "ncdr-taiwan", "tw-mnd", "nasa-firms"} <= {feed.feed_id for feed in active(["urs-tw"])}
     assert next(feed for feed in FEEDS if feed.feed_id == "cwa").status == "BLOCKED"
+
+
+def _gdelt_payload(*articles: dict) -> dict:
+    return {"articles": list(articles)}
+
+
+def _seen(day: date) -> str:
+    return day.strftime("%Y%m%d") + "T030000Z"
+
+
+def test_gdelt_pages_follow_the_keep_rule_and_a_failed_fetch_is_not_an_empty_day(tmp_path: Path, monkeypatch) -> None:
+    from types import SimpleNamespace
+
+    from grit.acquisition.gdelt import GdeltFetchError
+    from grit.daily import lane
+
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    monkeypatch.setattr(lane, "currents_specs", lambda pool, run: [SimpleNamespace(query_id="q-strait", query="Taiwan Strait", lane="CONDITION", sources=({"target": "TW-GLOBAL-03"},))])
+    pool = Pool(tmp_path / "grit.sqlite")
+    recent, future, old = "https://focustaiwan.tw/gdelt/recent", "https://focustaiwan.tw/gdelt/future", "https://focustaiwan.tw/gdelt/old"
+    payload = _gdelt_payload(
+        {"url": recent, "title": "Taiwan reports 30 PLA aircraft near Taiwan Strait", "seendate": _seen(DAY), "domain": "focustaiwan.tw"},
+        {"url": future, "title": "Taiwan reports 40 PLA aircraft near Taiwan Strait", "seendate": _seen(DAY + timedelta(days=1)), "domain": "focustaiwan.tw"},
+        {"url": old, "title": "Taiwan reports 20 PLA aircraft near Taiwan Strait", "seendate": _seen(DAY - timedelta(days=40)), "domain": "focustaiwan.tw"},
+    )
+    result = run_daily(
+        pool, "urs-tw", DAY, feeds=[], use_currents=False, use_gdelt=True, gdelt_getter=lambda url, params: payload, gdelt_pause=0,
+        embedder=_Embedder(), score_harm_fn=lambda *a, **k: {"status": "NOT_RUN"}, log=lambda _m: None,
+    )
+    decided = {row["title"]: row for row in pool.assessments(result.run_id)}
+    assert decided["Taiwan reports 30 PLA aircraft near Taiwan Strait"]["decision"] == "KEEP"
+    assert decided["Taiwan reports 40 PLA aircraft near Taiwan Strait"]["drop_reason"] == "AFTER_RUN_DATE"
+    assert decided["Taiwan reports 20 PLA aircraft near Taiwan Strait"]["drop_reason"] == "STALE"
+    assert pool.one("SELECT lane FROM signals WHERE url = ?", (recent,))["lane"] == "GDELT"
+    assert result.gdelt["stopped"] is None and result.gdelt["sent"] == 1
+
+    def fail(url, params):
+        raise GdeltFetchError("GDELT request failed")
+
+    failed = Pool(tmp_path / "failed.sqlite")
+    stopped = run_daily(
+        failed, "urs-tw", DAY, feeds=[], use_currents=False, use_gdelt=True, gdelt_getter=fail, gdelt_pause=0,
+        embedder=_Embedder(), score_harm_fn=lambda *a, **k: {"status": "NOT_RUN"}, log=lambda _m: None,
+    )
+    assert stopped.gdelt["stopped"] == "GDELT request failed" and stopped.gdelt["sent"] == 0 and stopped.signals == 0
+
+
+def test_the_daily_run_sends_red_mail_only_when_asked(tmp_path: Path, monkeypatch) -> None:
+    import grit.report.red_mail as red_mail
+
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    pool = Pool(tmp_path / "grit.sqlite")
+    called: list[int] = []
+    monkeypatch.setattr(red_mail, "send_daily_red_alerts", lambda *args, **kwargs: called.append(1) or {"status": "NOT_CONFIGURED", "sent": 0, "failed": 0})
+    quiet = run_daily(pool, "urs-tw", DAY, feeds=[], use_currents=False, profiles=[], embedder=_Embedder(), score_harm_fn=lambda *a, **k: {"status": "NOT_RUN"}, log=lambda _m: None)
+    assert called == [] and quiet.red_mail == {}
+    run_daily(pool, "urs-tw", DAY, feeds=[], use_currents=False, profiles=[], send_mail=True, embedder=_Embedder(), score_harm_fn=lambda *a, **k: {"status": "NOT_RUN"}, log=lambda _m: None)
+    assert called == [1]

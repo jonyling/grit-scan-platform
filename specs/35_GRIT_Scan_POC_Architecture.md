@@ -66,7 +66,7 @@ The pool is the working store. Dataverse remains the system of record. The MVP d
 
 | Interface | POC | MVP direction |
 |---|---|---|
-| RED | Draft `.eml` per RED signal, addressed by profile. A named person sends it. | Mail through a governed sender after a named approval. |
+| RED | Draft `.eml` per RED signal, addressed by profile. A daily run sends that draft to the R&A duty team when Graph mail is configured. A named person forwards or dismisses it. A weekly run does not send it. | Mail through a governed sender after a named approval, beyond the duty team. |
 | Weekly brief | Word, PowerPoint, Excel, and Markdown per reader. | Same formats, published after `ReviewGate()`. |
 | Dashboard | Streamlit: conditions, named items, watchpoints, signals with detail, packs and review, requests, RED, and AIRIS. | Next.js (React), Tailwind, and shadcn/ui over an API. |
 | Chat | Questions answered from the reader's shown signals with checked citations. `/concern`, `/topic`, `/trend`, and `/keyword` propose management requests. | Same contract behind the API. |
@@ -90,11 +90,11 @@ The live run `2026-10-07-urs-tw` searched 60 queries, kept 240 of 793 pages, val
 
 Write each item as trigger, deterministic decision, who signs off, and what is logged (spec 34 section 7).
 
-1. Sphera supplier alerts and GDELT are not wired into the reader scan. Sphera has credentials and no documented API contract here.
+1. GDELT's artlist feeds the daily lane (spec 42) and is not part of the weekly Brave scan. Sphera has no documented API contract. `secrets/sphera.env` is the placeholder, and the lane fetches nothing.
 2. The harm scorer's severity stays not established: acquisition supplies prose, not structured observations, and no value-at-risk register exists.
 3. Source ratings cover 26 Taiwan outlets. Most business-area sources are unrated.
 4. Order-book anchors are copied from the reference brief and need a named BA owner's confirmation.
 5. The BA relationship gaps (spec 34 section 5 and the README) still limit entity-level reasoning.
-6. Scheduling, mail delivery, authentication, and the Dataverse ledger write path are not built.
+6. The weekly run has a schedule (`grit scheduled`). Daily RED mail to the R&A duty team is built and sends only when Graph credentials and `GRIT_RED_MAIL_TO` are set. Dashboard authentication and the Dataverse ledger write path are not built.
 7. The six other business areas have no packs yet. Adding one is a data change: a manifest, the workbook build, a scan plan, and profile briefs. `grit gaps`, the digest commands, and the harm scorer's transmission registry still read the URS pack or workbook.
 8. No URS-wide standing conditions exist. The BA brief stands on the 14 risk themes until R&A approves a condition set.

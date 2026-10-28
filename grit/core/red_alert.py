@@ -1,7 +1,8 @@
 """RED alert rule. Pure: no I/O, no model.
 
 A signal is a RED candidate when a governed pattern hits its title or lead and the event is corroborated, or when the harm
-scorer returns a configured verdict for it. A RED candidate is a draft. A named person sends or dismisses the email.
+scorer returns a configured verdict for it. A RED candidate is a draft. A daily run sends that draft to the R&A duty team
+when mail is configured. A named person forwards or dismisses it. A weekly run does not send it.
 """
 
 from __future__ import annotations

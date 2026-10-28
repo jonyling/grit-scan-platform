@@ -6,7 +6,7 @@
 
 ## 1. What it does
 
-Once a day, GRIT-Scan reads the primary-source feeds that readers named, and sends one Currents query for each Group standing condition and each active management request. Once a week, it sweeps the named sources that have no usable feed. Every page goes through the same deterministic assessment as a weekly scan. A nightly index then groups pages into events and writes a digest per pack, so the Co-Pilot can answer "what's new". The weekly and monthly scans are unchanged. The daily lane uses no Brave queries, apart from the weekly source sweep.
+Once a day, GRIT-Scan reads the primary-source feeds that readers named, asks GDELT's artlist for each standing condition and each active management request, and sends one Currents query for the same. Once a week, it sweeps the named sources that have no usable feed. Every page goes through the same deterministic assessment as a weekly scan. A nightly index then groups pages into events and writes a digest per pack, so the Co-Pilot can answer "what's new". The weekly and monthly scans are unchanged. The daily lane uses no Brave queries, apart from the weekly source sweep. GDELT is free.
 
 To run it once a day, for example at 05:30 Singapore time from `cron`:
 
@@ -20,7 +20,7 @@ A crontab line for the host:
 30 5 * * * cd /home/khengaikjony.ling/grit-scan-platform && .venv/bin/grit daily >> output/daily.log 2>&1
 ```
 
-`--lookback-days 7` catches up after a gap; the default reads two days. `--no-currents` sends no Currents query, `--no-sweep` skips the source sweep, and `--dry-run` prints the packs, feeds and due sweeps without fetching.
+`--lookback-days 7` catches up after a gap; the default reads two days. `--no-currents` sends no Currents query, `--no-gdelt` sends no GDELT query, `--no-sweep` skips the source sweep, and `--dry-run` prints the packs, feeds and due sweeps without fetching.
 
 ## 2. The feed register
 
@@ -89,10 +89,11 @@ For each pack an active feed serves, and the Group pack:
 2. Each active feed's items from the lookback window become signals with a sighting in the run. An item without a date is skipped, because its age cannot be checked.
 3. The week's source-sweep pages for the pack's stale and blocked sources join the run.
 4. Currents receives one query per standing condition and per active management request, from the pack's scan plan. The sightings carry the query's lane and target, as in a weekly scan. `CURRENTS_DAILY_MAX` caps the queries per pack and day (default 20). A query already answered that day is not sent again.
-5. New pages are embedded. The run's deterministic assessment then applies the link ladder, keep rule, tier, conditions, harm scorer and RED rule.
-6. Every kept page is queued for the pack's next weekly or monthly scan (`pool_additions`, added by `daily-lane`). That scan's rules assess it again before it can reach a brief.
-7. RED drafts are written for a named person to send, as the weekly report does. A page gets one draft per pack, whichever run reads it first. Drafts from daily runs show in the dashboard's RED tab beside the selected run's own.
-8. The run's kept signals are written to `output/runs/DATE-PACK-daily/DATE-PACK-daily-signals.csv` (improvement point 9), in the brief's order: tier, RED first, newest first. The columns are published time, tier, RED, risk level, trend, harm, link to STE, independent publishers, title, publisher, the feed or query that found it, why it was kept, and URL. The file is UTF-8 with a byte-order mark, so Excel shows Chinese titles correctly.
+5. GDELT's DOC artlist receives the same conditions and requests, up to `GDELT_DAILY_MAX` per pack (default 8), with one second between queries. Each call has a 30-second timeout. The artlist has a title and no publication date, so the page date is GDELT's seen time and the keep rule applies to it: a page seen after the run date is dropped, and one outside the window is stale. A transport failure or HTTP 429 stops the lane for that pack and is not treated as an empty day. A query GDELT cannot answer is skipped. The 15-minute events export stays an index and is not written as signals. Sphera is not called. `secrets/sphera.env` is the placeholder; a licence file with no documented API still fetches nothing.
+6. New pages are embedded. The run's deterministic assessment then applies the link ladder, keep rule, tier, conditions, harm scorer and RED rule. RED events from `grit/core/red_events.py` are merged with `config/red-patterns.json`. A rule id already in the file is not replaced. `grit daily`, `grit scan`, and `grit assess` append any missing ids to the file.
+7. Every kept page is queued for the pack's next weekly or monthly scan (`pool_additions`, added by `daily-lane`). That scan's rules assess it again before it can reach a brief.
+8. RED drafts are written as the weekly report does. A page gets one draft per pack, whichever run reads it first. When `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`, `GRAPH_MAIL_SENDER`, and `GRIT_RED_MAIL_TO` are all set, each new draft is sent through Microsoft Graph to those duty-team mailboxes only. The status becomes `SENT_TO_DUTY`. A named person forwards it or dismisses it. A missing setting or a bad address leaves the draft unsent. A weekly run does not send mail. Drafts and duty-team sends from daily runs show in the dashboard's RED tab beside the selected run's own.
+9. The run's kept signals are written to `output/runs/DATE-PACK-daily/DATE-PACK-daily-signals.csv` (improvement point 9), in the brief's order: tier, RED first, newest first. The columns are published time, tier, RED, risk level, trend, harm, link to STE, independent publishers, title, publisher, the feed or query that found it, why it was kept, and URL. The file is UTF-8 with a byte-order mark, so Excel shows Chinese titles correctly.
 
 Weekly and monthly code ignores `DAILY` runs. This covers the previous-run comparison, the dashboard's run list, the Co-Pilot's `get_state`, and the fit report. The Co-Pilot's signal search includes daily pages.
 

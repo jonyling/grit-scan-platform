@@ -11,7 +11,7 @@ Agents propose. Deterministic functions decide. A named human approves.
 - No scoring path calls a language model. Confidence, news priority, trend labels, RED status, and the harm verdict are rules.
 - A missing fact stays missing. The brief prints "not established" or "nothing found". It never fills a gap with a default.
 - A draft that cites no source, quotes a source inexactly, or states a number its source lacks is withheld, not published.
-- Nothing is sent or published by code. A RED alert is a draft email. A weekly pack waits for `ReviewGate()`.
+- Nothing is published by code. A weekly pack waits for `ReviewGate()`. A RED alert is a draft email. A daily run sends that draft to the R&A duty team when Microsoft Graph mail is configured, and a named person forwards it. With no mail settings, the draft is not sent.
 
 ## How it works
 
@@ -119,7 +119,7 @@ One weekly run for a reader pack has these stages. Each stage reads and writes t
 |---|---|
 | `grit/core/` | Pure deterministic functions: the harm scorer, `TransitionGuard()`, `ReviewGate()`, priority, scale cues, document type, routing, the RED rule, the confidence rule, the reader keep rule, and the condition cascade. |
 | `grit/ontology/` | Pack manifests and loader, the pack builder, the typed graph, the link ladder, the reader index, the risk cascade, both query plans, workbook readers, and matchers. |
-| `grit/acquisition/` | Brave News, Currents, and GDELT adapters. They emit candidates and never score. |
+| `grit/acquisition/` | Brave News, Currents, GDELT, and the closed Sphera lane. They emit candidates and never score. |
 | `grit/retrieval/` | Embeddings, the vector cache, similarity, and the business-area digest filter. |
 | `grit/agents/` | The Gemini client, the reader agents, their checks, the chat commands, and the finding loop (`loop/`). |
 | `grit/copilot/` | The Co-Pilot: scope, hybrid search, tools, web search, the bounded agent loop, and its checks (specs 40 and 41). |
@@ -234,7 +234,11 @@ To change a cadence, edit `SCHEDULE` in `grit/schedule.py`.
 
 ## Run the daily lane
 
-Once a day, GRIT-Scan reads the primary-source feeds that readers named and sends one Currents query for each Group standing condition and active management request. The scan's own rules assess every page, and kept pages are queued for the next weekly or monthly scan. Once a week it also sweeps the named sources that block feed readers (ISW, RUSI, the World Bank, the IMF and others), with one Brave `site:` query each, about 15 a week. A nightly index then groups pages into events and writes a digest per pack for the Co-Pilot's "what's new" (spec 42).
+Once a day, GRIT-Scan reads the primary-source feeds that readers named, asks GDELT's artlist for each standing condition and active management request (capped, free, and not a Brave query), and sends one Currents query for the same. The scan's own rules assess every page, and kept pages are queued for the next weekly or monthly scan. Once a week it also sweeps the named sources that block feed readers (ISW, RUSI, the World Bank, the IMF and others), with one Brave `site:` query each, about 15 a week. A nightly index then groups pages into events and writes a digest per pack for the Co-Pilot's "what's new" (spec 42).
+
+GDELT's seen time is the page date, because the artlist has no publication date. `--no-gdelt` skips it. Sphera is not called. `secrets/sphera.env` is the placeholder for a licence, and nothing is fetched until an API contract exists.
+
+A new RED draft from the daily run is sent to the R&A duty team when `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`, `GRAPH_MAIL_SENDER`, and `GRIT_RED_MAIL_TO` are set. The app registration needs application permission Mail.Send. The message goes only to those mailboxes. A named person forwards it. If any setting is missing, the draft stays unsent.
 
 URS Taiwan has its own daily run, fed by official sources: USGS earthquakes, Taiwan NCDR disaster alerts (which carry the Central Weather Administration's warnings), Taiwan MND's daily PLA activity reports and NASA FIRMS fire detections. FIRMS needs a free key: request one at firms.modaps.eosdis.nasa.gov/api/map_key and set `FIRMS_MAP_KEY` in `.env`.
 
@@ -375,7 +379,7 @@ To add a reader pack for another business area or entity, follow [Add a business
 
 **Confidence** (`grit/core/confidence.py`). `HIGH` needs two independent outlets and one rated `HIGH` in the reader's source register. `MEDIUM` needs two outlets or one `HIGH`-rated outlet. Otherwise it is `LOW`.
 
-**RED** (`grit/core/red_alert.py`). A pattern must hit the title or lead, in a sentence that is not a forecast, an assessment, or a drill, and the event must be corroborated or carried by a `HIGH`-rated source. "Invasion of Taiwan unlikely before 2028" is not RED.
+**RED** (`grit/core/red_alert.py`). A pattern must hit the title or lead, in a sentence that is not a forecast, an assessment, or a drill, and the event must be corroborated or carried by a `HIGH`-rated source. "Invasion of Taiwan unlikely before 2028" is not RED. The events added on 28 October 2026 (a declared pandemic, a Chinese attack on Taiwan, an earthquake of magnitude 8.0 or greater, and the others in `grit/core/red_events.py`) are merged at assessment. A rule already in `config/red-patterns.json` is left as it stands. Events that name a linked party need a direct or counterparty link. Death of STE staff, a legal dispute, and a riot need a direct link.
 
 **Harm scorer** (`grit/core/impact_scoring.py`). It runs on every kept signal and returns evidence, horizon, severity, transmission, a verdict, and opportunity cost. Severity is the maximum across dimensions and is never averaged. Financial severity uses value-at-risk only. Acquisition supplies prose, not structured observations, so severity stays not established until those exist.
 
@@ -408,12 +412,12 @@ The earlier digest covers the whole `urs` ontology on a 12-week query cycle and 
 
 These are the open items for the MVP, not a ranking.
 
-1. Sphera supplier alerts and GDELT are not wired into the reader scan. Sphera has credentials in `secrets/` and no documented API contract here.
+1. GDELT's artlist feeds the daily lane and is not part of the weekly Brave scan. Sphera stays closed: `secrets/sphera.env` is the placeholder, and nothing is fetched until an API contract exists.
 2. Severity stays not established. No source supplies structured observations, and no value-at-risk register exists.
 3. Only the 26 Taiwan sources are rated. Most business-area sources are `UNRATED`.
 4. The order-book anchors are copied from the reference brief. A named BA owner must confirm them.
 5. The BA relationship gaps limit entity-level paths (see the previous section).
-6. Nothing schedules the weekly run, sends mail, or authenticates dashboard users. The workflow ledger is written to the pool, not to Dataverse.
+6. The weekly run is started with `grit scheduled`. A daily RED alert is mailed to the R&A duty team when Graph mail is configured; otherwise it stays a draft. The dashboard does not authenticate users. The workflow ledger is written to the pool, not to Dataverse.
 7. Urban Solutions, URS Taiwan, DS&C, and the Group pack have scan plans. The other business areas follow [Add a business area](docs/add-a-business-area.md). Until they do, the Group footprint covers URS and DS&C only.
 8. Generated short names cannot tell two companies with one name apart. On 2026-10-07, "Amtech Systems" matched a US semiconductor company. Reject such aliases through `grit gaps`.
 

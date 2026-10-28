@@ -15,6 +15,31 @@ def _payload(*articles: dict) -> dict:
     return {"articles": list(articles)}
 
 
+def test_gdelt_http_calls_have_a_timeout(monkeypatch) -> None:
+    import requests
+
+    from grit.acquisition.gdelt import _get_bytes, _get_json
+
+    seen: dict[str, int] = {}
+
+    class Response:
+        status_code = 200
+        content = b'{"articles": []}'
+
+        def json(self):
+            return {"articles": []}
+
+    def fake_get(url, **kwargs):
+        seen[url] = kwargs.get("timeout")
+        return Response()
+
+    monkeypatch.setattr(requests, "get", fake_get)
+    assert _get_json("https://api.gdeltproject.org/api/v2/doc/doc", {"query": "taiwan"})["articles"] == []
+    assert seen["https://api.gdeltproject.org/api/v2/doc/doc"] == 30
+    _get_bytes("http://data.gdeltproject.org/gdeltv2/lastupdate.txt")
+    assert seen["http://data.gdeltproject.org/gdeltv2/lastupdate.txt"] == 120
+
+
 def test_gdelt_artlist_becomes_wild_candidates_without_tone() -> None:
     payload = _payload(
         {

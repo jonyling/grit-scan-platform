@@ -181,7 +181,7 @@ def main() -> None:
 
         with alerts_tab:
             alerts = db.rows(
-                "SELECT a.* FROM alerts a JOIN runs r ON r.run_id = a.run_id WHERE a.run_id = ? OR (r.kind = 'DAILY' AND r.pack = ? AND a.status = 'DRAFT') ORDER BY a.created_at",
+                "SELECT a.* FROM alerts a JOIN runs r ON r.run_id = a.run_id WHERE a.run_id = ? OR (r.kind = 'DAILY' AND r.pack = ? AND a.status IN ('DRAFT', 'SENT_TO_DUTY')) ORDER BY a.created_at",
                 (run_id, db.run(run_id)["pack"]),
             )
             st.subheader("RED alert drafts")
@@ -191,9 +191,11 @@ def main() -> None:
                 st.markdown(f"**{row['alert_id']}**: {row['status']}. Rule {row['rule'].get('rule_id')}. Recipients: {', '.join(row['recipients'])}.")
                 if row["draft_path"] and Path(row["draft_path"]).is_file():
                     st.download_button("Download the draft email", Path(row["draft_path"]).read_bytes(), file_name=Path(row["draft_path"]).name, key=f"eml-{row['alert_id']}")
-                if row["status"] == "DRAFT":
+                if row["status"] == "SENT_TO_DUTY":
+                    st.caption("Sent to the R&A duty team. A named person forwards it or dismisses it.")
+                if row["status"] in {"DRAFT", "SENT_TO_DUTY"}:
                     sent, dismissed = st.columns(2)
-                    if sent.button("I sent it", key=f"sent-{row['alert_id']}"):
+                    if sent.button("I forwarded it" if row["status"] == "SENT_TO_DUTY" else "I sent it", key=f"sent-{row['alert_id']}"):
                         actions.decide_alert(db, profile, row["alert_id"], "SENT_BY_HUMAN")
                         st.rerun()
                     if dismissed.button("Dismiss", key=f"dismiss-{row['alert_id']}"):

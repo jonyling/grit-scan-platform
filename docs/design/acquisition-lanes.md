@@ -14,7 +14,7 @@ Each candidate carries one source lane:
 |---|---|---|
 | `APPROVED` | Pages from an approved source list. | Adapter only. No command uses it. |
 | `WILD` | Search results from Brave News, Currents, or GDELT. | In use. |
-| `SPHERA` | Sphera supplier-risk alerts. Sphera's own scores are dropped. | Adapter only. No API contract is documented. |
+| `SPHERA` | Sphera supplier-risk alerts. Sphera's own scores are dropped. | Closed. `secrets/sphera.env` is the placeholder. Nothing is fetched until an API contract exists. |
 | `AGILE` | AGILE alerts. AGILE's own scores are dropped. | Adapter only. |
 | `ISOS` | International SOS alerts. | Returns an empty list until a feed exists. |
 
@@ -47,11 +47,13 @@ The key is `CURRENTS_API_KEY`.
 
 ## GDELT
 
-`grit/acquisition/gdelt.py` reads GDELT's public 15-minute events export: it downloads the latest file listed in `lastupdate.txt` and filters it locally for each query. It does not poll the DOC API, which rate-limits heavily.
+`grit/acquisition/gdelt.py` reads GDELT's public 15-minute events export: it downloads the latest file listed in `lastupdate.txt` and filters it locally for each query. That path does not poll the DOC API. The export has a URL and a date added, but no headline. `DATEADDED` is stored as `seen_at`, not as a publication date, and tone and Goldstein scores are not read. A bad checksum raises `GdeltFetchError`. The export is an index. It is not written as a signal.
 
-The export has a URL and a date added, but no headline. `DATEADDED` is stored as `seen_at`, not as a publication date, and tone and Goldstein scores are not read. A bad checksum raises `GdeltFetchError`.
+The daily lane does call the DOC artlist, because a page needs a title before the keep rule can assess it. One query per standing condition and active management request, up to `GDELT_DAILY_MAX` (default 8), with a 30-second timeout. GDELT's seen time is stored as the page date so the keep rule can drop a page from after the run date or from outside the window. A failed request is an error, not an empty day. `--no-gdelt` skips the lane. The weekly Brave scan does not call GDELT.
 
-No command calls this adapter today. Wiring it into the reader scan is an open item for the MVP.
+## Sphera
+
+`grit/acquisition/sphera_lane.py` does not call a server. `secrets/sphera.env` may hold `SPHERA_API_URL` and `SPHERA_API_KEY`. Until an API contract is documented, a present licence file changes only the status line. The status never includes a value from the file.
 
 ## Credentials
 

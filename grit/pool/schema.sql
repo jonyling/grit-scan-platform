@@ -236,7 +236,7 @@ CREATE TABLE IF NOT EXISTS alerts (
     signal_id       TEXT NOT NULL REFERENCES signals (signal_id),
     recipients_json TEXT NOT NULL,
     rule_json       TEXT NOT NULL,
-    status          TEXT NOT NULL,            -- DRAFT, SENT_BY_HUMAN, DISMISSED
+    status          TEXT NOT NULL,            -- DRAFT, SENT_TO_DUTY, SENT_BY_HUMAN, DISMISSED
     draft_path      TEXT,
     created_at      TEXT NOT NULL,
     decided_by      TEXT,
