@@ -140,6 +140,703 @@
         "blacklist",
         "banned"
       ]
+    },
+    {
+      "ruleId": "RED-CHINA-ATTACKS-TAIWAN",
+      "label": "China attacks Taiwan",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "China attacks Taiwan",
+        "Chinese attack on Taiwan",
+        "China invades Taiwan",
+        "invasion of Taiwan",
+        "missile strike on Taiwan",
+        "missile attack on Taiwan",
+        "blockade of Taiwan",
+        "blockades Taiwan",
+        "amphibious assault on Taiwan"
+      ],
+      "requiresTaiwan": true
+    },
+    {
+      "ruleId": "RED-EARTHQUAKE-8",
+      "label": "Earthquake of magnitude 8.0 or greater",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "regex": "(?<![\\d.])(?:magnitude[\\s-]*(?:8(?:\\.\\d+)?|9(?:\\.\\d+)?)|(?:8(?:\\.\\d+)?|9(?:\\.\\d+)?)[\\s-]*magnitude)[\\s-]*(?:earthquake|quake)\\b"
+    },
+    {
+      "ruleId": "RED-FINANCIAL-MELTDOWN",
+      "label": "Financial meltdown",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "financial meltdown",
+        "financial crisis",
+        "banking crisis",
+        "stock market crash",
+        "global markets crash"
+      ]
+    },
+    {
+      "ruleId": "RED-CORRUPTION",
+      "label": "Major corruption case",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "charged with corruption",
+        "corruption charges",
+        "convicted of corruption",
+        "convicted of bribery",
+        "bribery charges"
+      ],
+      "requiresRung": [
+        "DIRECT",
+        "COUNTERPARTY"
+      ]
+    },
+    {
+      "ruleId": "RED-EHS-DEATH",
+      "label": "Death of STE staff",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "employee was killed",
+        "employee died",
+        "worker was killed",
+        "workers were killed",
+        "staff member died",
+        "workplace death"
+      ],
+      "requiresRung": [
+        "DIRECT"
+      ]
+    },
+    {
+      "ruleId": "RED-WORKPLACE-ACCIDENT",
+      "label": "Workplace accident",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "workplace accident",
+        "industrial accident",
+        "workplace fatality",
+        "factory explosion",
+        "plant explosion"
+      ],
+      "requiresRung": [
+        "DIRECT",
+        "COUNTERPARTY"
+      ]
+    },
+    {
+      "ruleId": "RED-MIDEAST-EVACUATION",
+      "label": "Middle East evacuation",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "regex": "(?:(?:evacuat(?:e|es|ed|ion|ing)|ordered to leave)).{0,80}(?:(?:Middle East|Israel|Israeli|Iran|Iranian|Lebanon|Lebanese|Gaza|Yemeni|Yemen|Saudi|UAE|United Arab Emirates|Qatar|Qatari|Iraq|Iraqi|Syria|Syrian|Hormuz|Red Sea))|(?:(?:Middle East|Israel|Israeli|Iran|Iranian|Lebanon|Lebanese|Gaza|Yemeni|Yemen|Saudi|UAE|United Arab Emirates|Qatar|Qatari|Iraq|Iraqi|Syria|Syrian|Hormuz|Red Sea)).{0,80}(?:(?:evacuat(?:e|es|ed|ion|ing)|ordered to leave))"
+    },
+    {
+      "ruleId": "RED-AI-QUANTUM-CYBER",
+      "label": "AI or quantum cyber attack",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "regex": "(?:(?:artificial intelligence|\\bAI\\b|quantum)).{0,80}(?:(?:cyber ?attacks?|ransomware|data breach(?:es)?))|(?:(?:cyber ?attacks?|ransomware|data breach(?:es)?)).{0,80}(?:(?:artificial intelligence|\\bAI\\b|quantum))"
+    },
+    {
+      "ruleId": "RED-SANCTIONS-LINKED",
+      "label": "Sanctions on a linked entity",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "sanctions imposed",
+        "hit with sanctions",
+        "subject to sanctions",
+        "placed under sanctions",
+        "new sanctions against"
+      ],
+      "requiresRung": [
+        "DIRECT",
+        "COUNTERPARTY"
+      ]
+    },
+    {
+      "ruleId": "RED-BANKRUPTCY",
+      "label": "Bankruptcy of a customer, supplier or project",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "files for bankruptcy",
+        "filed for bankruptcy",
+        "files for insolvency",
+        "declared bankrupt",
+        "declares bankruptcy"
+      ],
+      "requiresRung": [
+        "DIRECT",
+        "COUNTERPARTY"
+      ]
+    },
+    {
+      "ruleId": "RED-TRADE-BARRIER",
+      "label": "Trade barrier or tariff",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "tariffs imposed",
+        "tariff hike",
+        "trade barrier",
+        "export ban imposed",
+        "import ban imposed"
+      ],
+      "requiresRung": [
+        "DIRECT",
+        "COUNTERPARTY"
+      ]
+    },
+    {
+      "ruleId": "RED-KEY-PERSONNEL",
+      "label": "Sudden loss of key personnel",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "died suddenly",
+        "sudden death",
+        "resigned with immediate effect",
+        "stepped down with immediate effect",
+        "unexpected death"
+      ],
+      "requiresRung": [
+        "DIRECT",
+        "COUNTERPARTY"
+      ]
+    },
+    {
+      "ruleId": "RED-LABOUR",
+      "label": "Labour strike",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "on strike",
+        "workers strike",
+        "labour strike",
+        "labor strike",
+        "industrial action",
+        "walkout"
+      ],
+      "requiresRung": [
+        "DIRECT",
+        "COUNTERPARTY"
+      ]
+    },
+    {
+      "ruleId": "RED-BASIC-SERVICES-TAIWAN",
+      "label": "Disruption of basic services in Taiwan",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "power outage",
+        "power blackout",
+        "water supply cut",
+        "water outage",
+        "telecoms outage",
+        "telecommunications outage",
+        "internet blackout"
+      ],
+      "requiresTaiwan": true
+    },
+    {
+      "ruleId": "RED-BASIC-SERVICES-LINKED",
+      "label": "Disruption of basic services at a linked entity",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "power outage",
+        "power blackout",
+        "water supply cut",
+        "water outage",
+        "telecoms outage",
+        "telecommunications outage",
+        "internet blackout"
+      ],
+      "requiresRung": [
+        "DIRECT",
+        "COUNTERPARTY"
+      ]
+    },
+    {
+      "ruleId": "RED-LEGAL-DISPUTE",
+      "label": "Legal dispute affecting an STE entity",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "files a lawsuit",
+        "filed a lawsuit",
+        "legal dispute",
+        "sued for",
+        "arbitration against"
+      ],
+      "requiresRung": [
+        "DIRECT"
+      ]
+    },
+    {
+      "ruleId": "RED-RIOT",
+      "label": "Major riot where an STE entity or project is",
+      "packs": [
+        "ste",
+        "urs",
+        "urs-tw",
+        "dsc"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "forecast",
+        "assessment",
+        "drill",
+        "exercise",
+        "scenario",
+        "hypothetical",
+        "could",
+        "may be",
+        "might be",
+        "expected to",
+        "predicts",
+        "predicted",
+        "estimate",
+        "estimated",
+        "fears",
+        "fear of",
+        "risk of",
+        "warns",
+        "warning"
+      ],
+      "phrases": [
+        "riots erupted",
+        "riot erupted",
+        "violent riots",
+        "major riot"
+      ],
+      "requiresRung": [
+        "DIRECT"
+      ]
     }
   ],
   "harmVerdicts": [
