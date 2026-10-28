@@ -95,6 +95,8 @@ Commit `fa9e79b` delivered points 9 and 14. Commit `cfddaf6` delivered points 3,
 
 ### Batch C: user interface (done)
 
+Commit `0381af6`.
+
 - **Point 6.** Tables are HTML, so each row wraps and grows with its text. Escalating is red, Easing is green, and Unchanged is neutral. The word remains in the cell.
 - **Point 7.** **Show Co-Pilot** and **Co-Pilot width** are in the sidebar. The width is 24 to 50 percent. A closed panel leaves the dashboard full width.
 - **Point 8.** The Co-Pilot receives the open tab and up to 40 of its records. A condition chosen on the Dashboard is sent only while that tab is open.
