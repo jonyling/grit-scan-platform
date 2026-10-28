@@ -39,8 +39,9 @@ class Scope:
     window: str = DEFAULT_WINDOW
     run_id: str | None = None  # the run on screen; the "run" window searches only this run
     today: date = field(default_factory=date.today)
-    focus: str | None = None  # a condition or theme id the reader selected on the dashboard
+    focus: str | None = None  # a condition or theme id the reader selected on the Dashboard tab
     labels: dict[str, dict[str, str]] = field(default_factory=dict, compare=False)
+    screen: dict[str, Any] | None = None  # the open tab and the records on it
 
     @property
     def since(self) -> str | None:
@@ -54,11 +55,12 @@ class Scope:
     def describe(self) -> str:
         packs = ", ".join(self.label(pack) for pack in self.packs)
         window = f"run {self.run_id}" if self.window == "run" and self.run_id else WINDOWS.get(self.window, self.window).lower()
-        return f"{self.profile.label}; packs: {packs}; window: {window}" + (f"; focus: {self.focus}" if self.focus else "")
+        tab = f"; tab: {self.screen['tab']}" if self.screen and self.screen.get("tab") else ""
+        return f"{self.profile.label}; packs: {packs}; window: {window}" + tab + (f"; focus: {self.focus}" if self.focus else "")
 
 
 def scope_for(profile: Any, *, window: str = DEFAULT_WINDOW, run_id: str | None = None, pack: str | None = None, focus: str | None = None,
-              today: date | None = None, labels: dict[str, dict[str, str]] | None = None) -> Scope:
+              today: date | None = None, labels: dict[str, dict[str, str]] | None = None, screen: dict[str, Any] | None = None) -> Scope:
     """pack narrows the search to one pack inside the reader's reach; a pack outside it is refused."""
     labels = labels if labels is not None else pack_labels()
     packs = reach(profile, labels)
@@ -68,4 +70,4 @@ def scope_for(profile: Any, *, window: str = DEFAULT_WINDOW, run_id: str | None 
         packs = (pack,)
     if window not in WINDOWS:
         raise ValueError(f"window is one of {', '.join(WINDOWS)}")
-    return Scope(profile, packs, window, run_id, today or date.today(), focus, labels)
+    return Scope(profile, packs, window, run_id, today or date.today(), focus, labels, screen)

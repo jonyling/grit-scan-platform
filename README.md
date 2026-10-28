@@ -160,7 +160,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-26, 541 tests pass. They make no network call.
+   As of 2026-10-28, 597 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 
@@ -293,16 +293,16 @@ Pick a reader and a run in the sidebar. The tabs show:
 
 - **Dashboard:** the bottom line, the ten conditions, named items, watchpoints, and the QA log.
 - **Signals:** every signal in the reader's view, with why it is there, its link, risk register entries, harm verdict, and how the reader's profile moved it. Approve, reject, and watch buttons appear only when the reader's profile turns them on.
-- **Packs and review:** download the files, write this week's pack, and decide on a pending package.
+- **Packs and review:** download the files, write this week's pack, and decide on a pending package. **Approve** calls `ReviewGate()` with intent `APPROVE`. A reader does not see it. A reviewer or a BA head does.
 - **Management requests:** propose a concern, topic, trend, or keyword. A reviewer activates it. An active request adds queries to the next scan and assigns P1 to matching signals.
 - **RED and AIRIS:** RED drafts to send or dismiss, and the BA head's AIRIS export.
 
-The Co-Pilot sits in the right-hand drawer (spec 40). It answers from the briefs' state, every run's signals, the report library, and the registers in the reader's reach. Wilson, the CEO, and the Chairman search every pack; other readers search their own. Each answer gives the answer, the evidence, what it means for STE, and what is uncertain, with every claim cited. An answer that fails its checks is withheld. Each reader's conversation is private to them.
+The Co-Pilot sits in a drawer you can open, close, and resize from the sidebar (spec 40). With the drawer closed, the dashboard uses the full width. The Co-Pilot reads the tab you have open and the records on it. It also answers from the briefs' state, every run's signals, the report library, and the registers in the reader's reach. Wilson, the CEO, and the Chairman search every pack; other readers search their own. Each answer gives the answer, the evidence, what it means for STE, and what is uncertain, with every claim cited. An answer that fails its checks is withheld. Each reader's conversation is private to them.
 
 When the records are silent or older than the question needs, the Co-Pilot searches the web: Currents first, Brave when Currents finds nothing, 17 searches a day for each reader (spec 41). Web results are marked unvetted. **Add to pool** under a web citation queues the page for the next scan, whose rules decide whether it is kept.
 
 - Select **What's new since yesterday?** for the daily digests.
-- Select a row in the standing-conditions table to focus the Co-Pilot on it.
+- Choose a standing condition to focus the Co-Pilot on it. Trend labels keep their words: Escalating is red, Easing is green, and Unchanged is neutral. Table cells wrap, so a long basis or title stays on the row.
 - Type `/concern TITLE: keyword, keyword` (or `/topic`, `/trend`, `/keyword`) to propose a management request. A page is kept for a request only when its headline or lead names a keyword exactly, so give short keywords: `/concern PHP flaws: PHP2Shell, CVE-2026-109618, PHP`. Without a colon, the title's distinctive terms (acronyms and names such as PHP, Node.js, GitLab) become the keywords. A reviewer can correct them with `grit requests revise --id ID --keywords "..." --reason "..."`.
 - Type `/note TEXT` to leave a note for your profile. It goes to `secrets/readers/<profile>/inbox/` for filing.
 

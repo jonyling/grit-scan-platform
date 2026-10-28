@@ -2,7 +2,7 @@
 
 This page lists the 30 points of improvement Jony Ling raised on 26 October 2026 and the batches that deliver them. Each point has its current status. Use the page to choose the next batch, and to hand the work to another coding agent.
 
-Status as of 28 October 2026: Batches A and B are done. Batches C to G are not started.
+Status as of 28 October 2026: Batches A, B, and C are done. Batches D to G are not started.
 
 ## Rules for the next agent
 
@@ -17,7 +17,7 @@ Every agent working on this repository must follow these rules:
   .venv/bin/python -m pytest -q
   ```
 
-  As of commit `fa9e79b`, 541 tests pass.
+  As of 28 October 2026, 597 tests pass. The URS and DS&C workbooks in `secrets/` rebuild the same registers that are already in `config/`.
 
 - End each commit message with this trailer:
 
@@ -37,12 +37,12 @@ Every agent working on this repository must follow these rules:
 | 3 | Add RED events: pandemic, China attacks Taiwan, earthquake above 8.0, financial meltdown, major corruption cases, workplace accidents, Middle East attacks needing evacuation, AI and quantum cyber attacks, sanctions on linked entities, bankruptcy of key customers, suppliers or projects, trade barriers and tariffs, sudden loss of key personnel, EHS incidents causing the death of STE staff, labour incidents and strikes, disruption of basic services, legal disputes affecting STE entities, and major riots where STE entities or projects are. | B | Done. Patterns are in `grit/core/red_events.py` and merge at assessment. Magnitude 8.0 or greater. Linked events need a direct or counterparty link. `RED-PANDEMIC` was already in the register and was left as written. `grit daily`, `grit scan`, and `grit assess` append missing ids to `config/red-patterns.json` without replacing an existing rule. That file is not committed. |
 | 4 | Email RED alerts from daily scans to the relevant people at once, for example the PHP vulnerabilities. | B | Built. A daily draft is sent to `GRIT_RED_MAIL_TO` when Graph mail is configured. No address is invented. Until those settings exist, the draft stays unsent. Wilson still chooses who is on the duty list. |
 | 5 | Add GDELT and Sphera acquisition lanes. | B | GDELT artlist is on the daily lane, with a timeout and the keep rule. Sphera stays closed: `secrets/sphera.env` is the placeholder, and nothing is fetched until an API contract exists. |
-| 6 | Make table rows tall enough to show all text. Colour trend labels: Escalating red, Easing green, Unchanged neutral. | C | Not started |
-| 7 | Let the reader open and close the Co-Pilot panel, as in Microsoft 365 Copilot, and resize its width. | C | Not started |
-| 8 | Make the Co-Pilot read the tab the reader has open, such as Signals, and not always the Dashboard. | C | Not started |
+| 6 | Make table rows tall enough to show all text. Colour trend labels: Escalating red, Easing green, Unchanged neutral. | C | Done. Tables wrap. Escalating is red, Easing is green, and Unchanged is neutral. The word stays the label. |
+| 7 | Let the reader open and close the Co-Pilot panel, as in Microsoft 365 Copilot, and resize its width. | C | Done. Show Co-Pilot and a width control are in the sidebar. A closed panel leaves the dashboard full width. |
+| 8 | Make the Co-Pilot read the tab the reader has open, such as Signals, and not always the Dashboard. | C | Done. The open tab and its records are the Co-Pilot context. Dashboard focus is sent only on the Dashboard tab. |
 | 9 | Write a CSV of signals for each daily pack. | B | Done, commit `fa9e79b` |
 | 10 | In `docs/design/schema.yaml`, list BA right after STE, then LOB. | A | Done, commit `7140799` |
-| 11 | Add an Approve button for packages in the UI. | C | Not started |
+| 11 | Add an Approve button for packages in the UI. | C | Done. Approve calls ReviewGate with intent APPROVE. A reader is refused. |
 | 12 | Keep a weekly run strictly to its 7 days ending on the run date. | A | Done, commit `7140799` |
 | 13 | Count corroboration by publisher family, not by number of sources. | A | Done, commit `7140799` |
 | 14 | Add official hazard and cross-strait sources for URS Taiwan: USGS, NASA FIRMS, Taiwan MND and the Taiwan weather service. | B | Done, commit `fa9e79b`. FIRMS needs a key. |
@@ -93,12 +93,12 @@ Commit `fa9e79b` delivered points 9 and 14. Commit `cfddaf6` delivered points 3,
 - **Point 4 (done as far as code can go).** A daily run sends each new RED draft through Microsoft Graph to the mailboxes in `GRIT_RED_MAIL_TO`, and to nobody else. The status becomes `SENT_TO_DUTY`. A named person forwards it. If the Graph settings or the duty list are missing, or an address is not a mailbox, nothing is sent. This still needs a mail-enabled app registration and Wilson's list of duty mailboxes.
 - **Point 5 (done for GDELT).** The daily lane asks GDELT's artlist, with a timeout and the same keep rule. The page date is GDELT's seen time. Sphera is not called. `secrets/sphera.env` is created when missing, and a filled file still fetches nothing until an API contract exists.
 
-### Batch C: user interface
+### Batch C: user interface (done)
 
-- **Point 6.** Let table rows wrap and grow to fit their text. Colour trend labels: Escalating red, Easing green, Unchanged neutral. Pair each colour with its text label, so meaning does not rely on colour alone.
-- **Point 7.** Add a toggle to open and close the Co-Pilot panel, and a width control. Keep the Dashboard full width when the panel is closed.
-- **Point 8.** Pass the active tab and its visible records to the Co-Pilot as context, in place of the fixed Dashboard context.
-- **Point 11.** Add an Approve button to package review that calls `ReviewGate()` with intent `APPROVE`, and refuse it for reader-only profiles.
+- **Point 6.** Tables are HTML, so each row wraps and grows with its text. Escalating is red, Easing is green, and Unchanged is neutral. The word remains in the cell.
+- **Point 7.** **Show Co-Pilot** and **Co-Pilot width** are in the sidebar. The width is 24 to 50 percent. A closed panel leaves the dashboard full width.
+- **Point 8.** The Co-Pilot receives the open tab and up to 40 of its records. A condition chosen on the Dashboard is sent only while that tab is open.
+- **Point 11.** **Approve** calls `ReviewGate()` with intent `APPROVE`. A reader sees a refusal instead of the button, and `review_package` raises `PermissionError` if a reader reaches it.
 
 ### Batch D: reports
 
@@ -146,6 +146,6 @@ Projected on 26 October 2026, measured in working sessions of one batch each:
 |---|---|
 | Essentials: batches A to D | About 4.5 to 5 |
 | All batches, A to G | About 10 to 13 |
-| Used so far: batches A and B | About 2.5 |
+| Used so far: batches A to C | About 3.5 |
 
 Batches E and F cost the most, because they change report generation and need the inputs listed in the decisions table.

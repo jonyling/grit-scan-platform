@@ -84,6 +84,7 @@ Rules:
   state only what has happened.
 - Never write a URL. Never use the words severity, likelihood, probability, risk score or risk rating.
 - Prefer the brief's state over raw signals; use signals as the evidence behind it.
+- scope.screen names the tab the reader has open and lists the records on that tab. When the question is about the screen, use that tab. Do not answer from the Dashboard when another tab is open.
 - A scenario lean is a count of signposts seen. Never turn it into odds or a forecast; say which signposts were seen.
 - Cite a web result [W#] only for what the records lack. A web result never overrides a brief's assessment; when they
   differ, say so under "uncertain".
@@ -101,8 +102,11 @@ def _context(pool: Pool, scope: Any, web: Any | None = None) -> dict[str, Any]:
     for pack in scope.packs:
         run = pool.one("SELECT run_id, run_date FROM runs WHERE pack = ? AND status = 'COMPLETE' AND kind != 'DAILY' ORDER BY run_date DESC, started_at DESC LIMIT 1", (pack,))
         packs.append({"pack": pack, "label": scope.label(pack), "latest_run": run["run_id"] if run else None, "latest_run_date": run["run_date"] if run else None})
-    return {"packs": packs, "window": scope.window, "run_on_screen": scope.run_id, "focus": scope.focus, "today": scope.today.isoformat(),
-            "web_searches_left": min(web.remaining(), 2) if web is not None else 0}
+    context = {"packs": packs, "window": scope.window, "run_on_screen": scope.run_id, "focus": scope.focus, "today": scope.today.isoformat(),
+               "web_searches_left": min(web.remaining(), 2) if web is not None else 0}
+    if getattr(scope, "screen", None):
+        context["screen"] = scope.screen
+    return context
 
 
 def web_trigger(question: str, newest: str | None, today: Any) -> str | None:

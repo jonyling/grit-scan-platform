@@ -5,7 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from grit.agents.chat import parse_command
-from grit.ui.view_model import NOT_ESTABLISHED, shown
+import pytest
+
+from grit.ui.view_model import NOT_ESTABLISHED, screen_context, shown, table_html
 
 
 
@@ -64,3 +66,37 @@ def test_every_copilot_widget_is_keyed_by_the_reader() -> None:
     drawer = text[text.index("def copilot_drawer"):text.index("def _model_parts")]
     keys = re.findall(r'key=(f?"[^"]*")', drawer)
     assert keys and all("profile.profile_id" in key or "message_id" in key for key in keys), keys
+
+
+def test_trend_cells_keep_the_word_and_a_matching_colour() -> None:
+    rendered = table_html([{"Trend": "Escalating"}, {"Trend": "Easing"}, {"Trend": "Unchanged"}])
+    assert "Escalating" in rendered and "#F8D0D0" in rendered
+    assert "Easing" in rendered and "#D8F3DC" in rendered
+    assert "Unchanged" in rendered and "#EEF2F6" in rendered
+    assert "<script>" not in table_html([{"Item": "<script>alert(1)</script>"}])
+
+
+def test_screen_context_names_the_open_tab_and_cuts_a_long_field() -> None:
+    context = screen_context("Signals", [{"Title": "A" * 300}, {"Title": "short"}])
+    assert context == {"tab": "Signals", "shown": 2, "records": [{"Title": "A" * 240}, {"Title": "short"}]}
+    many = screen_context("Signals", [{"Title": str(number)} for number in range(41)])
+    assert many["shown"] == 41 and many["omitted"] == 1 and len(many["records"]) == 40
+
+
+def test_a_reader_cannot_approve_a_package() -> None:
+    from types import SimpleNamespace
+
+    from grit.workflow.packages import review_package
+
+    reader = SimpleNamespace(label="A reader", profile_id="reader", review_role="READER")
+    with pytest.raises(PermissionError, match="reader"):
+        review_package(None, package_id="PKG", version=1, reviewer=reader, intent="APPROVE")
+
+
+def test_the_dashboard_uses_the_open_tab_and_gates_approval() -> None:
+    text = (Path(__file__).parents[1] / "grit" / "ui" / "app.py").read_text(encoding="utf-8")
+    assert "Show Co-Pilot" in text and "Co-Pilot width" in text
+    assert "screen=screens.get(active_tab)" in text
+    assert 'button("Approve"' in text
+    assert '_apply_review(db, profile, row, "APPROVE")' in text
+    assert "A reader cannot approve a pack." in text

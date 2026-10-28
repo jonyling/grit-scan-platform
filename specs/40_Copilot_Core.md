@@ -92,14 +92,14 @@ Add `--no-save` to keep the turn out of the reader's chat; it is still logged. `
 
 ## 8. Dashboard
 
-The dashboard takes the left two-thirds of the screen. The Co-Pilot drawer takes the right third, with:
+The dashboard fills the screen. **Show Co-Pilot** in the sidebar opens the drawer, and **Co-Pilot width** sets its share of the screen from 24 to 50 percent. With the drawer closed, the dashboard uses the full width. The drawer has:
 
 - a window control and a pack filter;
 - a fixed-height conversation;
 - its own input;
 - a status line showing the steps taken, such as "read a brief; searched the signals".
 
-Selecting a row in the standing-conditions table focuses the Co-Pilot on that item and offers three starter questions.
+The Co-Pilot receives the tab the reader has open and the records on that tab. On the Dashboard, choosing a standing condition focuses the Co-Pilot on that item and offers three starter questions. On another tab, that Dashboard focus is not sent.
 
 ## 9. Not yet built
 

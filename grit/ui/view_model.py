@@ -2,10 +2,19 @@
 
 from __future__ import annotations
 
+import html
 from typing import Any, Mapping, Sequence
 
 NOT_ESTABLISHED = "not established"
 _ABSENCE = {"NOT_ASSESSED", "INSUFFICIENT_DATA", "NOT_ESTABLISHED"}
+# The word is the meaning. The colour only repeats it, so a reader who cannot see the colour still has the label.
+TREND_COLOURS = {
+    "Escalating": ("#8A1C13", "#F8D0D0"),
+    "Easing": ("#146C43", "#D8F3DC"),
+    "Unchanged": ("#344054", "#EEF2F6"),
+}
+SCREEN_LIMIT = 40
+FIELD_LIMIT = 240
 
 
 def shown(value: Any) -> str:
@@ -58,7 +67,7 @@ def signal_rows(routed: Sequence[Mapping[str, Any]], decisions: Mapping[str, str
             "Outlet": row.get("publisher"), "Published": (row.get("published_at") or "")[:10], "Rung": row.get("rung") or "",
             "Conditions": ", ".join(row.get("condition_ids") or []), "Named items": ", ".join(hit["item_name"] for hit in row.get("exposure") or [] if hit.get("strong")),
             **({"Your decision": decisions.get(row["signal_id"], "")} if decisions is not None else {}),
-            "Your profile": " ".join(row["preference"]["reasons"])[:120], "Shown": "yes" if row["shown"] else "no", "signal_id": row["signal_id"],
+            "Your profile": " ".join(row["preference"]["reasons"]), "Shown": "yes" if row["shown"] else "no", "signal_id": row["signal_id"],
         }
         for row in routed
     ]
@@ -81,3 +90,37 @@ def signal_detail(row: Mapping[str, Any]) -> list[tuple[str, str]]:
         ("Your profile", " ".join(row["preference"]["reasons"]) or "Your profile does not move this signal."),
     ]
     return [(label, value) for label, value in lines if value]
+
+
+def table_html(rows: Sequence[Mapping[str, Any]], columns: Sequence[str] | None = None) -> str:
+    """An HTML table whose cells wrap. A trend cell keeps its word and adds a colour that matches that word."""
+    if not rows:
+        return ""
+    chosen = list(columns) if columns is not None else [key for key in rows[0] if key != "signal_id"]
+    head = "".join(f"<th>{html.escape(column)}</th>" for column in chosen)
+    body = "".join("<tr>" + "".join(f"<td>{_cell(column, row.get(column))}</td>" for column in chosen) + "</tr>" for row in rows)
+    return f"<table class='grit-table'><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
+
+
+def screen_context(tab: str, records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """The tab the reader has open, and the records on it, for the Co-Pilot. Long fields are cut so the prompt stays bounded."""
+    shown_rows = [{str(key): _clip(value) for key, value in row.items()} for row in list(records)[:SCREEN_LIMIT]]
+    payload: dict[str, Any] = {"tab": tab, "shown": len(records), "records": shown_rows}
+    if len(records) > SCREEN_LIMIT:
+        payload["omitted"] = len(records) - SCREEN_LIMIT
+    return payload
+
+
+def _cell(column: str, value: Any) -> str:
+    text = "" if value is None else str(value)
+    colours = TREND_COLOURS.get(text) if column == "Trend" else None
+    escaped = html.escape(text)
+    if colours is None:
+        return escaped
+    ink, paper = colours
+    return f"<span style='color:{ink};background:{paper};padding:2px 8px;border-radius:4px'>{escaped}</span>"
+
+
+def _clip(value: Any) -> str:
+    text = "" if value is None else str(value)
+    return text if len(text) <= FIELD_LIMIT else text[:FIELD_LIMIT]
