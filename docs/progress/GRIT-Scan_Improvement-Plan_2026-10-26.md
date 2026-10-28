@@ -114,6 +114,8 @@ Commit `7f3573f`. Commit `6387e60` keeps short dashboard columns on one line.
 
 ### Batch E: State of the Situation and scenarios (done)
 
+Commit `24a4dc8`.
+
 - **Point 19.** A reviewed case can carry `where_ste_could_gain`. The Group brief, the scenario draft, and the State of the Situation copy that sentence and mark it "Hypothesis: to validate with BAs". The Strategist leaves it empty when the sources do not support a gain. A certainty word withholds the draft.
 - **Point 20.** The exposure section has one row per business area. Taiwan and China entities, staff, key suppliers, chip or component dependence, revenue and asset concentration, and a High, Medium, or Low rating for each case are filled only from the register. A filled cell is proposed until `exposureStatus` is `BA-confirmed`. A missing fact stays blank.
 - **Point 21.** `grit/pipeline/indicators.py` defines the five leading indicators. The scenario tracker counts kept signals whose title or lead contains an indicator phrase. Green, amber, and red apply only when both bounds are set. Until a named person sets them, the band is not established.
