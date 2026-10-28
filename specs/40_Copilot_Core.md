@@ -101,6 +101,8 @@ The dashboard fills the screen. **Show Co-Pilot** in the sidebar opens the drawe
 
 The Co-Pilot receives the tab the reader has open and the records on that tab. On the Dashboard, choosing a standing condition focuses the Co-Pilot on that item and offers three starter questions. On another tab, that Dashboard focus is not sent.
 
+Tables keep short columns on one line, including Trend, Confidence, and the column titles. A long basis, title, or keyword list wraps on spaces. When the columns are wider than the panel, the table scrolls sideways.
+
 ## 9. Not yet built
 
 - Web search, Add to pool, the Profiler and the fit report are built in spec 41.

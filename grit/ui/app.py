@@ -12,6 +12,7 @@ a workflow row itself.
 from __future__ import annotations
 
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[2]
@@ -37,9 +38,22 @@ def main() -> None:
 
     load_local_env()
     st.set_page_config(page_title="GRIT-Scan", layout="wide")
-    st.markdown(
-        "<style>table.grit-table{width:100%;border-collapse:collapse}table.grit-table th,table.grit-table td{white-space:normal;word-break:break-word;vertical-align:top;text-align:left;padding:8px 10px;border-bottom:1px solid #E4E7EC}table.grit-table th{color:#1F3864}</style>",
-        unsafe_allow_html=True,
+
+    def show_table(rows: Sequence, columns: Sequence[str] | None = None) -> None:
+        body = table_html(rows, columns)
+        if body:
+            st.html(body)
+
+    # HTML, not Markdown. Markdown drops the scroll box and the column classes.
+    st.html(
+        "<style>"
+        ".grit-table-scroll{overflow-x:auto;max-width:100%}"
+        "table.grit-table{border-collapse:collapse;width:100%}"
+        "table.grit-table th{color:#1F3864;white-space:nowrap;vertical-align:top;text-align:left;padding:8px 10px;border-bottom:1px solid #E4E7EC}"
+        "table.grit-table th.fit,table.grit-table td.fit{white-space:nowrap;width:1%;vertical-align:top;text-align:left;padding:8px 10px;border-bottom:1px solid #E4E7EC}"
+        "table.grit-table td.wrap{vertical-align:top;text-align:left;padding:8px 10px;border-bottom:1px solid #E4E7EC}"
+        "table.grit-table td.wrap>div{min-width:12rem;white-space:normal;overflow-wrap:break-word;word-break:normal}"
+        "</style>"
     )
 
     @st.cache_resource
@@ -102,7 +116,7 @@ def main() -> None:
             st.subheader("Standing risk themes" if meta.get("standing_label") == "risk theme" else "Standing conditions")
             st.caption("Choose a row to focus the Co-Pilot on it. Escalating is red, Easing is green, and Unchanged is neutral. The word is the label.")
             condition_rows = [{"#": row["number"], "Item": row["name"] + (f" ({row['group']})" if row.get("group") else ""), "Trend": row["trend"], "Confidence": row["confidence"], "Basis": row["basis"]["plain"], "id": row["condition_id"]} for row in brief["conditions"]]
-            st.markdown(table_html(condition_rows, ["#", "Item", "Trend", "Confidence", "Basis"]), unsafe_allow_html=True)
+            show_table(condition_rows, ["#", "Item", "Trend", "Confidence", "Basis"])
             screens["Dashboard"] = screen_context("Dashboard", condition_rows)
             focus_labels = ["None", *[f"{row['#']}. {row['Item']}" for row in condition_rows]]
             picked_item = st.selectbox("Focus the Co-Pilot on", focus_labels, key=f"conditions-{profile.profile_id}-{run_id}")
@@ -112,7 +126,7 @@ def main() -> None:
                 st.subheader("Named items")
                 named = [item for group in brief["projects"] + brief["entities"] for item in group["items"]] + brief["suppliers"] + brief["customers"] + brief["hazards"] + brief["competitors"]
                 named_rows = [{"Item": item["name"], "This week": item["text"]["plain"] if item["text"] else "Nothing found"} for item in named]
-                st.markdown(table_html(named_rows), unsafe_allow_html=True)
+                show_table(named_rows)
             with right:
                 if brief["management_requests"]:
                     st.subheader("Management-requested topics")
@@ -134,7 +148,7 @@ def main() -> None:
             only_shown = st.toggle("Only what your profile shows", value=True)
             rows = [row for row in routed if row["shown"] or not only_shown]
             signal_table = signal_rows(rows, decisions)
-            st.markdown(table_html(signal_table), unsafe_allow_html=True)
+            show_table(signal_table)
             screens["Signals"] = screen_context("Signals", signal_table)
             signal_labels = ["None", *[f"{number}. {row['Title']}" for number, row in enumerate(signal_table, 1)]]
             picked_signal = st.selectbox("Open a signal", signal_labels, key=f"signal-open-{profile.profile_id}-{run_id}-{int(only_shown)}")
@@ -161,7 +175,7 @@ def main() -> None:
 
                 st.json(write_pack(db, run_id, profile))
             package_rows = [{"Package": row["package_id"], "Version": row["version"], "Status": row["status"], "Decided by": row["decided_by"] or "nobody yet"} for row in packages]
-            st.markdown(table_html(package_rows), unsafe_allow_html=True)
+            show_table(package_rows)
             screens["Packs and review"] = screen_context("Packs and review", package_rows)
             for row in packages:
                 st.markdown(f"**{row['package_id']} v{row['version']}**: {row['status']}. Content hash `{row['content_hash'][:16]}`. Decided by {row['decided_by'] or 'nobody yet'}.")
@@ -185,7 +199,7 @@ def main() -> None:
         with requests_tab:
             requests = db.management_requests()
             request_rows = [{key: ", ".join(row[key]) if isinstance(row[key], list) else row[key] for key in ("request_id", "status", "kind", "title", "keywords", "requested_by", "origin")} for row in requests]
-            st.markdown(table_html(request_rows), unsafe_allow_html=True)
+            show_table(request_rows)
             screens["Management requests"] = screen_context("Management requests", request_rows)
             with st.form("request"):
                 title = st.text_input("Concern, topic, trend or keyword")
@@ -215,7 +229,7 @@ def main() -> None:
             if not alerts:
                 st.caption("No RED pattern fired this week.")
             alert_rows = [{"Alert": row["alert_id"], "Status": row["status"], "Rule": (row["rule"] or {}).get("rule_id"), "Recipients": ", ".join(row["recipients"] or [])} for row in alerts]
-            st.markdown(table_html(alert_rows), unsafe_allow_html=True)
+            show_table(alert_rows)
             screens["RED and AIRIS"] = screen_context("RED and AIRIS", alert_rows)
             for row in alerts:
                 st.markdown(f"**{row['alert_id']}**: {row['status']}. Rule {row['rule'].get('rule_id')}. Recipients: {', '.join(row['recipients'])}.")
@@ -238,7 +252,7 @@ def main() -> None:
                 ready = preview(db, profile)
                 st.caption(f"{len(ready)} tier 1-2 signal(s) linked to a register sit in packages you approved and are not yet handed off.")
                 if ready:
-                    st.markdown(table_html(ready), unsafe_allow_html=True)
+                    show_table(ready)
                     if st.button("Export to AIRIS"):
                         st.json(export_to_airis(db, profile))
             else:

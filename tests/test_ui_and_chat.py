@@ -73,7 +73,20 @@ def test_trend_cells_keep_the_word_and_a_matching_colour() -> None:
     assert "Escalating" in rendered and "#F8D0D0" in rendered
     assert "Easing" in rendered and "#D8F3DC" in rendered
     assert "Unchanged" in rendered and "#EEF2F6" in rendered
+    assert "<td class='fit'>" in rendered
     assert "<script>" not in table_html([{"Item": "<script>alert(1)</script>"}])
+
+
+def test_short_columns_stay_on_one_line_and_narrative_columns_wrap() -> None:
+    rendered = table_html([{"Title": "A long title", "Tier": 1, "keywords": "export control"}])
+    assert "<th class='wrap'>Title</th>" in rendered and "<td class='wrap'><div>A long title</div></td>" in rendered
+    assert "<th class='fit'>Tier</th>" in rendered and "<td class='fit'>1</td>" in rendered
+    assert "<td class='wrap'><div>export control</div></td>" in rendered
+    assert "grit-table-scroll" in rendered
+    text = (Path(__file__).parents[1] / "grit" / "ui" / "app.py").read_text(encoding="utf-8")
+    assert "word-break:break-word" not in text
+    assert "st.html(body)" in text and "def show_table" in text
+    assert "white-space:nowrap" in text and "td.wrap>div" in text and "overflow-x:auto" in text
 
 
 def test_screen_context_names_the_open_tab_and_cuts_a_long_field() -> None:

@@ -15,6 +15,11 @@ TREND_COLOURS = {
 }
 SCREEN_LIMIT = 40
 FIELD_LIMIT = 240
+# Narrative columns wrap on spaces. Every other column, and every heading, stays on one line.
+WRAP_COLUMNS = {
+    "Item", "Basis", "Title", "This week", "Conditions", "Named items", "Your profile",
+    "title", "keywords", "Recipients", "named_items", "standing_conditions", "risk_register", "url",
+}
 
 
 def shown(value: Any) -> str:
@@ -93,13 +98,13 @@ def signal_detail(row: Mapping[str, Any]) -> list[tuple[str, str]]:
 
 
 def table_html(rows: Sequence[Mapping[str, Any]], columns: Sequence[str] | None = None) -> str:
-    """An HTML table whose cells wrap. A trend cell keeps its word and adds a colour that matches that word."""
+    """An HTML table. Short columns stay on one line. A narrative column wraps on spaces inside a fixed width. A trend cell keeps its word and adds a colour that matches that word."""
     if not rows:
         return ""
     chosen = list(columns) if columns is not None else [key for key in rows[0] if key != "signal_id"]
-    head = "".join(f"<th>{html.escape(column)}</th>" for column in chosen)
-    body = "".join("<tr>" + "".join(f"<td>{_cell(column, row.get(column))}</td>" for column in chosen) + "</tr>" for row in rows)
-    return f"<table class='grit-table'><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
+    head = "".join(f"<th class='{'wrap' if column in WRAP_COLUMNS else 'fit'}'>{html.escape(column)}</th>" for column in chosen)
+    body = "".join("<tr>" + "".join(_td(column, row.get(column)) for column in chosen) + "</tr>" for row in rows)
+    return f"<div class='grit-table-scroll'><table class='grit-table'><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>"
 
 
 def screen_context(tab: str, records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
@@ -111,6 +116,13 @@ def screen_context(tab: str, records: Sequence[Mapping[str, Any]]) -> dict[str, 
     return payload
 
 
+def _td(column: str, value: Any) -> str:
+    inner = _cell(column, value)
+    if column in WRAP_COLUMNS:
+        return f"<td class='wrap'><div>{inner}</div></td>"
+    return f"<td class='fit'>{inner}</td>"
+
+
 def _cell(column: str, value: Any) -> str:
     text = "" if value is None else str(value)
     colours = TREND_COLOURS.get(text) if column == "Trend" else None
@@ -118,7 +130,7 @@ def _cell(column: str, value: Any) -> str:
     if colours is None:
         return escaped
     ink, paper = colours
-    return f"<span style='color:{ink};background:{paper};padding:2px 8px;border-radius:4px'>{escaped}</span>"
+    return f"<span style='color:{ink};background:{paper};padding:2px 8px;border-radius:4px;white-space:nowrap'>{escaped}</span>"
 
 
 def _clip(value: Any) -> str:

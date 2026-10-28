@@ -302,7 +302,7 @@ The Co-Pilot sits in a drawer you can open, close, and resize from the sidebar (
 When the records are silent or older than the question needs, the Co-Pilot searches the web: Currents first, Brave when Currents finds nothing, 17 searches a day for each reader (spec 41). Web results are marked unvetted. **Add to pool** under a web citation queues the page for the next scan, whose rules decide whether it is kept.
 
 - Select **What's new since yesterday?** for the daily digests.
-- Choose a standing condition to focus the Co-Pilot on it. Trend labels keep their words: Escalating is red, Easing is green, and Unchanged is neutral. Table cells wrap, so a long basis or title stays on the row.
+- Choose a standing condition to focus the Co-Pilot on it. Trend labels keep their words: Escalating is red, Easing is green, and Unchanged is neutral. Short columns, including Trend and Confidence, stay on one line. A long basis, title, or keyword list wraps on spaces. A table that is wider than the panel scrolls sideways.
 - Type `/concern TITLE: keyword, keyword` (or `/topic`, `/trend`, `/keyword`) to propose a management request. A page is kept for a request only when its headline or lead names a keyword exactly, so give short keywords: `/concern PHP flaws: PHP2Shell, CVE-2026-109618, PHP`. Without a colon, the title's distinctive terms (acronyms and names such as PHP, Node.js, GitLab) become the keywords. A reviewer can correct them with `grit requests revise --id ID --keywords "..." --reason "..."`.
 - Type `/note TEXT` to leave a note for your profile. It goes to `secrets/readers/<profile>/inbox/` for filing.
 
