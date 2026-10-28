@@ -104,6 +104,8 @@ Commit `0381af6`.
 
 ### Batch D: reports (done)
 
+Commit `7f3573f`. Commit `6387e60` keeps short dashboard columns on one line.
+
 - **Point 15.** Every Word brief, Markdown preview, and slide carries this statement on the cover and in the footer: "GRIT-Scan AI-generated suggestions for consideration. The scan can miss a source, misread a page, or leave out context. A named person reviews this before anyone acts on it."
 - **Point 16.** Each summary card keeps whole sentences, with no truncation mark. The first sentence is kept whole when it is longer than the box, and the box wraps it. The card says what the point means for the pack, using the pack's short label.
 - **Point 29.** A critical item is a key risk or an escalating theme, or, on a Group pack, a condition with evidence this period. One summary slide covers up to two items, two slides cover three or four, and three slides cover five or more. Each slide shows at most two full cards. Items past the sixth are named in full on the last slide. The Group scenario outlook stays after those slides.
