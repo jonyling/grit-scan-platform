@@ -79,7 +79,7 @@ Commit `7140799`.
 
 ### Batch B: alerts and daily lane (done)
 
-Commit `fa9e79b` delivered points 9 and 14. Points 3, 4, and 5 are in the commit that adds `grit/core/red_events.py`, `grit/report/red_mail.py`, and the GDELT step in `grit/daily/lane.py`.
+Commit `fa9e79b` delivered points 9 and 14. Commit `cfddaf6` delivered points 3, 4, and 5.
 
 - **Point 9 (done).** Each daily run writes `output/runs/DATE-PACK-daily/DATE-PACK-daily-signals.csv`, in the brief's order, UTF-8 with a byte-order mark for Excel.
 - **Point 14 (done).** URS Taiwan has its own daily run, fed by:
