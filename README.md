@@ -73,7 +73,7 @@ The Group pack (`ste`) briefs the CEO and the Chairman each month on the geopoli
    .venv/bin/python -m grit scenarios --pack ste --date DATE
    ```
 
-6. Record Wilson's approval. The draft becomes the scenario register, with keywords for every signpost, and the monthly radar then shows where each shift is heading: which case its signposts lean to, the signposts seen with their sources, and the planned responses they trigger. These are counts of signposts, never odds.
+6. Record Wilson's approval. The draft becomes the scenario register, with keywords for every signpost, and the monthly radar then shows where each shift is heading: which case its signposts lean to, the signposts seen with their sources, and the planned responses they trigger. These are counts of signposts, never odds. A case can also carry one sentence on where STE could gain, marked "Hypothesis: to validate with BAs". The tracker counts five leading indicators (PLA activity, shipping and insurance, export controls and sanctions, cross-strait politics, and overseas fab ramp-up). A green, amber, or red band appears only after a named person sets the bounds.
 
    ```bash
    .venv/bin/python -m grit scenarios-approve --pack ste --date DATE --by "Wilson Yeo"
@@ -85,6 +85,8 @@ The monthly brief is the Group Strategic Radar: one row for each condition, with
 ## State of the Situation
 
 A State of the Situation (SotS) document explains one strategic topic in depth: its history, structural drivers, key actors, where things stand, the key uncertainties, and the indicators to watch. It is built only from the thought-leadership reports in the library, and every sentence cites a report page ([spec 38](specs/38_Report_Library_and_State_of_the_Situation.md)). It is the base for the Group pack's forecasts and options. There are 11 topics: Wilson's eight strategic shifts, plus China-Taiwan, defence budgets, and competitors.
+
+The history section uses more of the topic's own passages and lists authoritative sources proposed beyond the library. Those sources are not cited until a named person adds the file. The exposure section adds a table for every business area: Taiwan and China entities, staff, key suppliers, chip or component dependence, revenue and asset concentration, and a High, Medium, or Low rating for the best, medium, and worst case. A filled cell is proposed until the business area confirms it. A blank cell is a fact the register does not hold. Where STE could gain is copied from a reviewed scenario and marked "Hypothesis: to validate with BAs".
 
 1. Put the reports in `secrets/reports/`. `grit/library/catalogue.py` names each file, its publisher and its edition.
 

@@ -70,6 +70,15 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
                 cells[0] = cells[0].replace(reading["name"], f"**{reading['name']}**", 1)
                 body.append("| " + " | ".join(cell.replace("|", "/").replace("\n", " ") for cell in cells) + " |")
             body += ["", f"*{SCENARIO_NOTE} Scenarios v{outlook['version']}, reviewed by {outlook['reviewed_by']} on {outlook['reviewed_on']}.*"]
+            if outlook.get("indicators"):
+                body += ["", "Leading indicators. A band is not established until a named person sets the green and amber bounds."]
+                body += [f"- **{item['name']}.** {item['signals']} signal(s) this period. Band: {item['band']}." for item in outlook["indicators"]]
+            if outlook.get("risk_links"):
+                body += ["", "| Group risk | BA risks | LOB risks | Status |", "|---|---|---|---|"]
+                for row in outlook["risk_links"]:
+                    ba = "; ".join(f"{item['id']} {item['name']}" for item in row["ba"]) or ""
+                    lob = "; ".join(item["name"] for item in row["lob"]) or ""
+                    body.append(f"| {row['group_risk']} {row['name']} | {ba} | {lob} | {row['status']} |".replace("\n", " "))
         elif key == "CONDITIONS" and brief.get("conditions") and meta.get("level") == "GROUP":
             options = any(row.get("options") for row in brief["conditions"]) or "RESPONSE_OPTIONS" in meta["sections"]
             headers = radar_headers(options=options)

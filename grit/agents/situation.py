@@ -36,8 +36,8 @@ class Section:
 SECTIONS = (
     Section("HISTORY", "History and how we got here", NARRATIVE,
             "How the situation developed: the longer history, the turning points, and the decisions and events that led to the present. "
-            "Go back as far as the passages allow, and keep the order of events clear.",
-            "history background origins turning points how it developed over the past decade"),
+            "Go back as far as the passages allow, keep the order of events clear, and name the report that states each turning point.",
+            "history background origins turning points official record how it developed over past decades"),
     Section("DRIVERS", "Structural drivers", NARRATIVE,
             "The long-running forces behind the situation: economic, fiscal, political, security and technological. Explain how each works, not just that it exists.",
             "structural drivers underlying causes long-term trends forces shaping"),

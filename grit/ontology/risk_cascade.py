@@ -35,6 +35,13 @@ class RiskHit:
         return asdict(self)
 
 
+def _add_named(bucket: list[dict[str, str]], item_id: str, name: str) -> None:
+    name = " ".join(name.split())
+    if not name or any(row["id"] == item_id and row["name"] == name for row in bucket):
+        return
+    bucket.append({"id": item_id, "name": name})
+
+
 def _boundary(keyword: str) -> re.Pattern[str]:
     body = r"\s+".join(re.escape(part) for part in keyword.split())
     return re.compile(rf"(?<![\w]){body}(?![\w])", re.IGNORECASE)
@@ -45,9 +52,11 @@ class RiskCascade:
         self.weights = {level["level"]: int(level["weight"]) for level in cascade.get("levels") or []}
         self.entity_themes = entity_themes
         self.ba_names = {theme["themeId"]: theme for theme in (ba_themes or {}).get("themes") or []}
+        self.entity_names = {theme["themeId"]: theme for theme in (entity_themes or {}).get("themes") or []}
+        self.crosswalk_rows = list(cascade.get("crosswalk") or [])
         self.crosswalk: dict[str, list[str]] = {}
         self.entity_crosswalk: dict[str, list[str]] = {}
-        for row in cascade.get("crosswalk") or []:
+        for row in self.crosswalk_rows:
             self.crosswalk[row["baThemeId"]] = list(row.get("groupRiskCodes") or [])
             self.entity_crosswalk[row["entityThemeId"]] = list(row.get("groupRiskCodes") or [])
         self.group_names: dict[str, str] = {}
@@ -83,6 +92,29 @@ class RiskCascade:
                     found.append(RiskHit("GROUP", self.weights.get("GROUP", 1), code, self.group_names[code], None, "CROSSWALK", f"{theme_id} (PROPOSED mapping)"))
         found.sort(key=lambda hit: (-hit.weight, hit.basis != "THEME_KEYWORD" and hit.basis != "KEYWORD", hit.risk_id))
         return found
+
+    def links(self) -> list[dict[str, Any]]:
+        """Each Group risk, the BA themes that crosswalk up to it, and any LOB the register names under that theme.
+
+        A crosswalk row stays proposed. A LOB cell stays empty when neither the row nor the theme names one.
+        """
+        grouped: dict[str, dict[str, Any]] = {}
+        for row in self.crosswalk_rows:
+            for code in row.get("groupRiskCodes") or []:
+                slot = grouped.setdefault(code, {
+                    "group_risk": code, "name": self.group_names.get(code, code), "ba": [], "lob": [], "status": "PROPOSED",
+                })
+                ba_id = row.get("baThemeId")
+                if ba_id:
+                    theme = self.ba_names.get(ba_id) or {}
+                    _add_named(slot["ba"], ba_id, str(theme.get("themeName") or ba_id))
+                    _add_named(slot["lob"], ba_id, str(theme.get("lob") or theme.get("lobName") or ""))
+                _add_named(slot["lob"], str(row.get("baThemeId") or ""), str(row.get("lob") or ""))
+                entity_id = row.get("entityThemeId")
+                if entity_id:
+                    theme = self.entity_names.get(entity_id) or {}
+                    _add_named(slot["lob"], entity_id, str(theme.get("lob") or theme.get("lobName") or ""))
+        return list(grouped.values())
 
 
 def load_risk_cascade(config_dir: Path = CONFIG_DIR, pack: Any | None = None) -> RiskCascade:

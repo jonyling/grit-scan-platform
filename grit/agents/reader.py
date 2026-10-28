@@ -642,6 +642,17 @@ def check_scenarios(draft: Any, sources: Mapping[str, Mapping[str, Any]], anchor
                 found.append(f"CERTAINTY_CLAIM: {where}: impact {number}: '{_CERTAIN.search(text).group(0)}'.")
             if not anchor_hits(text, anchors):
                 found.append(f"NO_ANCHOR: {where}: impact {number} names a business area, line of business, entity or country as business_area lists it.")
+        gain = item.get("where_ste_could_gain")
+        if gain not in (None, ""):
+            if not isinstance(gain, str):
+                found.append(f"BAD_SHAPE: {where}: where_ste_could_gain is one sentence or null.")
+                gain = ""
+            elif not _MODAL.search(gain):
+                found.append(f"NOT_CONDITIONAL: {where}: where_ste_could_gain uses could, may or might.")
+            elif _CERTAIN.search(gain):
+                found.append(f"CERTAINTY_CLAIM: {where}: where_ste_could_gain: '{_CERTAIN.search(gain).group(0)}'.")
+            elif not anchor_hits(gain, anchors):
+                found.append(f"NO_ANCHOR: {where}: where_ste_could_gain names a business area, line of business, entity or country as business_area lists it.")
         responses = item.get("responses")
         if not isinstance(responses, list) or not 1 <= len(responses) <= 2:
             found.append(f"BAD_COUNT: {where}: one or two responses.")
@@ -657,7 +668,7 @@ def check_scenarios(draft: Any, sources: Mapping[str, Mapping[str, Any]], anchor
                 found.append(f"BAD_TRIGGER: {where}: response {number}: trigger is the number of one of this case's signposts.")
             if _CERTAIN.search(response["action"]):
                 found.append(f"CERTAINTY_CLAIM: {where}: response {number}: '{_CERTAIN.search(response['action']).group(0)}'.")
-        loose = [narrative, *(signposts or []), *(counters or []), *(impact or []), *[str(r.get("action")) for r in responses if isinstance(r, Mapping)]]
+        loose = [narrative, *(signposts or []), *(counters or []), *(impact or []), *([gain] if isinstance(gain, str) and gain.strip() else []), *[str(r.get("action")) for r in responses if isinstance(r, Mapping)]]
         if any(_case_marks(text) for text in loose):
             found.append(f"MARK_IN_TEXT: {where}: [S#] and [P#] marks belong in evidence only.")
         found += text_problems(" ".join(loose), haystack(sources, cited), where)
@@ -694,7 +705,7 @@ def propose_scenarios(
         violations = check_scenarios(draft, sources, anchors, owners, uncertainties)
         if not violations:
             log.status = "VALIDATED"
-            keep = ("case", "name", "narrative", "evidence", "signposts", "counter_indicators", "impact", "responses")
+            keep = ("case", "name", "narrative", "evidence", "signposts", "counter_indicators", "impact", "where_ste_could_gain", "responses")
             known = {normalise(item): item for item in uncertainties}
             return {"status": "PROPOSED", "builds_on": [known[normalise(item)] for item in _strings(draft.get("builds_on") or []) or []],
                     "cases": [{key: item.get(key) for key in keep} for item in draft["cases"]], "violations": []}, log

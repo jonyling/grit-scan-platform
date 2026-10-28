@@ -2,7 +2,7 @@
 
 This page lists the 30 points of improvement Jony Ling raised on 26 October 2026 and the batches that deliver them. Each point has its current status. Use the page to choose the next batch, and to hand the work to another coding agent.
 
-Status as of 28 October 2026: Batches A, B, C, and D are done. Batches E to G are not started.
+Status as of 28 October 2026: Batches A, B, C, D, and E are done. Batches F and G are not started.
 
 ## Rules for the next agent
 
@@ -17,7 +17,7 @@ Every agent working on this repository must follow these rules:
   .venv/bin/python -m pytest -q
   ```
 
-  As of 28 October 2026, 606 tests pass. The URS and DS&C workbooks in `secrets/` rebuild the same registers that are already in `config/`.
+  As of 28 October 2026, 611 tests pass. The URS and DS&C workbooks in `secrets/` rebuild the same registers that are already in `config/`.
 
 - End each commit message with this trailer:
 
@@ -50,12 +50,12 @@ Every agent working on this repository must follow these rules:
 | 16 | Improve executive summary slide 2: remove truncation marks ("…") and say what each point means for DS&C. | D | Done. Each summary card keeps whole sentences and says what the point means for the pack's short label. |
 | 17 | Move to a newer, more capable Gemini model, such as Gemini 4 Argon. | G | Not started |
 | 18 | Put a timeout on every call to an outside server. | A | Done, commit `7140799` |
-| 19 | In State of the Situation (SotS) and Group packs, add for each scenario a hypothesis on where STE could gain, marked for BAs to validate. | E | Not started |
-| 20 | In SotS, give an exposure table for every BA: Taiwan and China entities, staff and key suppliers, chip or component dependence, revenue and asset concentration, and a High, Medium or Low rating per scenario. Mark each as BA-confirmed or proposed. | E | Not started |
-| 21 | Turn indicators into leading signals with green, amber and red thresholds: PLA activity, shipping and insurance, export controls and sanctions, cross-strait politics, and overseas fab ramp-up. | E | Not started |
+| 19 | In State of the Situation (SotS) and Group packs, add for each scenario a hypothesis on where STE could gain, marked for BAs to validate. | E | Done. The line is copied only when a reviewed case already states it, and it is marked "Hypothesis: to validate with BAs". |
+| 20 | In SotS, give an exposure table for every BA: Taiwan and China entities, staff and key suppliers, chip or component dependence, revenue and asset concentration, and a High, Medium or Low rating per scenario. Mark each as BA-confirmed or proposed. | E | Done. A filled cell is proposed until the business area confirms it. A fact the register does not hold stays blank. |
+| 21 | Turn indicators into leading signals with green, amber and red thresholds: PLA activity, shipping and insurance, export controls and sanctions, cross-strait politics, and overseas fab ramp-up. | E | Done. The tracker counts matching signals. Green, amber, and red apply only after a named person sets both bounds. Until then the band is not established. |
 | 22 | Do not repeat the same figures or points within one report. | D | Done. A later sentence that repeats an earlier sentence, or that only repeats a figure already used, is dropped. A table cell stays as written. The disclaimer can repeat. |
-| 23 | Make the SotS history section fuller, citing authoritative sources beyond the report library. | E | Not started |
-| 24 | Map Group risks down to BA and LOB, and BA risks up to Group. | E | Not started |
+| 23 | Make the SotS history section fuller, citing authoritative sources beyond the report library. | E | Done. History uses more passages from the topic's own reports. Sources beyond the library are listed as proposed and are not cited until a named person adds the file. |
+| 24 | Map Group risks down to BA and LOB, and BA risks up to Group. | E | Done. Each Group risk lists the business-area themes that crosswalk up to it, and any LOB the register names. A blank LOB cell stays blank. The crosswalk stays proposed. |
 | 25 | Recommend actions down to specific signals, scenarios (Best, Medium, Worst) and predictions. | D | Done. A finding or a triggered scenario response shows an action only when that action already exists, marked "Suggestion for the business area to consider." |
 | 26 | Base profiles on each BA's business partner, not the office holders. Business partners filter signals to office holders. | F | Blocked. Profiles are in `config/`. |
 | 27 | Add Wilson's Group-level daily adverse news agent, and make its output deterministic. | F | Blocked. Needs Wilson's prompt. |
@@ -112,13 +112,13 @@ Commit `7f3573f`. Commit `6387e60` keeps short dashboard columns on one line.
 - **Point 22.** Before the file is saved, a later sentence that repeats an earlier sentence, or whose figures were all used earlier, is dropped. A table cell is left as written. The disclaimer can repeat. A suggestion is dropped only when that same suggestion was already shown.
 - **Point 25.** A finding lists a suggestion after its hypothesis when a Proposer option or a triggered scenario response already cites that signal. The line starts with "Suggestion for the business area to consider." A signal, a scenario case, or a hypothesis with no existing action gets none.
 
-### Batch E: State of the Situation and scenarios
+### Batch E: State of the Situation and scenarios (done)
 
-- **Point 19.** Add a "where STE could gain" hypothesis to each scenario, marked "Hypothesis: to validate with BAs".
-- **Point 20.** Build a BA exposure table for SotS with the fields in point 20. Mark each cell BA-confirmed or proposed, and leave missing facts blank.
-- **Point 21.** Define leading indicators with green, amber and red thresholds, and track them in the scenario tracker (spec 43).
-- **Point 23.** Widen the SotS history section with cited authoritative sources.
-- **Point 24.** Link each Group risk to the BA and LOB risks under it, and roll BA risks up to Group.
+- **Point 19.** A reviewed case can carry `where_ste_could_gain`. The Group brief, the scenario draft, and the State of the Situation copy that sentence and mark it "Hypothesis: to validate with BAs". The Strategist leaves it empty when the sources do not support a gain. A certainty word withholds the draft.
+- **Point 20.** The exposure section has one row per business area. Taiwan and China entities, staff, key suppliers, chip or component dependence, revenue and asset concentration, and a High, Medium, or Low rating for each case are filled only from the register. A filled cell is proposed until `exposureStatus` is `BA-confirmed`. A missing fact stays blank.
+- **Point 21.** `grit/pipeline/indicators.py` defines the five leading indicators. The scenario tracker counts kept signals whose title or lead contains an indicator phrase. Green, amber, and red apply only when both bounds are set. Until a named person sets them, the band is not established.
+- **Point 23.** The history section retrieves a second set of passages from the topic's own reports, up to 20. Under that section, the document lists the topic's proposed sources that are not in the library. A sentence cannot cite one until a named person adds the file.
+- **Point 24.** `RiskCascade.links()` lists, for each Group risk, the business-area themes in the crosswalk and any LOB named on the row or the theme. The Group brief shows that table. A business-area theme still rolls up to Group through the existing proposed crosswalk. A LOB the register does not name stays blank.
 
 ### Batch F: data and governance
 
@@ -150,6 +150,6 @@ Projected on 26 October 2026, measured in working sessions of one batch each:
 |---|---|
 | Essentials: batches A to D | About 4.5 to 5 |
 | All batches, A to G | About 10 to 13 |
-| Used so far: batches A to D | About 4.5 |
+| Used so far: batches A to E | About 5.5 |
 
 Batches E and F cost the most, because they change report generation and need the inputs listed in the decisions table.

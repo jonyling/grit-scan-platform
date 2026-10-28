@@ -7,6 +7,7 @@ DISCLAIMER = (
 )
 
 SUGGESTION_LABEL = "Suggestion for the business area to consider."
+HYPOTHESIS_LABEL = "Hypothesis: to validate with BAs."
 
 
 def suggestion_line(action: str) -> str:

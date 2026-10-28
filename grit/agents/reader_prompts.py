@@ -218,6 +218,7 @@ Return this JSON object:
             "signposts": ["an observable development that would show this case is unfolding", ...],
             "counter_indicators": ["a development that would show it is not", ...],
             "impact": ["One sentence: what it could mean for one named business area, line of business, entity or country. Use could, may or might.", ...],
+            "where_ste_could_gain": null or "One sentence on where STE could gain if this case unfolds. Use could, may or might, and name one business area, line of business, entity or country. This is a hypothesis for the business areas to validate, not a forecast. Use null when the sources do not support a gain.",
             "responses": [{"action": "what STE could do, starting with a verb such as Consider, Prepare or Review",
                            "owner": "one of owners",
                            "trigger": the number (1, 2, ...) of this case's signpost that should set it off}]}]}
@@ -229,6 +230,7 @@ Rules:
 - Three or four signposts and one or two counter-indicators per case. A signpost is observable in news or official
   releases: an announcement, a contract, a rule, a price, a launch. No signpost appears in two cases.
 - One to three impact sentences and one or two responses per case. A response's trigger points to one of its case's signposts.
+- where_ste_could_gain is one sentence or null. Do not invent a gain the sources do not support.
 - Write no [S#] or [P#] marks outside evidence. Every number you write must appear in a source the case's evidence cites.
 - Do not write a URL, or the words severity, likelihood, probability, risk score, or risk rating. Do not give odds.
 - Do not use will, certainly, or another word of certainty outside attributed evidence.

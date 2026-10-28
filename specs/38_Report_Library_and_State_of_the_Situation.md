@@ -55,6 +55,8 @@ The Situation Analyst drafts each section from at most 12 passages, numbered P1,
 
 `not_covered` is required wherever the passages cannot support what the section needs. The library's gaps stay visible and are never filled from the model's memory.
 
+The history section retrieves a second set of passages from the same reports, aimed at earlier turning points, and may use up to 20 passages. Under that section, the document lists the topic's proposed sources that are not in the library yet. A sentence cannot cite one of those sources until a named person adds the file.
+
 The "In brief" is written last, from the validated sections and only the passages they cite.
 
 ## 5. STE exposure
@@ -66,6 +68,21 @@ Code writes this section, never the model. It lists:
 - the business areas' own risk themes that share the topic's vocabulary.
 
 It is proposed until the business areas confirm it.
+
+The same section adds one row for every business area:
+
+| Column | What fills it |
+|---|---|
+| Taiwan entities, China entities | Entity names whose country of incorporation is Taiwan or China. Hong Kong and Macau stay out of both columns. |
+| Staff | A count only when the entity register states `staff`, `staffCount`, or `headcount`. |
+| Key suppliers | Supplier names that match the topic's counterparties or countries. |
+| Chip or component dependence, revenue concentration, asset concentration | The text only when the exposure register states `chipDependence` or `componentDependence`, `revenueConcentration`, or `assetConcentration`. |
+| Best, Medium, Worst | `High`, `Medium`, or `Low` only when `scenarioRatings` states that word for the case. |
+| Status | `BA-confirmed` when `exposureStatus` is `BA-confirmed` and a cell is filled. Otherwise `proposed` when a cell is filled. |
+
+A filled cell is marked `proposed` or `BA-confirmed`. An empty cell stays empty.
+
+Where STE could gain is not drafted here. When a reviewed scenario for a shift this topic covers already has `where_ste_could_gain`, the document copies that sentence and marks it "Hypothesis: to validate with BAs".
 
 ## 6. Output and sign-off
 
@@ -83,6 +100,8 @@ In-text citations name the report, the edition, and the pages, such as "(PwC Sem
 - A sentence without a citation, a number not in its cited passages, or an unattributed forecast withholds the section.
 - A topic with no report makes no model call, and states that the library does not cover it.
 - An unchanged report is not read or embedded again.
-- The exposure section names only what the registers hold.
+- The exposure section names only what the registers hold. A missing staff count, dependence, concentration, or scenario rating stays blank.
+- A source listed beyond the library is marked proposed and is not cited.
+- A gain line appears only when a reviewed scenario already states it, and it keeps the hypothesis mark.
 
 The pilot of 15 October 2026 drafted all four pilot topics. All 28 sections passed their checks; two needed a third attempt.

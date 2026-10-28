@@ -286,6 +286,8 @@ def _scenarios_docx(document: Mapping[str, Any], path: Path) -> None:
             doc.add_paragraph("What it could mean for STE:")
             for text in item.get("impact") or []:
                 doc.add_paragraph(text, style="List Bullet")
+            if item.get("where_ste_could_gain"):
+                doc.add_paragraph(f"Hypothesis: to validate with BAs. {item['where_ste_could_gain']}")
             doc.add_paragraph("Planned responses:")
             for response in item.get("responses") or []:
                 doc.add_paragraph(f"{response['action']} Owner: {response['owner']}. Trigger: signpost {response['trigger']}.", style="List Bullet")

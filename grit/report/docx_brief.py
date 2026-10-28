@@ -622,7 +622,7 @@ def _qa(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bo
     return True
 
 
-SCENARIO_HEADERS = ("Strategic shift", "Where the signposts lean", "Signposts seen, with sources", "Counter-indicators seen", "Responses now triggered")
+SCENARIO_HEADERS = ("Strategic shift", "Where the signposts lean", "Signposts seen, with sources", "Counter-indicators seen", "Responses now triggered", "Where STE could gain")
 SCENARIO_NOTE = ("Each shift has a reviewed best, medium and worst case for STE. A signpost counts as seen when a kept signal in the period touches the "
                  "shift and names its keywords. These are counts of signposts, not odds.")
 
@@ -639,11 +639,12 @@ def scenario_cells(reading: Mapping[str, Any]) -> list[list[str]]:
 
     seen = [f"{case['title'].split(' case')[0]}: {item['text']} {_ref_text(item)}".strip() for case in reading["cases"] for item in case["signposts_seen"]]
     against = [f"{case['title'].split(' case')[0]}: {item['text']} {_ref_text(item)}".strip() for case in reading["cases"] for item in case["counter_indicators_seen"]]
-    from grit.report.notices import suggestion_line
+    from grit.report.notices import HYPOTHESIS_LABEL, suggestion_line
 
     triggered = [line for case in reading["cases"] for response in case["responses_triggered"] if (line := suggestion_line(f"{response['action']} Owner: {response['owner']}."))]
+    gains = [f"{case['title'].split(' case')[0]}: {HYPOTHESIS_LABEL} {case['where_ste_could_gain']}" for case in reading["cases"] if case.get("where_ste_could_gain")]
     names = [f"{case['title'].split(' for')[0]}: {case['name']}" for case in reading["cases"]]
-    return [[reading["name"], *names], [lean_text(reading)], seen or ["None this period."], against or ["None this period."], triggered or ["None."]]
+    return [[reading["name"], *names], [lean_text(reading)], seen or ["None this period."], against or ["None this period."], triggered or ["None."], gains or ["None in the reviewed scenarios."]]
 
 
 def _scenarios(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
@@ -652,13 +653,29 @@ def _scenarios(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool
         return bool(outlook and outlook.get("shifts"))
     _orient(document, landscape=True)
     _heading(document, title)
-    widths = (5.2, 3.6, 7.6, 4.4, 4.4)
+    widths = (4.6, 3.2, 6.2, 3.8, 3.8, 4.0)
     table = _table(document, SCENARIO_HEADERS, widths)
     for reading in outlook["shifts"]:
         cells = table.add_row().cells
         for cell, width, lines in zip(cells, widths, scenario_cells(reading)):
             cell.width = Cm(width)
             _cell_lines(cell, lines, bold_first=cell is cells[0])
+    if outlook.get("indicators"):
+        document.add_paragraph("Leading indicators. A band is not established until a named person sets the green and amber bounds.")
+        for item in outlook["indicators"]:
+            bounds = "bounds not set" if item.get("green_max") is None or item.get("amber_max") is None else f"green at or under {item['green_max']}, amber at or under {item['amber_max']}"
+            document.add_paragraph(f"{item['name']}: {item['signals']} signal(s) this period. Band: {item['band']} ({bounds}). Applies to {', '.join(item['applies_to'])}.", style="List Bullet")
+    if outlook.get("risk_links"):
+        document.add_paragraph("Group risks and the business-area and LOB risks under them. A blank LOB cell means the register does not name one. The crosswalk is proposed until a named person confirms it.")
+        link_widths = (6.0, 8.0, 6.0, 3.0)
+        links = _table(document, ("Group risk", "BA risks", "LOB risks", "Status"), link_widths)
+        for row in outlook["risk_links"]:
+            _row(links, (
+                f"{row['group_risk']} {row['name']}".strip(),
+                "; ".join(f"{item['id']} {item['name']}" for item in row["ba"]) or "",
+                "; ".join(item["name"] for item in row["lob"]) or "",
+                row["status"],
+            ), link_widths)
     note = document.add_paragraph()
     run = note.add_run(f"{SCENARIO_NOTE} Scenarios v{outlook['version']}, reviewed by {outlook['reviewed_by']} on {outlook['reviewed_on']}.")
     run.italic, run.font.size, run.font.color.rgb = True, Pt(8), LIGHT

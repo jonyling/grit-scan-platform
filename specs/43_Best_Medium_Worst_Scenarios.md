@@ -43,6 +43,7 @@ The draft goes to `output/runs/RUN/scenarios/`, as JSON and as a Word document f
 | Signposts | Three or four observable developments, such as an announcement, a contract, a rule, a price or a launch, that would show this case is unfolding. No signpost appears in two cases. |
 | Counter-indicators | One or two developments that would show it is not |
 | What it could mean for STE | One to three sentences, each naming a business area, line of business, entity or country |
+| Where STE could gain | One sentence, or nothing. It uses could, may, or might, names an anchor, and is marked "Hypothesis: to validate with BAs". The Strategist leaves it empty when the sources do not support a gain. |
 | Planned responses | One or two actions, each with an owner and the signpost that triggers it |
 
 ## 4. Checks
@@ -56,7 +57,7 @@ A draft that fails is redrafted with its violations listed, up to three attempts
 | Evidence | Each line cites supplied ids; every number is in a cited source; a forecast (will, expected to, projected, forecast) names its source or begins "According to" |
 | Possibility | Narratives and impacts use could, may or might, and no word of certainty |
 | Signposts | Three or four per case, never shared between cases; one or two counter-indicators |
-| Anchors | Every impact names a business area, line of business, entity or country from the registers |
+| Anchors | Every impact names a business area, line of business, entity or country from the registers. A gain sentence, when present, does the same and stays conditional. |
 | Responses | A known owner role, and a trigger that points to one of the case's signposts |
 | Text | No `[S#]` or `[P#]` mark outside evidence; no number outside the cited sources; no URL or governed score word |
 
@@ -94,6 +95,8 @@ The reviewer can edit any keyword in the register. Shifts whose draft was withhe
 | Distinctive | At least one matched keyword is used by no other item of the shift, and by no more than 8% (at least 5) of the period's shift signals. A place or programme every headline names does not show which case is unfolding. An item without a distinctive keyword needs all its keywords. |
 | Lean | The case with the most signposts seen. A tie reads "mixed"; none reads "no signpost seen". The previous run's lean is shown beside it. |
 | Responses | A planned response is "now triggered" when its trigger signpost is seen. The brief marks each triggered response "Suggestion for the business area to consider." |
+| Where STE could gain | Copied from the reviewed case. The brief marks it "Hypothesis: to validate with BAs". |
+| Leading indicators | PLA activity, shipping and insurance, export controls and sanctions, cross-strait politics, and overseas fab ramp-up. A kept signal counts when its title or lead contains one of the indicator's phrases. Green, amber, and red apply only when a named person has set both bounds. Until then the band is not established. |
 
 Leans are counts of signposts seen, never odds. The tracker writes nothing; every brief recomputes it from the pool.
 
@@ -101,7 +104,7 @@ Leans are counts of signposts seen, never odds. The tracker writes nothing; ever
 
 When the Group pack has a reviewed register, the Group radar brief adds a "Scenario outlook" section right after the standing conditions:
 
-- **Word, Markdown and Excel:** one row per shift, with the three case names, where the signposts lean, the signposts and counter-indicators seen with their sources, and the responses now triggered.
+- **Word, Markdown and Excel:** one row per shift, with the three case names, where the signposts lean, the signposts and counter-indicators seen with their sources, the responses now triggered, and where STE could gain. The same brief lists the five leading indicators and a table of each Group risk with the business-area risks under it and any LOB the register names. A blank LOB cell means the register does not name one. The crosswalk stays proposed until a named person confirms it.
 - **PowerPoint:** a scenario outlook slide after the executive-summary slides. A pack with many critical items has two or three summary slides before that outlook.
 - **Package:** the signals the outlook cites join the package membership, so review covers them.
 

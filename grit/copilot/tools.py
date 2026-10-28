@@ -320,7 +320,8 @@ class Toolbox:
                 tracker = self._state(f"TRACK:{run['run_id']}:{item['themeId']}", f"{item['name']}: {lean}", f"Scenario tracker, {run['run_date']}", shift=item["themeId"])
                 cases = []
                 for case in item["cases"]:
-                    text = " ".join([case["name"], case["narrative"], *[sign["text"] for sign in case["signposts"]], *case.get("impact", []),
+                    gain = f"Hypothesis: to validate with BAs. {case['where_ste_could_gain']}" if case.get("where_ste_could_gain") else ""
+                    text = " ".join([case["name"], case["narrative"], *[sign["text"] for sign in case["signposts"]], *case.get("impact", []), gain,
                                      *[f"{response['action']} {response['owner']}" for response in case.get("responses") or []]])
                     source = self._state(f"SCN:{register.get('version')}:{item['themeId']}:{case['case']}", text,
                                          f"Reviewed scenarios v{register.get('version')}, {case['title'] if 'title' in case else case['case']}", shift=item["themeId"], case=case["case"])
@@ -330,7 +331,8 @@ class Toolbox:
                         ids = [self._signal(signal).source_id for signal in (self.pool.signal(signal_id) for signal_id in sign["signal_ids"][:3]) if signal]
                         seen.append({"signpost": sign["text"], "signals": ids})
                     cases.append({"id": source.source_id, "case": case["case"], "name": case["name"], "narrative": case["narrative"],
-                                  "signposts": [sign["text"] for sign in case["signposts"]], "impact": case.get("impact"), "responses": case.get("responses"),
+                                  "signposts": [sign["text"] for sign in case["signposts"]], "impact": case.get("impact"),
+                                  "where_ste_could_gain": gain or None, "responses": case.get("responses"),
                                   "signposts_seen": seen, "responses_triggered": (seen_case or {}).get("responses_triggered") or []})
                 out.append({"pack": pack_name, "shift": item["themeId"], "name": item["name"], "tracker_id": tracker.source_id, "lean": lean,
                             "reviewed": f"v{register.get('version')} by {register.get('reviewedBy')} on {register.get('reviewedOn')}", "cases": cases})

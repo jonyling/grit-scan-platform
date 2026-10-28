@@ -51,11 +51,12 @@ def exposure(item: Topic, config_dir: Path = CONFIG_DIR) -> dict[str, Any]:
         folded = name.casefold()
         return any(re.search(rf"(?<![a-z]){re.escape(fragment)}(?![a-z])", folded) for fragment in fragments)
 
-    areas = []
+    areas, table = [], []
     for name, manifest in sorted(manifests(config_dir).items()):
         if manifest.get("level") != "BA":
             continue
         pack = load_ontology_pack(config_dir, name)
+        table.append(_exposure_row(name, pack, item))
         entities = [row for row in pack.exposure.get("entities") or [] if str(row.get("countryOfIncorporation") or "").casefold() in wanted]
         suppliers = [row["supplierName"] for row in pack.exposure.get("suppliers") or [] if named(row["supplierName"])]
         customers = [row["customerName"] for row in pack.exposure.get("customers") or [] if named(row["customerName"])]
@@ -67,8 +68,109 @@ def exposure(item: Topic, config_dir: Path = CONFIG_DIR) -> dict[str, Any]:
                 "suppliers": suppliers, "customers": customers,
                 "themes": [{"id": row["themeId"], "name": row["themeName"], "tier": row.get("tier")} for row in themes],
             })
-    return {"countries": list(item.countries), "counterparties": list(item.counterparties), "business_areas": areas,
-            "basis": "The business-area registers in config/. Proposed until the business areas confirm it."}
+    return {"countries": list(item.countries), "counterparties": list(item.counterparties), "business_areas": areas, "table": table,
+            "basis": "The business-area registers in config/. A filled cell is proposed until the business area confirms it. A blank cell is a fact the register does not hold."}
+
+
+_TAIWAN = {"taiwan", "chinese taipei"}
+_CHINA = {"china", "prc", "people's republic of china", "mainland china"}
+
+
+def _cell(text: str, confirmed: bool) -> dict[str, str]:
+    text = " ".join(str(text or "").split())
+    if not text:
+        return {"text": "", "mark": ""}
+    return {"text": text, "mark": "BA-confirmed" if confirmed else "proposed"}
+
+
+def _stated(mapping: Mapping[str, Any], *keys: str) -> str:
+    for key in keys:
+        value = mapping.get(key)
+        if value not in (None, ""):
+            return str(value)
+    return ""
+
+
+def _exposure_row(name: str, pack: Any, item: Topic) -> dict[str, Any]:
+    """One business area. Taiwan and China entities come from the register's country. Staff, dependence, concentration, and
+    scenario ratings are copied only when the register states them."""
+    exposure_register = pack.exposure or {}
+    confirmed = str(exposure_register.get("exposureStatus") or "").casefold() == "ba-confirmed"
+    entities = list(exposure_register.get("entities") or [])
+    fragments = [text.casefold() for text in (*item.counterparties, *item.countries)]
+
+    def named(label: str) -> bool:
+        folded = label.casefold()
+        return any(re.search(rf"(?<![a-z]){re.escape(fragment)}(?![a-z])", folded) for fragment in fragments)
+
+    def place(country: str) -> str:
+        return str(country or "").strip().casefold()
+
+    taiwan = [row["entityName"] for row in entities if place(row.get("countryOfIncorporation")) in _TAIWAN]
+    china = [row["entityName"] for row in entities if place(row.get("countryOfIncorporation")) in _CHINA]
+    staff = [f"{row['entityName']}: {_stated(row, 'staff', 'staffCount', 'headcount')}" for row in entities if _stated(row, "staff", "staffCount", "headcount")]
+    suppliers = [row["supplierName"] for row in exposure_register.get("suppliers") or [] if named(row["supplierName"])]
+    ratings = exposure_register.get("scenarioRatings") if isinstance(exposure_register.get("scenarioRatings"), Mapping) else {}
+    rating_cells = {case: _cell(ratings.get(case) if ratings.get(case) in {"High", "Medium", "Low"} else "", confirmed) for case in ("BEST", "MEDIUM", "WORST")}
+    filled = bool(taiwan or china or staff or suppliers or any(cell["text"] for cell in (
+        _cell(_stated(exposure_register, "chipDependence", "componentDependence"), confirmed),
+        _cell(_stated(exposure_register, "revenueConcentration"), confirmed),
+        _cell(_stated(exposure_register, "assetConcentration"), confirmed),
+        *rating_cells.values(),
+    )))
+    return {
+        "pack": name, "label": pack.label,
+        "taiwan_entities": _cell("; ".join(taiwan), confirmed),
+        "china_entities": _cell("; ".join(china), confirmed),
+        "staff": _cell("; ".join(staff), confirmed),
+        "key_suppliers": _cell("; ".join(suppliers), confirmed),
+        "chip_dependence": _cell(_stated(exposure_register, "chipDependence", "componentDependence"), confirmed),
+        "revenue_concentration": _cell(_stated(exposure_register, "revenueConcentration"), confirmed),
+        "asset_concentration": _cell(_stated(exposure_register, "assetConcentration"), confirmed),
+        "ratings": rating_cells,
+        "status": "BA-confirmed" if confirmed and filled else ("proposed" if filled else ""),
+    }
+
+
+def gains_for(item: Topic, config_dir: Path = CONFIG_DIR) -> list[dict[str, str]]:
+    """Gain hypotheses already stored on the reviewed scenarios for this topic. An absent line stays absent."""
+    from grit.pipeline.scenarios import load_register
+
+    register = load_register("ste", config_dir)
+    if not register:
+        return []
+    wanted = set(item.themes)
+    lines = []
+    for shift in register.get("shifts") or []:
+        if shift.get("themeId") not in wanted:
+            continue
+        for case in shift.get("cases") or []:
+            text = " ".join(str(case.get("where_ste_could_gain") or "").split())
+            if text:
+                lines.append({"shift": shift.get("name") or shift["themeId"], "case": case.get("title") or case.get("case") or "", "text": text})
+    return lines
+
+
+def _passages(item: Topic, section: Section, *, library_dir: Path, embedder: Any | None, k: int) -> list[tuple[Passage, float]]:
+    """Passages for one section. History asks a second question and keeps more passages, still only from this topic's reports."""
+    if not item.reports:
+        return []
+    queries = [f"{item.name}. {item.question} {section.angle}"]
+    limit = k
+    if section.key == "HISTORY":
+        queries.append(f"{item.name}. earlier history official statistics turning points before the current decade")
+        limit = max(k, 20)
+    found: list[tuple[Passage, float]] = []
+    seen: set[str] = set()
+    for query in queries:
+        for passage, score in retrieve(query, item.reports, k=k, library_dir=library_dir, embedder=embedder):
+            if passage.passage_id in seen:
+                continue
+            seen.add(passage.passage_id)
+            found.append((passage, score))
+            if len(found) >= limit:
+                return found
+    return found
 
 
 def _table(found: Sequence[tuple[Passage, float]], numbering: dict[str, str], table: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -101,7 +203,7 @@ def redraft_sections(
         if section is None or row["key"] not in keys:
             sections.append(row)
             continue
-        found = retrieve(f"{item.name}. {item.question} {section.angle}", item.reports, k=k, library_dir=library_dir, embedder=embedder) if item.reports else []
+        found = _passages(item, section, library_dir=library_dir, embedder=embedder, k=k)
         local = _table(found, numbering, table)
         result, call = draft_section(client, model, topic=brief, section=section, passages=local)
         record(call.as_record())
@@ -119,7 +221,7 @@ def build_topic(
     brief = {"id": item.topic_id, "name": item.name, "question": item.question}
     sections = []
     for section in SECTIONS:
-        found = retrieve(f"{item.name}. {item.question} {section.angle}", item.reports, k=k, library_dir=library_dir, embedder=embedder) if item.reports else []
+        found = _passages(item, section, library_dir=library_dir, embedder=embedder, k=k)
         local = _table(found, numbering, table)
         result, call = draft_section(client, model, topic=brief, section=section, passages=local)
         record(call.as_record())
@@ -135,7 +237,7 @@ def build_topic(
     return {
         "topicId": item.topic_id, "name": item.name, "question": item.question, "status": STATUS, "note": NOTE, "coverage": item.coverage,
         "covers": [{"id": theme, "name": names.get(theme, theme)} for theme in item.themes], "gapSources": list(item.gap_sources),
-        "inBrief": in_brief, "sections": sections, "exposure": exposure(item, config_dir), "passages": table,
+        "inBrief": in_brief, "sections": sections, "gains": gains_for(item, config_dir), "exposure": exposure(item, config_dir), "passages": table,
         "reports": [{"id": report(report_id).report_id, "title": report(report_id).title, "publisher": report(report_id).publisher, "edition": report(report_id).edition,
                      "access": report(report_id).access, "url": report(report_id).url} for report_id in item.reports],
     }
@@ -145,6 +247,12 @@ def build_topic(
 
 
 _MONTHS = {name: name[:3] for name in ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")}
+
+
+def _show_cell(cell: Mapping[str, str]) -> str:
+    if not cell.get("text"):
+        return ""
+    return f"{cell['text']} ({cell['mark']})" if cell.get("mark") else cell["text"]
 
 
 def _edition(text: str) -> str:
@@ -198,8 +306,7 @@ def to_markdown(document: Mapping[str, Any]) -> str:
         draft = row.get("draft") or {}
         if row["status"] == "WITHHELD":
             lines += ["Withheld: the draft failed its checks twice. " + "; ".join(row["violations"][:2]), ""]
-            continue
-        if row["kind"] == NARRATIVE:
+        elif row["kind"] == NARRATIVE:
             lines += [paragraph for text in draft.get("paragraphs") or [] for paragraph in (render_text(text, table), "")]
         else:
             for entry in draft.get("items") or []:
@@ -208,9 +315,36 @@ def to_markdown(document: Mapping[str, Any]) -> str:
                 else:
                     lines.append(f"- **{entry['indicator']}.** " + (f"Latest: {render_text(entry['reading'], table)}" if entry.get("reading") else "No reading in the library."))
             lines.append("")
-        if draft.get("not_covered"):
+            if draft.get("not_covered"):
+                lines += [f"*Not covered by the library:* {strip_marks(draft['not_covered'])}", ""]
+        if row["status"] != "WITHHELD" and row["kind"] == NARRATIVE and draft.get("not_covered"):
             lines += [f"*Not covered by the library:* {strip_marks(draft['not_covered'])}", ""]
+        if row["key"] == "HISTORY" and document.get("gapSources"):
+            lines += ["Authoritative sources proposed beyond this library. A named person adds the file before a sentence can cite one:", ""]
+            lines += [f"- {source} (proposed)" for source in document["gapSources"]]
+            lines.append("")
+    lines += ["## Where STE could gain", ""]
+    gains = document.get("gains") or []
+    if gains:
+        lines += ["Hypothesis: to validate with BAs.", ""]
+        lines += [f"- **{item['shift']} — {item['case']}.** {item['text']}" for item in gains]
+    else:
+        lines.append("No reviewed scenario states where STE could gain.")
+    lines.append("")
     lines += ["## STE exposure", "", f"*{document['exposure']['basis']}*", ""]
+    table = document["exposure"].get("table") or []
+    if table:
+        headers = ("Business area", "Taiwan entities", "China entities", "Staff", "Key suppliers", "Chip or component dependence", "Revenue concentration", "Asset concentration", "Best", "Medium", "Worst", "Status")
+        lines += ["| " + " | ".join(headers) + " |", "|" + "---|" * len(headers)]
+        for area in table:
+            cells = [
+                area["label"], _show_cell(area["taiwan_entities"]), _show_cell(area["china_entities"]), _show_cell(area["staff"]),
+                _show_cell(area["key_suppliers"]), _show_cell(area["chip_dependence"]), _show_cell(area["revenue_concentration"]),
+                _show_cell(area["asset_concentration"]), _show_cell(area["ratings"]["BEST"]), _show_cell(area["ratings"]["MEDIUM"]),
+                _show_cell(area["ratings"]["WORST"]), area.get("status") or "",
+            ]
+            lines.append("| " + " | ".join(cell.replace("|", "/") for cell in cells) + " |")
+        lines.append("")
     if not document["exposure"]["business_areas"]:
         lines += ["No business-area register names an entity in the topic's countries or a risk theme that shares its vocabulary.", ""]
     for area in document["exposure"]["business_areas"]:

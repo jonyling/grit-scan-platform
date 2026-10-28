@@ -119,6 +119,7 @@ def approve(
         for case in shift["cases"]:
             cases.append({
                 **{key: case[key] for key in ("case", "title", "name", "narrative", "evidence", "impact", "responses")},
+                **({"where_ste_could_gain": case["where_ste_could_gain"]} if case.get("where_ste_could_gain") else {}),
                 "signposts": [{"text": _item_text(text), "keywords": keywords.get(f"{case['case']}-S{number}", [])} for number, text in enumerate(case["signposts"], start=1)],
                 "counter_indicators": [{"text": _item_text(text), "keywords": keywords.get(f"{case['case']}-C{number}", [])} for number, text in enumerate(case["counter_indicators"], start=1)],
                 "sources": {"signals": case.get("signals") or [], "reports": case.get("reports") or []},
@@ -259,6 +260,7 @@ def track(pool: Pool, run_id: str, register: Mapping[str, Any], *, shift_conditi
             triggered = [dict(response) for response in case.get("responses") or [] if response.get("trigger") in fired]
             seen_counts[case["case"]] = len(seen)
             cases.append({"case": case["case"], "title": CASE_TITLES.get(case["case"], case["case"]), "name": case["name"],
+                          "where_ste_could_gain": case.get("where_ste_could_gain") or None,
                           "signposts_seen": seen, "counter_indicators_seen": against, "responses_triggered": triggered, "signposts_total": len(case["signposts"])})
         readings.append({"themeId": shift["themeId"], "name": shift["name"], "signals_considered": len(relevant), "lean": _lean(seen_counts), "seen": seen_counts, "cases": cases})
     return readings
@@ -299,7 +301,19 @@ def outlook(pool: Pool, run_id: str, pack: Any, *, config_dir: Path | None = Non
             for item in [*case["signposts_seen"], *case["counter_indicators_seen"]]:
                 item["sources"] = [found for found in (ref(signal_id) for signal_id in item["signal_ids"][:3]) if found]
                 item["more"] = max(0, len(item["signal_ids"]) - 3)
-    return {"version": register.get("version"), "reviewed_by": register.get("reviewedBy"), "reviewed_on": register.get("reviewedOn"), "shifts": now}
+    from grit.pipeline.indicators import score_indicators
+
+    root = config_dir or Path(pack.config_dir).parent
+    try:
+        from grit.ontology.risk_cascade import load_risk_cascade
+
+        risk_links = load_risk_cascade(root).links()
+    except (OSError, KeyError, json.JSONDecodeError):
+        risk_links = []
+    return {
+        "version": register.get("version"), "reviewed_by": register.get("reviewedBy"), "reviewed_on": register.get("reviewedOn"),
+        "shifts": now, "indicators": score_indicators(window_rows(pool, run_id)), "risk_links": risk_links,
+    }
 
 
 def lean_text(reading: Mapping[str, Any]) -> str:
@@ -333,7 +347,7 @@ def reviewed_view(pool: Pool, run_id: str, pack: Any, shift_id: str, *, config_d
     return {
         "version": register.get("version"), "reviewed_on": register.get("reviewedOn"), "builds_on": shift.get("builds_on"),
         "cases": [{"case": case["case"], "name": case["name"], "narrative": case["narrative"], "signposts": [item["text"] for item in case["signposts"]],
-                   "counter_indicators": [item["text"] for item in case["counter_indicators"]]} for case in shift["cases"]],
+                   "counter_indicators": [item["text"] for item in case["counter_indicators"]], "where_ste_could_gain": case.get("where_ste_could_gain")} for case in shift["cases"]],
         "signposts_seen": {case["case"]: [item["text"] for item in case["signposts_seen"]] for case in reading["cases"]},
     }
 
@@ -359,6 +373,8 @@ def changes(reviewed: Mapping[str, Any] | None, proposed: Mapping[str, Any]) -> 
         added = [text for text in new_posts if text not in old_posts]
         removed = [text for text in old_posts if text not in set(new_posts)]
         lines += [f"{title}: new signpost: {text}" for text in added] + [f"{title}: dropped signpost: {text}" for text in removed]
+        if (before.get("where_ste_could_gain") or "") != (case.get("where_ste_could_gain") or ""):
+            lines.append(f"{title}: the gain hypothesis changed.")
     return lines or ["No change from the reviewed version."]
 
 
@@ -402,5 +418,10 @@ def track_main(argv: list[str] | None = None) -> int:
                 print(f"    {case['case']:6} signpost {item['number']}: {len(item['signal_ids'])} signal(s)")
             for response in case["responses_triggered"]:
                 print(f"    {case['case']:6} response triggered: {response['action']} ({response['owner']})")
+            if case.get("where_ste_could_gain"):
+                print(f"    {case['case']:6} Hypothesis: to validate with BAs. {case['where_ste_could_gain']}")
+    for item in result.get("indicators") or []:
+        bounds = "bounds not set" if item["green_max"] is None or item["amber_max"] is None else f"green at or under {item['green_max']}, amber at or under {item['amber_max']}"
+        print(f"Indicator  {item['name']}: {item['signals']} signal(s), band {item['band']} ({bounds}).")
     return 0
 

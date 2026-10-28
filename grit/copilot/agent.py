@@ -86,6 +86,7 @@ Rules:
 - Prefer the brief's state over raw signals; use signals as the evidence behind it.
 - scope.screen names the tab the reader has open and lists the records on that tab. When the question is about the screen, use that tab. Do not answer from the Dashboard when another tab is open.
 - A scenario lean is a count of signposts seen. Never turn it into odds or a forecast; say which signposts were seen.
+- A line marked "Hypothesis: to validate with BAs" is a hypothesis, not a finding. Repeat that mark when you use it.
 - Cite a web result [W#] only for what the records lack. A web result never overrides a brief's assessment; when they
   differ, say so under "uncertain".
 - "history" holds this reader's earlier turns, for follow-up questions only; cite nothing from it.

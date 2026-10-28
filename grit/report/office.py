@@ -421,8 +421,17 @@ def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], 
             rows.append(values)
         widths = (60, 40, 22, 50, 70, 22) if options else (70, 45, 22, 60, 22)
         _sheet(workbook, "Key risks", key_risk_headers(brief["meta"], options=options), rows, widths)
-    if (brief.get("scenarios") or {}).get("shifts"):
-        _sheet(workbook, "Scenario outlook", SCENARIO_HEADERS, [["\n".join(lines) for lines in scenario_cells(reading)] for reading in brief["scenarios"]["shifts"]], (50, 40, 90, 60, 60))
+    outlook = brief.get("scenarios") or {}
+    if outlook.get("shifts"):
+        _sheet(workbook, "Scenario outlook", SCENARIO_HEADERS, [["\n".join(lines) for lines in scenario_cells(reading)] for reading in outlook["shifts"]], (50, 40, 90, 60, 60, 60))
+    if outlook.get("indicators"):
+        _sheet(workbook, "Leading indicators", ("Indicator", "Signals this period", "Band", "Green bound", "Amber bound", "Applies to"),
+               [(item["name"], item["signals"], item["band"], "" if item.get("green_max") is None else item["green_max"], "" if item.get("amber_max") is None else item["amber_max"], ", ".join(item["applies_to"])) for item in outlook["indicators"]],
+               (28, 22, 18, 14, 14, 40))
+    if outlook.get("risk_links"):
+        _sheet(workbook, "Risk links", ("Group risk", "BA risks", "LOB risks", "Status"),
+               [(f"{row['group_risk']} {row['name']}".strip(), "; ".join(f"{item['id']} {item['name']}" for item in row["ba"]), "; ".join(item["name"] for item in row["lob"]), row["status"]) for row in outlook["risk_links"]],
+               (40, 50, 30, 14))
     if brief.get("management_requests"):
         _sheet(
             workbook, "Management requests", ("Request", "Status", "Source", "Signals this week"),
