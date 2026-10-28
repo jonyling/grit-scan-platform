@@ -93,7 +93,7 @@ The reviewer can edit any keyword in the register. Shifts whose draft was withhe
 | Match | The signal's title and first 800 characters name at least two of an item's keywords, or its only keyword |
 | Distinctive | At least one matched keyword is used by no other item of the shift, and by no more than 8% (at least 5) of the period's shift signals. A place or programme every headline names does not show which case is unfolding. An item without a distinctive keyword needs all its keywords. |
 | Lean | The case with the most signposts seen. A tie reads "mixed"; none reads "no signpost seen". The previous run's lean is shown beside it. |
-| Responses | A planned response is "now triggered" when its trigger signpost is seen |
+| Responses | A planned response is "now triggered" when its trigger signpost is seen. The brief marks each triggered response "Suggestion for the business area to consider." |
 
 Leans are counts of signposts seen, never odds. The tracker writes nothing; every brief recomputes it from the pool.
 
@@ -102,7 +102,7 @@ Leans are counts of signposts seen, never odds. The tracker writes nothing; ever
 When the Group pack has a reviewed register, the Group radar brief adds a "Scenario outlook" section right after the standing conditions:
 
 - **Word, Markdown and Excel:** one row per shift, with the three case names, where the signposts lean, the signposts and counter-indicators seen with their sources, and the responses now triggered.
-- **PowerPoint:** a scenario outlook slide after the executive summary.
+- **PowerPoint:** a scenario outlook slide after the executive-summary slides. A pack with many critical items has two or three summary slides before that outlook.
 - **Package:** the signals the outlook cites join the package membership, so review covers them.
 
 The Co-Pilot's `get_scenarios` tool returns the reviewed cases, the current lean, the signposts seen with their signals, and the responses triggered. The Co-Pilot is told never to turn a lean into odds.

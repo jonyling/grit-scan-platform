@@ -49,11 +49,17 @@ The Word brief puts this table on a landscape page. The Markdown copy and the Ex
 
 The PowerPoint deck follows `docs/reference/GRIT-Scan_Executive_Summary.pptx`. It is built on a template trimmed from that deck (`grit/report/templates/executive_summary.pptx`, rebuilt with `python -m grit.report.deck_template`), so it carries the ST Engineering master and branding.
 
-1. **Cover.** The business area, the scan window, the reader, and the report owner.
-2. **Executive summary.** The status badge, the two leading items (escalating first, then key risks), the other items with their appendix numbers, and the bottom line.
+1. **Cover.** The business area, the scan window, the reader, the report owner, and the AI-generated content statement.
+2. **Executive summary.** One to three slides. One slide covers up to two critical items, two slides cover three or four, and three slides cover five or more. A critical item is a key risk or an escalating theme. On a Group pack it is a condition with evidence this period. Each slide shows at most two full cards. Items past the sixth are named in full on the last slide. The first slide carries the status badge and the bottom line.
 3. **Appendix, one slide per item.** What it means for the business area, what happened, and, when the profile includes `RESPONSE_OPTIONS`, the options. A side panel gives the risk linkage, the owners of the options, and up to three sources.
 
-Each summary item links to its appendix slide, and each appendix slide links back. Text that does not fit a box is shortened to whole sentences. The Word brief keeps the full text.
+Each card states what the point means for the pack, using the pack's short label, for example "What it means for DS&C". A summary card keeps whole sentences and does not use a truncation mark. When the first sentence is longer than the box, the box wraps that sentence. An appendix box may still shorten text with an ellipsis. Each summary card links to its appendix slide, and each appendix slide links back to the first summary slide. The Word brief keeps the full text.
+
+Every Word brief, Markdown preview, and slide carries this statement, on the cover and again in the footer:
+
+> GRIT-Scan AI-generated suggestions for consideration. The scan can miss a source, misread a page, or leave out context. A named person reviews this before anyone acts on it.
+
+A repeated sentence, or a later sentence whose figures were all used earlier, is kept at its first use. A table cell stays as written. The statement above can repeat. A finding shows a suggestion only when a Proposer option or a triggered scenario response already cites that signal. The line starts with "Suggestion for the business area to consider." A signal with no such action has no suggestion.
 
 ## 2. Implication
 

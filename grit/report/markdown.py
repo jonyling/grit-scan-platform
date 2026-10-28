@@ -5,6 +5,9 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from grit.report.docx_brief import OPTIONS_NOTE, SCENARIO_HEADERS, SCENARIO_NOTE, SECTION_TITLES, scenario_cells, implication_text, key_risk_headers, priority_trend, radar_cells, radar_headers, response_lines, section_title
+from grit.report.notices import DISCLAIMER
+from grit.report.repetition import dedupe_markdown
+from grit.report.suggestions import suggestions_for_signal
 
 
 def _md(rendered: Mapping[str, Any] | None, fallback: str = "No new item found this week in the checked sources.") -> str:
@@ -25,7 +28,8 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
     bottom = brief["bottom_line"]
     lines = [
         f"# {meta['title']}", "", f"{meta['subtitle']}", "",
-        f"*Scan window: {meta['window']} | Prepared for: {meta['prepared_for']}" + (" | Status: draft for review, not approved.*" if meta.get("show_review_status", True) else "*"), "",
+        f"*Scan window: {meta['window']} | Prepared for: {meta['prepared_for']}" + (" | Status: draft for review, not approved.*" if meta.get("show_review_status", True) else "*"),
+        "", DISCLAIMER, "",
         f"> **{bottom['label']} — Bottom line.** {bottom['text']} {bottom.get('escalation') or ''}", "",
     ]
     number = 0
@@ -104,7 +108,15 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
                 body += ["| # | Condition | Trend | Confidence | Basis |", "|---|---|---|---|---|"]
                 body += [f"| {row['number']} | {row['name']}{' (' + row['group'] + ')' if row.get('group') else ''} | {row['trend']} | {row['confidence']} | {_md(row['basis'])} |" for row in rest]
         elif key == "PRIORITY_FINDINGS":
-            body += [f"- [{item['priority'] + ' · ' if item['priority'] else ''}tier {item['tier']}] [{item['title']}]({item['url']}) ({item['outlet']}, {item['date'] or 'n.d.'}). {' '.join(line for line in item['why'] if line)}" for item in brief.get("findings") or []]
+            for item in brief.get("findings") or []:
+                lines = [line for line in item["why"] if line]
+                card = item.get("card") or {}
+                if card.get("what_happened"):
+                    lines.insert(0, str(card["what_happened"]))
+                if card.get("hypothesis"):
+                    lines.append(f"Hypothesis, not a forecast: {card['hypothesis']} Link confidence: {card['confidence']}.")
+                lines.extend(suggestions_for_signal(brief, item["signal_id"]))
+                body.append(f"- [{item['priority'] + ' · ' if item['priority'] else ''}tier {item['tier']}] [{item['title']}]({item['url']}) ({item['outlet']}, {item['date'] or 'n.d.'}). {' '.join(lines)}".rstrip())
         elif key == "OTHER_SIGNALS":
             body += [f"- {'[' + item['priority'] + '] ' if item['priority'] else ''}[{item['title']}]({item['url']}) ({item['outlet']}, {item['date'] or 'n.d.'})" for item in brief.get("other_signals") or []]
         elif key == "QA_LOG":
@@ -115,5 +127,5 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
         if body:
             lines += [f"## {number}. {section_title(meta, key)}", "", *body, ""]
             number += 1
-    lines.append(f"*Content hash {brief['content_hash'][:16]}. Run {meta['run_id']}.*")
-    return "\n".join(lines) + "\n"
+    lines += [DISCLAIMER, "", f"*Content hash {brief['content_hash'][:16]}. Run {meta['run_id']}.*"]
+    return dedupe_markdown("\n".join(lines) + "\n")

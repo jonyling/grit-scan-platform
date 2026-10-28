@@ -15,6 +15,7 @@ from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
 from grit.report.brief import text_only
+from grit.report.notices import DISCLAIMER
 
 NAVY = RGBColor(0x1F, 0x38, 0x64)
 GREY = RGBColor(0x55, 0x55, 0x55)
@@ -173,6 +174,9 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
     review = "Status: draft for review, not approved. " if meta.get("show_review_status", True) else ""
     run = status.add_run(f"{review}Reader profile: {meta['reader']}. Run {meta['run_id']}.")
     run.font.size, run.font.color.rgb = Pt(9), LIGHT
+    notice = document.add_paragraph()
+    run = notice.add_run(DISCLAIMER)
+    run.italic, run.font.size, run.font.color.rgb = True, Pt(9), LIGHT
 
     bottom = brief["bottom_line"]
     box = document.add_table(rows=1, cols=1)
@@ -203,6 +207,8 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
         renderer(document, brief, title, dry=False)
         number += 1
     _method(document, brief)
+    _apply_first_use(document)
+    _footers(document)
     path.parent.mkdir(parents=True, exist_ok=True)
     document.save(str(path))
     return path
@@ -575,6 +581,9 @@ def _findings(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool)
             lines.insert(0, str(item["card"]["what_happened"]))
         if item.get("card") and item["card"].get("hypothesis"):
             lines.append(f"Hypothesis, not a forecast: {item['card']['hypothesis']} Link confidence: {item['card']['confidence']}.")
+        from grit.report.suggestions import suggestions_for_signal
+
+        lines.extend(suggestions_for_signal(brief, item["signal_id"]))
         if item["risks"]:
             lines.append("Risk register: " + "; ".join(item["risks"]) + ".")
         lines.append(item["harm"])
@@ -630,7 +639,9 @@ def scenario_cells(reading: Mapping[str, Any]) -> list[list[str]]:
 
     seen = [f"{case['title'].split(' case')[0]}: {item['text']} {_ref_text(item)}".strip() for case in reading["cases"] for item in case["signposts_seen"]]
     against = [f"{case['title'].split(' case')[0]}: {item['text']} {_ref_text(item)}".strip() for case in reading["cases"] for item in case["counter_indicators_seen"]]
-    triggered = [f"{response['action']} Owner: {response['owner']}." for case in reading["cases"] for response in case["responses_triggered"]]
+    from grit.report.notices import suggestion_line
+
+    triggered = [line for case in reading["cases"] for response in case["responses_triggered"] if (line := suggestion_line(f"{response['action']} Owner: {response['owner']}."))]
     names = [f"{case['title'].split(' for')[0]}: {case['name']}" for case in reading["cases"]]
     return [[reading["name"], *names], [lean_text(reading)], seen or ["None this period."], against or ["None this period."], triggered or ["None."]]
 
@@ -695,6 +706,41 @@ def _method(document: Any, brief: Mapping[str, Any]) -> None:
     paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     run = paragraph.add_run(f"Content hash {brief['content_hash'][:16]}")
     run.font.size, run.font.color.rgb = Pt(7), LIGHT
+
+
+def _apply_first_use(document: Any) -> None:
+    """Record claims in table cells, then drop a later paragraph that repeats one. A hyperlink stays as written."""
+    from docx.text.paragraph import Paragraph
+
+    from grit.report.repetition import FirstUse
+
+    state = FirstUse()
+    for child in document.element.body.iterchildren():
+        if child.tag == qn("w:tbl"):
+            for node in child.iter(qn("w:p")):
+                state.observe(Paragraph(node, document).text)
+            continue
+        if child.tag != qn("w:p"):
+            continue
+        paragraph = Paragraph(child, document)
+        if paragraph._p.find(".//" + qn("w:hyperlink")) is not None:
+            state.observe(paragraph.text)
+            continue
+        updated = state.filter(paragraph.text)
+        if updated != paragraph.text and paragraph.runs:
+            paragraph.runs[0].text = updated
+            for run in paragraph.runs[1:]:
+                run.text = ""
+
+
+def _footers(document: Any) -> None:
+    for section in document.sections:
+        footer = section.footer
+        footer.is_linked_to_previous = False
+        paragraph = footer.paragraphs[0]
+        paragraph.text = DISCLAIMER
+        for run in paragraph.runs:
+            run.italic, run.font.size, run.font.color.rgb = True, Pt(8), LIGHT
 
 
 _SECTIONS = {

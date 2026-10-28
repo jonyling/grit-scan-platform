@@ -237,6 +237,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             "implication": implication,
             "options": [
                 {**{key: option.get(key) for key in ("kind", "owner", "builds_on", "trigger")},
+                 "source_ids": [str(item) for item in option.get("source_ids") or []],
                  "text": render(option["option"] + (f" [{', '.join(option['source_ids'])}]" if option.get("source_ids") else ""))}
                 for option in row.get("options") or []
             ] if "RESPONSE_OPTIONS" in sections else [],

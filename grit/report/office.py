@@ -16,6 +16,8 @@ from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
 from grit.report.docx_brief import implication_text, key_risk_headers, opportunity_text, priority_trend, radar_cells, radar_headers, response_lines, SCENARIO_HEADERS, SCENARIO_NOTE, scenario_cells
+from grit.report.notices import DISCLAIMER
+from grit.report.repetition import FirstUse
 
 # The reference deck's palette (docs/reference/GRIT-Scan_Executive_Summary.pptx).
 GOLD, EYEBROW, INK, MUTED, BODY = RGBColor(0xC0, 0x8A, 0x1E), RGBColor(0xA9, 0x74, 0x07), RGBColor(0x12, 0x21, 0x3F), RGBColor(0x5A, 0x68, 0x84), RGBColor(0x2C, 0x3A, 0x55)
@@ -44,6 +46,37 @@ def fit(text: str | None, limit: int) -> str:
             break
         kept = f"{kept} {sentence}".strip()
     return kept or text[: limit - 1].rsplit(" ", 1)[0].rstrip(",;:") + "\u2026"
+
+
+def whole_sentences(text: str | None, limit: int) -> str:
+    """Whole sentences that fit, with no truncation mark. One long sentence is kept whole so the box can wrap it."""
+    text = " ".join(str(text or "").split())
+    if len(text) <= limit:
+        return text
+    kept, first = "", ""
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
+        first = first or sentence
+        nxt = f"{kept} {sentence}".strip()
+        if len(nxt) > limit:
+            break
+        kept = nxt
+    return kept or first
+
+
+def summary_slide_count(item_count: int) -> int:
+    """One summary slide for up to two critical items, two slides for three or four, and three when there are five or more."""
+    if item_count <= 2:
+        return 1
+    if item_count <= 4:
+        return 2
+    return 3
+
+
+def summary_groups(items: Sequence[Mapping[str, Any]]) -> list[list[Mapping[str, Any]]]:
+    """At most two full cards on a summary slide, across one to three slides. Further items are named on the last slide."""
+    count = summary_slide_count(len(items))
+    shown = list(items[: count * 2])
+    return [shown[start:start + 2] for start in range(0, len(shown), 2)] or [[]]
 
 
 def _shape(slide: Any, x: float, y: float, w: float, h: float, fill: RGBColor | None, kind: Any = MSO_SHAPE.RECTANGLE) -> Any:
@@ -119,15 +152,62 @@ def deck_items(brief: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     return sorted(chosen, key=lambda row: (row["trend"] != "Escalating", row.get("tier") != "KEY", row["number"]))
 
 
+def _notice(slide: Any, deck: Any) -> None:
+    """The disclaimer along the bottom of a slide. 914400 English Metric Units make one inch."""
+    _words(slide, 0.4, deck.slide_height / 914400 - 0.34, 12.5, 0.28, [(DISCLAIMER, 8, False, MUTED)])
+
+
+def _summary_card(slide: Any, row: Mapping[str, Any] | None, x: float, width: float, short: str, link: Any, bottom: str) -> None:
+    """One summary point. Sentences stay whole, and the box wraps them. Nothing on this card is cut with an ellipsis."""
+    tag, colour, _fill, bar = TRENDS.get(row["trend"], STEADY) if row else STEADY
+    _shape(slide, x, 1.95, width, 3.35, CARD)
+    _shape(slide, x, 1.95, 0.05, 3.35, bar)
+    if row is None:
+        _words(slide, x + 0.25, 2.15, width - 0.5, 0.3, [(tag, 12, True, colour)])
+        _words(slide, x + 0.25, 2.5, width - 0.5, 0.6, [("No standing item moved this week", 18, True, INK)])
+        _words(slide, x + 0.25, 3.2, width - 0.5, 1.6, [(whole_sentences(bottom, 400), 13, False, BODY)])
+        return
+    _words(slide, x + 0.25, 2.05, width - 0.5, 0.28, [(f"{tag}  \u00b7  {str(row.get('group') or 'standing item').upper()}", 12, True, colour)])
+    name = " ".join(str(row["name"]).split())
+    _words(slide, x + 0.25, 2.35, width - 0.5, 0.58, [(name, 16 if len(name) <= 70 else 13, True, INK)])
+    happened = whole_sentences(row["development"], 420)
+    _words(slide, x + 0.25, 2.95, width - 0.5, 1.15, [(happened, 12 if len(happened) <= 280 else 10.5, False, BODY)])
+    meaning = whole_sentences(implication_text(row), 320)
+    _words(slide, x + 0.25, 4.15, width - 0.5, 0.85, [(f"What it means for {short}: {meaning}", 12 if len(meaning) <= 220 else 10.5, True, INK)])
+    if link is not None:
+        _words(slide, x + width - 1.6, 4.95, 1.35, 0.28, [("Full detail \u25b8", 12, True, BODY)], link=link)
+
+
+def _dedupe_deck(deck: Any) -> None:
+    """Keep the first use of a sentence or figure on the deck. Leave a hyperlink and the disclaimer untouched."""
+    state = FirstUse()
+    for slide in deck.slides:
+        for shape in slide.shapes:
+            if not getattr(shape, "has_text_frame", False):
+                continue
+            for paragraph in shape.text_frame.paragraphs:
+                text = paragraph.text
+                if not text or any(run.hyperlink.address for run in paragraph.runs):
+                    state.observe(text)
+                    continue
+                updated = state.filter(text)
+                if updated != text and paragraph.runs:
+                    paragraph.runs[0].text = updated
+                    for run in paragraph.runs[1:]:
+                        run.text = ""
+
+
 def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
-    """The executive summary in the reference deck's format: a cover, a one-page summary, and one appendix slide per item."""
+    """The executive summary in the reference deck's format: a cover, one to three summary slides, and one appendix slide per item."""
     from grit.report.deck_template import CONTENT_LAYOUT, COVER_LAYOUT, TEMPLATE
 
     meta, bottom = brief["meta"], brief["bottom_line"]
     short, label = meta.get("pack_short") or meta["pack_label"], meta["pack_label"]
     deck = Presentation(str(TEMPLATE))
     items = deck_items(brief)
-    cover, summary = _blank(deck, COVER_LAYOUT), _blank(deck, CONTENT_LAYOUT)
+    groups = summary_groups(items)
+    cover = _blank(deck, COVER_LAYOUT)
+    summaries = [_blank(deck, CONTENT_LAYOUT) for _ in groups]
     outlook = brief.get("scenarios") if meta.get("level") == "GROUP" else None
     scenario_slide = _blank(deck, CONTENT_LAYOUT) if outlook and outlook.get("shifts") else None
     appendix = [_blank(deck, CONTENT_LAYOUT) for _ in items]
@@ -147,55 +227,49 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
         _shape(cover, x, 4.6, 0.05, 1.2, GOLD)
         _words(cover, x + 0.25, 4.83, 3.4, 0.25, [(caption, 11, True, EYEBROW)])
         _words(cover, x + 0.25, 5.15, 3.4, 0.5, [(fit(value, 60), 15, True, INK)])
-    _words(cover, 0.5, 6.1, 12.3, 0.3, [(("Draft for review. Not approved. " if meta.get("show_review_status", True) else "") + f"Reader: {meta['reader']}. Run {meta['run_id']}.", 10, False, MUTED)])
+    _words(cover, 0.5, 6.05, 12.3, 0.55, [
+        ((("Draft for review. Not approved. " if meta.get("show_review_status", True) else "") + f"Reader: {meta['reader']}. Run {meta['run_id']}."), 10, False, MUTED),
+        (DISCLAIMER, 10, False, MUTED),
+    ])
+    _notice(cover, deck)
 
-    # Executive summary.
-    _words(summary, 0.5, 0.24, 8.0, 0.3, [("EXECUTIVE SUMMARY  \u00b7  GRIT-SCAN", 13, True, EYEBROW)])
-    title = f"{label} \u2014 Weekly Risk Radar"
-    _words(summary, 0.5, 0.52, 9.4, 0.62, [(title, 32 if len(title) <= 34 else 26, True, INK)])
-    _words(summary, 0.5, 1.13, 9.4, 0.3, [(fit(f"Scan window: {meta['window']}   \u00b7   Prepared for {meta['prepared_for']}   \u00b7   Group Risk & Assurance", 100), 12, False, MUTED)])
-    status, colour, fill = STATUS.get(bottom["label"], STATUS["WATCHPOINT"])
-    _badge(summary, 10.13, 0.87, 2.98, 0.64, status, colour, fill, size=15)
-    escalating = sum(1 for row in items if row["trend"] == "Escalating")
-    caption = "RED alert drafted this week" if bottom["label"] == "RED" else f"{escalating} item(s) escalating this week" if escalating else "no material change this week"
-    _words(summary, 10.13, 1.52, 2.98, 0.3, [(caption, 9.5, False, MUTED)]).text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
-    _rule(summary, 1.5)
-    _words(summary, 0.5, 1.6, 12.0, 0.32, [(f"\u25b2  NEW & ESCALATING \u2014 WHAT'S CHANGED, AND WHAT IT MEANS FOR {short.upper()}", 16.5, True, TRENDS["Escalating"][1])])
-    cards = items[:2] or [None]
-    for number, row in enumerate(cards):
-        x = 0.5 + number * 6.3
-        tag, colour, _fill, bar = TRENDS.get(row["trend"], STEADY) if row else STEADY
-        _shape(summary, x, 2.06, 5.95, 2.46, CARD)
-        _shape(summary, x, 2.06, 0.05, 2.46, bar)
-        if row is None:
-            _words(summary, x + 0.3, 2.21, 5.4, 0.26, [(tag, 12, True, colour)])
-            _words(summary, x + 0.3, 2.5, 5.35, 0.68, [("No standing item moved this week", 18, True, INK)])
-            _words(summary, x + 0.3, 3.21, 5.35, 1.08, [(fit(bottom["text"], 240), 13.5, False, BODY)])
-            continue
-        _words(summary, x + 0.3, 2.21, 5.4, 0.26, [(f"{tag}  \u00b7  {str(row.get('group') or 'standing item').upper()}", 12, True, colour)])
-        _words(summary, x + 0.3, 2.5, 5.35, 0.68, [(fit(row["name"], 80), 18, True, INK)])
-        body = fit(row["development"], 130 if row.get("implication") else 250)
-        if row.get("implication"):
-            body += " " + fit(implication_text(row), 120)
-        _words(summary, x + 0.3, 3.21, 5.35, 1.08, [(body, 13, False, BODY)])
-        _words(summary, x + 4.6, 4.1, 1.3, 0.34, [("Full detail \u25b8", 12.5, True, BODY)], link=appendix[number])
-    rest = items[2:]
-    moving = any(row["trend"] == "Escalating" for row in rest)
-    header = "\u25b2  ALSO ESCALATING, AND OTHER KEY RISKS \u2014 IN THE APPENDIX" if moving else "=  CONTINUING \u2014 STILL OPEN, NO NEW DEVELOPMENT"
-    _words(summary, 0.5, 4.5, 11.0, 0.26, [(header, 13, True, MUTED)])
-    _shape(summary, 0.5, 4.8, 12.33, 0.56, CARD)
-    listed = "   \u00b7   ".join(f"{TRENDS.get(row['trend'], STEADY)[0].split()[0]} {row['name']} (A{items.index(row) + 1})" for row in rest)
-    _words(summary, 0.75, 4.8, 10.82, 0.56, [(fit(listed, 230) or "No other standing item is detailed this week. The Word brief lists every theme.", 12, True, BODY)], middle=True)
-    if rest:
-        _words(summary, 11.33, 4.86, 1.35, 0.5, [("Full detail \u25b8", 13, True, BODY)], link=appendix[2], middle=True)
-    _shape(summary, 0.5, 5.5, 12.33, 0.9, AMBER_FILL)
-    _words(summary, 0.78, 5.5, 11.8, 0.9, [(f"BOTTOM LINE   {fit(bottom['text'], 330)}", 12, True, EYEBROW)], middle=True)
-    if appendix:
-        _link(summary, 0.5, 6.5, f"Full supporting detail \u2014 Appendix A1\u2013A{len(appendix)}" if len(appendix) > 1 else "Full supporting detail \u2014 Appendix A1", appendix[0], dot=GOLD)
-    _link(summary, 9.08, 6.5, "Ask GRIT-Scan chat about this full report", None, colour=EYEBROW, dot=GOLD, w=3.55)
+    shown = [row for group in groups for row in group]
+    overflow = [row for row in items if row not in shown]
+    for page, (summary, group) in enumerate(zip(summaries, groups), start=1):
+        eyebrow = "EXECUTIVE SUMMARY  \u00b7  GRIT-SCAN" if page == 1 else f"EXECUTIVE SUMMARY  \u00b7  CONTINUED  {page} OF {len(summaries)}"
+        _words(summary, 0.5, 0.22, 8.0, 0.28, [(eyebrow, 13, True, EYEBROW)])
+        if page == 1:
+            title = f"{label} \u2014 Weekly Risk Radar"
+            _words(summary, 0.5, 0.48, 9.4, 0.55, [(title, 28 if len(title) <= 40 else 22, True, INK)])
+            _words(summary, 0.5, 1.05, 9.2, 0.28, [(whole_sentences(f"Scan window: {meta['window']}   \u00b7   Prepared for {meta['prepared_for']}   \u00b7   Group Risk & Assurance", 140), 12, False, MUTED)])
+            status, colour, fill = STATUS.get(bottom["label"], STATUS["WATCHPOINT"])
+            _badge(summary, 10.13, 0.5, 2.7, 0.5, status, colour, fill, size=13)
+            escalating = sum(1 for row in items if row["trend"] == "Escalating")
+            caption = "RED alert drafted this week" if bottom["label"] == "RED" else f"{escalating} item(s) escalating this week" if escalating else "no material change this week"
+            _words(summary, 10.13, 1.05, 2.7, 0.28, [(caption, 9, False, MUTED)]).text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+        _rule(summary, 1.42)
+        _words(summary, 0.5, 1.5, 12.3, 0.32, [(f"\u25b2  NEW & ESCALATING \u2014 WHAT'S CHANGED, AND WHAT IT MEANS FOR {short.upper()}", 15, True, TRENDS["Escalating"][1])])
+        cards = group or [None]
+        card_width = 12.33 if len(cards) == 1 else 6.05
+        for number, row in enumerate(cards):
+            link = appendix[items.index(row)] if row is not None else None
+            _summary_card(summary, row, 0.5 + number * 6.28, card_width, short, link, bottom["text"])
+        if page == len(summaries) and overflow:
+            names = "   \u00b7   ".join(f"{row['name']} (A{items.index(row) + 1})" for row in overflow)
+            _words(summary, 0.5, 5.4, 12.3, 0.55, [(f"Also in the appendix: {names}", 11, False, BODY)])
+        if page == 1:
+            _shape(summary, 0.5, 5.42, 12.33, 0.72, AMBER_FILL)
+            _words(summary, 0.7, 5.42, 12.0, 0.72, [(f"BOTTOM LINE   {whole_sentences(bottom['text'], 420)}", 12, True, EYEBROW)], middle=True)
+        if page == len(summaries) and appendix:
+            _link(summary, 0.5, 6.22, f"Full supporting detail \u2014 Appendix A1\u2013A{len(appendix)}" if len(appendix) > 1 else "Full supporting detail \u2014 Appendix A1", appendix[0], dot=GOLD)
+            _link(summary, 9.08, 6.22, "Ask GRIT-Scan chat about this full report", None, colour=EYEBROW, dot=GOLD, w=3.55)
+        elif page < len(summaries):
+            _link(summary, 0.5, 6.22, "Continued on the next summary slide", summaries[page], dot=GOLD)
+        _notice(summary, deck)
 
     if scenario_slide is not None:
         _scenario_slide(scenario_slide, outlook)
+        _notice(scenario_slide, deck)
 
     # One appendix slide per item.
     options_on = "RESPONSE_OPTIONS" in (meta.get("sections") or [])
@@ -238,8 +312,10 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
         if more > 0:
             lines.append((f"and {more} more in the Word brief.", 9.5, False, MUTED))
         _words(slide, 8.6, 5.2, 3.98, 1.15, lines or [("No source cited this week.", 10, False, MUTED)], urls=[ref.get("url") for ref in refs])
-        _link(slide, 0.5, 6.48, "Back to Executive Summary", summary)
+        _link(slide, 0.5, 6.48, "Back to Executive Summary", summaries[0])
+        _notice(slide, deck)
 
+    _dedupe_deck(deck)
     path.parent.mkdir(parents=True, exist_ok=True)
     deck.save(str(path))
     return path

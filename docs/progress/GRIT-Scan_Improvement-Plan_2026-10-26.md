@@ -2,7 +2,7 @@
 
 This page lists the 30 points of improvement Jony Ling raised on 26 October 2026 and the batches that deliver them. Each point has its current status. Use the page to choose the next batch, and to hand the work to another coding agent.
 
-Status as of 28 October 2026: Batches A, B, and C are done. Batches D to G are not started.
+Status as of 28 October 2026: Batches A, B, C, and D are done. Batches E to G are not started.
 
 ## Rules for the next agent
 
@@ -17,7 +17,7 @@ Every agent working on this repository must follow these rules:
   .venv/bin/python -m pytest -q
   ```
 
-  As of 28 October 2026, 597 tests pass. The URS and DS&C workbooks in `secrets/` rebuild the same registers that are already in `config/`.
+  As of 28 October 2026, 606 tests pass. The URS and DS&C workbooks in `secrets/` rebuild the same registers that are already in `config/`.
 
 - End each commit message with this trailer:
 
@@ -37,7 +37,7 @@ Every agent working on this repository must follow these rules:
 | 3 | Add RED events: pandemic, China attacks Taiwan, earthquake above 8.0, financial meltdown, major corruption cases, workplace accidents, Middle East attacks needing evacuation, AI and quantum cyber attacks, sanctions on linked entities, bankruptcy of key customers, suppliers or projects, trade barriers and tariffs, sudden loss of key personnel, EHS incidents causing the death of STE staff, labour incidents and strikes, disruption of basic services, legal disputes affecting STE entities, and major riots where STE entities or projects are. | B | Done. Patterns are in `grit/core/red_events.py` and merge at assessment. Magnitude 8.0 or greater. Linked events need a direct or counterparty link. `RED-PANDEMIC` was already in the register and was left as written. `grit daily`, `grit scan`, and `grit assess` append missing ids to `config/red-patterns.json` without replacing an existing rule. That file is not committed. |
 | 4 | Email RED alerts from daily scans to the relevant people at once, for example the PHP vulnerabilities. | B | Built. A daily draft is sent to `GRIT_RED_MAIL_TO` when Graph mail is configured. No address is invented. Until those settings exist, the draft stays unsent. Wilson still chooses who is on the duty list. |
 | 5 | Add GDELT and Sphera acquisition lanes. | B | GDELT artlist is on the daily lane, with a timeout and the keep rule. Sphera stays closed: `secrets/sphera.env` is the placeholder, and nothing is fetched until an API contract exists. |
-| 6 | Make table rows tall enough to show all text. Colour trend labels: Escalating red, Easing green, Unchanged neutral. | C | Done. Tables wrap. Escalating is red, Easing is green, and Unchanged is neutral. The word stays the label. |
+| 6 | Make table rows tall enough to show all text. Colour trend labels: Escalating red, Easing green, Unchanged neutral. | C | Done. Short columns stay on one line. A long basis, title, or keyword list wraps on spaces, and a wide table scrolls sideways. Escalating is red, Easing is green, and Unchanged is neutral. The word stays the label. |
 | 7 | Let the reader open and close the Co-Pilot panel, as in Microsoft 365 Copilot, and resize its width. | C | Done. Show Co-Pilot and a width control are in the sidebar. A closed panel leaves the dashboard full width. |
 | 8 | Make the Co-Pilot read the tab the reader has open, such as Signals, and not always the Dashboard. | C | Done. The open tab and its records are the Co-Pilot context. Dashboard focus is sent only on the Dashboard tab. |
 | 9 | Write a CSV of signals for each daily pack. | B | Done, commit `fa9e79b` |
@@ -46,21 +46,21 @@ Every agent working on this repository must follow these rules:
 | 12 | Keep a weekly run strictly to its 7 days ending on the run date. | A | Done, commit `7140799` |
 | 13 | Count corroboration by publisher family, not by number of sources. | A | Done, commit `7140799` |
 | 14 | Add official hazard and cross-strait sources for URS Taiwan: USGS, NASA FIRMS, Taiwan MND and the Taiwan weather service. | B | Done, commit `fa9e79b`. FIRMS needs a key. |
-| 15 | State in each report and deck that the content is GRIT-Scan AI-generated suggestions for consideration, with a disclaimer on AI limits and the need for human review. | D | Not started |
-| 16 | Improve executive summary slide 2: remove truncation marks ("…") and say what each point means for DS&C. | D | Not started |
+| 15 | State in each report and deck that the content is GRIT-Scan AI-generated suggestions for consideration, with a disclaimer on AI limits and the need for human review. | D | Done. The statement is on the cover and in the footer of every Word brief, Markdown preview, and slide. |
+| 16 | Improve executive summary slide 2: remove truncation marks ("…") and say what each point means for DS&C. | D | Done. Each summary card keeps whole sentences and says what the point means for the pack's short label. |
 | 17 | Move to a newer, more capable Gemini model, such as Gemini 4 Argon. | G | Not started |
 | 18 | Put a timeout on every call to an outside server. | A | Done, commit `7140799` |
 | 19 | In State of the Situation (SotS) and Group packs, add for each scenario a hypothesis on where STE could gain, marked for BAs to validate. | E | Not started |
 | 20 | In SotS, give an exposure table for every BA: Taiwan and China entities, staff and key suppliers, chip or component dependence, revenue and asset concentration, and a High, Medium or Low rating per scenario. Mark each as BA-confirmed or proposed. | E | Not started |
 | 21 | Turn indicators into leading signals with green, amber and red thresholds: PLA activity, shipping and insurance, export controls and sanctions, cross-strait politics, and overseas fab ramp-up. | E | Not started |
-| 22 | Do not repeat the same figures or points within one report. | D | Not started |
+| 22 | Do not repeat the same figures or points within one report. | D | Done. A later sentence that repeats an earlier sentence, or that only repeats a figure already used, is dropped. A table cell stays as written. The disclaimer can repeat. |
 | 23 | Make the SotS history section fuller, citing authoritative sources beyond the report library. | E | Not started |
 | 24 | Map Group risks down to BA and LOB, and BA risks up to Group. | E | Not started |
-| 25 | Recommend actions down to specific signals, scenarios (Best, Medium, Worst) and predictions. | D | Not started |
+| 25 | Recommend actions down to specific signals, scenarios (Best, Medium, Worst) and predictions. | D | Done. A finding or a triggered scenario response shows an action only when that action already exists, marked "Suggestion for the business area to consider." |
 | 26 | Base profiles on each BA's business partner, not the office holders. Business partners filter signals to office holders. | F | Blocked. Profiles are in `config/`. |
 | 27 | Add Wilson's Group-level daily adverse news agent, and make its output deterministic. | F | Blocked. Needs Wilson's prompt. |
 | 28 | Support four feedback routes: the UI's package review, management requests, Co-Pilot chat, and Jony through VS Code chat with uploaded documents. | F | Not started |
-| 29 | Allow 2 or 3 summary slides when the period has many critical signals. | D | Not started |
+| 29 | Allow 2 or 3 summary slides when the period has many critical signals. | D | Done. One summary slide for up to two critical items, two slides for three or four, and three slides for five or more. |
 | 30 | Fix Co-Pilot chat history that seems shared between profiles. | A | Done, commit `7140799` |
 
 ## Batch plan
@@ -97,18 +97,18 @@ Commit `fa9e79b` delivered points 9 and 14. Commit `cfddaf6` delivered points 3,
 
 Commit `0381af6`.
 
-- **Point 6.** Tables are HTML, so each row wraps and grows with its text. Escalating is red, Easing is green, and Unchanged is neutral. The word remains in the cell.
+- **Point 6.** Tables are HTML. Short columns stay on one line. A long basis, title, or keyword list wraps on spaces, and a wide table scrolls sideways. Escalating is red, Easing is green, and Unchanged is neutral. The word remains in the cell.
 - **Point 7.** **Show Co-Pilot** and **Co-Pilot width** are in the sidebar. The width is 24 to 50 percent. A closed panel leaves the dashboard full width.
 - **Point 8.** The Co-Pilot receives the open tab and up to 40 of its records. A condition chosen on the Dashboard is sent only while that tab is open.
 - **Point 11.** **Approve** calls `ReviewGate()` with intent `APPROVE`. A reader sees a refusal instead of the button, and `review_package` raises `PermissionError` if a reader reaches it.
 
-### Batch D: reports
+### Batch D: reports (done)
 
-- **Point 15.** Add an AI-generated content statement and a limitations disclaimer to every Word report and slide deck, on the cover and in the footer.
-- **Point 16.** Rewrite the slide 2 template to fit text without truncation marks, and add a "What it means for DS&C" line to each point. Generalise the line to the pack's BA.
-- **Point 29.** Choose 1 to 3 summary slides from the number of critical signals.
-- **Point 22.** Check each report for repeated figures and sentences before rendering, and keep the first use only.
-- **Point 25.** Attach recommended actions to signals, scenarios and predictions, each marked as a suggestion for the BA to consider.
+- **Point 15.** Every Word brief, Markdown preview, and slide carries this statement on the cover and in the footer: "GRIT-Scan AI-generated suggestions for consideration. The scan can miss a source, misread a page, or leave out context. A named person reviews this before anyone acts on it."
+- **Point 16.** Each summary card keeps whole sentences, with no truncation mark. The first sentence is kept whole when it is longer than the box, and the box wraps it. The card says what the point means for the pack, using the pack's short label.
+- **Point 29.** A critical item is a key risk or an escalating theme, or, on a Group pack, a condition with evidence this period. One summary slide covers up to two items, two slides cover three or four, and three slides cover five or more. Each slide shows at most two full cards. Items past the sixth are named in full on the last slide. The Group scenario outlook stays after those slides.
+- **Point 22.** Before the file is saved, a later sentence that repeats an earlier sentence, or whose figures were all used earlier, is dropped. A table cell is left as written. The disclaimer can repeat. A suggestion is dropped only when that same suggestion was already shown.
+- **Point 25.** A finding lists a suggestion after its hypothesis when a Proposer option or a triggered scenario response already cites that signal. The line starts with "Suggestion for the business area to consider." A signal, a scenario case, or a hypothesis with no existing action gets none.
 
 ### Batch E: State of the Situation and scenarios
 
@@ -148,6 +148,6 @@ Projected on 26 October 2026, measured in working sessions of one batch each:
 |---|---|
 | Essentials: batches A to D | About 4.5 to 5 |
 | All batches, A to G | About 10 to 13 |
-| Used so far: batches A to C | About 3.5 |
+| Used so far: batches A to D | About 4.5 |
 
 Batches E and F cost the most, because they change report generation and need the inputs listed in the decisions table.

@@ -167,16 +167,22 @@ def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
     deck = Presentation(rich["files"]["pptx"])
     slides = list(deck.slides)
     items = deck_items(build_brief(pool, run.run_id, with_options))
-    assert len(slides) == 2 + len(items), "a cover, the executive summary, and one appendix slide per key risk or escalating theme"
+    from grit.report.office import summary_slide_count
+
+    summaries = summary_slide_count(len(items))
+    assert len(slides) == 1 + summaries + len(items), "a cover, one to three summary slides, and one appendix slide per key risk or escalating theme"
     assert slides[0].slide_layout.name == COVER_LAYOUT and all(slide.slide_layout.name == CONTENT_LAYOUT for slide in slides[1:])
     texts = ["\n".join(shape.text_frame.text for shape in slide.shapes if shape.has_text_frame) for slide in slides]
     assert "GRIT-Scan" in texts[0] and "SCAN WINDOW" in texts[0] and "REPORT OWNER" in texts[0]
-    assert "Weekly Risk Radar" in texts[1] and "BOTTOM LINE" in texts[1] and "NEW & ESCALATING" in texts[1]
-    detail = next(text for text in texts[2:] if "Consider testing rail ticketing systems" in text)
+    assert "AI-generated suggestions for consideration" in texts[0]
+    summary = "\n".join(texts[1:1 + summaries])
+    assert "Weekly Risk Radar" in texts[1] and "BOTTOM LINE" in texts[1] and "NEW & ESCALATING" in summary
+    assert "What it means for" in summary
+    detail = next(text for text in texts[1 + summaries:] if "Consider testing rail ticketing systems" in text)
     for label in ("WHAT IT MEANS FOR", "WHAT HAPPENED", "OPTIONS FOR MANAGEMENT CONSIDERATION", "RISK LINKAGE", "OWNER", "SOURCES", "Back to Executive Summary"):
         assert label in detail, label
     targets = lambda slide: {deck.slides.index(shape.click_action.target_slide) for shape in slide.shapes if shape.click_action.target_slide is not None}  # noqa: E731
-    assert 2 in targets(slides[1]) and all(targets(slide) == {1} for slide in slides[2:]), "summary links to the appendix, and each appendix slide links back"
+    assert 1 + summaries in targets(slides[1]) and all(targets(slide) == {1} for slide in slides[1 + summaries:]), "summary links to the appendix, and each appendix slide links back"
     assert not any(REASONING in text for text in texts)
 
     wilson = write_pack(pool, run.run_id, profiles["wilson"], folder=tmp_path / "wilson")
