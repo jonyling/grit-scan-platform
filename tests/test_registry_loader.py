@@ -15,8 +15,8 @@ def test_workbook_entries_are_primary_and_aliases_are_overlays() -> None:
     )
     counts = {kind: sum(entry.registry_kind is kind for entry in registry.entries) for kind in RegistryKind}
     assert counts[RegistryKind.ENTITY] == 41
-    assert counts[RegistryKind.CUSTOMER] == 20
-    assert counts[RegistryKind.SUPPLIER] == 15
+    assert counts[RegistryKind.CUSTOMER] == 33
+    assert counts[RegistryKind.SUPPLIER] == 19
     assert counts[RegistryKind.PROJECT] == 0
 
     by_id = {entry.entity_id: entry for entry in registry.entries}

@@ -124,7 +124,7 @@ def test_an_overlay_edge_carries_its_status_and_a_bad_row_fails_loudly() -> None
 def test_the_urs_graph_builds_from_the_workbook_pack_and_reports_its_real_gaps() -> None:
     pack = load_ontology_pack(_ROOT / "config", "urs")
     graph = build_graph(pack, reviewed_aliases=json.loads((_ROOT / "config" / "registry_aliases.json").read_text(encoding="utf-8")))
-    assert len(graph.of_class("STE")) >= 41 and len(graph.of_class("Customer")) == 20 and len(graph.of_class("Supplier")) == 15
+    assert len(graph.of_class("STE")) >= 41 and len(graph.of_class("Customer")) == 33 and len(graph.of_class("Supplier")) == 19
     assert all(graph.reach(customer.id)[0].targets == ("STE-BA-urban-solutions",) for customer in graph.of_class("Customer"))
     unresolved = next(gap for gap in graph.gaps if gap["kind"] == "ENTITY_LOB_UNRESOLVED" and gap["label"] == "Mobility (Rail & Road)")
     assert unresolved["count"] == 28

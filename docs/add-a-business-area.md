@@ -15,7 +15,7 @@ You need:
 
 ## Create the pack
 
-1. Copy the workbook to `secrets/`.
+1. Copy the workbook to `secrets/`. Name it with the BA tag, such as `01_CA_Entity_Info.xlsx`: when the manifest's file name is missing, the newest file carrying `PREFIX_Entity_Info` is used.
 
 2. Create the folder `config/PACK/`, where `PACK` is the pack id.
 
@@ -41,7 +41,9 @@ You need:
    | `themeVocabulary` | Theme names the built-in vocabulary does not know. Key each list by the start of the theme name, such as `"talent retention": ["tech talent", "attrition"]`. |
    | `sourceSheets` | A source sheet with another column layout, such as `{"9. Specific Industry News": {"name_col": 1, "heading_col": null, "numbered": true}}`. Columns count from 0. `numbered` strips a leading "1. " from each name. |
    | `themeActionPlans` | Key risks with an Action Plans column on sheet 7. Set `true` so the Proposer can build on the action plans (spec 36). |
-   | `managementFocusLayout` | `"areas"` when sheet 10 is one row per focus area (S/N, area, watchpoints), not numbered requests and a LOB / Scope table. |
+   | `managementFocusLayout` | `"areas"` when sheet 10 is one row per focus area (S/N, area, watchpoints), not numbered requests and a LOB / Scope table. `"scenarios"` when it holds scenario tables (No., Scenario, description, impact or risks, watchpoints), as CA's does. |
+   | `entitySheet` | An entity sheet with another name, such as CA's `2a. Entity and Asset Address`. Its header row is found by its NameOfEntity column, so a note line above it is skipped. |
+   | `assetSheet` | A finance asset listing, such as CA's `2. Asset Listing (Finance)`. Each entity gets `assetCountries`, which counts as footprint but is never taken as its country of incorporation. |
    | `supplierUnit`, `sharedSupplierSeparator` | Supplier BA values that name two business areas, such as `URS/DS&C`. Set the BA's own label (`DS&C`) and the separator (`/`). The supplier is recorded under the BA, and `sharedWith` names the other. |
 
    The build also handles these differences without configuration:
@@ -49,6 +51,9 @@ You need:
    - The supplier header row is found by its `BA` column, whatever column A says.
    - A competitor LOB label such as "1. Mission Software & Services" resolves without its number.
    - A customer named only by country and programme, such as "Thailand NPE Programme Customer", is marked `anonymised`. It is not searched by name.
+   - Customer and supplier sheets are read by their header row. A sheet with a serial column keeps numbered rows; a list without one, such as CA's harmonised customer list, keeps every named row once. A short name (match key) becomes an alias. Country, customer type, sector, primary LOB, workscope, contracting entity, customer group, category, goods or services, concentration flag, linked risk codes and confidence are copied when the sheet has them. The graph links a customer to its stated LOB and contracting entity, and a supplier to its stated LOB. A counterparty's country stays a field: it is not STE footprint.
+   - Sheet 7 sections headed only `Ref | Risk` are found by their headings, such as `2. Tier-2 Risks`.
+   - On sheet 10, a numbered row whose text is only a topic heading (Opportunities, Challenges, Key Risks) continues the request above it, and a request that lists its countries in its text keeps them. Each such reading is noted on the request.
 
 4. Write the LOB hierarchy by hand from the org chart. Copy `config/urs/URS-LOB-Hierarchy.json`: each LOB has a name, its grouping, and the other labels the workbook uses for it. Set `status` to say a BA owner must validate it.
 

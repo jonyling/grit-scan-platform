@@ -14,6 +14,13 @@ differs per business area sits in the pack's pack.json under "build":
     managementFocusLayout    "requests" (URS) or "areas" (one row per focus area, DS&C)
     supplierUnit             the business area's own label in the supplier sheet's BA column, such as "DS&C"
     sharedSupplierSeparator  the separator in a BA value naming two business areas, such as "/" in "URS/DS&C"
+    entitySheet              the entity sheet, if not "2. Entity Address". Its header row is found by its NameOfEntity column.
+    assetSheet               a finance asset listing (entity, LOB grouping, country per asset), such as CA's
+                             "2. Asset Listing (Finance)". It adds assetCountries to each entity, and adds an entity only it names.
+
+Customer and supplier sheets are read by their header row. Beyond the name, a column the sheet has is copied: short name
+(match key), country, customer type, sector, primary LOB, workscope, contracting entity, customer group, category, goods or
+services, concentration flag, linked risk codes, and basis or confidence. A short name also becomes an alias.
 
 The register file names come from the manifest's registers. The workbook is the source. A missing rating, domain, project,
 site, or Layer 1 condition stays absent. An entity pack's conditions are not copied.
@@ -34,6 +41,7 @@ from grit.ontology.workbook import workbook_path as default_workbook
 from grit.ontology.xlsx_reader import read_worksheet
 from grit.settings import CONFIG_DIR, ROOT
 
+ENTITY_SHEET = "2. Entity Address"
 GENERATED = ("source_register", "exposure", "lob_profiles", "themes", "baseline", "keyword_library", "competitors", "management_focus")
 
 
@@ -57,8 +65,9 @@ def build_pack(
     sheets = tuple(build["keywordSheets"]) if "keywordSheets" in build else None
     documents = {
         "source_register": _sources(workbook, prefix, _source_layouts(build.get("sourceSheets"))),
-        "exposure": _exposure(workbook, prefix, own_label=build.get("supplierUnit"), shared_separator=build.get("sharedSupplierSeparator")),
-        "lob_profiles": _lobs(workbook, hierarchy, prefix),
+        "exposure": _exposure(workbook, prefix, own_label=build.get("supplierUnit"), shared_separator=build.get("sharedSupplierSeparator"),
+                              entity_sheet=str(build.get("entitySheet") or ENTITY_SHEET), asset_sheet=build.get("assetSheet")),
+        "lob_profiles": _lobs(workbook, hierarchy, prefix, entity_sheet=str(build.get("entitySheet") or ENTITY_SHEET)),
         "themes": _themes(workbook, prefix, counts=build.get("themeCounts"), vocabulary=build.get("themeVocabulary"), action_plans=bool(build.get("themeActionPlans"))),
         "baseline": _baseline(prefix, ba_name, list(manifest.get("children") or [])),
         "keyword_library": load_keyword_library(workbook, hierarchy, sheets=sheets, prefix=prefix),
@@ -157,8 +166,115 @@ def _sources(workbook: Path, prefix: str = "URS", layouts: dict[str, dict] | Non
     }
 
 
-def _exposure(workbook: Path, prefix: str = "URS", *, own_label: str | None = None, shared_separator: str | None = None) -> dict:
-    sheet_rows = _sheet_dicts(workbook, "2. Entity Address")
+# Column headers (by key, see _key) mapped to the register field they fill. A header matches when its key starts with the
+# pattern. The first matching pattern wins, so a longer pattern is listed before a shorter one.
+_COUNTERPARTY_FIELDS: tuple[tuple[str, str], ...] = (
+    ("shortname", "shortName"),
+    ("hqcountry", "country"), ("suppliercountry", "country"), ("countryofincorporation", "country"), ("countryregion", "country"),
+    ("parentgrouphqcountry", "parentCountry"), ("spheracountry", "spheraCountry"), ("country", "country"),
+    ("sectorcustomertype", "sector"), ("customertype", "customerType"), ("sector", "sector"),
+    ("customergroup", "customerGroup"), ("suppliercategory", "category"), ("indicativegoods", "goodsServices"),
+    ("primary", "lob"), ("indicativedsclob", "lob"), ("indicativeursworkscope", "workscope"),
+    ("likely", "contractingEntity"), ("entityname", "contractingEntity"),
+    ("geopolitical", "concentrationFlag"), ("alsoacompetitor", "alsoCompetitor"),
+    ("linkedriskcodes", "linkedRiskCodes"), ("basisconfidence", "confidence"), ("datastatus", "confidence"),
+    ("publicreference", "reference"), ("spheraibu", "ibu"), ("ibu", "ibu"),
+)
+_LIST_FIELDS = {"linkedRiskCodes"}
+_CUSTOMER_NAMES = ("customer", "existingcustomers", "harmonisedcustomername", "customername")
+_SERIALS = {"", "#", "sn", "no", "ref"}
+
+
+def _counterparty_columns(header: list) -> dict[int, str]:
+    columns: dict[int, str] = {}
+    for index, cell in enumerate(header):
+        key = _key(cell)
+        field = next((name for pattern, name in _COUNTERPARTY_FIELDS if key.startswith(pattern)), None)
+        if field and field not in columns.values():
+            columns[index] = field
+    return columns
+
+
+def _counterparty_details(values: list, columns: dict[int, str], name: str) -> dict:
+    """The stated columns for one customer or supplier. A blank cell, 'N/A' and a dash stay absent."""
+    details: dict[str, object] = {}
+    for index, field in columns.items():
+        text = _clean(values[index] if index < len(values) else None)
+        if not text or text.casefold() in {"n/a", "na", "-", "none", "nil"}:
+            continue
+        details[field] = [part.strip() for part in re.split(r"[;,]", text) if part.strip()] if field in _LIST_FIELDS else text
+    if details.get("country") and details.get("spheraCountry") == details["country"]:
+        details.pop("spheraCountry")
+    short = str(details.get("shortName") or "")
+    aliases = [name]
+    if short and short.casefold() != name.casefold() and len(short) >= 3:
+        aliases.append(short)
+    return {"aliases": aliases, **{key: value for key, value in details.items() if key != "shortName"}}
+
+
+def _customers(workbook: Path) -> list[dict]:
+    """Customers from sheet 4. A sheet with a serial column (URS, DS&C) keeps numbered rows only. A sheet without one
+    (CA's harmonised customer list) keeps every named row. A name listed twice is kept once."""
+    rows = read_worksheet(workbook, "4. Customers")
+    header_index = name_col = None
+    for index, row in enumerate(rows):
+        found = next((col for col, cell in enumerate(row) if _key(cell).startswith(_CUSTOMER_NAMES)), None)
+        if found is not None:
+            header_index, name_col = index, found
+            break
+    if header_index is None:  # the template layout: a serial number in column A and the name in column B
+        header, name_col, numbered, body = [], 1, True, rows
+    else:
+        header = rows[header_index]
+        numbered = name_col > 0 and _key(header[0]) in _SERIALS
+        body = rows[header_index + 1:]
+    columns = {index: field for index, field in _counterparty_columns(header).items() if index != name_col}
+    customers, seen = [], set()
+    for row in body:
+        if numbered and not _clean(row[0] if row else None).isdigit():
+            continue
+        name = _clean(row[name_col] if len(row) > name_col else None)
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        customer = {"customerId": f"CUSTOMER-{slugify(name)}", "customerName": name, **_counterparty_details(row, columns, name)}
+        if _ANONYMISED.search(name):
+            customer["anonymised"] = True
+        customers.append(customer)
+    return customers
+
+
+def _entity_rows(workbook: Path, sheet: str) -> list[dict[str, object]]:
+    """The entity sheet's rows, keyed by header. The header row is the one with a NameOfEntity column, so a note line
+    above it, such as 'last updated on 16 Oct', is skipped."""
+    worksheet = read_worksheet(workbook, sheet)
+    header_index = next((index for index, row in enumerate(worksheet) if any(_key(cell) == "nameofentity" for cell in row)), None)
+    if header_index is None:
+        return _sheet_dicts(workbook, sheet)
+    headers = [_key(value) for value in worksheet[header_index]]
+    return [dict(zip(headers, values, strict=False)) for values in worksheet[header_index + 1:] if any(_clean(value) for value in values)]
+
+
+def _assets(workbook: Path, sheet: str) -> dict[str, dict[str, object]]:
+    """Entity name -> its LOB grouping and the countries of its listed assets, from a finance asset listing."""
+    found: dict[str, dict[str, object]] = {}
+    for row in _sheet_dicts(workbook, sheet):
+        name = _value(row, "Entity Name", "NameOfEntity")
+        if not name:
+            continue
+        slot = found.setdefault(name, {"lobGrouping": _value(row, "LOB Grp", "LOBGrouping1"), "countries": [], "assets": 0})
+        slot["assets"] = int(slot["assets"]) + 1
+        country = _value(row, "Country")
+        if country and country not in slot["countries"]:
+            slot["countries"].append(country)
+    return found
+
+
+def _exposure(
+    workbook: Path, prefix: str = "URS", *, own_label: str | None = None, shared_separator: str | None = None,
+    entity_sheet: str = ENTITY_SHEET, asset_sheet: str | None = None,
+) -> dict:
+    sheet_rows = _entity_rows(workbook, entity_sheet)
     lob_names = {keyword.lob for keyword in load_lob_keywords(workbook)}
     lob_names.update(_value(row, "LOB1") for row in sheet_rows if _value(row, "NameOfEntity") and _value(row, "LOB1"))
     entities = []
@@ -189,19 +305,22 @@ def _exposure(workbook: Path, prefix: str = "URS", *, own_label: str | None = No
                 "aliases": [name],
             }
         )
-    customers = []
-    seen.clear()
-    for row in read_worksheet(workbook, "4. Customers"):
-        if len(row) < 2 or not _clean(row[0]).isdigit():
-            continue
-        name = _clean(row[1])
-        if not name or name in seen:
-            continue
-        seen.add(name)
-        customer = {"customerId": f"CUSTOMER-{slugify(name)}", "customerName": name, "aliases": [name]}
-        if _ANONYMISED.search(name):
-            customer["anonymised"] = True
-        customers.append(customer)
+    asset_only = 0
+    if asset_sheet:
+        assets = _assets(workbook, asset_sheet)
+        by_key = {_key(row["entityName"]): row for row in entities}
+        for name, asset in assets.items():
+            row = by_key.get(_key(name))
+            if row is None:
+                row = {"entityId": f"ENTITY-{slugify(name)}", "sourceEntityId": None, "entityName": name, "cluster": None, "businessArea": None,
+                       "lobGrouping": asset["lobGrouping"], "lob": None, "countryOfIncorporation": None, "natureOfShareholding": None,
+                       "reportingSegment": None, "aliases": [name], "source": asset_sheet}
+                entities.append(row)
+                by_key[_key(name)] = row
+                asset_only += 1
+            row["assetCountries"] = list(asset["countries"])
+            row["assetCount"] = asset["assets"]
+    customers = _customers(workbook)
     suppliers = []
     seen.clear()
     supplier_rows = read_worksheet(workbook, "5. Suppliers")
@@ -213,6 +332,7 @@ def _exposure(workbook: Path, prefix: str = "URS", *, own_label: str | None = No
     )
     if header_index is None:
         raise ValueError("Suppliers sheet is missing its Name/BA header row.")
+    supplier_columns = {index: field for index, field in _counterparty_columns(supplier_rows[header_index]).items() if index > 1}
     shared_count = 0
     for values in supplier_rows[header_index + 1 :]:
         name = _clean(values[0] if values else None)
@@ -220,7 +340,7 @@ def _exposure(workbook: Path, prefix: str = "URS", *, own_label: str | None = No
             continue
         seen.add(name)
         unit = _clean(values[1] if len(values) > 1 else None) or None
-        supplier = {"supplierId": f"SUPPLIER-{slugify(name)}", "supplierName": name, "businessArea": unit, "aliases": [name]}
+        supplier = {"supplierId": f"SUPPLIER-{slugify(name)}", "supplierName": name, "businessArea": unit, **_counterparty_details(values, supplier_columns, name)}
         parts = [part.strip() for part in unit.split(shared_separator)] if unit and shared_separator and own_label else []
         if own_label in parts and len(parts) > 1:
             supplier["businessArea"] = own_label
@@ -269,6 +389,16 @@ def _exposure(workbook: Path, prefix: str = "URS", *, own_label: str | None = No
             if any(row.get("anonymised") for row in customers)
             else {}
         ),
+        **(
+            {
+                "assetNote": (
+                    f"assetCountries lists the countries of each entity's assets in '{asset_sheet}'. They are where the entity "
+                    f"holds assets, not where it is incorporated. {asset_only} entities are named only in that listing."
+                )
+            }
+            if asset_sheet
+            else {}
+        ),
         "entities": entities,
         "projects": [],
         "customers": customers,
@@ -277,9 +407,9 @@ def _exposure(workbook: Path, prefix: str = "URS", *, own_label: str | None = No
     }
 
 
-def _lobs(workbook: Path, hierarchy: dict | None = None, prefix: str = "URS") -> dict:
+def _lobs(workbook: Path, hierarchy: dict | None = None, prefix: str = "URS", *, entity_sheet: str = ENTITY_SHEET) -> dict:
     entity_lobs: dict[str, dict[str, str | None]] = {}
-    for row in _sheet_dicts(workbook, "2. Entity Address"):
+    for row in _entity_rows(workbook, entity_sheet):
         lob = _value(row, "LOB1")
         if not lob or lob in entity_lobs:
             continue
@@ -395,13 +525,13 @@ def _themes(
     rows = read_worksheet(workbook, "7. Annual Risks")
     expected = {**_THEME_COUNTS, **(counts or {})}
     sections = (
-        ("KEY", "ref", "keyrisk", expected["KEY"]),
-        ("TIER_2", "sn", "tier2risk", expected["TIER_2"]),
-        ("EMERGING", "no", "emergingrisk", expected["EMERGING"]),
+        ("KEY", "ref", "keyrisk", expected["KEY"], "keyrisks"),
+        ("TIER_2", "sn", "tier2risk", expected["TIER_2"], "tier2risks"),
+        ("EMERGING", "no", "emergingrisk", expected["EMERGING"], "emergingrisks"),
     )
     themes = []
-    for tier, ref_key, name_key, expected in sections:
-        found = _section(rows, ref_key, name_key)
+    for tier, ref_key, name_key, expected, heading in sections:
+        found = _section(rows, ref_key, name_key) or _headed_section(rows, heading)
         if len(found) != expected:
             raise ValueError(f"Sheet 7 {tier} section has {len(found)} rows; expected {expected}.")
         for ref, name, detail, extra, plans in found:
@@ -465,6 +595,17 @@ def _require_unique_ids(rows: list[dict], field: str) -> None:
         if identity in seen and seen[identity] != name:
             raise ValueError(f"Slug collision on '{identity}': '{seen[identity]}' and '{name}'")
         seen[identity] = name
+
+
+def _headed_section(rows: list[list], heading: str) -> list[tuple[str, str, str, str, str]]:
+    """A section whose header is only 'Ref | Risk' (CA): found by its heading row, such as '2. Tier-2 Risks'."""
+    at = next((index for index, row in enumerate(rows) if row and _key(row[0]).lstrip("0123456789") == heading), None)
+    if at is None:
+        return []
+    header = next((index for index in range(at + 1, min(at + 4, len(rows))) if rows[index] and _key(rows[index][0]) in {"ref", "sn", "no"}), None)
+    if header is None:
+        return []
+    return _section(rows[header:], _key(rows[header][0]), _key(rows[header][1] if len(rows[header]) > 1 else None))
 
 
 def _section(rows: list[list], ref_key: str, name_key: str) -> list[tuple[str, str, str, str, str]]:

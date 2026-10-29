@@ -17,7 +17,7 @@ Every agent working on this repository must follow these rules:
   .venv/bin/python -m pytest -q
   ```
 
-  As of 29 October 2026, 614 tests pass. The URS and DS&C workbooks in `secrets/` rebuild the same registers that are already in `config/`.
+  As of 29 October 2026, 623 tests pass. The URS, DS&C and CA registers in `config/` were rebuilt from `02_URS_Entity_Info.xlsx`, `04_DSC_Entity_Info.xlsx` and `01_CA_Entity_Info.xlsx` on 29 October 2026.
 
 - End each commit message with this trailer:
 
@@ -26,14 +26,14 @@ Every agent working on this repository must follow these rules:
   ```
 
 - Update `README.md` and the matching spec in `specs/` when behaviour changes.
-- Keep Brave Search use within its free credit of about 1,000 queries a month. The `grit scheduled` timetable already uses about 978 in its busiest month. Brave's credit renews on 1 November.
+- Keep Brave Search use within its free credit of about 1,000 queries a month. After the 29 October workbooks added customers and suppliers, the `grit scheduled` timetable uses about 1,000 queries in a four-Monday month and 1,150 in a five-Monday month; the guard stops Brave at 1,000 and falls back to Currents. Brave's credit renews on 1 November.
 
 ## Points of improvement
 
 | # | Point | Batch | Status |
 |---|---|---|---|
-| 1 | Add more URS and DS&C entity information to the ontology, and update it before upload to Google and each pack run. | F | Not started |
-| 2 | Get entity information from the six BAs that have not sent it: Commercial Aerospace, Satcom, Defence Aerospace, Marine, Land and Homeland. | None | Organisational. Needs higher authority. |
+| 1 | Add more URS and DS&C entity information to the ontology, and update it before upload to Google and each pack run. | F | Done for URS and DS&C, 29 Oct. Customer and supplier sheets are read by their headers: short names become aliases, and country, sector, LOB, contracting entity, linked risk codes and confidence are kept. Every URS customer now links to a LOB or its contracting entity. Renamed workbooks are found by their tag. Uploading to Google is still to do. |
+| 2 | Get entity information from the six BAs that have not sent it: Commercial Aerospace, Satcom, Defence Aerospace, Marine, Land and Homeland. | None | CA received 29 Oct and wired up as pack `ca` (registers, graph, Group footprint, SotS exposure). Five BAs still to send. |
 | 3 | Add RED events: pandemic, China attacks Taiwan, earthquake above 8.0, financial meltdown, major corruption cases, workplace accidents, Middle East attacks needing evacuation, AI and quantum cyber attacks, sanctions on linked entities, bankruptcy of key customers, suppliers or projects, trade barriers and tariffs, sudden loss of key personnel, EHS incidents causing the death of STE staff, labour incidents and strikes, disruption of basic services, legal disputes affecting STE entities, and major riots where STE entities or projects are. | B | Done. Patterns are in `grit/core/red_events.py` and merge at assessment. Magnitude 8.0 or greater. Linked events need a direct or counterparty link. `RED-PANDEMIC` was already in the register and was left as written. `grit daily`, `grit scan`, and `grit assess` append missing ids to `config/red-patterns.json` without replacing an existing rule. The file is tracked in git as an intended exception (commit `c37a015`). |
 | 4 | Email RED alerts from daily scans to the relevant people at once, for example the PHP vulnerabilities. | B | Built. A daily draft is sent to `GRIT_RED_MAIL_TO` when Graph mail is configured. No address is invented. Until those settings exist, the draft stays unsent. Wilson still chooses who is on the duty list. |
 | 5 | Add GDELT and Sphera acquisition lanes. | B | GDELT artlist is on the daily lane, with a timeout and the keep rule. Sphera stays closed: `secrets/sphera.env` is the placeholder, and nothing is fetched until an API contract exists. |
@@ -124,7 +124,7 @@ Commit `24a4dc8`.
 
 ### Batch F: data and governance
 
-- **Point 1.** Refresh the URS and DS&C entity information in the ontology before upload and pack runs. The latest workbooks are in `secrets/`.
+- **Point 1 (done for URS and DS&C, 29 Oct).** Rebuild with `grit pack-build --pack PACK` whenever a workbook changes. Commercial Aerospace (`ca`) has registers but no scan plan yet, so it is not scanned weekly.
 - **Point 26.** Re-base profiles on BA business partners. Needs `config/` access or Jony's edits.
 - **Point 27.** Add Wilson's daily adverse news agent as a lane whose output passes the same deterministic checks. Needs Wilson's prompt.
 - **Point 28.** Record all four feedback routes in one feedback table, with the route, the person and the date.

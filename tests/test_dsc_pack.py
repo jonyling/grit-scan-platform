@@ -87,9 +87,11 @@ def test_dsc_registers_are_built_from_the_workbook_without_invention(tmp_path: P
     read = lambda name: json.loads((tmp_path / name).read_text(encoding="utf-8"))  # noqa: E731
     exposure, themes, focus = read("E.json"), read("T.json"), read("M.json")
 
-    assert len(exposure["entities"]) == 21 and len(exposure["customers"]) == 30 and len(exposure["suppliers"]) == 39
+    assert len(exposure["entities"]) == 21 and len(exposure["customers"]) == 69 and len(exposure["suppliers"]) == 39
     assert exposure["projects"] == [] and exposure["sites"] == []
-    assert sum(bool(row.get("anonymised")) for row in exposure["customers"]) == 5
+    assert sum(bool(row.get("anonymised")) for row in exposure["customers"]) == 8
+    mindef = next(row for row in exposure["customers"] if row["customerName"] == "Ministry of Defence (MINDEF)")
+    assert mindef["country"] == "Singapore" and mindef["confidence"] == "Verified – public source" and "Unmanned" in mindef["lob"], "the sheet's columns are copied"
     shared = {row["supplierName"]: row for row in exposure["suppliers"] if row.get("sharedWith")}
     assert set(shared) == {"MOTOROLA SOLUTIONS SINGAPORE PTE. LTD.", "FRONTIER INTEGRATED TECHNOLOGY PTE LTD"}
     assert all(row["businessArea"] == "DS&C" and row["sharedWith"] == ["URS"] for row in shared.values())
@@ -114,7 +116,7 @@ def test_dsc_registers_are_built_from_the_workbook_without_invention(tmp_path: P
 @needs_workbook
 def test_the_dsc_transmission_registry_loads_without_the_urs_aliases() -> None:
     registry = load_transmission_registry(_WORKBOOK, None)
-    assert len(registry.entries) == 21 + 30 + 39
+    assert len(registry.entries) == 21 + 69 + 39
     assert registry.aliases == ()
 
 
@@ -126,8 +128,16 @@ def test_a_urs_workbook_override_never_feeds_another_business_area(tmp_path: Pat
     monkeypatch.delenv("GRIT_WORKBOOK_DSC", raising=False)
     assert workbook_path() == urs
     assert workbook_path("URS.xlsx", prefix="URS") == urs
+    import grit.ontology.workbook as workbook_module
+
+    monkeypatch.setattr(workbook_module, "ROOT", tmp_path)
     with pytest.raises(FileNotFoundError, match="GRIT_WORKBOOK_DSC"):
         workbook_path("no-such-dsc-workbook.xlsx", prefix="DSC")
+    renamed = tmp_path / "secrets" / "04_DSC_Entity_Info.xlsx"
+    renamed.parent.mkdir()
+    renamed.write_bytes(b"")
+    (tmp_path / "secrets" / "02_URS_Entity_Info.xlsx").write_bytes(b"")
+    assert workbook_path("no-such-dsc-workbook.xlsx", prefix="DSC") == renamed, "a renamed workbook is found by its business-area tag"
     monkeypatch.setenv("GRIT_WORKBOOK_DSC", str(dsc))
     assert workbook_path("no-such-dsc-workbook.xlsx", prefix="DSC") == dsc
 

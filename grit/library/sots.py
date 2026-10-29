@@ -57,14 +57,16 @@ def exposure(item: Topic, config_dir: Path = CONFIG_DIR) -> dict[str, Any]:
             continue
         pack = load_ontology_pack(config_dir, name)
         table.append(_exposure_row(name, pack, item))
-        entities = [row for row in pack.exposure.get("entities") or [] if str(row.get("countryOfIncorporation") or "").casefold() in wanted]
+        entities = [row for row in pack.exposure.get("entities") or [] if wanted & _entity_places(row)]
         suppliers = [row["supplierName"] for row in pack.exposure.get("suppliers") or [] if named(row["supplierName"])]
         customers = [row["customerName"] for row in pack.exposure.get("customers") or [] if named(row["customerName"])]
         themes = [row for row in (pack.themes or {}).get("themes") or [] if any(_keyword(keyword).search(f"{row['themeName']} {' '.join(row.get('keywords') or [])}") for keyword in item.keywords)]
         if entities or suppliers or customers or themes:
             areas.append({
                 "pack": name, "label": pack.label,
-                "entities": [{"name": row["entityName"], "country": row.get("countryOfIncorporation"), "lob": row.get("lob")} for row in entities],
+                "entities": [{"name": row["entityName"], "country": row.get("countryOfIncorporation"), "lob": row.get("lob"),
+                              **({"assetCountries": [country for country in row["assetCountries"] if country.casefold() in wanted]} if row.get("assetCountries") else {})}
+                             for row in entities],
                 "suppliers": suppliers, "customers": customers,
                 "themes": [{"id": row["themeId"], "name": row["themeName"], "tier": row.get("tier")} for row in themes],
             })
@@ -73,6 +75,11 @@ def exposure(item: Topic, config_dir: Path = CONFIG_DIR) -> dict[str, Any]:
 
 
 _TAIWAN = {"taiwan", "chinese taipei"}
+
+
+def _entity_places(row: Mapping[str, Any]) -> set[str]:
+    """Where an entity is incorporated and where it holds assets, folded for comparison."""
+    return {str(country or "").strip().casefold() for country in [row.get("countryOfIncorporation"), *(row.get("assetCountries") or [])] if country}
 _CHINA = {"china", "prc", "people's republic of china", "mainland china"}
 
 
@@ -106,8 +113,17 @@ def _exposure_row(name: str, pack: Any, item: Topic) -> dict[str, Any]:
     def place(country: str) -> str:
         return str(country or "").strip().casefold()
 
-    taiwan = [row["entityName"] for row in entities if place(row.get("countryOfIncorporation")) in _TAIWAN]
-    china = [row["entityName"] for row in entities if place(row.get("countryOfIncorporation")) in _CHINA]
+    def located(places: set[str]) -> list[str]:
+        """Incorporated there, or holding an asset there (a finance asset listing), marked so the two are not confused."""
+        names = []
+        for row in entities:
+            if place(row.get("countryOfIncorporation")) in places:
+                names.append(row["entityName"])
+            elif any(place(country) in places for country in row.get("assetCountries") or []):
+                names.append(f"{row['entityName']} (asset there)")
+        return names
+
+    taiwan, china = located(_TAIWAN), located(_CHINA)
     staff = [f"{row['entityName']}: {_stated(row, 'staff', 'staffCount', 'headcount')}" for row in entities if _stated(row, "staff", "staffCount", "headcount")]
     suppliers = [row["supplierName"] for row in exposure_register.get("suppliers") or [] if named(row["supplierName"])]
     ratings = exposure_register.get("scenarioRatings") if isinstance(exposure_register.get("scenarioRatings"), Mapping) else {}

@@ -162,13 +162,13 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-29, 614 tests pass. They make no network call.
+   As of 2026-10-29, 623 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 
 The `urs` pack is built from the confidential URS Entity Info workbook. Git ignores `secrets/`, `output/`, `.env`, and every `.xlsx` file.
 
-1. Copy the workbook to `secrets/URS_Entity_Info_20261006.xlsx`. To use another path, set `GRIT_WORKBOOK`. Another business area's workbook has its own variable, such as `GRIT_WORKBOOK_DSC`.
+1. Copy the workbook to `secrets/`. A file whose name carries the business area's tag, such as `02_URS_Entity_Info.xlsx`, `04_DSC_Entity_Info.xlsx` or `01_CA_Entity_Info.xlsx`, is found when the manifest's own file name is missing; the newest one wins. To use another path, set `GRIT_WORKBOOK` for URS, or the business area's own variable, such as `GRIT_WORKBOOK_DSC`.
 2. Copy `.env.example` to `.env` and fill in the values you need:
    - Gemini on Vertex: `GOOGLE_CLOUD_PROJECT` and `GOOGLE_APPLICATION_CREDENTIALS` for a service-account file, or `GOOGLE_API_KEY` for express mode. `GEMINI_MODEL` names the model.
    - Search: `BRAVE_SEARCH_API_KEY`, and optionally `CURRENTS_API_KEY`. `BRAVE_MONTHLY_LIMIT` sets the local monthly guard (default 2000).
@@ -186,7 +186,7 @@ Do not commit `.env`, `secrets/`, or a service-account file, and do not paste cr
 
 Run these commands from the repository root. `DATE` is the run date, `YYYY-MM-DD`; it defaults to today. Without `--pack`, every pack with a scan plan runs, entity packs first. To run one pack, add `--pack urs` or `--pack urs-tw`.
 
-> **Warning:** The scan spends Brave queries. A run costs about 124 queries for DS&C, 117 for URS, 60 for URS Taiwan and 48 for the Group pack, and a run date already answered costs nothing more. Brave's free credit covers about 1,000 queries a month; beyond that Brave refuses with HTTP 402, and the scan falls back to Currents for at most 40 queries a run. The local counter in `output/brave-usage.json` stops at `BRAVE_MONTHLY_LIMIT` (default 1,000) and ignores queries sent outside this repository. To rewrite a brief, rerun `grit agents` and `grit report`, which spend no Brave queries, not `grit scan` or `grit weekly` with a new date. `--sweep N` adds up to N queries from the 12-week business-area digest plan.
+> **Warning:** The scan spends Brave queries. A run costs about 147 queries for DS&C, 140 for URS, 66 for URS Taiwan and 54 for the Group pack (29 October 2026, after the 29 October workbooks added customers and suppliers), and a run date already answered costs nothing more. Brave's free credit covers about 1,000 queries a month; beyond that Brave refuses with HTTP 402, and the scan falls back to Currents for at most 40 queries a run. The local counter in `output/brave-usage.json` stops at `BRAVE_MONTHLY_LIMIT` (default 1,000) and ignores queries sent outside this repository. To rewrite a brief, rerun `grit agents` and `grit report`, which spend no Brave queries, not `grit scan` or `grit weekly` with a new date. `--sweep N` adds up to N queries from the 12-week business-area digest plan.
 
 1. Print the queries. This sends nothing.
 
@@ -216,12 +216,12 @@ To keep Brave within its free credit of about 1,000 queries a month, the weekly 
 
 | Pack | Due | Brave queries a month |
 |---|---|---|
-| DS&C | Every Monday | 496 to 620 |
-| URS | First and third Monday | 234 |
-| URS Taiwan | First Monday | 60 |
-| STE Group | First Monday | 48 |
+| DS&C | Every Monday | 588 to 735 |
+| URS | First and third Monday | 280 |
+| URS Taiwan | First Monday | 66 |
+| STE Group | First Monday | 54 |
 
-With the monthly source sweep, the heaviest month comes to about 978 queries. To see which packs are due on a day without sending anything, or to run them:
+With the monthly source sweep, a four-Monday month comes to about 1,000 queries and a five-Monday month to about 1,150. The 29 October workbooks added customers and suppliers, and each is searched by name. Beyond 1,000, the monthly guard stops Brave and the run falls back to Currents, so the last runs of a five-Monday month get fewer Brave results. To stay inside the free credit, search DS&C customers less often, or run DS&C every other Monday. To see which packs are due on a day without sending anything, or to run them:
 
 ```bash
 .venv/bin/python -m grit scheduled --dry-run --date 2026-11-02

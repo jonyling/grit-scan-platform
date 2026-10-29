@@ -203,6 +203,17 @@ def parse_competitor_rows(rows: list[list[str]]) -> dict[str, Any]:
     return {"competitors": competitors, "dropped": dropped}
 
 
+_PLACE_LIST = re.compile(r"\bin ((?:[A-Z][a-z]+(?: [A-Z][a-z]+)?)(?:, (?:[A-Z][a-z]+(?: [A-Z][a-z]+)?))*,? and (?:[A-Z][a-z]+(?: [A-Z][a-z]+)?))\b")
+
+
+def _countries_in_text(text: str) -> list[str]:
+    """A list of places the text states, as in 'sectors in Thailand, Malaysia, India, Vietnam and Australia'."""
+    match = _PLACE_LIST.search(text or "")
+    if not match:
+        return []
+    return [part.strip() for part in re.split(r",\s*(?:and\s+)?|\s+and\s+", match.group(1)) if part.strip()]
+
+
 def parse_management_focus_rows(rows: list[list[str]]) -> dict[str, Any]:
     """Parse the management focus sheet: numbered requests first, then the LOB / Scope table. Fails loudly on another layout."""
     header = next((index for index, row in enumerate(rows) if row[0].casefold() == "lob / scope" and row[1].casefold() == "management focus"), None)
@@ -214,6 +225,14 @@ def parse_management_focus_rows(rows: list[list[str]]) -> dict[str, Any]:
     topic: dict[str, Any] | None = None
     for number, (index, scope, entity, text, _extra) in enumerate(rows[:header], start=1):
         if number == 1 and scope.casefold() == "lob":
+            continue
+        if index.isdigit() and text.casefold() in _MANAGEMENT_GROUP_HEADERS and current is not None:
+            # A numbered row whose text is only a topic heading continues the request above it, with one more LOB in scope.
+            if scope and scope not in current["scope"].split("; "):
+                current["scope"] = f"{current['scope']}; {scope}"
+            current["notes"].append(f"Row {number} is numbered {index}, but its text '{text}' is a topic heading, so it continues request {current['number']}.")
+            topic = {"name": text.rstrip(":"), "items": []}
+            current["topics"].append(topic)
             continue
         if index.isdigit():
             current = {"number": int(index), "scope": scope, "entity": entity or None, "text": text, "countries": [], "topics": [], "notes": []}
@@ -234,6 +253,12 @@ def parse_management_focus_rows(rows: list[list[str]]) -> dict[str, Any]:
                 topic["items"].append(text)
             else:
                 dropped.append({"row": number, "text": text[:120], "reason": "ITEM_BEFORE_ANY_TOPIC_HEADING"})
+    for request in requests:
+        if not request["countries"]:
+            named = _countries_in_text(request["text"])
+            if named:
+                request["countries"] = named
+                request["notes"].append("The countries are the ones the request text names.")
     items = []
     for row in rows[header + 1 :]:
         scope, focus, why, indicators, status = row[:5]
@@ -277,6 +302,45 @@ def parse_management_area_rows(rows: list[list[str]]) -> dict[str, Any]:
                 "number": int(index),
             }
         )
+    return {"requests": [], "focusItems": items, "dropped": dropped}
+
+
+def parse_management_scenario_rows(rows: list[list[str]]) -> dict[str, Any]:
+    """Parse a management focus sheet laid out as scenario tables (CA): 'No. | Scenario | description | impact or risks |
+    Key Watchpoints'. Each table's origin is the heading above it, such as 'Scenario Planning from Management' or 'Others
+    from the R&A team'. Watchpoints are split on semicolons. Fails loudly when the sheet has no scenario table."""
+    items: list[dict[str, Any]] = []
+    dropped: list[dict[str, Any]] = []
+    origin: str | None = None
+    columns: list[str] | None = None
+    for number, row in enumerate(rows, start=1):
+        cells = [cell.strip() for cell in row]
+        if cells[0].casefold().rstrip(".") in {"no", "s/n"} and cells[1].casefold() == "scenario":
+            columns = [cell.casefold() for cell in cells]
+            continue
+        if columns is None or not cells[0].isdigit():
+            if cells[0] and not any(cells[1:]):
+                origin, columns = cells[0].rstrip(":"), None
+            continue
+        if not cells[1]:
+            dropped.append({"row": number, "text": cells[0], "reason": "NO_SCENARIO_NAME"})
+            continue
+        third = columns[3] if len(columns) > 3 else ""
+        items.append(
+            {
+                "scope": "All LOBs",
+                "allLobs": True,
+                "focus": cells[1],
+                "whyItMatters": cells[2] or None,
+                **({"relevantRisks": cells[3] or None} if "risk" in third else {"impact": cells[3] or None}),
+                "indicators": [item.strip(" .") for item in re.split(r";|\n", cells[4]) if item.strip(" .")],
+                "status": None,
+                "origin": origin,
+                "number": int(cells[0]),
+            }
+        )
+    if not items:
+        raise ValueError("Management focus sheet has no 'No. | Scenario | ... | Key Watchpoints' table.")
     return {"requests": [], "focusItems": items, "dropped": dropped}
 
 
@@ -328,6 +392,9 @@ def load_management_focus(workbook: Path, hierarchy: dict[str, Any] | None, *, p
     if layout == "areas":
         parsed = parse_management_area_rows(rows)
         absence = "The sheet gives each area a list of watchpoints. It names no LOB, status, or reason, so none is recorded."
+    elif layout == "scenarios":
+        parsed = parse_management_scenario_rows(rows)
+        absence = "The sheet gives scenarios with watchpoints. It names no LOB or status, so none is recorded. origin names who proposed each one."
     else:
         parsed = parse_management_focus_rows(rows)
         absence = "The status text is copied unchanged. A status that says research draft means a business area has not validated the item."

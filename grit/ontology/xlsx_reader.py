@@ -63,7 +63,8 @@ def read_worksheet(path: str | Path, sheet_name: str, *, keep_blank_rows: bool =
             raise ValueError(f"Workbook sheet is missing: {sheet_name}")
         relationship_id = selected.attrib[f"{{{_REL}}}id"]
         target = targets[relationship_id]
-        worksheet_path = posixpath.normpath(posixpath.join("xl", target))
+        # A target is relative to xl/, or absolute from the package root ("/xl/worksheets/sheet1.xml", as openpyxl writes it).
+        worksheet_path = target.lstrip("/") if target.startswith("/") else posixpath.normpath(posixpath.join("xl", target))
         root = ET.fromstring(archive.read(worksheet_path))
         shared = _shared_strings(archive)
         rows: list[list[object | None]] = []

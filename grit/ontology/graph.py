@@ -188,6 +188,11 @@ class OntologyGraph:
         return {node.id for edge, node, forward in self.neighbours(place_id, "located_in") if not forward}
 
 
+def _name_key(name: str) -> str:
+    """Letters and digits only, so 'ST Engineering Urban Solutions Ltd.' finds the entity 'ST Engineering Urban Solutions Ltd'."""
+    return re.sub(r"[^a-z0-9]", "", str(name or "").casefold())
+
+
 def _alias_table(names: Iterable[str], basis: str, table: dict[str, str]) -> None:
     for name in names:
         table.setdefault(name, basis)
@@ -280,6 +285,9 @@ def build_graph(pack: Any, *, reviewed_aliases: Mapping[str, Any] | None = None,
         add_edge(row["entityId"], "part_of", ba_id, SOURCE_STATED, f"{SHEET_ENTITIES}: business area")
         if row.get("countryOfIncorporation"):
             add_edge(row["entityId"], "located_in", place(row["countryOfIncorporation"]), SOURCE_STATED, f"{SHEET_ENTITIES}: country of incorporation")
+        for country in row.get("assetCountries") or []:
+            if country != row.get("countryOfIncorporation"):
+                add_edge(row["entityId"], "located_in", place(country), SOURCE_STATED, "asset listing: the entity holds an asset in this country")
         lob_id = resolve(row.get("lob") or "")
         if lob_id:
             add_edge(row["entityId"], "operates_in", lob_id, SOURCE_STATED, f"{SHEET_ENTITIES}: LOB")
@@ -296,14 +304,34 @@ def build_graph(pack: Any, *, reviewed_aliases: Mapping[str, Any] | None = None,
             aliases, basis = with_aliases(node_id, name, row.get("aliases") or [], generated=False)
             add_node(Node(node_id, cls, collection[:-1].upper(), name, aliases, basis))
 
+    entity_by_key = {_name_key(row["entityName"]): row["entityId"] for row in entity_rows}
+
+    def stated_lobs(row: Mapping[str, Any]) -> list[str]:
+        """The LOBs a customer or supplier row names. A label the hierarchy does not know adds no edge."""
+        found = [resolve(part.strip()) for part in str(row.get("lob") or "").split(";") if part.strip()]
+        return list(dict.fromkeys(lob for lob in found if lob))
+
+    # A customer's or supplier's country stays a field. A located_in edge would count it as STE footprint.
+    unlinked_customers = 0
     for row in exposure.get("customers") or []:
         aliases, basis = with_aliases(row["customerId"], row["customerName"], row.get("aliases") or [])
-        add_node(Node(row["customerId"], "Customer", "CUSTOMER", row["customerName"], aliases, basis))
+        details = {key: row[key] for key in ("country", "sector", "customerType", "customerGroup", "confidence") if row.get(key)}
+        add_node(Node(row["customerId"], "Customer", "CUSTOMER", row["customerName"], aliases, basis, details))
         add_edge(row["customerId"], "buys_from", ba_id, SOURCE_STATED, f"{SHEET_CUSTOMERS}: listed as a customer of the business area")
-    if exposure.get("customers"):
-        gaps.append({"kind": "CUSTOMER_ENTITY_UNKNOWN", "count": len(exposure["customers"]), "needs": "For each customer, the entity or LOB it buys from. The register stops at the business area."})
+        linked = False
+        for lob_id in stated_lobs(row):
+            add_edge(row["customerId"], "buys_from", lob_id, SOURCE_STATED, f"{SHEET_CUSTOMERS}: primary LOB column")
+            linked = True
+        entity_id = entity_by_key.get(_name_key(row.get("contractingEntity") or ""))
+        if entity_id:
+            add_edge(row["customerId"], "buys_from", entity_id, SOURCE_STATED, f"{SHEET_CUSTOMERS}: contracting entity column")
+            linked = True
+        unlinked_customers += 0 if linked else 1
+    if unlinked_customers:
+        gaps.append({"kind": "CUSTOMER_ENTITY_UNKNOWN", "count": unlinked_customers, "needs": "For each customer, the entity or LOB it buys from. The register stops at the business area."})
 
     unit_ids: dict[str, str] = {}
+    unlinked_suppliers = 0
     for row in exposure.get("suppliers") or []:
         aliases, basis = with_aliases(row["supplierId"], row["supplierName"], row.get("aliases") or [])
         add_node(Node(row["supplierId"], "Supplier", "SUPPLIER", row["supplierName"], aliases, basis))
@@ -313,8 +341,12 @@ def build_graph(pack: Any, *, reviewed_aliases: Mapping[str, Any] | None = None,
                 unit_ids[label] = unit.id
                 add_edge(unit.id, "part_of", ba_id, DERIVED, "the supplier sheet's business-area column names this unit of the business area")
             add_edge(row["supplierId"], "supplies", unit_ids[label], SOURCE_STATED, f"{SHEET_SUPPLIERS}: business area column")
-    if exposure.get("suppliers"):
-        gaps.append({"kind": "SUPPLIER_ENTITY_UNKNOWN", "count": len(exposure["suppliers"]), "needs": "For each supplier, the entity it supplies. The register names a unit such as 'URS Singapore'."})
+        supplied = stated_lobs(row)
+        for lob_id in supplied:
+            add_edge(row["supplierId"], "supplies", lob_id, SOURCE_STATED, f"{SHEET_SUPPLIERS}: primary LOB column")
+        unlinked_suppliers += 0 if supplied else 1
+    if unlinked_suppliers:
+        gaps.append({"kind": "SUPPLIER_ENTITY_UNKNOWN", "count": unlinked_suppliers, "needs": "For each supplier, the entity it supplies. The register names a unit such as 'URS Singapore'."})
 
     competitor_unresolved = 0
     for row in (pack.competitors or {}).get("competitors") or []:
