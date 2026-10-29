@@ -18,7 +18,8 @@
     "competitors": "CA-Competitors.json",
     "management_focus": "CA-Management-Focus.json",
     "lob_hierarchy": "CA-LOB-Hierarchy.json",
-    "relationships": "CA-Relationships.json"
+    "relationships": "CA-Relationships.json",
+    "scan_plan": "CA-Scan-Plan.json"
   },
   "build": {
     "prefix": "CA",

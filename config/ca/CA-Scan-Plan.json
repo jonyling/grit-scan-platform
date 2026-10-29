@@ -1,0 +1,247 @@
+{
+  "registerId": "CA-SCAN-PLAN",
+  "status": "PROPOSED: drafted by GRIT-Scan on 29 October 2026 from the CA workbook. The CA R&A business partner reviews the queries and request keywords.",
+  "standingSet": "themes",
+  "audience": "Commercial Aerospace management and its R&A business partner, released by Wilson Yeo (Group Head, Risk & Assurance)",
+  "themes": [
+    {
+      "themeId": "CA-KEY-01",
+      "queries": [
+        "aircraft MRO airworthiness directive",
+        "aviation maintenance quality escape FAA EASA",
+        "engine parts certification investigation",
+        "MRO facility regulator audit"
+      ]
+    },
+    {
+      "themeId": "CA-KEY-02",
+      "queries": [
+        "MRO market competition pricing airlines",
+        "airline maintenance contract award",
+        "engine MRO capacity expansion competitor",
+        "freighter conversion competition"
+      ]
+    },
+    {
+      "themeId": "CA-KEY-03",
+      "queries": [
+        "aerospace supply chain tariffs sanctions",
+        "aviation export controls China aerospace",
+        "aerospace material shortage titanium castings",
+        "geopolitical disruption aircraft parts supply"
+      ]
+    },
+    {
+      "themeId": "CA-KEY-04",
+      "queries": [
+        "aircraft engine parts shortage MRO",
+        "OEM spare parts delay airlines",
+        "single-source aerospace supplier disruption",
+        "CFM LEAP parts shortage"
+      ]
+    },
+    {
+      "themeId": "CA-KEY-05",
+      "queries": [
+        "airline bankruptcy filing",
+        "airline financial distress lessor",
+        "aircraft lessor default",
+        "airline insolvency maintenance payments"
+      ]
+    },
+    {
+      "themeId": "CA-KEY-06",
+      "queries": [
+        "aircraft technician shortage",
+        "licensed aircraft engineer shortage Asia"
+      ]
+    },
+    {
+      "themeId": "CA-KEY-07",
+      "queries": [
+        "aviation cyberattack MRO",
+        "aerospace ransomware attack"
+      ]
+    },
+    {
+      "themeId": "CA-KEY-08",
+      "queries": [
+        "aerospace sanctions compliance violation",
+        "aviation export control enforcement"
+      ]
+    },
+    {
+      "themeId": "CA-TIER_2-09",
+      "queries": [
+        "aircraft leasing interest rates"
+      ]
+    },
+    {
+      "themeId": "CA-TIER_2-10",
+      "queries": [
+        "hangar accident aircraft maintenance worker"
+      ]
+    },
+    {
+      "themeId": "CA-TIER_2-11",
+      "queries": [
+        "aerospace joint venture dispute"
+      ]
+    },
+    {
+      "themeId": "CA-TIER_2-12",
+      "queries": [
+        "typhoon airport hangar disruption Asia"
+      ]
+    },
+    {
+      "themeId": "CA-EMERGING-13",
+      "queries": [
+        "AI predictive maintenance aircraft MRO"
+      ]
+    },
+    {
+      "themeId": "CA-EMERGING-14",
+      "queries": [
+        "aviation workforce ageing retention"
+      ]
+    },
+    {
+      "themeId": "CA-EMERGING-15",
+      "queries": [
+        "sustainable aviation fuel mandate airlines"
+      ]
+    },
+    {
+      "themeId": "CA-EMERGING-16",
+      "queries": [
+        "OEM aftermarket licensing MRO independent shops"
+      ]
+    }
+  ],
+  "managementRequests": [
+    {
+      "requestId": "CA-MR-01",
+      "title": "Major aviation incident linked to an aircraft or component CA maintained or made",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "keywords": [
+        "aviation accident",
+        "aircraft incident",
+        "emergency airworthiness directive",
+        "NTSB + engine",
+        "uncontained engine failure"
+      ],
+      "queries": [
+        "aviation accident investigation engine component",
+        "emergency airworthiness directive"
+      ],
+      "source": "CA workbook, 10. Management Focus, Scenario Planning from Management 1"
+    },
+    {
+      "requestId": "CA-MR-02",
+      "title": "Cyberattack, including AI-driven, compromising CA systems or data",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "keywords": [
+        "aviation cyberattack",
+        "aerospace ransomware",
+        "MRO + cyberattack",
+        "airline + data breach"
+      ],
+      "queries": [
+        "aerospace cyberattack AI",
+        "airline MRO data breach"
+      ],
+      "source": "CA workbook, 10. Management Focus, Scenario Planning from Management 2"
+    },
+    {
+      "requestId": "CA-MR-03",
+      "title": "Technology bifurcation and export-control restrictions on aerospace",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "keywords": [
+        "aerospace export controls",
+        "aviation + export ban",
+        "aircraft parts + sanctions",
+        "COMAC + export"
+      ],
+      "queries": [
+        "aerospace export control restrictions China",
+        "aircraft parts sanctions shipment"
+      ],
+      "source": "CA workbook, 10. Management Focus, Scenario Planning from Management 3"
+    },
+    {
+      "requestId": "CA-MR-04",
+      "title": "Geopolitical fragmentation prolongs supply and cost pressure",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "keywords": [
+        "aerospace supply chain + sanctions",
+        "aircraft parts + tariffs"
+      ],
+      "queries": [
+        "aerospace supply chain geopolitical fragmentation"
+      ],
+      "source": "CA workbook, 10. Management Focus, Others from the R&A team 1"
+    },
+    {
+      "requestId": "CA-MR-05",
+      "title": "Aviation growth collides with capacity, talent and cost constraints",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "keywords": [
+        "MRO capacity shortage",
+        "aircraft technician shortage",
+        "airline + maintenance delay"
+      ],
+      "queries": [
+        "MRO capacity constraint technician shortage"
+      ],
+      "source": "CA workbook, 10. Management Focus, Others from the R&A team 2"
+    }
+  ],
+  "namedItems": {
+    "source": "graph",
+    "lanes": {
+      "ENTITY": {
+        "cadenceWeeks": 4
+      },
+      "SUPPLIER": {
+        "cadenceWeeks": 4
+      },
+      "CUSTOMER": {
+        "cadenceWeeks": 26
+      },
+      "COMPETITOR": {
+        "cadenceWeeks": 8
+      }
+    }
+  },
+  "contextCues": {
+    "sector": [
+      "aviation",
+      "aircraft",
+      "airline",
+      "airlines",
+      "aerospace",
+      "MRO",
+      "airframe",
+      "aero engine",
+      "engine overhaul",
+      "freighter",
+      "lessor",
+      "leasing",
+      "nacelle",
+      "Airbus",
+      "Boeing",
+      "airport"
+    ]
+  },
+  "sectionTitles": {
+    "CONDITIONS": "Commercial Aerospace risk themes",
+    "CUSTOMERS": "Airline and lessor customers",
+    "COMPETITORS": "MRO competitor and industry watch"
+  }
+}

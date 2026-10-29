@@ -7,11 +7,16 @@
     "urs",
     "urs-tw",
     "dsc", 
+    "ca",
     "ste"
   ],
   "businessScope": {
     "businessAreas": [
-      "Urban Solutions"
+      "Urban Solutions",
+      "URS Taiwan",
+      "Digital Systems & Cybersecurity",
+      "Commercial Aerospace",
+      "ST Engineering Group Strategic Radar"
     ],
     "lobs": [],
     "countries": []
@@ -22,6 +27,8 @@
     "packs": [
       "urs-tw",
       "urs",
+      "ca",
+      "ste",
       "dsc"
     ]
   },
@@ -90,7 +97,38 @@
         "WATCHPOINTS",
         "RESPONSE_OPTIONS"
       ],
-      "ste": {
+      "maxFindings": 8,
+      "formats": [
+        "docx",
+        "pptx",
+        "xlsx"
+      ]
+    }, 
+    "ca": {
+      "title": "GRIT-Scan: Commercial Aerospace",
+      "subtitle": "Business Area Weekly Risk Scan",
+      "preparedFor": "Group Head, Risk & Assurance",
+      "sections": [
+        "BOTTOM_LINE",
+        "CONDITIONS",
+        "MANAGEMENT_REQUESTS",
+        "ENTITIES",
+        "CUSTOMERS",
+        "SUPPLIERS",
+        "COMPETITORS",
+        "PRIORITY_FINDINGS",
+        "QA_LOG",
+        "WATCHPOINTS",
+        "RESPONSE_OPTIONS"
+      ],
+      "maxFindings": 8,
+      "formats": [
+        "docx",
+        "pptx",
+        "xlsx"
+      ]
+    },
+    "ste": {
       "title": "GRIT-Scan: ST Engineering Group Strategic Radar",
       "subtitle": "Monthly geopolitical and technology radar",
       "preparedFor": "Wilson Yeo, Head of Risk & Assurance",
@@ -106,14 +144,6 @@
         "docx",
         "pptx"
       ]
-    },
-      "maxFindings": 8,
-      "formats": [
-        "docx",
-        "pptx",
-        "xlsx"
-      ]
     }
-  },
-  "note": "Basic profile. Receives the Urban Solutions business-area brief, the URS Taiwan entity brief, and the DSC brief. Memory builds from Wilson's approve and reject decisions in the pool."
+  }
 }
