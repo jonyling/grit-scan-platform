@@ -661,10 +661,11 @@ def _scenarios(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool
             cell.width = Cm(width)
             _cell_lines(cell, lines, bold_first=cell is cells[0])
     if outlook.get("indicators"):
-        document.add_paragraph("Leading indicators. A band is not established until a named person sets the green and amber bounds.")
+        from grit.pipeline.indicators import indicator_line
+
+        document.add_paragraph("Leading indicators. Green: no action. Amber: BAs review exposure and plans. Red: BAs act on the planned responses. The bounds are proposed by GRIT-Scan until Wilson confirms them.")
         for item in outlook["indicators"]:
-            bounds = "bounds not set" if item.get("green_max") is None or item.get("amber_max") is None else f"green at or under {item['green_max']}, amber at or under {item['amber_max']}"
-            document.add_paragraph(f"{item['name']}: {item['signals']} signal(s) this period. Band: {item['band']} ({bounds}). Applies to {', '.join(item['applies_to'])}.", style="List Bullet")
+            document.add_paragraph(f"{item['name']}: {indicator_line(item)} Applies to {', '.join(item['applies_to'])}.", style="List Bullet")
     if outlook.get("risk_links"):
         document.add_paragraph("Group risks and the business-area and LOB risks under them. A blank LOB cell means the register does not name one. The crosswalk is proposed until a named person confirms it.")
         link_widths = (6.0, 8.0, 6.0, 3.0)

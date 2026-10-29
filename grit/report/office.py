@@ -178,10 +178,11 @@ def _summary_card(slide: Any, row: Mapping[str, Any] | None, x: float, width: fl
         _words(slide, x + width - 1.6, 4.95, 1.35, 0.28, [("Full detail \u25b8", 12, True, BODY)], link=link)
 
 
-def _dedupe_deck(deck: Any) -> None:
-    """Keep the first use of a sentence or figure on the deck. Leave a hyperlink and the disclaimer untouched."""
+def _dedupe_deck(deck: Any, slides: int | None = None) -> None:
+    """Keep the first use of a point on the cover and summary slides (the first `slides`). Appendix slides are the full detail
+    a summary card links to, so they keep their text. A hyperlink and the disclaimer stay untouched."""
     state = FirstUse()
-    for slide in deck.slides:
+    for slide in list(deck.slides)[:slides]:
         for shape in slide.shapes:
             if not getattr(shape, "has_text_frame", False):
                 continue
@@ -315,7 +316,7 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
         _link(slide, 0.5, 6.48, "Back to Executive Summary", summaries[0])
         _notice(slide, deck)
 
-    _dedupe_deck(deck)
+    _dedupe_deck(deck, slides=1 + len(summaries))
     path.parent.mkdir(parents=True, exist_ok=True)
     deck.save(str(path))
     return path
@@ -425,9 +426,11 @@ def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], 
     if outlook.get("shifts"):
         _sheet(workbook, "Scenario outlook", SCENARIO_HEADERS, [["\n".join(lines) for lines in scenario_cells(reading)] for reading in outlook["shifts"]], (50, 40, 90, 60, 60, 60))
     if outlook.get("indicators"):
-        _sheet(workbook, "Leading indicators", ("Indicator", "Signals this period", "Band", "Green bound", "Amber bound", "Applies to"),
-               [(item["name"], item["signals"], item["band"], "" if item.get("green_max") is None else item["green_max"], "" if item.get("amber_max") is None else item["amber_max"], ", ".join(item["applies_to"])) for item in outlook["indicators"]],
-               (28, 22, 18, 14, 14, 40))
+        _sheet(workbook, "Leading indicators", ("Indicator", "Measure", "Reading", "Band", "Green up to", "Amber up to", "Bounds", "When red", "Applies to"),
+               [(item["name"], item.get("measure") or "kept signals in the window", "" if item.get("reading", item["signals"]) is None else item.get("reading", item["signals"]), item["band"],
+                 "" if item.get("green_max") is None else item["green_max"], "" if item.get("amber_max") is None else item["amber_max"],
+                 (item.get("bounds_status") or "not set").lower(), item.get("action") or "", ", ".join(item["applies_to"])) for item in outlook["indicators"]],
+               (28, 30, 10, 14, 12, 12, 12, 60, 40))
     if outlook.get("risk_links"):
         _sheet(workbook, "Risk links", ("Group risk", "BA risks", "LOB risks", "Status"),
                [(f"{row['group_risk']} {row['name']}".strip(), "; ".join(f"{item['id']} {item['name']}" for item in row["ba"]), "; ".join(item["name"] for item in row["lob"]), row["status"]) for row in outlook["risk_links"]],

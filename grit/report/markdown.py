@@ -6,6 +6,7 @@ from typing import Any, Mapping
 
 from grit.report.docx_brief import OPTIONS_NOTE, SCENARIO_HEADERS, SCENARIO_NOTE, SECTION_TITLES, scenario_cells, implication_text, key_risk_headers, priority_trend, radar_cells, radar_headers, response_lines, section_title
 from grit.report.notices import DISCLAIMER
+from grit.pipeline.indicators import indicator_line
 from grit.report.repetition import dedupe_markdown
 from grit.report.suggestions import suggestions_for_signal
 
@@ -71,8 +72,8 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
                 body.append("| " + " | ".join(cell.replace("|", "/").replace("\n", " ") for cell in cells) + " |")
             body += ["", f"*{SCENARIO_NOTE} Scenarios v{outlook['version']}, reviewed by {outlook['reviewed_by']} on {outlook['reviewed_on']}.*"]
             if outlook.get("indicators"):
-                body += ["", "Leading indicators. A band is not established until a named person sets the green and amber bounds."]
-                body += [f"- **{item['name']}.** {item['signals']} signal(s) this period. Band: {item['band']}." for item in outlook["indicators"]]
+                body += ["", "Leading indicators. Green: no action. Amber: BAs review exposure and plans. Red: BAs act on the planned responses. The bounds are proposed by GRIT-Scan until Wilson confirms them."]
+                body += [f"- **{item['name']}.** {indicator_line(item)}" for item in outlook["indicators"]]
             if outlook.get("risk_links"):
                 body += ["", "| Group risk | BA risks | LOB risks | Status |", "|---|---|---|---|"]
                 for row in outlook["risk_links"]:

@@ -19,9 +19,9 @@ import csv
 import hashlib
 import json
 import os
-import time
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
+from time import sleep
 from typing import Any, Callable, Mapping, Sequence
 
 from grit.daily.feeds import FEEDS, Feed, active, read_feed, swept
@@ -258,7 +258,7 @@ def _gdelt(pool: Pool, run: Any, result: DailyResult, *, lookback_days: int, get
     stopped = None
     for index, spec in enumerate(specs):
         if index and pause:
-            time.sleep(pause)
+            sleep(pause)
         try:
             candidates = collect_wild_scan(spec.query, fetched_at=utc_now(), timespan=timespan, max_records=15, getter=getter, pause_seconds=0)
         except ValueError as exc:

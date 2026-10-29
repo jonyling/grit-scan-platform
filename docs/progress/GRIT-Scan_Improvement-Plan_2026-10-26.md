@@ -17,7 +17,7 @@ Every agent working on this repository must follow these rules:
   .venv/bin/python -m pytest -q
   ```
 
-  As of 28 October 2026, 611 tests pass. The URS and DS&C workbooks in `secrets/` rebuild the same registers that are already in `config/`.
+  As of 29 October 2026, 614 tests pass. The URS and DS&C workbooks in `secrets/` rebuild the same registers that are already in `config/`.
 
 - End each commit message with this trailer:
 
@@ -52,8 +52,8 @@ Every agent working on this repository must follow these rules:
 | 18 | Put a timeout on every call to an outside server. | A | Done, commit `7140799` |
 | 19 | In State of the Situation (SotS) and Group packs, add for each scenario a hypothesis on where STE could gain, marked for BAs to validate. | E | Done. The line is copied only when a reviewed case already states it, and it is marked "Hypothesis: to validate with BAs". |
 | 20 | In SotS, give an exposure table for every BA: Taiwan and China entities, staff and key suppliers, chip or component dependence, revenue and asset concentration, and a High, Medium or Low rating per scenario. Mark each as BA-confirmed or proposed. | E | Done. A filled cell is proposed until the business area confirms it. A fact the register does not hold stays blank. |
-| 21 | Turn indicators into leading signals with green, amber and red thresholds: PLA activity, shipping and insurance, export controls and sanctions, cross-strait politics, and overseas fab ramp-up. | E | Done. The tracker counts matching signals. Green, amber, and red apply only after a named person sets both bounds. Until then the band is not established. |
-| 22 | Do not repeat the same figures or points within one report. | D | Done. A later sentence that repeats an earlier sentence, or that only repeats a figure already used, is dropped. A table cell stays as written. The disclaimer can repeat. |
+| 21 | Turn indicators into leading signals with green, amber and red thresholds: PLA activity, shipping and insurance, export controls and sanctions, cross-strait politics, and overseas fab ramp-up. | E | Done; fixed 29 Oct. Each indicator has proposed green, amber and red bounds, printed as "proposed bounds, for Wilson to confirm" until he confirms them (`BOUNDS_STATUS` in `grit/pipeline/indicators.py`). PLA activity reads the most PLA aircraft sorties in one day from Taiwan MND's daily reports: green up to 20, amber up to 45, red above. The others count kept signals in the window. A week with no reading has no band. Red names what the BAs do. |
+| 22 | Do not repeat the same figures or points within one report. | D | Done; fixed 29 Oct. A later sentence is dropped when it repeats an earlier sentence, or when it restates an earlier point: every figure in it was used before, in one sentence that shares at least half of its content words. A sentence that only shares a figure with an unrelated sentence is a different fact and stays. Appendix slides keep their full text, because the summary links to them. A table cell stays as written. The disclaimer can repeat. |
 | 23 | Make the SotS history section fuller, citing authoritative sources beyond the report library. | E | Done. History uses more passages from the topic's own reports. Sources beyond the library are listed as proposed and are not cited until a named person adds the file. |
 | 24 | Map Group risks down to BA and LOB, and BA risks up to Group. | E | Done. Each Group risk lists the business-area themes that crosswalk up to it, and any LOB the register names. A blank LOB cell stays blank. The crosswalk stays proposed. |
 | 25 | Recommend actions down to specific signals, scenarios (Best, Medium, Worst) and predictions. | D | Done. A finding or a triggered scenario response shows an action only when that action already exists, marked "Suggestion for the business area to consider." |

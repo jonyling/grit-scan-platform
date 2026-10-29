@@ -59,7 +59,7 @@ Every Word brief, Markdown preview, and slide carries this statement, on the cov
 
 > GRIT-Scan AI-generated suggestions for consideration. The scan can miss a source, misread a page, or leave out context. A named person reviews this before anyone acts on it.
 
-A repeated sentence, or a later sentence whose figures were all used earlier, is kept at its first use. A table cell stays as written. The statement above can repeat. A finding shows a suggestion only when a Proposer option or a triggered scenario response already cites that signal. The line starts with "Suggestion for the business area to consider." A signal with no such action has no suggestion.
+A later sentence is dropped when it repeats an earlier sentence, or when it restates an earlier point: every figure in it was used before, in one sentence that shares at least half of its content words. A sentence that only shares a figure with an unrelated sentence is a different fact and stays. Appendix slides keep their full text, because the summary links to them. A table cell stays as written. The statement above can repeat. A finding shows a suggestion only when a Proposer option or a triggered scenario response already cites that signal. The line starts with "Suggestion for the business area to consider." A signal with no such action has no suggestion.
 
 ## 2. Implication
 

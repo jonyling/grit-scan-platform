@@ -96,7 +96,7 @@ The reviewer can edit any keyword in the register. Shifts whose draft was withhe
 | Lean | The case with the most signposts seen. A tie reads "mixed"; none reads "no signpost seen". The previous run's lean is shown beside it. |
 | Responses | A planned response is "now triggered" when its trigger signpost is seen. The brief marks each triggered response "Suggestion for the business area to consider." |
 | Where STE could gain | Copied from the reviewed case. The brief marks it "Hypothesis: to validate with BAs". |
-| Leading indicators | PLA activity, shipping and insurance, export controls and sanctions, cross-strait politics, and overseas fab ramp-up. A kept signal counts when its title or lead contains one of the indicator's phrases. Green, amber, and red apply only when a named person has set both bounds. Until then the band is not established. |
+| Leading indicators | PLA activity, shipping and insurance, export controls and sanctions, cross-strait politics, and overseas fab ramp-up. A kept signal counts when its title or lead contains one of the indicator's phrases. Each indicator has proposed green, amber and red bounds, printed as "proposed bounds, for Wilson to confirm" until he confirms them (`BOUNDS_STATUS` in `grit/pipeline/indicators.py`). PLA activity reads the most PLA aircraft sorties in one day from Taiwan MND's daily reports: green up to 20, amber up to 45, red above. The others count kept signals in the window. A week with no reading has no band. Red names what the BAs do. |
 
 Leans are counts of signposts seen, never odds. The tracker writes nothing; every brief recomputes it from the pool.
 

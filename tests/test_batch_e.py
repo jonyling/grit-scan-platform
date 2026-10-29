@@ -62,17 +62,26 @@ def test_the_exposure_table_leaves_a_missing_fact_blank(tmp_path: Path) -> None:
     assert row["status"] == "proposed"
 
 
-def test_a_leading_indicator_stays_uncolored_until_the_bounds_are_set() -> None:
+def test_leading_indicators_band_on_proposed_bounds_and_say_so() -> None:
+    from grit.pipeline.indicators import indicator_line
+
     rows = [
-        {"signal_id": "S1", "title": "PLA sortie near Taiwan", "text": "An ADIZ incursion was reported."},
-        {"signal_id": "S2", "title": "A market note", "text": "No military activity."},
+        {"signal_id": "S1", "title": "Taiwan MND: 3 PLA aircraft sorties, 6 PLAN ships, 9 official ships around Taiwan; 1 crossed the Strait median line", "text": ""},
+        {"signal_id": "S2", "title": "Taiwan MND: 52 PLA aircraft sorties, 14 PLAN ships around Taiwan", "text": ""},
+        {"signal_id": "S3", "title": "A market note", "text": "No military activity."},
     ]
-    found = score_indicators(rows)
-    pla = next(item for item in found if item["id"] == "PLA-ACTIVITY")
-    assert pla["signals"] == 1 and pla["band"] == "not established" and pla["green_max"] is None
-    bounded = LeadingIndicator("PLA-ACTIVITY", "PLA activity", ("ADIZ incursion",), ("STE-GC-05",), green_max=0, amber_max=2)
-    assert score_indicators(rows, [bounded])[0]["band"] == "amber"
-    assert band(0, 0, 2) == "green" and band(3, 0, 2) == "red" and band(1, None, 2) == "not established"
+    found = {item["id"]: item for item in score_indicators(rows)}
+    pla = found["PLA-ACTIVITY"]
+    assert pla["signals"] == 2 and pla["reading"] == 52 and pla["reading_signal_ids"] == ["S2"], "MND's own reports count, on the busiest day"
+    assert pla["band"] == "red" and pla["bounds_status"] == "PROPOSED"
+    line = indicator_line(pla)
+    assert "proposed bounds, for Wilson to confirm" in line and "Taiwan-linked BAs" in line
+    assert found["SHIPPING-INSURANCE"]["band"] == "green" and "Taiwan-linked" not in indicator_line(found["SHIPPING-INSURANCE"])
+    quiet = {item["id"]: item for item in score_indicators(rows[2:])}["PLA-ACTIVITY"]
+    assert quiet["reading"] is None and quiet["band"] == "no reading", "a week with no MND report has no band, not a green one"
+    unbounded = LeadingIndicator("PLA-ACTIVITY", "PLA activity", ("ADIZ incursion",), ("STE-GC-05",))
+    assert score_indicators(rows, [unbounded])[0]["band"] == "not established"
+    assert band(0, 0, 2) == "green" and band(2, 0, 2) == "amber" and band(3, 0, 2) == "red" and band(1, None, 2) == "not established"
 
 
 def test_a_group_risk_lists_the_business_area_risks_under_it() -> None:

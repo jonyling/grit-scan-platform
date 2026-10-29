@@ -105,3 +105,22 @@ def _brief(claim: str) -> dict:
         "method": {"queries": 1, "signals": 5, "kept": 5, "shown_to_reader": 5, "hidden_by_routing": 0, "profile": "A test profile.", "moved_by_profile": 0, "agents": []},
         "content_hash": "a" * 64,
     }
+
+
+def test_a_different_fact_that_shares_a_figure_is_kept() -> None:
+    from grit.report.repetition import dedupe_markdown
+
+    text = "Revenue in Taiwan fell 12% in the third quarter of this year.\nThe Taichung MRT tender attracted a 12% discount on the bid price."
+    assert dedupe_markdown(text) == text, "only a restatement of the same point is dropped, not every reuse of a figure"
+    restated = "Revenue in Taiwan fell 12% in the third quarter of this year.\nTaiwan revenue for the third quarter fell 12% from the year before."
+    assert dedupe_markdown(restated) == restated.splitlines()[0] + "\n", "the same point with the same figure is dropped"
+
+
+def test_appendix_slides_keep_the_full_detail_the_summary_links_to(tmp_path: Path) -> None:
+    claim = "Staff absence reached 12% across the watched sites this week."
+    pptx = render_pptx(_brief(claim), tmp_path / "brief.pptx")
+    deck = Presentation(pptx)
+    appendix = ["\n".join(shape.text_frame.text for shape in slide.shapes if shape.has_text_frame) for slide in list(deck.slides)[1 + summary_slide_count(5):]]
+    assert len(appendix) == 5
+    for number, slide in enumerate(appendix, start=1):
+        assert f"Item {number} adds its own sentence about the week." in slide

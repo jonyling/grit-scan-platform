@@ -422,3 +422,19 @@ def test_the_daily_run_sends_red_mail_only_when_asked(tmp_path: Path, monkeypatc
     assert called == [] and quiet.red_mail == {}
     run_daily(pool, "urs-tw", DAY, feeds=[], use_currents=False, profiles=[], send_mail=True, embedder=_Embedder(), score_harm_fn=lambda *a, **k: {"status": "NOT_RUN"}, log=lambda _m: None)
     assert called == [1]
+
+
+def test_the_gdelt_lane_pauses_between_queries_without_failing(tmp_path: Path, monkeypatch) -> None:
+    """The pause runs the real sleep. A datetime import once shadowed the time module, so the second query crashed the lane."""
+    from types import SimpleNamespace
+
+    from grit.daily import lane
+
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    specs = [SimpleNamespace(query_id=f"q-{n}", query=f"Taiwan Strait {n}", lane="CONDITION", sources=({"target": "TW-GLOBAL-03"},)) for n in range(3)]
+    monkeypatch.setattr(lane, "currents_specs", lambda pool, run: specs)
+    pool = Pool(tmp_path / "grit.sqlite")
+    payload = _gdelt_payload({"url": "https://focustaiwan.tw/gdelt/one", "title": "Taiwan reports 30 PLA aircraft near Taiwan Strait", "seendate": _seen(DAY), "domain": "focustaiwan.tw"})
+    result = run_daily(pool, "urs-tw", DAY, feeds=[], use_currents=False, use_gdelt=True, gdelt_getter=lambda url, params: payload, gdelt_pause=0.01,
+                       embedder=_Embedder(), score_harm_fn=lambda *a, **k: {"status": "NOT_RUN"}, log=lambda _m: None)
+    assert result.gdelt["sent"] == 3 and result.gdelt["stopped"] is None

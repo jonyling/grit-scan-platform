@@ -73,7 +73,7 @@ The Group pack (`ste`) briefs the CEO and the Chairman each month on the geopoli
    .venv/bin/python -m grit scenarios --pack ste --date DATE
    ```
 
-6. Record Wilson's approval. The draft becomes the scenario register, with keywords for every signpost, and the monthly radar then shows where each shift is heading: which case its signposts lean to, the signposts seen with their sources, and the planned responses they trigger. These are counts of signposts, never odds. A case can also carry one sentence on where STE could gain, marked "Hypothesis: to validate with BAs". The tracker counts five leading indicators (PLA activity, shipping and insurance, export controls and sanctions, cross-strait politics, and overseas fab ramp-up). A green, amber, or red band appears only after a named person sets the bounds.
+6. Record Wilson's approval. The draft becomes the scenario register, with keywords for every signpost, and the monthly radar then shows where each shift is heading: which case its signposts lean to, the signposts seen with their sources, and the planned responses they trigger. These are counts of signposts, never odds. A case can also carry one sentence on where STE could gain, marked "Hypothesis: to validate with BAs". The tracker counts five leading indicators (PLA activity, shipping and insurance, export controls and sanctions, cross-strait politics, and overseas fab ramp-up). Each has a green, amber or red band on bounds GRIT-Scan proposes, marked as proposed until Wilson confirms them. PLA activity reads the sortie counts in Taiwan MND's daily reports.
 
    ```bash
    .venv/bin/python -m grit scenarios-approve --pack ste --date DATE --by "Wilson Yeo"
@@ -162,7 +162,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-28, 597 tests pass. They make no network call.
+   As of 2026-10-29, 614 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 
@@ -204,7 +204,7 @@ Run these commands from the repository root. `DATE` is the run date, `YYYY-MM-DD
 
 3. Open the packs. Each reader's files are in `output/runs/DATE-PACK/PROFILE/vN/`: a Word brief, a PowerPoint executive summary in the format of `docs/reference/GRIT-Scan_Executive_Summary.pptx`, an Excel signal list, a Markdown copy, and the brief model as JSON. RED drafts are in `output/runs/DATE-PACK/alerts/`.
 
-   Each Word brief, Markdown preview, and slide says that the content is GRIT-Scan AI-generated suggestions for consideration, and that a named person reviews it before anyone acts on it. The deck uses one summary slide for up to two critical items, two slides for three or four, and three slides when there are five or more. Each summary point says what it means for that pack. A repeated sentence or figure is kept at its first use. A suggestion appears only when a proposed option or a triggered scenario response already cites that signal, and it is marked "Suggestion for the business area to consider."
+   Each Word brief, Markdown preview, and slide says that the content is GRIT-Scan AI-generated suggestions for consideration, and that a named person reviews it before anyone acts on it. The deck uses one summary slide for up to two critical items, two slides for three or four, and three slides when there are five or more. Each summary point says what it means for that pack. A repeated point is kept at its first use; a different fact that happens to share a figure stays. A suggestion appears only when a proposed option or a triggered scenario response already cites that signal, and it is marked "Suggestion for the business area to consider."
 
 The URS Taiwan brief follows the 2 Oct 2026 reference brief in `docs/reference/`: a bottom-line box, the order-book baseline, named projects, suppliers, customers, natural hazards, the ten standing conditions with trend, confidence, and dated sources, the QA and correction log, and the watchpoints.
 
