@@ -221,6 +221,21 @@ def _published(value: Any) -> str | None:
     return parsed.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _reason(response: Any) -> str:
+    """Brave's own error code and detail, such as 'SUBSCRIPTION_TOKEN_INVALID: The provided API key is invalid.' Brave
+    answers a bad key with HTTP 422, which otherwise reads like a bad query. The body never carries the key."""
+    try:
+        error = response.json().get("error") or {}
+    except (ValueError, AttributeError):
+        return ""
+    if not isinstance(error, dict):
+        return ""
+    code, detail = str(error.get("code") or "").strip(), " ".join(str(error.get("detail") or "").split())[:160]
+    text = ": ".join(part for part in (code, detail) if part)
+    hint = " Copy the current key from the Brave Search API dashboard into BRAVE_SEARCH_API_KEY in .env." if code == "SUBSCRIPTION_TOKEN_INVALID" else ""
+    return f" ({text}).{hint}" if text else ""
+
+
 def _get_json(url: str, params: dict[str, str]) -> dict[str, Any]:
     import requests
 
@@ -241,7 +256,7 @@ def _get_json(url: str, params: dict[str, str]) -> dict[str, Any]:
     if response.status_code != 200:
         retry = response.headers.get("Retry-After", "")
         extra = f" retry_after={retry}" if re.fullmatch(r"\d+", retry) else ""
-        raise BraveFetchError(f"Brave returned HTTP {response.status_code}{extra}")
+        raise BraveFetchError(f"Brave returned HTTP {response.status_code}{extra}{_reason(response)}")
     try:
         payload = response.json()
     except ValueError as exc:
