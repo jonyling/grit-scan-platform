@@ -1,6 +1,6 @@
 {
   "registerId": "URS-COMPETITORS",
-  "workbook": "URS_Entity_Info_20261006.xlsx",
+  "workbook": "02_URS_Entity_Info.xlsx",
   "sheet": "3. Competitors",
   "absence": "A LOB label that is not on the org chart has no canonicalLob. The same competitor can appear under more than one LOB.",
   "competitors": [

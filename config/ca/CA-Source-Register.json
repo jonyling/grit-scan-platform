@@ -1,0 +1,1106 @@
+{
+  "registerId": "CA-NEWS-OUTLETS",
+  "scope": "sources named with a URL on the News-Pri, News-Sec, and 9. Specific Industry News sheets",
+  "ratingStatus": "UNRATED",
+  "workbook": "01_CA_Entity_Info.xlsx",
+  "sheets": [
+    "News-Pri",
+    "News-Sec",
+    "9. Specific Industry News"
+  ],
+  "absence": "These sheets name sources. They do not assign credibility ratings, and rows without a URL were not given an invented domain. A source listed on more than one sheet appears once, under the first sheet read. This is not the company source-credibility register.",
+  "skippedWithoutUrl": [
+    "Port and chokepoint status: Suez Canal Authority, Panama Canal Authority",
+    "Vendor PSIRT pages for the stack STE actually ships and runs: Microsoft, Cisco, Palo Alto, Fortinet, VMware/Broadcom, SAP, Oracle",
+    "National export-licence gazettes for end markets STE actually sells into (US, EU member states, Australia Defence, Middle East only via official gazettes)"
+  ],
+  "sources": [
+    {
+      "sourceName": "Ministry of Defence",
+      "sourceDomain": "mindef.gov.sg",
+      "sourceUrl": "https://www.mindef.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "policy, cyber defence, procurement rules"
+    },
+    {
+      "sourceName": "Defence Science Technology Agency",
+      "sourceDomain": "dsta.gov.sg",
+      "sourceUrl": "https://www.dsta.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "Defence procurement policies, public notices, and security clearance circulars."
+    },
+    {
+      "sourceName": "Customs",
+      "sourceDomain": "customs.gov.sg",
+      "sourceUrl": "https://www.customs.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "Strategic Goods (Control) Act, SGCL, catch-all updates"
+    },
+    {
+      "sourceName": "Cyber Security Agency",
+      "sourceDomain": "csa.gov.sg",
+      "sourceUrl": "https://www.csa.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "advisories, CII, sector notices"
+    },
+    {
+      "sourceName": "Civil Aviation Authority",
+      "sourceDomain": "caas.gov.sg",
+      "sourceUrl": "https://www.caas.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "airworthiness, directives, aerodrome and operator rules"
+    },
+    {
+      "sourceName": "Maritime Port Authority",
+      "sourceDomain": "mpa.gov.sg",
+      "sourceUrl": "https://www.mpa.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "port, ship, maritime security circulars"
+    },
+    {
+      "sourceName": "Ministry of Manpower",
+      "sourceDomain": "mom.gov.sg",
+      "sourceUrl": "https://www.mom.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "WSH alerts (workplace health and safety is a named group risk)"
+    },
+    {
+      "sourceName": "Infocomm Media Development",
+      "sourceDomain": "imda.gov.sg",
+      "sourceUrl": "https://www.imda.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "satcom, spectrum, telecom regulation"
+    },
+    {
+      "sourceName": "Enterprise Singapore",
+      "sourceDomain": "enterprisesg.gov.sg",
+      "sourceUrl": "https://www.enterprisesg.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "trade controls"
+    },
+    {
+      "sourceName": "Government Electronic Procurement Portal",
+      "sourceDomain": "gebiz.gov.sg",
+      "sourceUrl": "https://www.gebiz.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "public procurement notices"
+    },
+    {
+      "sourceName": "Police Force",
+      "sourceDomain": "police.gov.sg",
+      "sourceUrl": "https://www.police.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "public security and critical-incident releases"
+    },
+    {
+      "sourceName": "Singapore Statutes Online",
+      "sourceDomain": "sso.agc.gov.sg",
+      "sourceUrl": "https://www.sso.agc.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "legislation text (SGCA, Cybersecurity Act, WHSA)"
+    },
+    {
+      "sourceName": "Singapore Personal Data Protection Commission",
+      "sourceDomain": "pdpc.gov.sg",
+      "sourceUrl": "https://www.pdpc.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "Personal-data protection enforcement and regulatory decisions"
+    },
+    {
+      "sourceName": "Competition and Consumer Commission of Singapore",
+      "sourceDomain": "cccs.gov.sg",
+      "sourceUrl": "https://www.cccs.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "Competition/antitrust developments"
+    },
+    {
+      "sourceName": "Accounting & Corporate Regulatory Authority",
+      "sourceDomain": "acra.gov.sg",
+      "sourceUrl": "https://www.acra.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "Regulatory notices, Corporate Governance Code revisions, and filing compliance warnings"
+    },
+    {
+      "sourceName": "National Environment Agency",
+      "sourceDomain": "nea.gov.sg",
+      "sourceUrl": "https://www.nea.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "Environmental Protection and Management Act (EPMA) circulars, industrial hazardous waste discharge rules, and carbon tax updates"
+    },
+    {
+      "sourceName": "Judiciary",
+      "sourceDomain": "judiciary.gov.sg",
+      "sourceUrl": "https://www.judiciary.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "High Court and Court of Appeal judgment registries, winding-up petitions, and scheme of arrangement filings."
+    },
+    {
+      "sourceName": "Law Watch",
+      "sourceDomain": "singaporelawwatch.sg",
+      "sourceUrl": "https://www.singaporelawwatch.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Singapore sovereign and licence environment",
+      "focus": "High Court and Court of Appeal judgment registries, winding-up petitions, and scheme of arrangement filings."
+    },
+    {
+      "sourceName": "US Occupational Safety & Health Administration",
+      "sourceDomain": "osha.gov",
+      "sourceUrl": "https://osha.gov",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Workplace Safety, Health (WSH) & Environmental Compliance",
+      "focus": "Safety violation citations and environmental enforcement actions affecting U.S.-based MRO facilities and shipyards."
+    },
+    {
+      "sourceName": "US Environmental Protection Agency",
+      "sourceDomain": "epa.gov",
+      "sourceUrl": "https://epa.gov",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Workplace Safety, Health (WSH) & Environmental Compliance",
+      "focus": "Safety violation citations and environmental enforcement actions affecting U.S.-based MRO facilities and shipyards."
+    },
+    {
+      "sourceName": "US Office of Foreign Assets Control",
+      "sourceDomain": "ofac.treasury.gov",
+      "sourceUrl": "https://ofac.treasury.gov",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Sanctions and export control"
+    },
+    {
+      "sourceName": "Sanctions List",
+      "sourceDomain": "sanctionslist.ofac.treas.gov",
+      "sourceUrl": "https://sanctionslist.ofac.treas.gov",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Sanctions and export control",
+      "focus": "SDN and programme updates"
+    },
+    {
+      "sourceName": "US Bueau of Industry & Security",
+      "sourceDomain": "bis.gov",
+      "sourceUrl": "https://www.bis.gov",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Sanctions and export control",
+      "focus": "Entity List, Military End User, denied persons, EAR changes"
+    },
+    {
+      "sourceName": "US Directorate of Defense Trade Controls",
+      "sourceDomain": "pmddtc.state.gov",
+      "sourceUrl": "https://www.pmddtc.state.gov",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Sanctions and export control",
+      "focus": "ITAR and USML notices"
+    },
+    {
+      "sourceName": "EU Sanctions Map / EEA",
+      "sourceDomain": "sanctionsmap.eu",
+      "sourceUrl": "https://sanctionsmap.eu",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Sanctions and export control",
+      "focus": "EU consolidated financial sanctions, dual-use export control regimes"
+    },
+    {
+      "sourceName": "UK Office of Financial Sanctions Implementation",
+      "sourceDomain": "gov.uk",
+      "sourceUrl": "https://www.gov.uk/government/organisations/office-of-financial-sanctions-implementation",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Sanctions and export control",
+      "focus": "UK OFSI list"
+    },
+    {
+      "sourceName": "United Nations Security Council",
+      "sourceDomain": "un.org",
+      "sourceUrl": "https://un.org/securitycouncil/sanctions",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Sanctions and export control",
+      "focus": "Consolidated United Nations Security Council Sanctions List"
+    },
+    {
+      "sourceName": "The open-source database of sanctions, watchlists, and politically exposed persons",
+      "sourceDomain": "opensanctions.org",
+      "sourceUrl": "https://www.opensanctions.org",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Sanctions and export control",
+      "focus": "aggregator of the above; use the bulk feed"
+    },
+    {
+      "sourceName": "U.S. Securities and Exchange Commission (SEC)",
+      "sourceDomain": "sec.gov",
+      "sourceUrl": "https://sec.gov",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Financial, integrity, disruption",
+      "focus": "Foreign Corrupt Practices Act (FCPA) enforcement actions, relevant to international multi-million dollar defence tenders."
+    },
+    {
+      "sourceName": "INTERPOL",
+      "sourceDomain": "interpol.int",
+      "sourceUrl": "https://www.interpol.int/en",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Financial, integrity, disruption",
+      "focus": "International criminal notices and alerts"
+    },
+    {
+      "sourceName": "Financial Action Task Force",
+      "sourceDomain": "fatf-gafi.org",
+      "sourceUrl": "https://www.fatf-gafi.org/en/home.html",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Financial, integrity, disruption",
+      "focus": "High-risk/increased-monitoring jurisdictions, AML/CFT developments"
+    },
+    {
+      "sourceName": "World Trade Organization",
+      "sourceDomain": "wto.org",
+      "sourceUrl": "https://www.wto.org/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Financial, integrity, disruption",
+      "focus": "Trade restrictions and international trade-policy changes"
+    },
+    {
+      "sourceName": "Organisation for Economic Co-operation and Development",
+      "sourceDomain": "oecd.org",
+      "sourceUrl": "https://www.oecd.org/en.html",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Financial, integrity, disruption",
+      "focus": "Anti-bribery, responsible business and regulatory developments"
+    },
+    {
+      "sourceName": "Singapore Exchange",
+      "sourceDomain": "sgx.com",
+      "sourceUrl": "https://www.sgx.com",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Financial, integrity, disruption",
+      "focus": "announcements and unusual trading (issuer page for ST Engineering plus key customers/suppliers)"
+    },
+    {
+      "sourceName": "Monetary Authority of Singapore",
+      "sourceDomain": "mas.gov.sg",
+      "sourceUrl": "https://www.mas.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Financial, integrity, disruption",
+      "focus": "financial-crime and sanctions advisories"
+    },
+    {
+      "sourceName": "Singapore Corrupt Practices Investigation Bureau",
+      "sourceDomain": "cpib.gov.sg",
+      "sourceUrl": "https://www.cpib.gov.sg",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Financial, integrity, disruption",
+      "focus": "corruption cases and advisories"
+    },
+    {
+      "sourceName": "World Bank",
+      "sourceDomain": "worldbank.org",
+      "sourceUrl": "https://www.worldbank.org",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Financial, integrity, disruption",
+      "focus": "debarment lists"
+    },
+    {
+      "sourceName": "Asian Developmenet Bank",
+      "sourceDomain": "adb.org",
+      "sourceUrl": "https://www.adb.org",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Financial, integrity, disruption",
+      "focus": "debarment lists"
+    },
+    {
+      "sourceName": "European Data Protection Board",
+      "sourceDomain": "edpb.europa.eu",
+      "sourceUrl": "https://edpb.europa.eu",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Cyber and critical infrastructure (Defence & Public Security)",
+      "focus": "GDPR enforcement and cross-border data transfer guidelines (relevant to European operations)"
+    },
+    {
+      "sourceName": "US Cybersecurity & Infrastructure Security Agency",
+      "sourceDomain": "cisa.gov",
+      "sourceUrl": "https://www.cisa.gov",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Cyber and critical infrastructure (Defence & Public Security)",
+      "focus": "KEV catalogue, advisories, ICS alerts. KEV is a must-ingest, Known Exploited Vulnerabilities"
+    },
+    {
+      "sourceName": "US National Vulnerability Database, National Institute of Science & Technology",
+      "sourceDomain": "nvd.nist.gov",
+      "sourceUrl": "https://nvd.nist.gov",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Cyber and critical infrastructure (Defence & Public Security)",
+      "focus": "CVE feed (use the JSON/API)"
+    },
+    {
+      "sourceName": "US globally-accessible knowledge base of adversary tactics and techniques based on real-world observations",
+      "sourceDomain": "attack.mitre.org",
+      "sourceUrl": "https://attack.mitre.org",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Cyber and critical infrastructure (Defence & Public Security)",
+      "focus": "ATT&CK updates"
+    },
+    {
+      "sourceName": "EU Agency for Cybersecurity",
+      "sourceDomain": "enisa.europa.eu",
+      "sourceUrl": "https://www.enisa.europa.eu",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Cyber and critical infrastructure (Defence & Public Security)",
+      "focus": "EU advisories"
+    },
+    {
+      "sourceName": "UK National Cyber Security Centre",
+      "sourceDomain": "ncsc.gov.uk",
+      "sourceUrl": "https://www.ncsc.gov.uk",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Cyber and critical infrastructure (Defence & Public Security)",
+      "focus": "UK threat reports"
+    },
+    {
+      "sourceName": "global Forum of Incident Response and Security Teams",
+      "sourceDomain": "first.org",
+      "sourceUrl": "https://www.first.org",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Cyber and critical infrastructure (Defence & Public Security)",
+      "focus": "CVSS and coordination notices"
+    },
+    {
+      "sourceName": "US System for Award Management",
+      "sourceDomain": "sam.gov",
+      "sourceUrl": "https://SAM.gov",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Geopolitical and defence operating environment (Defence & Public Security)",
+      "focus": "US government procurement opportunities and awards"
+    },
+    {
+      "sourceName": "UK Find a Tender",
+      "sourceDomain": "find-tender.service.gov.uk",
+      "sourceUrl": "https://www.find-tender.service.gov.uk/Search",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Geopolitical and defence operating environment (Defence & Public Security)",
+      "focus": "UK public-sector procurement"
+    },
+    {
+      "sourceName": "EU Tenders Electronic Daily",
+      "sourceDomain": "ted.europa.eu",
+      "sourceUrl": "https://ted.europa.eu/en/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Geopolitical and defence operating environment (Defence & Public Security)",
+      "focus": "EU public procurement"
+    },
+    {
+      "sourceName": "Stockholm International Peace Research Institute",
+      "sourceDomain": "sipri.org",
+      "sourceUrl": "https://www.sipri.org",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Geopolitical and defence operating environment (Defence & Public Security)",
+      "focus": "Arms transfers, expenditure, embargo data"
+    },
+    {
+      "sourceName": "Top international Risk Signals and Validated Military Intelligence",
+      "sourceDomain": "janes.com",
+      "sourceUrl": "https://www.janes.com",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Geopolitical and defence operating environment (Defence & Public Security)",
+      "focus": "only if licensed; public news page is thin"
+    },
+    {
+      "sourceName": "US Department of War",
+      "sourceDomain": "defense.gov",
+      "sourceUrl": "https://www.defense.gov",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Geopolitical and defence operating environment (Defence & Public Security)",
+      "focus": "policy and posture"
+    },
+    {
+      "sourceName": "North Atlantic Treaty Organization",
+      "sourceDomain": "nato.int",
+      "sourceUrl": "https://www.nato.int",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Geopolitical and defence operating environment (Defence & Public Security)",
+      "focus": "policy and posture"
+    },
+    {
+      "sourceName": "International Institute for Strategic Studies",
+      "sourceDomain": "iiss.org",
+      "sourceUrl": "https://www.iiss.org",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Geopolitical and defence operating environment (Defence & Public Security)",
+      "focus": "policy and posture"
+    },
+    {
+      "sourceName": "Global Database of Events, Language, and Tone",
+      "sourceDomain": "gdeltproject.org",
+      "sourceUrl": "https://gdeltproject.org",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Pri",
+      "group": "Geopolitical and defence operating environment (Defence & Public Security)",
+      "focus": "event feed, not a site to crawl. Use the GKG/events files"
+    },
+    {
+      "sourceName": "Agence France-Presse (AFP)",
+      "sourceDomain": "afp.com",
+      "sourceUrl": "https://www.afp.com/en/homepage",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Associated Press (AP)",
+      "sourceDomain": "apnews.com",
+      "sourceUrl": "https://apnews.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Reuters",
+      "sourceDomain": "reuters.com",
+      "sourceUrl": "https://www.reuters.com",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Bloomberg",
+      "sourceDomain": "bloomberg.com",
+      "sourceUrl": "https://www.bloomberg.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Dow Jones",
+      "sourceDomain": "dowjones.com",
+      "sourceUrl": "https://www.dowjones.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Channel News Asia",
+      "sourceDomain": "channelnewsasia.com",
+      "sourceUrl": "https://www.channelnewsasia.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "The Straits Times",
+      "sourceDomain": "straitstimes.com",
+      "sourceUrl": "https://www.straitstimes.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Business Time",
+      "sourceDomain": "businesstimes.com.sg",
+      "sourceUrl": "https://www.businesstimes.com.sg/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Nikkei Asia",
+      "sourceDomain": "asia.nikkei.com",
+      "sourceUrl": "https://asia.nikkei.com",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "South Korea Yonhap",
+      "sourceDomain": "en.yna.co.kr",
+      "sourceUrl": "https://en.yna.co.kr/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "South China Morning Post",
+      "sourceDomain": "scmp.com",
+      "sourceUrl": "https://scmp.com",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "China Daily",
+      "sourceDomain": "chinadaily.com.cn",
+      "sourceUrl": "https://chinadaily.com.cn",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Russia Times",
+      "sourceDomain": "rt.com",
+      "sourceUrl": "https://rt.com",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Taiwan Central News Agency",
+      "sourceDomain": "focustaiwan.tw",
+      "sourceUrl": "https://focustaiwan.tw",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Bangkok Post",
+      "sourceDomain": "bangkokpost.com",
+      "sourceUrl": "https://www.bangkokpost.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Vietnam News",
+      "sourceDomain": "vietnamnews.vn",
+      "sourceUrl": "https://vietnamnews.vn/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Malaysia Bernama",
+      "sourceDomain": "bernama.com",
+      "sourceUrl": "https://www.bernama.com/en/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Indonesia Jakarta Post",
+      "sourceDomain": "thejakartapost.com",
+      "sourceUrl": "https://www.thejakartapost.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Asia Times",
+      "sourceDomain": "asiatimes.com",
+      "sourceUrl": "https://www.asiatimes.com",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Al Jazeera",
+      "sourceDomain": "aljazeera.com",
+      "sourceUrl": "https://www.aljazeera.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "CNBC",
+      "sourceDomain": "cnbc.com",
+      "sourceUrl": "https://www.cnbc.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Financial Times",
+      "sourceDomain": "ft.com",
+      "sourceUrl": "https://www.ft.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Wall Street Journal",
+      "sourceDomain": "wsj.com",
+      "sourceUrl": "https://www.wsj.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "CNN",
+      "sourceDomain": "cnn.com",
+      "sourceUrl": "https://www.cnn.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "New York Times",
+      "sourceDomain": "nyt.com",
+      "sourceUrl": "https://www.nyt.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Washington Post",
+      "sourceDomain": "washingtonpost.com",
+      "sourceUrl": "https://www.washingtonpost.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "BBC News",
+      "sourceDomain": "bbc.com",
+      "sourceUrl": "https://www.bbc.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "The Guardian",
+      "sourceDomain": "theguardian.com",
+      "sourceUrl": "https://www.theguardian.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "The Telegraph",
+      "sourceDomain": "telegraph.co.uk",
+      "sourceUrl": "https://www.telegraph.co.uk/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "The Diplomat",
+      "sourceDomain": "thediplomat.com",
+      "sourceUrl": "https://thediplomat.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "The Economist",
+      "sourceDomain": "economist.com",
+      "sourceUrl": "https://www.economist.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Foreign Affairs",
+      "sourceDomain": "foreignaffairs.com",
+      "sourceUrl": "https://www.foreignaffairs.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Institute for the Study of War",
+      "sourceDomain": "understandingwar.org",
+      "sourceUrl": "https://understandingwar.org/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "American Enterprise Institute",
+      "sourceDomain": "aei.org",
+      "sourceUrl": "https://www.aei.org/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Hudson Institute",
+      "sourceDomain": "hudson.org",
+      "sourceUrl": "https://www.hudson.org/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Brookings Institute",
+      "sourceDomain": "brookings.edu",
+      "sourceUrl": "https://www.brookings.edu/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Aviation Week Network / MRO",
+      "sourceDomain": "aviationweek.com",
+      "sourceUrl": "https://aviationweek.com/mro",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "MRO, aircraft and propulsion, aftermarket, supply chain and emerging MRO technology"
+    },
+    {
+      "sourceName": "FlightGlobal",
+      "sourceDomain": "flightglobal.com",
+      "sourceUrl": "https://www.flightglobal.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Global commercial aviation, airlines, aircraft, propulsion, safety and MRO developments"
+    },
+    {
+      "sourceName": "MRO Business Today",
+      "sourceDomain": "mrobusinesstoday.com",
+      "sourceUrl": "https://mrobusinesstoday.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "MRO facilities, engine/component maintenance, leasing, digital MRO and aerospace aftermarket news"
+    },
+    {
+      "sourceName": "Aviation International News (AIN)",
+      "sourceDomain": "ainonline.com",
+      "sourceUrl": "https://www.ainonline.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Commercial aviation, aircraft, engines, MRO, safety and aerospace business"
+    },
+    {
+      "sourceName": "Simple Flying",
+      "sourceDomain": "simpleflying.com",
+      "sourceUrl": "https://simpleflying.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Airline fleets, aircraft orders, route/network and commercial aviation developments"
+    },
+    {
+      "sourceName": "AeroTime",
+      "sourceDomain": "aerotime.aero",
+      "sourceUrl": "https://www.aerotime.aero/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Airlines, aircraft, aviation technology, MRO and industry developments"
+    },
+    {
+      "sourceName": "Leeham News and Analysis",
+      "sourceDomain": "leehamnews.com",
+      "sourceUrl": "https://leehamnews.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Commercial aircraft programmes, production, orders, OEM strategy and market analysis"
+    },
+    {
+      "sourceName": "International Air Transport Association (IATA)",
+      "sourceDomain": "iata.org",
+      "sourceUrl": "https://www.iata.org/en/publications/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Air passenger/cargo trends, airline economics, safety, sustainability and industry outlook"
+    },
+    {
+      "sourceName": "International Civil Aviation Organization (ICAO)",
+      "sourceDomain": "icao.int",
+      "sourceUrl": "https://www.icao.int/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Global aviation standards, safety, air navigation, environment and regulatory developments"
+    },
+    {
+      "sourceName": "Oliver Wyman",
+      "sourceDomain": "oliverwyman.com",
+      "sourceUrl": "https://www.oliverwyman.com/our-expertise/industries/transportation/aerospace-and-defense.html",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Global Fleet & MRO Market Forecast; MRO industry surveys and aftermarket/supply-chain analysis"
+    },
+    {
+      "sourceName": "Cirium",
+      "sourceDomain": "cirium.com",
+      "sourceUrl": "https://www.cirium.com/thoughtcloud/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Fleet, aircraft values, utilisation, aviation analytics and market outlook"
+    },
+    {
+      "sourceName": "Boeing Commercial Market Outlook",
+      "sourceDomain": "boeing.com",
+      "sourceUrl": "https://www.boeing.com/commercial/market/commercial-market-outlook",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Long-term commercial fleet, traffic and services market outlook"
+    },
+    {
+      "sourceName": "Airbus Global Market Forecast",
+      "sourceDomain": "airbus.com",
+      "sourceUrl": "https://www.airbus.com/en/products-services/commercial-aircraft/global-market-forecast",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Long-term passenger traffic, fleet demand and aviation services outlook"
+    },
+    {
+      "sourceName": "Federal Aviation Administration (FAA)",
+      "sourceDomain": "faa.gov",
+      "sourceUrl": "https://www.faa.gov/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Airworthiness directives, aviation safety, certification and regulatory updates"
+    },
+    {
+      "sourceName": "European Union Aviation Safety Agency (EASA)",
+      "sourceDomain": "easa.europa.eu",
+      "sourceUrl": "https://www.easa.europa.eu/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Airworthiness, safety directives, certification and European aviation regulation"
+    },
+    {
+      "sourceName": "Aviation Safety Network",
+      "sourceDomain": "aviation-safety.net",
+      "sourceUrl": "https://aviation-safety.net/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Aircraft accident and safety occurrence reference information"
+    },
+    {
+      "sourceName": "Aviation Working Group",
+      "sourceDomain": "awg.aero",
+      "sourceUrl": "https://www.awg.aero/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "9. Specific Industry News",
+      "focus": "Aircraft leasing, financing, Cape Town Convention and cross-border asset legal issues"
+    }
+  ]
+}

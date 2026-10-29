@@ -2,7 +2,7 @@
   "registerId": "URS-NEWS-OUTLETS",
   "scope": "sources named with a URL on the News-Pri, News-Sec, and 9. Specific Industry News sheets",
   "ratingStatus": "UNRATED",
-  "workbook": "URS_Entity_Info_20261006.xlsx",
+  "workbook": "02_URS_Entity_Info.xlsx",
   "sheets": [
     "News-Pri",
     "News-Sec",
@@ -1269,6 +1269,42 @@
       "sourceName": "Foreign Affairs",
       "sourceDomain": "foreignaffairs.com",
       "sourceUrl": "https://www.foreignaffairs.com/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Institute for the Study of War",
+      "sourceDomain": "understandingwar.org",
+      "sourceUrl": "https://understandingwar.org/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "American Enterprise Institute",
+      "sourceDomain": "aei.org",
+      "sourceUrl": "https://www.aei.org/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Hudson Institute",
+      "sourceDomain": "hudson.org",
+      "sourceUrl": "https://www.hudson.org/",
+      "sourceClass": null,
+      "credibilityRating": "UNRATED",
+      "active": true,
+      "workbookSheet": "News-Sec"
+    },
+    {
+      "sourceName": "Brookings Institute",
+      "sourceDomain": "brookings.edu",
+      "sourceUrl": "https://www.brookings.edu/",
       "sourceClass": null,
       "credibilityRating": "UNRATED",
       "active": true,

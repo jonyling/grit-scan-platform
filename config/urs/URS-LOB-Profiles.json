@@ -1,6 +1,6 @@
 {
   "registerId": "URS-LOB-PROFILES",
-  "workbook": "URS_Entity_Info_20261006.xlsx",
+  "workbook": "02_URS_Entity_Info.xlsx",
   "sheet": "6. LOB_Keywords",
   "absence": "priorityCountries is empty. Country of incorporation is not a priority country, and none was invented.",
   "lobHierarchy": {

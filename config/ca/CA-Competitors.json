@@ -1,0 +1,396 @@
+{
+  "registerId": "CA-COMPETITORS",
+  "workbook": "01_CA_Entity_Info.xlsx",
+  "sheet": "3. Competitors",
+  "absence": "A LOB label that is not on the org chart has no canonicalLob. The same competitor can appear under more than one LOB.",
+  "competitors": [
+    {
+      "lobLabel": "1. Airframe Services",
+      "competitor": "Lufthansa Technik",
+      "workscope": "Global airframe, engine and component MRO network; widebody heavy checks and VIP completions; facilities in Manila, Singapore and Shenzhen.",
+      "note": "Retained from original list",
+      "category": null,
+      "row": 4,
+      "canonicalLob": "Airframe Services"
+    },
+    {
+      "lobLabel": "1. Airframe Services",
+      "competitor": "HAECO Group",
+      "workscope": "Widebody and narrowbody airframe MRO, cabin solutions, line maintenance and freighter conversions across Asia; Swire Pacific subsidiary. Often cited as the #2 global airframe MRO by capacity.",
+      "note": null,
+      "category": null,
+      "row": 5,
+      "canonicalLob": "Airframe Services"
+    },
+    {
+      "lobLabel": "1. Airframe Services",
+      "competitor": "SIA Engineering Company",
+      "workscope": "Airframe heavy maintenance, line maintenance and component services; Singapore home-market rival.",
+      "note": "Retained from original list",
+      "category": null,
+      "row": 6,
+      "canonicalLob": "Airframe Services"
+    },
+    {
+      "lobLabel": "1. Airframe Services",
+      "competitor": "AAR Corp.",
+      "workscope": "Independent airframe, component and logistics MRO; acquired HAECO Americas (Nov 2025, US$78m), adding 12 US hangars. Head-to-head with STE San Antonio / Pensacola.",
+      "note": "Retained from original list",
+      "category": null,
+      "row": 7,
+      "canonicalLob": "Airframe Services"
+    },
+    {
+      "lobLabel": "1. Airframe Services",
+      "competitor": "Ameco Beijing",
+      "workscope": "Air China–Lufthansa JV; airframe heavy maintenance, modifications and interior upgrades for Chinese and international airlines. Competes with STE Guangzhou / Hubei.",
+      "note": null,
+      "category": null,
+      "row": 8,
+      "canonicalLob": "Airframe Services"
+    },
+    {
+      "lobLabel": "1. Airframe Services",
+      "competitor": "GAMECO",
+      "workscope": "Guangzhou-based airframe base maintenance, P2F conversions and line maintenance. Direct competitor to STE Aerospace (Guangzhou).",
+      "note": null,
+      "category": null,
+      "row": 9,
+      "canonicalLob": "Airframe Services"
+    },
+    {
+      "lobLabel": "1. Airframe Services",
+      "competitor": "Turkish Technic",
+      "workscope": "Airframe MRO, component repair and engineering from Istanbul hub; expanding heavy maintenance at Istanbul Airport.",
+      "note": null,
+      "category": null,
+      "row": 10,
+      "canonicalLob": "Airframe Services"
+    },
+    {
+      "lobLabel": "1. Airframe Services",
+      "competitor": "Delta TechOps",
+      "workscope": "Largest airline-owned MRO in North America; third-party heavy checks on 737/A321; ~US$1bn third-party revenue.",
+      "note": null,
+      "category": null,
+      "row": 11,
+      "canonicalLob": "Airframe Services"
+    },
+    {
+      "lobLabel": "2. Component Services",
+      "competitor": "AFI KLM E&M",
+      "workscope": "Multi-product MRO; component pooling via 8 global logistics centres, PROGNOS predictive maintenance; strong on new-gen fleets (A350, A320neo, 787).",
+      "note": null,
+      "category": null,
+      "row": 12,
+      "canonicalLob": "Component Services"
+    },
+    {
+      "lobLabel": "2. Component Services",
+      "competitor": "Lufthansa Technik",
+      "workscope": "Component maintenance, pooling and AOG support across the global fleet.",
+      "note": "Retained from original list",
+      "category": null,
+      "row": 13,
+      "canonicalLob": "Component Services"
+    },
+    {
+      "lobLabel": "2. Component Services",
+      "competitor": "AAR Corp.",
+      "workscope": "Component repair, supply-chain and inventory management programs.",
+      "note": "Retained from original list",
+      "category": null,
+      "row": 14,
+      "canonicalLob": "Component Services"
+    },
+    {
+      "lobLabel": "2. Component Services",
+      "competitor": "SIA Engineering Company",
+      "workscope": "Component MRO and fleet management in Asia-Pacific.",
+      "note": "Retained from original list",
+      "category": null,
+      "row": 15,
+      "canonicalLob": "Component Services"
+    },
+    {
+      "lobLabel": "3. Engine Services",
+      "competitor": "GE Aerospace",
+      "workscope": "Largest MRO provider globally (~15% share), driven by OEM engine maintenance; LEAP/GE90/GEnx overhaul.",
+      "note": null,
+      "category": null,
+      "row": 16,
+      "canonicalLob": "Engine Services"
+    },
+    {
+      "lobLabel": "3. Engine Services",
+      "competitor": "MTU Maintenance",
+      "workscope": "Leading independent engine MRO; LEAP and GTF expertise; 500+ shop visits.",
+      "note": "Retained from original list (as MTU)",
+      "category": null,
+      "row": 17,
+      "canonicalLob": "Engine Services"
+    },
+    {
+      "lobLabel": "3. Engine Services",
+      "competitor": "SAFRAN S.A.",
+      "workscope": "OEM engine MRO (Safran Aircraft Engines) for CFM56/LEAP; also nacelles and cabin (see below).",
+      "note": "Retained from original list",
+      "category": null,
+      "row": 18,
+      "canonicalLob": "Engine Services"
+    },
+    {
+      "lobLabel": "3. Engine Services",
+      "competitor": "Rolls-Royce",
+      "workscope": "OEM MRO for Trent family; expanding capacity for A350/A330neo/787 fleets.",
+      "note": null,
+      "category": null,
+      "row": 19,
+      "canonicalLob": "Engine Services"
+    },
+    {
+      "lobLabel": "3. Engine Services",
+      "competitor": "StandardAero",
+      "workscope": "Independent engine and component MRO.",
+      "note": "Retained from original list",
+      "category": null,
+      "row": 20,
+      "canonicalLob": "Engine Services"
+    },
+    {
+      "lobLabel": "3. Engine Services",
+      "competitor": "AFI KLM E&M Engine Services",
+      "workscope": "CFM56, LEAP, CF6, GE90 and PW1000G GTF overhaul.",
+      "note": null,
+      "category": null,
+      "row": 21,
+      "canonicalLob": "Engine Services"
+    },
+    {
+      "lobLabel": "4. Cabin Interiors & Engineering Solutions",
+      "competitor": "Safran Cabin / Safran Seats",
+      "workscope": "Integrated cabin interiors (bins, galleys, lavatories, crew rest), seats, cabin modification services; No. 1 in business & regional aircraft interiors.",
+      "note": null,
+      "category": null,
+      "row": 22,
+      "canonicalLob": "Cabin Interiors & Engineering Solutions"
+    },
+    {
+      "lobLabel": "4. Cabin Interiors & Engineering Solutions",
+      "competitor": "Collins Aerospace (RTX)",
+      "workscope": "Cabin seating, lighting, galleys, lavatories, cabin reconfiguration, engineering and certification services.",
+      "note": null,
+      "category": null,
+      "row": 23,
+      "canonicalLob": "Cabin Interiors & Engineering Solutions"
+    },
+    {
+      "lobLabel": "4. Cabin Interiors & Engineering Solutions",
+      "competitor": "Diehl Aviation",
+      "workscope": "Cabin monuments, cabin and cargo linings, overhead stowage, crew rest compartments, ducting and cabin systems.",
+      "note": null,
+      "category": null,
+      "row": 24,
+      "canonicalLob": "Cabin Interiors & Engineering Solutions"
+    },
+    {
+      "lobLabel": "4. Cabin Interiors & Engineering Solutions",
+      "competitor": "HAECO Cabin Solutions",
+      "workscope": "Cabin reconfiguration and seating solutions for widebody fleets.",
+      "note": null,
+      "category": null,
+      "row": 25,
+      "canonicalLob": "Cabin Interiors & Engineering Solutions"
+    },
+    {
+      "lobLabel": "5. Freighter Conversion & Composite Panels (EFW / ACS)",
+      "competitor": "Boeing Converted Freighters",
+      "workscope": "OEM 737-800BCF and 767-300BCF; 737-800BCF competes directly with EFW's A321P2F.",
+      "note": "EFW (STE 55% / Airbus 45%) is the reference Airbus P2F house",
+      "category": null,
+      "row": 26,
+      "canonicalLob": "Composite Panels"
+    },
+    {
+      "lobLabel": "5. Freighter Conversion & Composite Panels (EFW / ACS)",
+      "competitor": "Israel Aerospace Industries (IAI)",
+      "workscope": "Independent converter: 737-800BDSF, 767-300BDSF, 777-300ERSF (Emirates first delivery May 2026).",
+      "note": null,
+      "category": null,
+      "row": 27,
+      "canonicalLob": "Composite Panels"
+    },
+    {
+      "lobLabel": "5. Freighter Conversion & Composite Panels (EFW / ACS)",
+      "competitor": "321 Precision Conversions",
+      "workscope": "Independent A321-200PCF STC (EASA approved 2024) – direct alternative to EFW A321P2F.",
+      "note": null,
+      "category": null,
+      "row": 28,
+      "canonicalLob": "Composite Panels"
+    },
+    {
+      "lobLabel": "5. Freighter Conversion & Composite Panels (EFW / ACS)",
+      "competitor": "Mammoth Freighters",
+      "workscope": "777-200LRMF / 777-300ERMF; first delivery to Jetran Aug 2026.",
+      "note": null,
+      "category": null,
+      "row": 29,
+      "canonicalLob": "Composite Panels"
+    },
+    {
+      "lobLabel": "5. Freighter Conversion & Composite Panels (EFW / ACS)",
+      "competitor": "Aeronautical Engineers Inc. (AEI)",
+      "workscope": "737-800SF, 737-400SF, CRJ200SF, MD-80SF conversions.",
+      "note": null,
+      "category": null,
+      "row": 30,
+      "canonicalLob": "Composite Panels"
+    },
+    {
+      "lobLabel": "5. Freighter Conversion & Composite Panels (EFW / ACS)",
+      "competitor": "FACC AG",
+      "workscope": "Composite aerostructures, interiors and engine/nacelle components (competes in composite panels).",
+      "note": null,
+      "category": null,
+      "row": 31,
+      "canonicalLob": "Composite Panels"
+    },
+    {
+      "lobLabel": "6. Nacelles",
+      "competitor": "Safran Nacelles",
+      "workscope": "Leading producer of complete nacelle systems for aircraft OEMs.",
+      "note": "Retained from original list (as Safran S.A.)",
+      "category": null,
+      "row": 32,
+      "canonicalLob": "Nacelles"
+    },
+    {
+      "lobLabel": "6. Nacelles",
+      "competitor": "Spirit AeroSystems",
+      "workscope": "Fuselages, wings, pylons and nacelles for Boeing, Rolls-Royce and Bombardier programs.",
+      "note": null,
+      "category": null,
+      "row": 33,
+      "canonicalLob": "Nacelles"
+    },
+    {
+      "lobLabel": "6. Nacelles",
+      "competitor": "Collins Aerospace (RTX)",
+      "workscope": "Nacelles and thrust reversers; electric thrust reverser actuation (elecTRAS).",
+      "note": null,
+      "category": null,
+      "row": 34,
+      "canonicalLob": "Nacelles"
+    },
+    {
+      "lobLabel": "6. Nacelles",
+      "competitor": "GKN Aerospace",
+      "workscope": "Nacelle and aerostructure components.",
+      "note": null,
+      "category": null,
+      "row": 35,
+      "canonicalLob": "Nacelles"
+    },
+    {
+      "lobLabel": "6. Nacelles",
+      "competitor": "The NORDAM Group",
+      "workscope": "Nacelles, thrust reversers and aftermarket repair.",
+      "note": null,
+      "category": null,
+      "row": 36,
+      "canonicalLob": "Nacelles"
+    },
+    {
+      "lobLabel": "6. Nacelles",
+      "competitor": "Magellan Aerospace / Aernnova",
+      "workscope": "Aerostructures and nacelle component suppliers.",
+      "note": null,
+      "category": null,
+      "row": 37,
+      "canonicalLob": "Nacelles"
+    },
+    {
+      "lobLabel": "7. Precision Manufacturing",
+      "competitor": "Precision Castparts Corp. (PCC)",
+      "workscope": "Investment castings, forgings and airfoils for aero engines and airframes.",
+      "note": null,
+      "category": null,
+      "row": 38,
+      "canonicalLob": "Precision Manufacturing"
+    },
+    {
+      "lobLabel": "7. Precision Manufacturing",
+      "competitor": "Howmet Aerospace",
+      "workscope": "Engine airfoils, rings, disks and forgings; investment casting.",
+      "note": null,
+      "category": null,
+      "row": 39,
+      "canonicalLob": "Precision Manufacturing"
+    },
+    {
+      "lobLabel": "7. Precision Manufacturing",
+      "competitor": "Doncasters",
+      "workscope": "Precision cast components and nickel/cobalt superalloys (NYSE: DPC listing June 2026).",
+      "note": null,
+      "category": null,
+      "row": 40,
+      "canonicalLob": "Precision Manufacturing"
+    },
+    {
+      "lobLabel": "7. Precision Manufacturing",
+      "competitor": "Hitchiner Manufacturing",
+      "workscope": "Investment casting for aerospace and industrial applications.",
+      "note": null,
+      "category": null,
+      "row": 41,
+      "canonicalLob": "Precision Manufacturing"
+    },
+    {
+      "lobLabel": "8. Aviation Asset Management",
+      "competitor": "AerCap Engines",
+      "workscope": "Largest spare engine lessor: ~1,300 engines, 24 engine types, 140+ customers.",
+      "note": null,
+      "category": null,
+      "row": 42,
+      "canonicalLob": "Aviation Asset Management"
+    },
+    {
+      "lobLabel": "8. Aviation Asset Management",
+      "competitor": "Willis Lease Finance",
+      "workscope": "Largest independent engine lessor: 334 engines, US$4.4bn AUM; 70 LEAP spares; also engine MRO and teardown.",
+      "note": null,
+      "category": null,
+      "row": 43,
+      "canonicalLob": "Aviation Asset Management"
+    },
+    {
+      "lobLabel": "8. Aviation Asset Management",
+      "competitor": "Rolls-Royce & Partners Finance (RRPF)",
+      "workscope": "GATX/Rolls-Royce JV; 468 engines, Trent and V2500 focus.",
+      "note": null,
+      "category": null,
+      "row": 44,
+      "canonicalLob": "Aviation Asset Management"
+    },
+    {
+      "lobLabel": "8. Aviation Asset Management",
+      "competitor": "Engine Lease Finance Corp. (ELFC)",
+      "workscope": "Mitsubishi HC Capital; CFM56, V2500, LEAP and GTF leasing.",
+      "note": null,
+      "category": null,
+      "row": 45,
+      "canonicalLob": "Aviation Asset Management"
+    },
+    {
+      "lobLabel": "8. Aviation Asset Management",
+      "competitor": "FTAI Aviation",
+      "workscope": "CFM56/V2500 leasing and module aftermarket platform.",
+      "note": null,
+      "category": null,
+      "row": 46,
+      "canonicalLob": "Aviation Asset Management"
+    }
+  ],
+  "dropped": []
+}

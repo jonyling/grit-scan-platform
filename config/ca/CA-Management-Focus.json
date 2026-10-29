@@ -1,0 +1,94 @@
+{
+  "registerId": "CA-MANAGEMENT-FOCUS",
+  "workbook": "01_CA_Entity_Info.xlsx",
+  "sheet": "10. Management Focus",
+  "absence": "The sheet gives scenarios with watchpoints. It names no LOB or status, so none is recorded. origin names who proposed each one.",
+  "requests": [],
+  "focusItems": [
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Major aviation incident",
+      "whyItMatters": "An aircraft or component previously designed, maintained or repaired by CA is subsequently involved in a major accident or incident, exposing CA to investigation and potential litigation.",
+      "impact": "Safety and reputational impact; investigations and litigation; potential financial exposure from claims.",
+      "indicators": [
+        "Major aviation accidents/incidents",
+        "regulator safety directives/findings",
+        "litigation trends affecting MRO providers"
+      ],
+      "status": null,
+      "origin": "Scenario Planning from Management",
+      "number": 1,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Cyberattack (including AI driven) resulting in data breach",
+      "whyItMatters": "A major cyberattack compromises CA systems or information and disrupts business operations.",
+      "impact": "Operational disruption; information compromise; regulatory/compliance and financial exposure.",
+      "indicators": [
+        "Cyber threat and security incidents, including increased attacks on critical providers, especially within the industry",
+        "AI- and quantum-enabled threat developments"
+      ],
+      "status": null,
+      "origin": "Scenario Planning from Management",
+      "number": 2,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Technology bifurcation / export-control restrictions",
+      "whyItMatters": "Escalating geopolitical tensions drive technology bifurcation and tighter export controls, restricting CA’s ability to transfer technology or ship products and parts between key markets.",
+      "impact": "Shipment stoppages; technology/supply constraints; operational disruption; inventory build-up and market-access constraints.",
+      "indicators": [
+        "Geopolitical developments and introduction of new policies",
+        "export-control/licensing expiring with no renewal and technology/IP restrictions",
+        "supply-chain separation by OEMs/suppliers for different markets"
+      ],
+      "status": null,
+      "origin": "Scenario Planning from Management",
+      "number": 3,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Geopolitical fragmentation prolongs supply and cost disruption",
+      "whyItMatters": "Escalating conflicts and trade tensions bring sanctions, export controls, tariffs and route disruption, causing critical material shortages; OEMs and single-source suppliers tighten access to parts, technical data, repair rights and licences; longer lead times, rising input and energy costs and missed TAT occur while customers resist cost pass-through, squeezing margins and working capital.",
+      "relevantRisks": "Geopolitics & protectionism; OEM / single-source dependency; Legal & trade compliance; Pricing pressure; Customer credit; FX & interest rates.",
+      "indicators": [
+        "Political developments in regions key to the aerospace supply chain",
+        "critical parts with no qualified alternative, especially at Tier 2 and Tier 3",
+        "spikes in lead times, freight and energy costs, or minimum-order requirements",
+        "higher OEM licensing, royalty, repair-right or technical-data costs",
+        "new or changing sanctions, embargoes, export controls or tariffs affecting customers, suppliers or countries of operation"
+      ],
+      "status": null,
+      "origin": "Others from the R&A team",
+      "number": 1,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Aviation growth collides with capacity, talent and customer stress",
+      "whyItMatters": "Demand stays strong, but technician shortages, long training and certification lead times, and supplier delays cap throughput; price-sensitive customers under fuel and margin pressure seek longer payment terms and some face liquidity issues; resulting impacts include weaker competitiveness, delivery delays, margin erosion, higher receivables and reliance on a few key customers.",
+      "relevantRisks": "Pricing competition; Technical talent shortage; Customer credit; Customer concentration; Quality & regulatory compliance; Supply-chain dependency.",
+      "indicators": [
+        "Customers pushing for delays, renegotiation or cost absorption",
+        "whether cost pass-through and force-majeure clauses hold up in practice",
+        "downgrading of customer credit ratings",
+        "university aerospace course cohort reduction",
+        "labour-market trends from external HR vendors",
+        "emerging technology and its impact on skills required"
+      ],
+      "status": null,
+      "origin": "Others from the R&A team",
+      "number": 2,
+      "canonicalLob": null
+    }
+  ],
+  "dropped": []
+}

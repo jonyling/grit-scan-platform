@@ -1,0 +1,67 @@
+{
+  "registerId": "CA-LOB-HIERARCHY",
+  "businessArea": "Commercial Aerospace",
+  "status": "PROPOSED: transcribed from the CA workbook's 'CA' sheet, 2. Capabilities & LOB Scope, a research-based first draft. The CA business partner must validate it against the org chart.",
+  "source": "01_CA_Entity_Info.xlsx, sheet 'CA'",
+  "lobs": [
+    {
+      "lobName": "Airframe Services",
+      "lobGrouping": "Aerospace MRO",
+      "aliases": [
+        "Airframe MRO",
+        "Airframe"
+      ]
+    },
+    {
+      "lobName": "Component Services",
+      "lobGrouping": "Aerospace MRO",
+      "aliases": [
+        "Component MRO",
+        "Components"
+      ]
+    },
+    {
+      "lobName": "Engine Services",
+      "lobGrouping": "Aerospace MRO",
+      "aliases": [
+        "Engines MRO",
+        "Engine MRO",
+        "Engines"
+      ]
+    },
+    {
+      "lobName": "Cabin Interiors & Engineering Solutions",
+      "lobGrouping": "Aerostructures & Systems",
+      "aliases": [
+        "Cabin Interiors and Engineering Solutions",
+        "Cabin Interiors & Engineering"
+      ]
+    },
+    {
+      "lobName": "Composite Panels",
+      "lobGrouping": "Aerostructures & Systems",
+      "aliases": [
+        "Freighter Conversion & Composite Panels (EFW / ACS)"
+      ]
+    },
+    {
+      "lobName": "Nacelles",
+      "lobGrouping": "Aerostructures & Systems",
+      "aliases": []
+    },
+    {
+      "lobName": "Precision Manufacturing",
+      "lobGrouping": "Aerostructures & Systems",
+      "aliases": []
+    },
+    {
+      "lobName": "Aviation Asset Management",
+      "lobGrouping": "Aviation Asset Management",
+      "aliases": []
+    }
+  ],
+  "unresolvedLabels": [
+    "Aerostructures & Systems"
+  ],
+  "unresolvedNote": "Sheet 6 files some keywords under the grouping 'Aerostructures & Systems', not one LOB. They stay at the grouping."
+}

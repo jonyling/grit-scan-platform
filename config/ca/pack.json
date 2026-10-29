@@ -1,0 +1,140 @@
+{
+  "pack": "ca",
+  "level": "BA",
+  "label": "Commercial Aerospace",
+  "shortLabel": "CA",
+  "businessArea": "Commercial Aerospace",
+  "parent": "ste",
+  "children": [],
+  "registers": {
+    "source_register": "CA-Source-Register.json",
+    "exposure": "CA-Exposure-Ontology.json",
+    "lob_profiles": "CA-LOB-Profiles.json",
+    "themes": "CA-STE-Themes.json",
+    "baseline": "CA-Global-Baseline.json"
+  },
+  "optional": {
+    "keyword_library": "CA-Keyword-Library.json",
+    "competitors": "CA-Competitors.json",
+    "management_focus": "CA-Management-Focus.json",
+    "lob_hierarchy": "CA-LOB-Hierarchy.json",
+    "relationships": "CA-Relationships.json"
+  },
+  "build": {
+    "prefix": "CA",
+    "defaultWorkbook": "01_CA_Entity_Info.xlsx",
+    "lobHierarchy": "CA-LOB-Hierarchy.json",
+    "keywordSheets": [],
+    "themeCounts": {
+      "KEY": 8,
+      "TIER_2": 4,
+      "EMERGING": 4
+    },
+    "themeActionPlans": true,
+    "managementFocusLayout": "scenarios",
+    "entitySheet": "2a. Entity and Asset Address",
+    "assetSheet": "2. Asset Listing (Finance)",
+    "themeVocabulary": {
+      "aviation regulatory": [
+        "airworthiness",
+        "aviation regulator",
+        "EASA",
+        "FAA",
+        "aviation safety",
+        "quality escape"
+      ],
+      "geopolitical risks": [
+        "geopolitical",
+        "sanctions",
+        "export control",
+        "tariff",
+        "protectionism",
+        "material shortage",
+        "supply chain disruption"
+      ],
+      "over dependence": [
+        "single-source",
+        "OEM dependency",
+        "late delivery",
+        "parts shortage",
+        "supplier delay"
+      ],
+      "customer concentration": [
+        "airline bankruptcy",
+        "airline insolvency",
+        "customer default",
+        "credit risk",
+        "airline financial distress"
+      ],
+      "lack of qualified": [
+        "technician shortage",
+        "aviation talent",
+        "licensed engineer",
+        "skills shortage",
+        "attrition"
+      ],
+      "cyber security": [
+        "cybersecurity",
+        "cyber attack",
+        "ransomware",
+        "data breach",
+        "IT outage"
+      ],
+      "legal & regulatory": [
+        "sanctions compliance",
+        "trade compliance",
+        "anti-bribery",
+        "export control",
+        "intermediary"
+      ],
+      "foreign exchange": [
+        "foreign exchange",
+        "interest rate",
+        "forex",
+        "currency"
+      ],
+      "workplace safety": [
+        "workplace safety",
+        "hangar accident",
+        "occupational safety",
+        "workplace fatality"
+      ],
+      "jv partnership": [
+        "joint venture",
+        "JV partner"
+      ],
+      "business continuity": [
+        "business continuity",
+        "extreme weather",
+        "typhoon",
+        "flood",
+        "pandemic"
+      ],
+      "critical emerging": [
+        "artificial intelligence",
+        "predictive maintenance",
+        "digital twin",
+        "additive manufacturing"
+      ],
+      "evolving workforce": [
+        "ageing workforce",
+        "knowledge transfer",
+        "hiring",
+        "retention"
+      ],
+      "climate adaptation": [
+        "sustainable aviation fuel",
+        "emissions",
+        "ESG",
+        "carbon",
+        "CORSIA"
+      ],
+      "oem aftermarket": [
+        "OEM aftermarket",
+        "licensing fee",
+        "royalty",
+        "aftermarket services"
+      ]
+    }
+  }
+}

@@ -1,0 +1,237 @@
+{
+  "registerId": "CA-STE-THEMES",
+  "workbook": "01_CA_Entity_Info.xlsx",
+  "sheet": "7. Annual Risks",
+  "absence": "Keywords beyond the governed risk title are generic business-risk vocabulary for the same entity-wide theme (see _GENERAL_RISK_KEYWORDS), not per-condition prose. Country- or condition-specific terms -- the Taiwan Layer-1 baseline -- are still not copied. Driver text is stored and is not used as a keyword.",
+  "themes": [
+    {
+      "themeId": "CA-KEY-01",
+      "themeName": "Aviation Regulatory Compliance; Quality & Safety of Products or Services",
+      "tier": "KEY",
+      "keywords": [
+        "airworthiness",
+        "aviation regulator",
+        "EASA",
+        "FAA",
+        "aviation safety",
+        "quality escape"
+      ],
+      "sheetDetail": "Compliance with aviation authorities’ regulatory requirements; poor CA product quality (e.g. product recall, Airworthiness Directives, Quality & Safety Service Bulletins); poor vendor material/services quality affecting product quality and safety (e.g. Suspected Unapproved Parts); staff lapse due to human error; reputational impact and potential liability claims from aviation incidents/accidents; FAA aviation AI regulatory roadmap and framework.",
+      "sheetExtra": "QMS and Aviation SMS founded on open incident reporting; vendor qualification, audit and monitoring; audits against aviation authority, aviation and ISO standards; global CA Quality & Safety Issues Management Review and cross-sharing of lessons learnt; product/services insurance; GIMS for Global IBUs (pending Hubei); SUP and counterfeit-parts controls, including strengthened supplier qualification and the Group OEST(Quality) policy; quality performance indicators; EASA, CAAS and FAA training (Parts 21, 145 and 147).",
+      "sheetActionPlans": "Implement GIMS in the new Hubei, China MRO; develop an anonymous incident-reporting website accessible to staff and non-staff."
+    },
+    {
+      "themeId": "CA-KEY-02",
+      "themeName": "Competition on Products/Services",
+      "tier": "KEY",
+      "keywords": [
+        "competition",
+        "competitor",
+        "pricing pressure",
+        "technology differentiation",
+        "market access"
+      ],
+      "sheetDetail": "Airlines’ cost pressure and price sensitivity; loss of competitiveness if competitors innovate, digitalise and adopt AI faster; airlines and competitors expanding across the aviation value chain through vertical or horizontal integration; competitor repair investment and capacity expansion.",
+      "sheetExtra": "Differentiate and bundle products/services rather than compete on price alone; CI, Kaizen, automation and digitalisation; cost-control and reduction initiatives; long-term strategic OEM partnerships; explore multi-tenant campus facilities in lower-cost regions.",
+      "sheetActionPlans": "Build next-generation aircraft OEM/MRO capability; implement AI/CI Execution Framework and Operational Excellence Framework; strengthen productivity through AI, automation and digitalisation to protect cost competitiveness."
+    },
+    {
+      "themeId": "CA-KEY-03",
+      "themeName": "Geopolitical risks, global fragmentation and protectionism impacting business operation and supply chain",
+      "tier": "KEY",
+      "keywords": [
+        "geopolitical",
+        "sanctions",
+        "export control",
+        "tariff",
+        "protectionism",
+        "material shortage",
+        "supply chain disruption"
+      ],
+      "sheetDetail": "Material shortages and higher material, fuel, freight and electricity costs from sanctions, export controls and tariffs, compounded by conflict; inability to continue business with sanctioned customers; supply-chain and operational disruption from sanctions, blockades, U.S.–China competition and Middle East instability.",
+      "sheetExtra": "Diversify and localise supply chains; sanctions/export-control screening, BU export-control POCs, EUS and sanctions clauses; contingency planning for critical materials, routes, logistics providers and warehousing; rebalance MRO capacity and collaborate with OEMs on duty exemptions; insurance, hedging and geopolitical BCP scenarios; strategic partnerships with strong financial backing.",
+      "sheetActionPlans": "Roll out trade-compliance e-learning for relevant staff on evolving geopolitical and export-control requirements."
+    },
+    {
+      "themeId": "CA-KEY-04",
+      "themeName": "Over Dependence on Key Vendors, OEMs and/or Single Source Suppliers",
+      "tier": "KEY",
+      "keywords": [
+        "single-source",
+        "OEM dependency",
+        "late delivery",
+        "parts shortage",
+        "supplier delay"
+      ],
+      "sheetDetail": "Late/non-delivery by key vendors, OEMs or single-source suppliers; OEM vertical integration and aftermarket consolidation increasing dependency on OEM-controlled IP, technical data, repair rights and licensing; rising material costs, rare-earth constraints and limited Tier-2/Tier-3 concentration visibility.",
+      "sheetExtra": "Vendor qualification and financial screening; regular performance reviews, site visits and delivery monitoring; strategic partnership agreements for IP, technical data, spares and support; alternative sourcing/subcontracting; safety stock and inventory buffers; design policy to avoid sole-source OEM components where possible.",
+      "sheetActionPlans": "Track OEM dependency/partnership by major engine and component and strengthen strategic partnerships; identify critical sub-tier, country and single-source dependencies and establish alternatives where feasible."
+    },
+    {
+      "themeId": "CA-KEY-05",
+      "themeName": "Customer Concentration and Credit Risk",
+      "tier": "KEY",
+      "keywords": [
+        "airline bankruptcy",
+        "airline insolvency",
+        "customer default",
+        "credit risk",
+        "airline financial distress"
+      ],
+      "sheetDetail": "Customer financial difficulty from recession, withdrawal of government aid or aviation crisis; airline distress, low margins, high fuel prices and economic pressure; reliance on key customers across BUs may reduce bargaining power and amplify customer-loss impact.",
+      "sheetExtra": "Bi-weekly credit reviews and risk tiering using market/internal intelligence and early-warning indicators; segment customers by exposure and risk; monitor debts and intensify dunning, late-payment interest, legal warnings and COD terms; liens or sale-and-leaseback where appropriate; negotiate payment/commercial terms; review customer portfolio and concentration; long-term contracts, JVs and customer-feedback monitoring; diversify customers, products, programmes, services and partnerships.",
+      "sheetActionPlans": "Strengthen customer retention and credit management through customer feedback, follow-up actions, programme-performance reviews and improved credit terms; strengthen key-account management through Top/Grow/Build 15; develop an OEM engagement framework for major OEM customers and concentration exposure."
+    },
+    {
+      "themeId": "CA-KEY-06",
+      "themeName": "Lack of Qualified and Experienced Technical Personnel",
+      "tier": "KEY",
+      "keywords": [
+        "technician shortage",
+        "aviation talent",
+        "licensed engineer",
+        "skills shortage",
+        "attrition"
+      ],
+      "sheetDetail": "Competition for a limited pool of qualified aviation personnel; difficulty recruiting locals and foreign-worker quotas; high technician attrition driven by career and compensation factors; AI deployment requires job redesign and workforce upskilling; global technician shortages, retirements and long training/licensing lead times.",
+      "sheetExtra": "Use skilled subcontract labour for immediate needs; broaden analysis beyond Singapore; partner authorities/labour agents and technical institutions; ITE Engine Learning Centre; technical training programmes in Singapore, USA, China and Germany; intern incentives; track vacancy/time-to-fill and succession depth; annual Airframe workforce-development review; overseas/local institution collaboration.",
+      "sheetActionPlans": "Support BUs in job redesign, upskilling/reskilling, change management, AI competency development and AI-related talent acquisition; facilitate workforce integration and track AI competency against Group target."
+    },
+    {
+      "themeId": "CA-KEY-07",
+      "themeName": "Cyber Security Attack / Breach",
+      "tier": "KEY",
+      "keywords": [
+        "cybersecurity",
+        "cyber attack",
+        "ransomware",
+        "data breach",
+        "IT outage"
+      ],
+      "sheetDetail": "Staff lapse or complacency; AI- and quantum-enabled threats, including deepfake phishing, malicious prompt injection and forged OEM certifications targeting SUP; aviation ransomware and extortion campaigns.",
+      "sheetExtra": "Cyber e-learning and GISO/CA ITBP publicity; GIO/GISO compliance for new or upgraded systems; IT-disruption BCP; cybersecurity roadmap including firewall, EDR, privileged-access management and vulnerability scanning; AI governance framework and training; N2 framework, policies and common platform; AIRMS and AI-governance e-learning.",
+      "sheetActionPlans": "Roll out Zero Trust Architecture and passwordless authentication for IBUs; align N2 projects with N2 OT/IoT Policy; minimise external file-sharing platforms; implement 2FA/MFA; strengthen suspicious-activity reporting."
+    },
+    {
+      "themeId": "CA-KEY-08",
+      "themeName": "Legal & Regulatory Compliance (e.g., Sanctions, Trade Compliance, intermediaries)",
+      "tier": "KEY",
+      "keywords": [
+        "Legal & Regulatory Compliance",
+        "sanctions compliance",
+        "trade compliance",
+        "anti-bribery",
+        "export control",
+        "intermediary"
+      ],
+      "sheetDetail": "Increasingly complex sanctions and trade-compliance environment; inconsistent BU/function understanding creating misaligned strategies and controls; lack of dedicated compliance personnel.",
+      "sheetExtra": "Due-diligence screening of customers, suppliers and intermediaries through Compliance Catalyst/Ethixbase; KYC checks for Russian-related and other restricted parties; quarterly tracking of reported fines; regular regulatory review and consistent practices through BCM annual review; external legal advice for potentially higher-risk projects.",
+      "sheetActionPlans": "Continuous monitoring and review of regulatory developments and trends."
+    },
+    {
+      "themeId": "CA-TIER_2-09",
+      "themeName": "Foreign Exchange and Interest Rate Fluctuation",
+      "tier": "TIER_2",
+      "keywords": [
+        "foreign exchange",
+        "interest rate",
+        "forex",
+        "currency"
+      ],
+      "sheetDetail": "Interest-rate exposure, including AAM funding; foreign-currency cash-flow exposure.",
+      "sheetExtra": "Group Treasury central hedging strategy; AAM funding sourced in consultation with Treasury and hedged under Group interest-rate policy; BUs monitor cash-flow projections and work with Group Treasury on internal/external hedging under Group FX policy."
+    },
+    {
+      "themeId": "CA-TIER_2-10",
+      "themeName": "Workplace Safety and Health (WSH)",
+      "tier": "TIER_2",
+      "keywords": [
+        "Workplace Safety and Health",
+        "workplace safety",
+        "hangar accident",
+        "occupational safety",
+        "workplace fatality"
+      ],
+      "sheetDetail": "Workplace risks requiring systematic identification, assessment and mitigation.",
+      "sheetExtra": "WSH management systems covering risk assessments, incident reporting/investigation, training, emergency preparedness, audits and management reviews; ISO 45001 and ISO 14001 certified systems; regular internal/external audits and continual improvement."
+    },
+    {
+      "themeId": "CA-TIER_2-11",
+      "themeName": "JV Partnership Alignment",
+      "tier": "TIER_2",
+      "keywords": [
+        "joint venture",
+        "JV partner"
+      ],
+      "sheetDetail": "Potential misalignment in joint ventures and associates, including applicability of newer Group policies such as AI governance.",
+      "sheetExtra": "Continuous evaluation of JVs and associates for ongoing partnership relevance; alignment to Group policies, including AI governance where applicable."
+    },
+    {
+      "themeId": "CA-TIER_2-12",
+      "themeName": "Business Continuity Disruption due to extreme weather events and pandemic",
+      "tier": "TIER_2",
+      "keywords": [
+        "business continuity",
+        "extreme weather",
+        "typhoon",
+        "flood",
+        "pandemic"
+      ],
+      "sheetDetail": "Rising frequency of climate events, including heat stress, haze and flooding, plus potential pandemic recurrence, with possible operational disruption.",
+      "sheetExtra": "BCM controls and procedures to secure facilities and customer assets; hangars designed for harsher climate, including elevation and ventilation/cooling measures; insurance; early warnings; SOP/BCP measures; safe zones, backup power, drainage and emergency resources where applicable."
+    },
+    {
+      "themeId": "CA-EMERGING-13",
+      "themeName": "Critical Emerging Technologies Disrupting Business Models",
+      "tier": "EMERGING",
+      "keywords": [
+        "artificial intelligence",
+        "predictive maintenance",
+        "digital twin",
+        "additive manufacturing"
+      ],
+      "sheetDetail": "Potential disruption from hydrogen/electric/supersonic aircraft, AI and quantum technologies; need to align with evolving FAA/EASA AI certification expectations and next-generation aircraft/component/engine/nacelle capability.",
+      "sheetExtra": "IIoT/sensors for predictive maintenance; digital work cards/workflows; AI-driven preventive maintenance, planning and material provisioning; robotics, automation, digitalisation and analytics projects; A*STAR partnerships; R&D; CISO clearance of cyber projects; compliance with Group AI Governance policy."
+    },
+    {
+      "themeId": "CA-EMERGING-14",
+      "themeName": "Evolving Workforce Demographics leading to Hiring and Retention Challenges",
+      "tier": "EMERGING",
+      "keywords": [
+        "ageing workforce",
+        "knowledge transfer",
+        "hiring",
+        "retention"
+      ],
+      "sheetDetail": "Ageing workforce and knowledge-transfer risk; skills mismatch as new technologies change roles; changing expectations of younger employees; diversity and inclusion needs; AI-driven organisation and job redesign.",
+      "sheetExtra": "Digital knowledge directories, continuous technical training, retired trainers, mature-worker upskilling, mentoring, internships/sponsorships; education partnerships, multiskilling, OTR, job redesign and succession planning; manager training; DI programmes and scorecards; Visier people analytics; AI Workforce Buildup Plan and ECMF."
+    },
+    {
+      "themeId": "CA-EMERGING-15",
+      "themeName": "Climate Adaptation & ESG-Driven Market Shifts",
+      "tier": "EMERGING",
+      "keywords": [
+        "sustainable aviation fuel",
+        "emissions",
+        "ESG",
+        "carbon",
+        "CORSIA"
+      ],
+      "sheetDetail": "Stricter GHG/emissions regulation; MRO process changes; aircraft redesign/retrofit and associated cost/timeline; compliance and carbon-footprint costs; customer demand for ESG practices and lower-carbon offerings.",
+      "sheetExtra": "ISO 14001/50001 certifications and DNV ESG accreditation work; ESG bid-requirement database; ISO 50001, ISO 14064-1 and GHG Protocol alignment; solar, rainwater, equipment electrification, SAF, OOA materials and recycling; quarterly resource/energy reporting; customer ESG-disclosure monitoring; workforce training and industry/regulator/supplier partnerships."
+    },
+    {
+      "themeId": "CA-EMERGING-16",
+      "themeName": "OEM Aftermarket Growth: Licensing & Royalty Fee Implications",
+      "tier": "EMERGING",
+      "keywords": [
+        "OEM aftermarket",
+        "licensing fee",
+        "royalty",
+        "aftermarket services"
+      ],
+      "sheetDetail": "OEM aftermarket expansion may increase dependence on licensing, royalty arrangements, technical capabilities and access to OEM-controlled repair markets.",
+      "sheetExtra": "Technical training, capability development and knowledge transfer; leverage volume/consolidated purchasing; provision potential OEM royalties in customer pricing; strategic OEM partnerships/investments; specialised MRO expertise and market differentiation."
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 {
   "registerId": "URS-EXPOSURE",
-  "workbook": "URS_Entity_Info_20261006.xlsx",
+  "workbook": "02_URS_Entity_Info.xlsx",
   "absence": {
-    "projects": "URS_Entity_Info_20261006.xlsx has no project sheet. No project was invented.",
+    "projects": "02_URS_Entity_Info.xlsx has no project sheet. No project was invented.",
     "sites": "Registered addresses were not promoted to site aliases. A repeated legal name was not split into a second site."
   },
   "entities": [
@@ -629,140 +629,717 @@
       "customerName": "LAND TRANSPORT AUTHORITY",
       "aliases": [
         "LAND TRANSPORT AUTHORITY"
-      ]
+      ],
+      "country": "Singapore",
+      "customerType": "Government statutory board",
+      "sector": "Land transport (rail & road)",
+      "lob": "Mobility Rail; Mobility Road",
+      "workscope": "Rail electronics, communications, PSD/fare systems; ITS, traffic & tunnel management",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S1.2",
+        "L3.3",
+        "O1.4",
+        "O1.9",
+        "O6.3"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-ministry-of-home-affairs",
       "customerName": "MINISTRY OF HOME AFFAIRS",
       "aliases": [
         "MINISTRY OF HOME AFFAIRS"
-      ]
+      ],
+      "country": "Singapore",
+      "customerType": "Government ministry",
+      "sector": "Homeland security & public safety",
+      "lob": "Smart Security & Automation",
+      "workscope": "Integrated security, surveillance, checkpoint & public-safety systems",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S1.2",
+        "L3.3",
+        "O3.1",
+        "C1.2"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-ch-karnchang-public-company-limited",
       "customerName": "CH. KARNCHANG PUBLIC COMPANY LIMITED",
       "aliases": [
-        "CH. KARNCHANG PUBLIC COMPANY LIMITED"
-      ]
+        "CH. KARNCHANG PUBLIC COMPANY LIMITED",
+        "Karnchang"
+      ],
+      "country": "Thailand",
+      "customerType": "Listed EPC contractor",
+      "sector": "Infrastructure construction",
+      "lob": "Mobility Rail",
+      "workscope": "Rail E&M / systems packages for Bangkok mass-transit lines (as subcontractor)",
+      "contractingEntity": "ST Engineering Urban Solutions (Thailand) Ltd",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "F3.1",
+        "O1.4",
+        "O1.5",
+        "L1.1",
+        "F1.1"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-housing-development-board",
       "customerName": "Housing Development Board",
       "aliases": [
         "Housing Development Board"
-      ]
+      ],
+      "country": "Singapore",
+      "customerType": "Government statutory board",
+      "sector": "Public housing / smart estates",
+      "lob": "Smart Sustainable Utilities",
+      "workscope": "Smart estate, building & energy management, smart lighting",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "L3.3",
+        "O1.4",
+        "O1.8"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-hyundai-rotem-company",
       "customerName": "HYUNDAI ROTEM COMPANY",
       "aliases": [
-        "HYUNDAI ROTEM COMPANY"
-      ]
+        "HYUNDAI ROTEM COMPANY",
+        "Hyundai Rotem"
+      ],
+      "country": "South Korea",
+      "customerType": "Rolling stock OEM",
+      "sector": "Rail rolling stock & systems",
+      "lob": "Mobility Rail",
+      "workscope": "Rail electronics / communications subsystems under OEM-led rail contracts",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "O1.3",
+        "F3.1",
+        "L1.1",
+        "S2.1"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-sbs-transit-ltd",
       "customerName": "SBS TRANSIT LTD",
       "aliases": [
-        "SBS TRANSIT LTD"
-      ]
+        "SBS TRANSIT LTD",
+        "SBS Transit"
+      ],
+      "country": "Singapore",
+      "customerType": "Public transport operator (listed)",
+      "sector": "Rail & bus operations",
+      "lob": "Mobility Rail; Mobility Road",
+      "workscope": "Rail operations systems, bus fleet / ITS and maintenance support",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S5.3",
+        "O6.1",
+        "O6.3"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-alstom-transport",
       "customerName": "ALSTOM TRANSPORT",
       "aliases": [
-        "ALSTOM TRANSPORT"
-      ]
+        "ALSTOM TRANSPORT",
+        "Alstom"
+      ],
+      "country": "France",
+      "customerType": "Rail OEM / signalling",
+      "sector": "Rail rolling stock & signalling",
+      "lob": "Mobility Rail",
+      "workscope": "Rail systems subcontracts (communications, PSD, integration)",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "Yes – also peer/competitor",
+      "linkedRiskCodes": [
+        "O1.3",
+        "S2.1",
+        "L1.1",
+        "F3.1"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-chennai-metro-rail-limited",
       "customerName": "CHENNAI METRO RAIL LIMITED",
       "aliases": [
-        "CHENNAI METRO RAIL LIMITED"
-      ]
+        "CHENNAI METRO RAIL LIMITED",
+        "Chennai Metro Rail"
+      ],
+      "country": "India",
+      "customerType": "Government metro operator (JV)",
+      "sector": "Metro rail",
+      "lob": "Mobility Rail",
+      "workscope": "Metro systems for Chennai Metro expansion",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd. - India Office",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S3.3",
+        "F1.1",
+        "L2.5",
+        "O1.5"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-defence-science-and-technology",
       "customerName": "DEFENCE SCIENCE AND TECHNOLOGY",
       "aliases": [
         "DEFENCE SCIENCE AND TECHNOLOGY"
-      ]
+      ],
+      "country": "Singapore",
+      "customerType": "Government defence agency",
+      "sector": "Defence",
+      "lob": "Smart Security & Automation",
+      "workscope": "Defence infrastructure security, automation & C2 systems",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "L2.6",
+        "O3.1",
+        "S5.5"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-ministry-of-defence",
       "customerName": "MINISTRY OF DEFENCE",
       "aliases": [
         "MINISTRY OF DEFENCE"
-      ]
+      ],
+      "country": "Singapore",
+      "customerType": "Government ministry",
+      "sector": "Defence",
+      "lob": "Smart Security & Automation",
+      "workscope": "Camp / facility security & automation systems",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "L2.6",
+        "O3.1",
+        "S5.5"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-changchun-changke-alstom-railway",
       "customerName": "CHANGCHUN CHANGKE ALSTOM RAILWAY",
       "aliases": [
-        "CHANGCHUN CHANGKE ALSTOM RAILWAY"
-      ]
+        "CHANGCHUN CHANGKE ALSTOM RAILWAY",
+        "Changchun Changke Alstom"
+      ],
+      "country": "China",
+      "customerType": "Rolling stock JV",
+      "sector": "Rail rolling stock",
+      "lob": "Mobility Rail",
+      "workscope": "On-board rail electronics / systems",
+      "contractingEntity": "ST Engineering (Shanghai) Co., Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S1.1",
+        "L2.1",
+        "F1.1",
+        "O1.3"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-siemens",
       "customerName": "SIEMENS",
       "aliases": [
         "SIEMENS"
-      ]
+      ],
+      "country": "Germany",
+      "customerType": "Rail & infrastructure OEM",
+      "sector": "Rail signalling & infrastructure",
+      "lob": "Mobility Rail",
+      "workscope": "Rail systems subcontracts under Siemens-led projects",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "Yes – also peer/competitor",
+      "linkedRiskCodes": [
+        "O1.3",
+        "S2.1",
+        "L1.1"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-ministry-of-health",
       "customerName": "MINISTRY OF HEALTH",
       "aliases": [
         "MINISTRY OF HEALTH"
-      ]
+      ],
+      "country": "Singapore",
+      "customerType": "Government ministry",
+      "sector": "Healthcare",
+      "lob": "Healthcare Robotics & Automation",
+      "workscope": "Healthcare automation, robotics & PPE / respiratory protection",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "L3.3",
+        "S5.2",
+        "O6.3"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-changi-airport-group-singapore-pte-ltd",
       "customerName": "CHANGI AIRPORT GROUP (SINGAPORE) PTE LTD",
       "aliases": [
-        "CHANGI AIRPORT GROUP (SINGAPORE) PTE LTD"
-      ]
+        "CHANGI AIRPORT GROUP (SINGAPORE) PTE LTD",
+        "Changi Airport"
+      ],
+      "country": "Singapore",
+      "customerType": "Airport operator",
+      "sector": "Aviation",
+      "lob": "Smart Security & Automation",
+      "workscope": "Airport security, biometric & automation systems",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "O1.8",
+        "O3.1",
+        "C1.1",
+        "L2.3"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-sembcorp-specialised-construction",
       "customerName": "SEMBCORP SPECIALISED CONSTRUCTION",
       "aliases": [
         "SEMBCORP SPECIALISED CONSTRUCTION"
-      ]
+      ],
+      "country": "Singapore",
+      "customerType": "Construction / EPC contractor",
+      "sector": "Infrastructure construction",
+      "lob": "Smart Sustainable Utilities",
+      "workscope": "Systems / M&E integration as subcontractor",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "F3.1",
+        "L1.1",
+        "O1.4"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-hitachi-rail",
       "customerName": "HITACHI RAIL",
       "aliases": [
         "HITACHI RAIL"
-      ]
+      ],
+      "country": "Japan",
+      "customerType": "Rail OEM / signalling",
+      "sector": "Rail rolling stock & signalling",
+      "lob": "Mobility Rail",
+      "workscope": "Rail systems subcontracts under Hitachi-led projects",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "Yes – also peer/competitor",
+      "linkedRiskCodes": [
+        "O1.3",
+        "S2.1",
+        "L1.1"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-cpb-bam-ghella-ugl-joint-venture",
       "customerName": "CPB BAM GHELLA UGL JOINT VENTURE",
       "aliases": [
-        "CPB BAM GHELLA UGL JOINT VENTURE"
-      ]
+        "CPB BAM GHELLA UGL JOINT VENTURE",
+        "CPB BAM Ghella UGL"
+      ],
+      "country": "Australia",
+      "customerType": "Construction JV",
+      "sector": "Rail / tunnel infrastructure",
+      "lob": "Mobility Rail; Mobility Road",
+      "workscope": "Rail / tunnel systems integration for Australian infrastructure project",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd. - Australia Branch",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "F3.1",
+        "L1.1",
+        "O1.4",
+        "O1.5",
+        "F1.1"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-citycab-pte-ltd",
       "customerName": "CITYCAB PTE LTD",
       "aliases": [
-        "CITYCAB PTE LTD"
-      ]
+        "CITYCAB PTE LTD",
+        "CityCab"
+      ],
+      "country": "Singapore",
+      "customerType": "Taxi operator",
+      "sector": "Point-to-point transport",
+      "lob": "Mobility Services",
+      "workscope": "Fleet / vehicle maintenance, inspection & lifecycle support",
+      "contractingEntity": "ST Engineering Mobility Services Pte. Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S5.3",
+        "O6.1"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-setia-utama-lrt3-sdn-bhd",
       "customerName": "SETIA UTAMA LRT3 SDN. BHD.",
       "aliases": [
-        "SETIA UTAMA LRT3 SDN. BHD."
-      ]
+        "SETIA UTAMA LRT3 SDN. BHD.",
+        "Setia Utama LRT3"
+      ],
+      "country": "Malaysia",
+      "customerType": "Rail turnkey contractor",
+      "sector": "Light rail",
+      "lob": "Mobility Rail",
+      "workscope": "Rail systems for Shah Alam LRT3",
+      "contractingEntity": "SEEL Electronic & Engineering Sdn. Bhd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "F3.1",
+        "O1.5",
+        "L1.1",
+        "L2.5"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "customerId": "CUSTOMER-public-utilities-board",
       "customerName": "PUBLIC UTILITIES BOARD",
       "aliases": [
         "PUBLIC UTILITIES BOARD"
-      ]
+      ],
+      "country": "Singapore",
+      "customerType": "Government statutory board",
+      "sector": "Water utility",
+      "lob": "Smart Sustainable Utilities",
+      "workscope": "Smart water metering, water infrastructure monitoring",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "L3.3",
+        "C1.1",
+        "O6.3"
+      ],
+      "confidence": "Research draft – validate with BA"
+    },
+    {
+      "customerId": "CUSTOMER-kaohsiung-city-mass-rapid-transit-bureau",
+      "customerName": "KAOHSIUNG CITY MASS RAPID TRANSIT BUREAU",
+      "aliases": [
+        "KAOHSIUNG CITY MASS RAPID TRANSIT BUREAU",
+        "Kaohsiung"
+      ],
+      "country": "Taiwan",
+      "customerType": "Government municipal agency",
+      "sector": "Metro / light rail",
+      "lob": "Mobility Rail",
+      "workscope": "Turnkey rail systems – Yellow Line, RK & RL lines (consortium w/ Hyundai Rotem); Purple Line in pipeline",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd. - Taiwan Branch",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S1.1",
+        "S1.2",
+        "F3.1",
+        "O1.4",
+        "O1.5",
+        "L3.3"
+      ],
+      "confidence": "GRIT-Scan URS Taiwan reports / SOP (M365) – validate with BA; AR2025 cites Kaohsiung turnkey order book"
+    },
+    {
+      "customerId": "CUSTOMER-taoyuan-city-department-of-rapid-transit-systems",
+      "customerName": "TAOYUAN CITY DEPARTMENT OF RAPID TRANSIT SYSTEMS",
+      "aliases": [
+        "TAOYUAN CITY DEPARTMENT OF RAPID TRANSIT SYSTEMS",
+        "Taoyuan"
+      ],
+      "country": "Taiwan",
+      "customerType": "Government municipal agency",
+      "sector": "Metro rail",
+      "lob": "Mobility Rail",
+      "workscope": "Turnkey rail systems – Brown Line & Green Line Extension; Orange Line / Airport MRT add. stations in pipeline",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd. - Taiwan Branch",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S1.1",
+        "S1.2",
+        "F3.1",
+        "O1.4",
+        "O1.5",
+        "L3.3"
+      ],
+      "confidence": "GRIT-Scan URS Taiwan reports / SOP (M365) – validate with BA"
+    },
+    {
+      "customerId": "CUSTOMER-taichung-city-mrt-engineering-bureau",
+      "customerName": "TAICHUNG CITY MRT ENGINEERING BUREAU",
+      "aliases": [
+        "TAICHUNG CITY MRT ENGINEERING BUREAU",
+        "Taichung"
+      ],
+      "country": "Taiwan",
+      "customerType": "Government municipal agency",
+      "sector": "Metro rail",
+      "lob": "Mobility Rail",
+      "workscope": "Turnkey rail services – Blue Line (~S$1.4b, consortium); Orange Line in pipeline",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd. - Taiwan Branch",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S1.1",
+        "S1.2",
+        "F3.1",
+        "O1.4",
+        "O1.5",
+        "L3.3"
+      ],
+      "confidence": "GRIT-Scan URS Taiwan reports / SOP (M365) – validate with BA; ST Engineering Annual Report 2025 (M365) – validate with BA"
+    },
+    {
+      "customerId": "CUSTOMER-new-taipei-city-department-of-rapid-transit-systems",
+      "customerName": "NEW TAIPEI CITY DEPARTMENT OF RAPID TRANSIT SYSTEMS",
+      "aliases": [
+        "NEW TAIPEI CITY DEPARTMENT OF RAPID TRANSIT SYSTEMS",
+        "New Taipei"
+      ],
+      "country": "Taiwan",
+      "customerType": "Government municipal agency",
+      "sector": "Metro rail",
+      "lob": "Mobility Rail",
+      "workscope": "Platform screen doors – Xidong Line",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd. - Taiwan Branch",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S1.1",
+        "O1.4",
+        "O1.5",
+        "O2.7"
+      ],
+      "confidence": "ST Engineering Annual Report 2025 (M365) – validate with BA"
+    },
+    {
+      "customerId": "CUSTOMER-tainan-city-government-prospect",
+      "customerName": "TAINAN CITY GOVERNMENT (Prospect)",
+      "aliases": [
+        "TAINAN CITY GOVERNMENT (Prospect)",
+        "Tainan"
+      ],
+      "country": "Taiwan",
+      "customerType": "Government municipal (prospect)",
+      "sector": "Monorail",
+      "lob": "Mobility Rail",
+      "workscope": "Prospective – Tainan Monorail",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd. - Taiwan Branch",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S1.1",
+        "S2.1",
+        "S3.3",
+        "L3.3"
+      ],
+      "confidence": "Prospect / pipeline – GRIT-Scan URS Taiwan reports / SOP (M365) – validate with BA"
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-transportation-and-communications-taiwan-funding-authority",
+      "customerName": "MINISTRY OF TRANSPORTATION AND COMMUNICATIONS, TAIWAN (Funding authority)",
+      "aliases": [
+        "MINISTRY OF TRANSPORTATION AND COMMUNICATIONS, TAIWAN (Funding authority)",
+        "MOTC"
+      ],
+      "country": "Taiwan",
+      "customerType": "Government ministry (funding authority – indirect)",
+      "sector": "Land transport policy & funding",
+      "lob": "Mobility Rail",
+      "workscope": "Central subsidy / approval for municipal MRT projects (indirect customer)",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd. - Taiwan Branch",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "L3.3",
+        "F3.1",
+        "S1.1"
+      ],
+      "confidence": "Indirect – GRIT-Scan URS Taiwan reports / SOP (M365) – validate with BA"
+    },
+    {
+      "customerId": "CUSTOMER-pennsylvania-turnpike-commission",
+      "customerName": "PENNSYLVANIA TURNPIKE COMMISSION",
+      "aliases": [
+        "PENNSYLVANIA TURNPIKE COMMISSION",
+        "Pennsylvania Turnpike"
+      ],
+      "country": "USA",
+      "customerType": "Government toll authority",
+      "sector": "Toll roads",
+      "lob": "Mobility Road",
+      "workscope": "All-Electronic Tolling conversion – phase 2 (central & western PA)",
+      "contractingEntity": "TransCore, LP",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S3.1",
+        "F1.1",
+        "F2.1",
+        "L1.1",
+        "O1.9"
+      ],
+      "confidence": "ST Engineering Annual Report 2025 (M365) – validate with BA"
+    },
+    {
+      "customerId": "CUSTOMER-nevada-department-of-transportation",
+      "customerName": "NEVADA DEPARTMENT OF TRANSPORTATION",
+      "aliases": [
+        "NEVADA DEPARTMENT OF TRANSPORTATION"
+      ],
+      "country": "USA",
+      "customerType": "Government state agency",
+      "sector": "Road / traffic management",
+      "lob": "Mobility Road",
+      "workscope": "Traffic signal management enhancement – Las Vegas",
+      "contractingEntity": "TransCore, LP",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S3.1",
+        "F1.1",
+        "L3.3",
+        "O1.8"
+      ],
+      "confidence": "ST Engineering Annual Report 2025 (M365) – validate with BA"
+    },
+    {
+      "customerId": "CUSTOMER-new-jersey-turnpike-authority",
+      "customerName": "NEW JERSEY TURNPIKE AUTHORITY",
+      "aliases": [
+        "NEW JERSEY TURNPIKE AUTHORITY",
+        "New Jersey Turnpike"
+      ],
+      "country": "USA",
+      "customerType": "Government toll authority",
+      "sector": "Toll roads",
+      "lob": "Mobility Road",
+      "workscope": "E-ZPass services contract (statewide tolling; reaffirmed after independent review)",
+      "contractingEntity": "TransCore, LP",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S3.1",
+        "S1.2",
+        "L1.1",
+        "F1.1",
+        "O1.4",
+        "C1.1"
+      ],
+      "confidence": "ST Engineering Annual Report 2025 (M365) – validate with BA"
+    },
+    {
+      "customerId": "CUSTOMER-metropolitan-transportation-authority-triborough-bridge-and-tunnel-authority-nyc",
+      "customerName": "METROPOLITAN TRANSPORTATION AUTHORITY / TRIBOROUGH BRIDGE AND TUNNEL AUTHORITY (NYC)",
+      "aliases": [
+        "METROPOLITAN TRANSPORTATION AUTHORITY / TRIBOROUGH BRIDGE AND TUNNEL AUTHORITY (NYC)",
+        "Metropolitan Transportation Authority"
+      ],
+      "country": "USA",
+      "customerType": "Government transit / toll authority",
+      "sector": "Congestion pricing / tolling",
+      "lob": "Mobility Road",
+      "workscope": "NYC Central Business District Tolling (Congestion Pricing) – operations & maintenance phase",
+      "contractingEntity": "TransCore, LP",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S3.1",
+        "L3.3",
+        "C1.1",
+        "O6.1",
+        "F1.1"
+      ],
+      "confidence": "ST Engineering Annual Report 2025 (M365) – validate with BA (customer name inferred from programme)"
+    },
+    {
+      "customerId": "CUSTOMER-transport-for-nsw-western-harbour-tunnel-sydney",
+      "customerName": "TRANSPORT FOR NSW – WESTERN HARBOUR TUNNEL (Sydney)",
+      "aliases": [
+        "TRANSPORT FOR NSW – WESTERN HARBOUR TUNNEL (Sydney)",
+        "Western Harbour Tunnel"
+      ],
+      "country": "Australia",
+      "customerType": "Government state agency (to validate)",
+      "sector": "Toll roads / tunnels",
+      "lob": "Mobility Road",
+      "workscope": "AI-powered multi-lane free-flow tolling – first TransCore contract in Australia",
+      "contractingEntity": "TransCore, LP",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S3.1",
+        "S3.3",
+        "F1.1",
+        "O1.5"
+      ],
+      "confidence": "ST Engineering Annual Report 2025 (M365) – validate with BA (contracting customer to validate)"
+    },
+    {
+      "customerId": "CUSTOMER-abu-dhabi-integrated-transport-centre-dmt",
+      "customerName": "ABU DHABI INTEGRATED TRANSPORT CENTRE (DMT)",
+      "aliases": [
+        "ABU DHABI INTEGRATED TRANSPORT CENTRE (DMT)",
+        "Integrated Transport Centre"
+      ],
+      "country": "UAE",
+      "customerType": "Government agency",
+      "sector": "Land transport / ITS",
+      "lob": "Mobility Road",
+      "workscope": "Multimodal Intelligent Transportation Central Platform (ITCP)",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd - Abu Dhabi Branch",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S3.3",
+        "L3.3",
+        "O1.5",
+        "T1.2",
+        "8.2"
+      ],
+      "confidence": "ST Engineering Annual Report 2025 (M365) – validate with BA (customer agency inferred)"
+    },
+    {
+      "customerId": "CUSTOMER-ev-electric-charging-pte-ltd-eve-lta-subsidiary",
+      "customerName": "EV-ELECTRIC CHARGING PTE LTD (EVe – LTA subsidiary)",
+      "aliases": [
+        "EV-ELECTRIC CHARGING PTE LTD (EVe – LTA subsidiary)",
+        "EV-Electric Charging"
+      ],
+      "country": "Singapore",
+      "customerType": "Government-linked company",
+      "sector": "EV charging infrastructure",
+      "lob": "Mobility Road",
+      "workscope": "Fast-charging points at industrial & public car parks (pre-qualified EV Charging Operator)",
+      "contractingEntity": "ST Engineering Urban Solutions Ltd.",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S1.2",
+        "L3.3",
+        "O1.4",
+        "O6.3"
+      ],
+      "confidence": "ST Engineering Annual Report 2025 (M365) – validate with BA"
     }
   ],
   "suppliers": [
@@ -771,119 +1348,381 @@
       "supplierName": "LEONARDO S.P.A.",
       "businessArea": "URS Singapore; URS Taiwan",
       "aliases": [
-        "LEONARDO S.P.A."
-      ]
+        "LEONARDO S.P.A.",
+        "Leonardo"
+      ],
+      "country": "Italy",
+      "parentCountry": "Italy",
+      "category": "Defence & electronics OEM",
+      "goodsServices": "ANPR / traffic-enforcement & security electronics",
+      "lob": "Mobility Road; Smart Security & Automation",
+      "alsoCompetitor": "No",
+      "concentrationFlag": "Taiwan concentration – Tier-2 Risk 1; Multi-BA supplier",
+      "linkedRiskCodes": [
+        "O2.2",
+        "O2.4",
+        "L2.1",
+        "S1.6"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-byd-singapore-pte-ltd",
       "supplierName": "BYD (SINGAPORE) PTE LTD",
       "businessArea": "URS Singapore",
       "aliases": [
-        "BYD (SINGAPORE) PTE LTD"
-      ]
+        "BYD (SINGAPORE) PTE LTD",
+        "BYD"
+      ],
+      "country": "Singapore",
+      "parentCountry": "China",
+      "category": "EV OEM",
+      "goodsServices": "Electric buses / commercial EVs & batteries",
+      "lob": "Mobility Services",
+      "alsoCompetitor": "Yes – also peer/competitor",
+      "concentrationFlag": "China-linked – Key Risk 5 (Geopolitical)",
+      "linkedRiskCodes": [
+        "O2.2",
+        "O2.6",
+        "L2.1",
+        "S1.5"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-motorola-solutions-singapore-pte-ltd",
       "supplierName": "MOTOROLA SOLUTIONS SINGAPORE PTE. LTD.",
       "businessArea": "URS Singapore",
       "aliases": [
-        "MOTOROLA SOLUTIONS SINGAPORE PTE. LTD."
-      ]
+        "MOTOROLA SOLUTIONS SINGAPORE PTE. LTD.",
+        "Motorola"
+      ],
+      "country": "Singapore",
+      "parentCountry": "USA",
+      "category": "Communications & public-safety OEM",
+      "goodsServices": "Radio (TETRA/LMR) & video-security equipment",
+      "lob": "Mobility Rail; Smart Security & Automation",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "O2.2",
+        "O2.4",
+        "O2.3"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-frontier-integrated-technology-pte-ltd",
       "supplierName": "FRONTIER INTEGRATED TECHNOLOGY PTE LTD",
       "businessArea": "URS Singapore",
       "aliases": [
-        "FRONTIER INTEGRATED TECHNOLOGY PTE LTD"
-      ]
+        "FRONTIER INTEGRATED TECHNOLOGY PTE LTD",
+        "Frontier Integrated"
+      ],
+      "country": "Singapore",
+      "parentCountry": "Singapore",
+      "category": "System integrator / ICT",
+      "goodsServices": "IT infrastructure & integration services",
+      "lob": "Smart Security & Automation",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "O2.7",
+        "O2.5"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-man-truck-bus-se",
       "supplierName": "MAN TRUCK & BUS SE",
       "businessArea": "URS Singapore",
       "aliases": [
-        "MAN TRUCK & BUS SE"
-      ]
+        "MAN TRUCK & BUS SE",
+        "MAN Truck"
+      ],
+      "country": "Germany",
+      "parentCountry": "Germany",
+      "category": "Commercial vehicle OEM",
+      "goodsServices": "Trucks & buses (distribution / lifecycle support)",
+      "lob": "Mobility Services",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "S1.5",
+        "O2.2",
+        "O2.4",
+        "F1.1"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-trapeze-group-singapore-pte-ltd",
       "supplierName": "TRAPEZE GROUP SINGAPORE PTE. LTD.",
       "businessArea": "URS Singapore",
       "aliases": [
-        "TRAPEZE GROUP SINGAPORE PTE. LTD."
-      ]
+        "TRAPEZE GROUP SINGAPORE PTE. LTD.",
+        "Trapeze"
+      ],
+      "country": "Singapore",
+      "parentCountry": "Canada",
+      "category": "Transit software vendor",
+      "goodsServices": "Bus fleet scheduling & management software",
+      "lob": "Mobility Road",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "O2.2",
+        "T1.2",
+        "S1.6"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-cong-ty-tnhh-cei-international-investments-vn",
       "supplierName": "CONG TY TNHH CEI INTERNATIONAL INVESTMENTS (VN)",
       "businessArea": "URS Singapore",
       "aliases": [
-        "CONG TY TNHH CEI INTERNATIONAL INVESTMENTS (VN)"
-      ]
+        "CONG TY TNHH CEI INTERNATIONAL INVESTMENTS (VN)",
+        "CEI"
+      ],
+      "country": "Vietnam",
+      "parentCountry": "Singapore",
+      "category": "Electronics manufacturing services",
+      "goodsServices": "Contract-manufactured electronic assemblies",
+      "lob": "Mobility Rail; Mobility Road",
+      "alsoCompetitor": "No",
+      "linkedRiskCodes": [
+        "O2.7",
+        "O2.5",
+        "O2.6"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-zhejiang-crrc-electric",
       "supplierName": "ZHEJIANG CRRC ELECTRIC",
       "businessArea": "URS Singapore",
       "aliases": [
-        "ZHEJIANG CRRC ELECTRIC"
-      ]
+        "ZHEJIANG CRRC ELECTRIC",
+        "CRRC"
+      ],
+      "country": "China",
+      "parentCountry": "China",
+      "category": "Rail electrical equipment OEM (CRRC group)",
+      "goodsServices": "Rail / EV electrical & traction equipment",
+      "lob": "Mobility Rail",
+      "alsoCompetitor": "Yes – also peer/competitor",
+      "concentrationFlag": "China-linked – Key Risk 5 (Geopolitical)",
+      "linkedRiskCodes": [
+        "O2.2",
+        "L2.1",
+        "O2.6"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-l-s-electric-co-ltd",
       "supplierName": "L&S Electric Co., Ltd.",
       "businessArea": "URS Taiwan",
       "aliases": [
-        "L&S Electric Co., Ltd."
-      ]
+        "L&S Electric Co., Ltd.",
+        "L&S Electric"
+      ],
+      "country": "South Korea",
+      "parentCountry": "South Korea",
+      "category": "Electrical / power equipment OEM",
+      "goodsServices": "Power supply / electrical systems (Sphera address: Anyang, South Korea)",
+      "lob": "Mobility Rail",
+      "alsoCompetitor": "No",
+      "concentrationFlag": "Taiwan concentration – Tier-2 Risk 1",
+      "linkedRiskCodes": [
+        "O2.7",
+        "L2.2"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-infochamp-systems-corporation",
       "supplierName": "InfoChamp Systems Corporation",
       "businessArea": "URS Taiwan",
       "aliases": [
-        "InfoChamp Systems Corporation"
-      ]
+        "InfoChamp Systems Corporation",
+        "InfoChamp"
+      ],
+      "country": "Taiwan",
+      "parentCountry": "Taiwan",
+      "category": "IT system integrator",
+      "goodsServices": "Software & ICT services",
+      "lob": "Mobility Rail",
+      "alsoCompetitor": "No",
+      "concentrationFlag": "Taiwan concentration – Tier-2 Risk 1",
+      "linkedRiskCodes": [
+        "O2.7",
+        "T1.1"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-ub-union-technologies-inc",
       "supplierName": "UB Union Technologies Inc",
       "businessArea": "URS Taiwan",
       "aliases": [
-        "UB Union Technologies Inc"
-      ]
+        "UB Union Technologies Inc",
+        "UB Union"
+      ],
+      "country": "Taiwan",
+      "parentCountry": "Taiwan",
+      "category": "Engineering subcontractor",
+      "goodsServices": "Engineering / installation services",
+      "lob": "Mobility Rail",
+      "alsoCompetitor": "No",
+      "concentrationFlag": "Taiwan concentration – Tier-2 Risk 1",
+      "linkedRiskCodes": [
+        "O2.7"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-ag-neovo-technology-corporation",
       "supplierName": "AG Neovo Technology Corporation",
       "businessArea": "URS Taiwan",
       "aliases": [
-        "AG Neovo Technology Corporation"
-      ]
+        "AG Neovo Technology Corporation",
+        "AG Neovo"
+      ],
+      "country": "Taiwan",
+      "parentCountry": "Taiwan",
+      "category": "Display manufacturer",
+      "goodsServices": "Industrial / control-room & PIS displays",
+      "lob": "Mobility Rail",
+      "alsoCompetitor": "No",
+      "concentrationFlag": "Taiwan concentration – Tier-2 Risk 1",
+      "linkedRiskCodes": [
+        "O2.3",
+        "O2.5"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-tatung-system-technologies-inc",
       "supplierName": "Tatung System Technologies Inc.",
       "businessArea": "URS Taiwan",
       "aliases": [
-        "Tatung System Technologies Inc."
-      ]
+        "Tatung System Technologies Inc.",
+        "Tatung"
+      ],
+      "country": "Taiwan",
+      "parentCountry": "Taiwan",
+      "category": "IT system integrator (Tatung group)",
+      "goodsServices": "ICT systems integration",
+      "lob": "Mobility Rail",
+      "alsoCompetitor": "No",
+      "concentrationFlag": "Taiwan concentration – Tier-2 Risk 1",
+      "linkedRiskCodes": [
+        "O2.7",
+        "T1.1"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-3s-system-tech-inc",
       "supplierName": "3S System Tech. Inc.",
       "businessArea": "URS Taiwan",
       "aliases": [
-        "3S System Tech. Inc."
-      ]
+        "3S System Tech. Inc.",
+        "3S System"
+      ],
+      "country": "Taiwan",
+      "parentCountry": "Taiwan",
+      "category": "Engineering subcontractor",
+      "goodsServices": "Systems / installation services",
+      "lob": "Mobility Rail",
+      "alsoCompetitor": "No",
+      "concentrationFlag": "Taiwan concentration – Tier-2 Risk 1",
+      "linkedRiskCodes": [
+        "O2.7"
+      ],
+      "confidence": "Research draft – validate with BA"
     },
     {
       "supplierId": "SUPPLIER-sen-yeh-construction-co-ltd",
       "supplierName": "Sen Yeh Construction Co., Ltd",
       "businessArea": "URS Taiwan",
       "aliases": [
-        "Sen Yeh Construction Co., Ltd"
+        "Sen Yeh Construction Co., Ltd",
+        "Sen Yeh"
+      ],
+      "country": "Taiwan",
+      "parentCountry": "Taiwan",
+      "category": "Construction contractor",
+      "goodsServices": "Civil & installation works",
+      "lob": "Mobility Rail",
+      "alsoCompetitor": "No",
+      "concentrationFlag": "Taiwan concentration – Tier-2 Risk 1",
+      "linkedRiskCodes": [
+        "O2.7",
+        "L2.2",
+        "N1.6"
+      ],
+      "confidence": "Research draft – validate with BA"
+    },
+    {
+      "supplierId": "SUPPLIER-chan-chun-taiwan-per-grit-scan-sop",
+      "supplierName": "Chan Chun (Taiwan) – per GRIT-Scan SOP",
+      "businessArea": "URS Taiwan",
+      "aliases": [
+        "Chan Chun (Taiwan) – per GRIT-Scan SOP",
+        "Chan Chun"
+      ],
+      "country": "Taiwan",
+      "parentCountry": "Taiwan",
+      "category": "Construction contractor",
+      "goodsServices": "Track works / civil installation (paired with Sen Yeh)",
+      "lob": "Mobility Rail",
+      "alsoCompetitor": "No",
+      "concentrationFlag": "Taiwan concentration – Tier-2 Risk 1",
+      "linkedRiskCodes": [
+        "O2.7",
+        "L2.2",
+        "N1.6",
+        "O1.5"
+      ],
+      "confidence": "Not in Sphera – named in GRIT-Scan URS Taiwan SOP (M365); validate with BA"
+    },
+    {
+      "supplierId": "SUPPLIER-st-engineering-urs-mobility-rail-internal-supplier",
+      "supplierName": "ST Engineering URS – Mobility Rail (internal supplier)",
+      "businessArea": "URS Taiwan",
+      "aliases": [
+        "ST Engineering URS – Mobility Rail (internal supplier)",
+        "URS Mobility Rail"
+      ],
+      "country": "Singapore",
+      "parentCountry": "Singapore",
+      "category": "Intra-group supplier",
+      "goodsServices": "PSD, AFC, SCADA & PIS sub-systems for Taiwan turnkey projects",
+      "lob": "Mobility Rail",
+      "alsoCompetitor": "No",
+      "concentrationFlag": "Taiwan concentration – Tier-2 Risk 1",
+      "linkedRiskCodes": [
+        "O1.3",
+        "O2.7",
+        "O1.5",
+        "S1.1"
+      ],
+      "confidence": "Not in Sphera – named in GRIT-Scan URS Taiwan SOP (M365); intra-group"
+    },
+    {
+      "supplierId": "SUPPLIER-summary",
+      "supplierName": "Summary",
+      "businessArea": "Measure",
+      "aliases": [
+        "Summary"
+      ],
+      "country": "Count"
+    },
+    {
+      "supplierId": "SUPPLIER-watchpoint-not-listed-as-a-row-grit-scan-sop-flags-an-unnamed-china-based-platform-screen-door-fabricator-in-the-urs-taiwan-supply-chain-identify-with-ba",
+      "supplierName": "Watchpoint (not listed as a row): GRIT-Scan SOP flags an unnamed China-based platform-screen-door fabricator in the URS Taiwan supply chain – identify with BA.",
+      "businessArea": null,
+      "aliases": [
+        "Watchpoint (not listed as a row): GRIT-Scan SOP flags an unnamed China-based platform-screen-door fabricator in the URS Taiwan supply chain – identify with BA."
       ]
     }
   ],

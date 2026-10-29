@@ -6,7 +6,7 @@
     "sites": "Registered addresses were not promoted to site aliases. A repeated legal name was not split into a second site."
   },
   "sharedSupplierNote": "2 suppliers are listed for more than one business area in column B. They are recorded under DS&C, and sharedWith names the other business areas.",
-  "anonymisedCustomerNote": "5 customers are named only by country and programme, such as 'Thailand NPE Programme Customer'. They stay in the register and are not searched by name.",
+  "anonymisedCustomerNote": "8 customers are named only by country and programme, such as 'Thailand NPE Programme Customer'. They stay in the register and are not searched by name.",
   "entities": [
     {
       "entityId": "ENTITY-st-engineering-digital-systems-pte-ltd",
@@ -331,175 +331,300 @@
       "customerName": "Ministry of Home Affairs (MHA)",
       "aliases": [
         "Ministry of Home Affairs (MHA)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Government – Homeland Security",
+      "lob": "Mission Software & Services; Info-Security",
+      "reference": "GeBIZ: MHA HQ is DS&C's largest GeBIZ buyer (18 awards, ~S$385M, 2021–2025), incl. Public Camera System to AN&S (~S$243.7M, Feb 2025) and xDASH data platform to MSS (~S$10.0M, Mar 2025)",
+      "confidence": "Verified – public source"
     },
     {
       "customerId": "CUSTOMER-home-team-science-technology-agency-htx",
       "customerName": "Home Team Science & Technology Agency (HTX)",
       "aliases": [
         "Home Team Science & Technology Agency (HTX)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Government – Homeland Security S&T",
+      "lob": "Mission Software & Services",
+      "reference": "4Q2025: Digital Systems awarded contract by HTX to design and develop an Enterprise Integrated Security System (EISS) for Singapore Prison Service",
+      "confidence": "Verified – public source"
     },
     {
       "customerId": "CUSTOMER-singapore-police-force-spf",
       "customerName": "Singapore Police Force (SPF)",
       "aliases": [
         "Singapore Police Force (SPF)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Public Security – Police",
+      "lob": "Mission Software & Services; Advanced Networks & Sensors",
+      "reference": "GeBIZ (via MHA): Seaborne Electro Optics Systems for Police Coast Guard to AN&S (~S$23.1M Oct 2024; ~S$18.7M Jun 2025); PCG radio systems to UIS (~S$3.3M, Jun 2025)",
+      "confidence": "Verified – public source"
     },
     {
       "customerId": "CUSTOMER-singapore-civil-defence-force-scdf",
       "customerName": "Singapore Civil Defence Force (SCDF)",
       "aliases": [
         "Singapore Civil Defence Force (SCDF)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Public Safety – Civil Defence / Emergency Response",
+      "lob": "Mission Software & Services; Training & Simulation Systems",
+      "reference": "GeBIZ (via MHA): SCDF Tactical Command & Control Tool (e-Staging) to MSS (~S$10.0M, Jan 2025)",
+      "confidence": "Verified – public source"
     },
     {
       "customerId": "CUSTOMER-ministry-of-defence-mindef",
       "customerName": "Ministry of Defence (MINDEF)",
       "aliases": [
         "Ministry of Defence (MINDEF)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Defence – Ministry",
+      "lob": "Unmanned & Integrated Systems; Training & Simulation Systems",
+      "reference": "2Q2025: Contracts to deliver Mine Countermeasure Unmanned Systems for the RSN (USVs, AUVs, C2 centre and high-fidelity training simulation system)",
+      "confidence": "Verified – public source"
     },
     {
       "customerId": "CUSTOMER-defence-science-technology-agency-dsta",
       "customerName": "Defence Science & Technology Agency (DSTA)",
       "aliases": [
         "Defence Science & Technology Agency (DSTA)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Defence – Procurement & Technology Agency",
+      "lob": "All Digital Systems LOBs; Info-Security",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Inferred"
     },
     {
       "customerId": "CUSTOMER-defence-science-organisation-dso",
       "customerName": "Defence Science Organisation (DSO)",
       "aliases": [
         "Defence Science Organisation (DSO)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Defence – R&D",
+      "lob": "Advanced Networks & Sensors; Info-Security",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Inferred"
     },
     {
       "customerId": "CUSTOMER-civil-aviation-authority-of-singapore-caas",
       "customerName": "Civil Aviation Authority of Singapore (CAAS)",
       "aliases": [
         "Civil Aviation Authority of Singapore (CAAS)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Civil Aviation – Regulator / ANSP",
+      "lob": "Mission Software & Services; Training & Simulation Systems",
+      "reference": "GeBIZ: CNS/ATM maintenance framework to MSS & UIS (~S$80M each, Jul 2022); ADS-B system to UIS (~S$6.6M, Nov 2023); SIRMS 2 to MSS (~S$4.6M, Nov 2025)",
+      "confidence": "Verified – public source"
     },
     {
       "customerId": "CUSTOMER-maritime-and-port-authority-of-singapore-mpa",
       "customerName": "Maritime and Port Authority of Singapore (MPA)",
       "aliases": [
         "Maritime and Port Authority of Singapore (MPA)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Maritime – Port Authority",
+      "lob": "Mission Software & Services; Advanced Networks & Sensors",
+      "reference": "GeBIZ: radar maintenance, digital video surveillance, AIS network & sensor buoys (AN&S/UIS); Maritime Cyber Assurance & Ops Centre operators to Info-Security (~S$1.4M, Nov 2025)",
+      "confidence": "Verified – public source"
     },
     {
       "customerId": "CUSTOMER-changi-airport-group-cag",
       "customerName": "Changi Airport Group (CAG)",
       "aliases": [
         "Changi Airport Group (CAG)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Aviation – Airport Operator",
+      "lob": "Digital Systems & Cyber (Integration); Info-Security",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Inferred"
     },
     {
       "customerId": "CUSTOMER-housing-development-board-hdb",
       "customerName": "Housing & Development Board (HDB)",
       "aliases": [
         "Housing & Development Board (HDB)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Government – Public Housing",
+      "lob": "Digital Systems & Cyber (Integration)",
+      "reference": "GeBIZ: IBM system software & maintenance to T&SS (~S$21.5M, Jun 2024); cyber threat intelligence & forensic retainer to Info-Security",
+      "confidence": "Verified – public source"
     },
     {
       "customerId": "CUSTOMER-public-utilities-board-pub",
       "customerName": "Public Utilities Board (PUB)",
       "aliases": [
         "Public Utilities Board (PUB)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Government – Water Utility (Critical Infrastructure)",
+      "lob": "Info-Security; Digital Systems & Cyber (Integration)",
+      "reference": "GeBIZ: data analytics platform licences & support to MSS (~S$4.8M, Mar 2024)",
+      "confidence": "Verified – public source"
     },
     {
       "customerId": "CUSTOMER-national-environment-agency-nea",
       "customerName": "National Environment Agency (NEA)",
       "aliases": [
         "National Environment Agency (NEA)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Government – Environment",
+      "lob": "Digital Systems & Cyber (Integration)",
+      "reference": "GeBIZ: S-Band Doppler weather radar to UIS (~S$19.3M, Oct 2025); Met Service IT maintenance to UIS (~S$18.5M, Aug 2025)",
+      "confidence": "Verified – public source"
     },
     {
       "customerId": "CUSTOMER-prime-minister-s-office-elections-department-pmo-eld",
       "customerName": "Prime Minister's Office - Elections Department (PMO ELD)",
       "aliases": [
         "Prime Minister's Office - Elections Department (PMO ELD)"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Government – Elections",
+      "lob": "Digital Systems & Cyber (Integration); Info-Security",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Inferred"
     },
     {
       "customerId": "CUSTOMER-science-centre-board",
       "customerName": "Science Centre Board",
       "aliases": [
         "Science Centre Board"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Statutory Board – Science / Education",
+      "lob": "Training & Simulation Systems (immersive / learning solutions)",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Inferred"
     },
     {
       "customerId": "CUSTOMER-tower-transit-singapore",
       "customerName": "Tower Transit Singapore",
       "aliases": [
         "Tower Transit Singapore"
-      ]
+      ],
+      "country": "Singapore",
+      "sector": "Commercial – Public Bus Operator",
+      "lob": "Digital Systems & Cyber (Integration)",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Inferred"
     },
     {
       "customerId": "CUSTOMER-dxc-technology",
       "customerName": "DXC Technology",
       "aliases": [
         "DXC Technology"
-      ]
+      ],
+      "country": "USA (global)",
+      "sector": "Commercial – IT Services / Partner",
+      "lob": "Cloud & Data Centre Solutions; Info-Security",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Inferred"
     },
     {
       "customerId": "CUSTOMER-royal-thai-air-force-rtaf",
       "customerName": "Royal Thai Air Force (RTAF)",
       "aliases": [
         "Royal Thai Air Force (RTAF)"
-      ]
+      ],
+      "country": "Thailand",
+      "sector": "Defence – Air Force",
+      "lob": "Training & Simulation Systems",
+      "reference": "Note: Thailand $530m frigate shortlist (Hyundai Heavy vs ST Engineering) relates to Marine, not DS&C",
+      "confidence": "Related (non-DS&C) only"
     },
     {
       "customerId": "CUSTOMER-ministry-of-public-security-vietnam-mops",
       "customerName": "Ministry of Public Security, Vietnam (MOPS)",
       "aliases": [
         "Ministry of Public Security, Vietnam (MOPS)"
-      ]
+      ],
+      "country": "Vietnam",
+      "sector": "Public Security – Ministry",
+      "lob": "Mission Software & Services; Info-Security",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Inferred"
     },
     {
       "customerId": "CUSTOMER-uk-ministry-of-defence-uk-mod",
       "customerName": "UK Ministry of Defence (UK MOD)",
       "aliases": [
         "UK Ministry of Defence (UK MOD)"
-      ]
+      ],
+      "country": "United Kingdom",
+      "sector": "Defence – Ministry",
+      "lob": "Training & Simulation Systems (ST Engineering Antycip Ltd)",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Inferred"
     },
     {
       "customerId": "CUSTOMER-np-aerospace-united-kingdom",
       "customerName": "NP Aerospace (United Kingdom)",
       "aliases": [
         "NP Aerospace (United Kingdom)"
-      ]
+      ],
+      "country": "United Kingdom",
+      "sector": "Commercial – Defence Vehicle Integrator / Armour",
+      "lob": "To be confirmed by BA",
+      "reference": "Note: NP Aerospace won £71m UK MOD CVSSP vehicle support contract (Sep 2024); no ST Engineering link found",
+      "confidence": "Related (non-DS&C) only"
     },
     {
       "customerId": "CUSTOMER-national-disaster-management-agency-bnpb-indonesia",
       "customerName": "National Disaster Management Agency (BNPB), Indonesia",
       "aliases": [
         "National Disaster Management Agency (BNPB), Indonesia"
-      ]
+      ],
+      "country": "Indonesia",
+      "sector": "Government – Disaster Management",
+      "lob": "Mission Software & Services; Advanced Networks & Sensors",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Inferred"
     },
     {
       "customerId": "CUSTOMER-hong-kong-police-force-hkpf",
       "customerName": "Hong Kong Police Force (HKPF)",
       "aliases": [
         "Hong Kong Police Force (HKPF)"
-      ]
+      ],
+      "country": "Hong Kong",
+      "sector": "Public Security – Police",
+      "lob": "Mission Software & Services (HK Branch)",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Inferred"
     },
     {
       "customerId": "CUSTOMER-estonia-defence-force-edf",
       "customerName": "Estonia Defence Force (EDF)",
       "aliases": [
         "Estonia Defence Force (EDF)"
-      ]
+      ],
+      "country": "Estonia",
+      "sector": "Defence – Armed Forces",
+      "lob": "To be confirmed by BA",
+      "reference": "Note: Proteus Advanced Systems (IAI–ST Engineering Land Systems JV) contracted to supply Blue Spear (5G SSM) missile systems (Oct 2021) – Land Systems, not DS&C",
+      "confidence": "Related (non-DS&C) only"
     },
     {
       "customerId": "CUSTOMER-faleolo-international-airport-samoa",
       "customerName": "Faleolo International Airport (Samoa)",
       "aliases": [
         "Faleolo International Airport (Samoa)"
-      ]
+      ],
+      "country": "Samoa",
+      "sector": "Aviation – Airport (Samoa Airport Authority)",
+      "lob": "Digital Systems & Cyber (Integration)",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Inferred"
     },
     {
       "customerId": "CUSTOMER-thailand-npe-programme-customer",
@@ -507,6 +632,11 @@
       "aliases": [
         "Thailand NPE Programme Customer"
       ],
+      "country": "Thailand",
+      "sector": "Placeholder – programme customer (entity TBC)",
+      "lob": "To be confirmed by BA",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Entity to be identified",
       "anonymised": true
     },
     {
@@ -515,6 +645,11 @@
       "aliases": [
         "Qatar DPE & Simulation Solutions Customer"
       ],
+      "country": "Qatar",
+      "sector": "Placeholder – programme customer (entity TBC)",
+      "lob": "Training & Simulation Systems",
+      "reference": "Note: Lusail City smart-city contract (>S$60m, Oct 2024) is Urban Solutions, not DS&C",
+      "confidence": "Entity to be identified",
       "anonymised": true
     },
     {
@@ -523,6 +658,11 @@
       "aliases": [
         "UAE Project Perseus Customer"
       ],
+      "country": "UAE",
+      "sector": "Placeholder – programme customer (entity TBC)",
+      "lob": "To be confirmed by BA",
+      "reference": "Possibly related: FADA (EDGE Group) selected ST Engineering Digital Systems for a SAR satellite and mission control under UAE National SAR Constellation Programme 'Sirb' (Nov 2025) – link to Project Perseus not confirmed",
+      "confidence": "Entity to be identified",
       "anonymised": true
     },
     {
@@ -531,6 +671,11 @@
       "aliases": [
         "Pakistan Flight Simulation Upgrade Customer"
       ],
+      "country": "Pakistan",
+      "sector": "Placeholder – programme customer (entity TBC)",
+      "lob": "Training & Simulation Systems",
+      "reference": "No DS&C-specific public reference found",
+      "confidence": "Entity to be identified",
       "anonymised": true
     },
     {
@@ -539,6 +684,482 @@
       "aliases": [
         "India ATC Simulator Customer"
       ],
+      "country": "India",
+      "sector": "Likely Airports Authority of India (AAI)",
+      "lob": "Mission Software & Services; Training & Simulation Systems",
+      "reference": "AAI contract AAI/CNS-P/PO-02/PAAS/2021-22 awarded 18 Nov 2021 to ST Engineering Mission Software Pte Ltd: Procedural Approach & Area Control Simulators for CATC Prayagraj, HTC Hyderabad & NIATAM Gondia; value INR 500,187,531; supplies due 31 Dec 2022",
+      "confidence": "Verified – public source",
+      "anonymised": true
+    },
+    {
+      "customerId": "CUSTOMER-us-air-force-academy-usafa",
+      "customerName": "US Air Force Academy (USAFA)",
+      "aliases": [
+        "US Air Force Academy (USAFA)"
+      ],
+      "country": "USA",
+      "sector": "Defence – Military Academy",
+      "lob": "Training & Simulation Systems (ST Engineering Antycip)",
+      "reference": "2025: USAFA intended sole-source award to ST Engineering Antycip for maintenance of Merlin flight simulators (Solicitation FA700025Q0067; 1 yr + 4 option yrs)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-fada-edge-group-uae",
+      "customerName": "FADA (EDGE Group), UAE",
+      "aliases": [
+        "FADA (EDGE Group), UAE"
+      ],
+      "country": "UAE",
+      "sector": "Defence / Space",
+      "lob": "Digital Systems – Space (satellite & mission control)",
+      "reference": "Nov 2025: Selected ST Engineering to deliver a SAR satellite and mission control infrastructure under UAE National SAR Constellation Programme 'Sirb'",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-monetary-authority-of-singapore-mas",
+      "customerName": "Monetary Authority of Singapore (MAS)",
+      "aliases": [
+        "Monetary Authority of Singapore (MAS)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Central Bank / Financial Regulator",
+      "lob": "eServ; Info-Security",
+      "reference": "GeBIZ: 8 awards; Automated Material Handling System refresh to Info-Security (~S$40.1M, Aug 2023); Tenable, Palo Alto, CyberArk renewals; MEPS+ business ops",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-government-technology-agency-govtech",
+      "customerName": "Government Technology Agency (GovTech)",
+      "aliases": [
+        "Government Technology Agency (GovTech)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Digital Government Agency",
+      "lob": "Mission Software & Services; Info-Security",
+      "reference": "GeBIZ: whole-of-government frameworks – data science, agile co-development (~S$6.8M), DDoS mitigation, Cybersecurity & Audit Services (Oct 2025)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-building-and-construction-authority-bca",
+      "customerName": "Building and Construction Authority (BCA)",
+      "aliases": [
+        "Building and Construction Authority (BCA)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Built Environment Regulator",
+      "lob": "Advanced Networks & Sensors; eServ",
+      "reference": "GeBIZ: CORENET X helpdesk to AN&S (~S$2.3M, Oct 2023); finance/HR services to eServ",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-health-moh",
+      "customerName": "Ministry of Health (MOH)",
+      "aliases": [
+        "Ministry of Health (MOH)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Healthcare",
+      "lob": "Digital Systems & Cyber (Integration)",
+      "reference": "GeBIZ: facility management & security services for NEHR rebuild & migration to ST Engineering Digital Systems (~S$37.4M, Jan 2025)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-skillsfuture-singapore-ssg",
+      "customerName": "SkillsFuture Singapore (SSG)",
+      "aliases": [
+        "SkillsFuture Singapore (SSG)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Workforce / Training",
+      "lob": "eServ",
+      "reference": "GeBIZ: Business Process Outsourcing 2.0 to eServ (~S$105.6M, Aug 2025)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-manpower-mom",
+      "customerName": "Ministry of Manpower (MOM)",
+      "aliases": [
+        "Ministry of Manpower (MOM)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Manpower",
+      "lob": "Mission Software & Services",
+      "reference": "GeBIZ: Integrated Information System (Foreign Manpower Mgmt Div) to MSS (~S$24.7M, Jul 2022); software maintenance (~S$6.3M, Jul 2025)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-health-promotion-board-hpb",
+      "customerName": "Health Promotion Board (HPB)",
+      "aliases": [
+        "Health Promotion Board (HPB)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Public Health",
+      "lob": "Advanced Networks & Sensors; eServ",
+      "reference": "GeBIZ: Integrated Contact Centre System to AN&S (~S$10.3M, Jan 2023); revenue collection to eServ",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-sport-singapore-sportsg",
+      "customerName": "Sport Singapore (SportSG)",
+      "aliases": [
+        "Sport Singapore (SportSG)"
+      ],
+      "country": "Singapore",
+      "sector": "Statutory Board – Sport",
+      "lob": "eServ",
+      "reference": "GeBIZ: finance services (~S$5.6M, Sep 2023); payroll & claims administration",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-singapore-polytechnic-sp",
+      "customerName": "Singapore Polytechnic (SP)",
+      "aliases": [
+        "Singapore Polytechnic (SP)"
+      ],
+      "country": "Singapore",
+      "sector": "Education – Polytechnic",
+      "lob": "eServ",
+      "reference": "GeBIZ: CET administrative support for PACE Academy (2022, 2025)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-republic-polytechnic-rp",
+      "customerName": "Republic Polytechnic (RP)",
+      "aliases": [
+        "Republic Polytechnic (RP)"
+      ],
+      "country": "Singapore",
+      "sector": "Education – Polytechnic",
+      "lob": "Info-Security",
+      "reference": "GeBIZ: IXIA PerfectStorm maintenance & licence (Aug 2023)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-institute-of-technical-education-ite",
+      "customerName": "Institute of Technical Education (ITE)",
+      "aliases": [
+        "Institute of Technical Education (ITE)"
+      ],
+      "country": "Singapore",
+      "sector": "Education – Technical",
+      "lob": "Cloud & Data Centre Solutions",
+      "reference": "GeBIZ: M&E maintenance at ITE data centres (2023, 2025)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-agency-for-science-technology-and-research-a-star",
+      "customerName": "Agency for Science, Technology and Research (A*STAR)",
+      "aliases": [
+        "Agency for Science, Technology and Research (A*STAR)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – R&D",
+      "lob": "eServ; Info-Security",
+      "reference": "GeBIZ: admin process outsourcing (Feb 2023); external cyber threat intelligence (Feb 2025)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-digital-development-and-information-mddi-cyber-security-agency-csa",
+      "customerName": "Ministry of Digital Development and Information (MDDI) / Cyber Security Agency (CSA)",
+      "aliases": [
+        "Ministry of Digital Development and Information (MDDI) / Cyber Security Agency (CSA)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Digital / Cybersecurity",
+      "lob": "Info-Security; eServ",
+      "reference": "GeBIZ: Cyber Vendor Risk Management SaaS PoC (May 2024); CSA grant verification service (Nov 2024)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-culture-community-and-youth-mccy",
+      "customerName": "Ministry of Culture, Community and Youth (MCCY)",
+      "aliases": [
+        "Ministry of Culture, Community and Youth (MCCY)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Culture / Community",
+      "lob": "eServ",
+      "reference": "GeBIZ: project-based grant claim verification (Jun 2023)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-national-youth-council-nyc",
+      "customerName": "National Youth Council (NYC)",
+      "aliases": [
+        "National Youth Council (NYC)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Youth",
+      "lob": "Mission Software & Services; eServ",
+      "reference": "GeBIZ: Integrated Operations Monitoring System to MSS (~S$4.3M, Jul 2024); book-keeping",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-jtc-corporation-jtc",
+      "customerName": "JTC Corporation (JTC)",
+      "aliases": [
+        "JTC Corporation (JTC)"
+      ],
+      "country": "Singapore",
+      "sector": "Statutory Board – Industrial Infrastructure",
+      "lob": "Cloud & Data Centre Solutions; Mission Software & Services",
+      "reference": "GeBIZ: Jurong Island data centre design & fit-out (~S$6.6M, Apr 2021); industrial estate surveillance innovation challenge (Apr 2024)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-workforce-singapore-wsg",
+      "customerName": "Workforce Singapore (WSG)",
+      "aliases": [
+        "Workforce Singapore (WSG)"
+      ],
+      "country": "Singapore",
+      "sector": "Statutory Board – Workforce",
+      "lob": "Mission Software & Services",
+      "reference": "GeBIZ: iBPMS software licences (2023, Mar 2026)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-central-provident-fund-board-cpf",
+      "customerName": "Central Provident Fund Board (CPF)",
+      "aliases": [
+        "Central Provident Fund Board (CPF)"
+      ],
+      "country": "Singapore",
+      "sector": "Statutory Board – Social Security",
+      "lob": "eServ",
+      "reference": "GeBIZ: contact centre services framework (Jun 2024)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-energy-market-authority-ema",
+      "customerName": "Energy Market Authority (EMA)",
+      "aliases": [
+        "Energy Market Authority (EMA)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Energy Regulator (Critical Infrastructure)",
+      "lob": "Info-Security",
+      "reference": "GeBIZ: Cyber Threat Detection System (~S$1.9M, Feb 2025)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-infocomm-media-development-authority-imda",
+      "customerName": "Infocomm Media Development Authority (IMDA)",
+      "aliases": [
+        "Infocomm Media Development Authority (IMDA)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Infocomm Regulator",
+      "lob": "eServ",
+      "reference": "GeBIZ: grant audit & claim verification (Aug 2023)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-social-and-family-development-msf",
+      "customerName": "Ministry of Social and Family Development (MSF)",
+      "aliases": [
+        "Ministry of Social and Family Development (MSF)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Social Services",
+      "lob": "eServ",
+      "reference": "GeBIZ: Government-Paid Leave Schemes operation centre (~S$5.4M, Jun 2021)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-education-moe",
+      "customerName": "Ministry of Education (MOE)",
+      "aliases": [
+        "Ministry of Education (MOE)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Education",
+      "lob": "eServ",
+      "reference": "GeBIZ: CONNECT Plan administration (Jan 2025)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-prime-minister-s-office-national-research-foundation-pmo-nrf",
+      "customerName": "Prime Minister's Office - National Research Foundation (PMO NRF)",
+      "aliases": [
+        "Prime Minister's Office - National Research Foundation (PMO NRF)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Research Funding",
+      "lob": "Cloud & Data Centre Solutions",
+      "reference": "GeBIZ: CREATE data centre hardware & preventive maintenance (Jul 2021)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-prime-minister-s-office-corrupt-practices-investigation-bureau-pmo-cpib",
+      "customerName": "Prime Minister's Office - Corrupt Practices Investigation Bureau (PMO CPIB)",
+      "aliases": [
+        "Prime Minister's Office - Corrupt Practices Investigation Bureau (PMO CPIB)"
+      ],
+      "country": "Singapore",
+      "sector": "Government – Anti-Corruption Enforcement",
+      "lob": "Mission Software & Services",
+      "reference": "GeBIZ: analytics sandbox environment (~S$2.7M, Jan 2022)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-national-library-board-nlb",
+      "customerName": "National Library Board (NLB)",
+      "aliases": [
+        "National Library Board (NLB)"
+      ],
+      "country": "Singapore",
+      "sector": "Statutory Board – Libraries / Archives",
+      "lob": "Mission Software & Services",
+      "reference": "GeBIZ: secure digital preservation system (~S$4.9M, Feb 2022)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-people-s-association-pa",
+      "customerName": "People's Association (PA)",
+      "aliases": [
+        "People's Association (PA)"
+      ],
+      "country": "Singapore",
+      "sector": "Statutory Board – Community",
+      "lob": "eServ",
+      "reference": "GeBIZ: accounting services for PA & grassroots organisations (~S$6.1M, Apr 2021)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-sentosa-development-corporation-sdc",
+      "customerName": "Sentosa Development Corporation (SDC)",
+      "aliases": [
+        "Sentosa Development Corporation (SDC)"
+      ],
+      "country": "Singapore",
+      "sector": "Statutory Board – Leisure / Tourism",
+      "lob": "eServ",
+      "reference": "GeBIZ: payroll services (Apr 2022)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-singapore-land-authority-sla",
+      "customerName": "Singapore Land Authority (SLA)",
+      "aliases": [
+        "Singapore Land Authority (SLA)"
+      ],
+      "country": "Singapore",
+      "sector": "Statutory Board – Land / Geospatial",
+      "lob": "Mission Software & Services",
+      "reference": "GeBIZ: enterprise data platform (~S$2.8M, Jun 2024)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-singapore-food-agency-sfa",
+      "customerName": "Singapore Food Agency (SFA)",
+      "aliases": [
+        "Singapore Food Agency (SFA)"
+      ],
+      "country": "Singapore",
+      "sector": "Statutory Board – Food Security",
+      "lob": "eServ",
+      "reference": "GeBIZ: HR manpower services (~S$2.2M, Aug 2025)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-singapore-prison-service-sps",
+      "customerName": "Singapore Prison Service (SPS)",
+      "aliases": [
+        "Singapore Prison Service (SPS)"
+      ],
+      "country": "Singapore",
+      "sector": "Public Security – Corrections",
+      "lob": "Digital Systems & Cyber (Integration)",
+      "reference": "4Q2025: End-user of Enterprise Integrated Security System (EISS) contracted via HTX",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-republic-of-singapore-navy-rsn",
+      "customerName": "Republic of Singapore Navy (RSN)",
+      "aliases": [
+        "Republic of Singapore Navy (RSN)"
+      ],
+      "country": "Singapore",
+      "sector": "Defence – Navy",
+      "lob": "Unmanned & Integrated Systems; Training & Simulation Systems",
+      "reference": "2Q2025: End-user of Mine Countermeasure Unmanned Systems (via MINDEF); Littoral Mission Vessel Simulation Centre with DSTA (award 2019)",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-jj-innovation-enterprise",
+      "customerName": "JJ Innovation Enterprise",
+      "aliases": [
+        "JJ Innovation Enterprise"
+      ],
+      "country": "Singapore",
+      "sector": "Commercial – SME (IT Solutions)",
+      "lob": "Info-Security",
+      "reference": "Customer story: adopted AI-Enabled Threat Elimination and Response service",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-boston-fusion",
+      "customerName": "Boston Fusion",
+      "aliases": [
+        "Boston Fusion"
+      ],
+      "country": "USA",
+      "sector": "Commercial – Defence R&D (US Army SBIR)",
+      "lob": "Training & Simulation Systems (MAK Technologies)",
+      "reference": "Used MAK ONE VR-Forces with reinforcement learning agents in a US Army SBIR project; product user, not confirmed direct contract",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-cervus",
+      "customerName": "Cervus",
+      "aliases": [
+        "Cervus"
+      ],
+      "country": "United Kingdom",
+      "sector": "Commercial – Defence Experimentation (UK Army Forge)",
+      "lob": "Training & Simulation Systems (MAK Technologies)",
+      "reference": "Uses MAK ONE VR-Forces in AI-enabled experimentation pipeline; product user, not confirmed direct contract",
+      "confidence": "Added – public source"
+    },
+    {
+      "customerId": "CUSTOMER-asean-cloud-managed-security-services-customer",
+      "customerName": "ASEAN Cloud Managed Security Services Customer",
+      "aliases": [
+        "ASEAN Cloud Managed Security Services Customer"
+      ],
+      "country": "ASEAN",
+      "sector": "Placeholder – programme customer (entity TBC)",
+      "lob": "Info-Security",
+      "reference": "4Q2024: provision of cloud-based managed security services for a customer in ASEAN",
+      "confidence": "Entity to be identified",
+      "anonymised": true
+    },
+    {
+      "customerId": "CUSTOMER-asia-cyber-range-customer",
+      "customerName": "Asia Cyber Range Customer",
+      "aliases": [
+        "Asia Cyber Range Customer"
+      ],
+      "country": "Asia",
+      "sector": "Placeholder – programme customer (entity TBC)",
+      "lob": "Info-Security",
+      "reference": "2Q2025: cyber range for a customer in Asia",
+      "confidence": "Entity to be identified",
+      "anonymised": true
+    },
+    {
+      "customerId": "CUSTOMER-asian-country-counter-drone-air-defence-customer",
+      "customerName": "Asian Country Counter-Drone Air Defence Customer",
+      "aliases": [
+        "Asian Country Counter-Drone Air Defence Customer"
+      ],
+      "country": "Asia",
+      "sector": "Placeholder – programme customer (entity TBC)",
+      "lob": "Advanced Networks & Sensors",
+      "reference": "2Q2026: counter-drone solution for air defence deployment in an Asian country",
+      "confidence": "Entity to be identified",
       "anonymised": true
     }
   ],
@@ -549,7 +1170,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "NOKIA SOLUTIONS AND NETWORKS SINGAPORE PTE. LTD."
-      ]
+      ],
+      "country": "Singapore"
     },
     {
       "supplierId": "SUPPLIER-ciena-communications-international",
@@ -557,7 +1179,9 @@
       "businessArea": "DS&C",
       "aliases": [
         "CIENA COMMUNICATIONS INTERNATIONAL"
-      ]
+      ],
+      "country": "Singapore",
+      "spheraCountry": "United States"
     },
     {
       "supplierId": "SUPPLIER-ubiqconn-technology-inc",
@@ -565,7 +1189,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "UBIQCONN TECHNOLOGY INC"
-      ]
+      ],
+      "country": "Taiwan"
     },
     {
       "supplierId": "SUPPLIER-elbit-systems-electro-optics-elop-ltd",
@@ -573,7 +1198,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "ELBIT SYSTEMS ELECTRO-OPTICS ELOP LTD"
-      ]
+      ],
+      "country": "Israel"
     },
     {
       "supplierId": "SUPPLIER-toplink-pacific-pte-ltd",
@@ -581,7 +1207,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "TOPLINK PACIFIC PTE LTD"
-      ]
+      ],
+      "country": "Singapore"
     },
     {
       "supplierId": "SUPPLIER-elbit-security-systems-ltd",
@@ -589,7 +1216,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "ELBIT SECURITY SYSTEMS LTD"
-      ]
+      ],
+      "country": "Israel"
     },
     {
       "supplierId": "SUPPLIER-rockwell-collins-simulation-training-solutions-llc",
@@ -597,7 +1225,9 @@
       "businessArea": "DS&C",
       "aliases": [
         "ROCKWELL COLLINS SIMULATION & TRAINING SOLUTIONS LLC"
-      ]
+      ],
+      "country": "USA",
+      "spheraCountry": "United States"
     },
     {
       "supplierId": "SUPPLIER-sitep-italia-s-p-a",
@@ -605,7 +1235,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "SITEP ITALIA S.P.A."
-      ]
+      ],
+      "country": "Italy"
     },
     {
       "supplierId": "SUPPLIER-chengdu-vantron-technology-ltd",
@@ -613,7 +1244,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "CHENGDU VANTRON TECHNOLOGY,LTD."
-      ]
+      ],
+      "country": "China"
     },
     {
       "supplierId": "SUPPLIER-dong-won-precision-co-ltd-gyeonggi-do",
@@ -621,7 +1253,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "DONG WON PRECISION CO., LTD (GYEONGGI-DO)"
-      ]
+      ],
+      "country": "South Korea"
     },
     {
       "supplierId": "SUPPLIER-the-boeing-company-st-louis",
@@ -629,7 +1262,9 @@
       "businessArea": "DS&C",
       "aliases": [
         "THE BOEING COMPANY (ST LOUIS)"
-      ]
+      ],
+      "country": "USA",
+      "spheraCountry": "United States"
     },
     {
       "supplierId": "SUPPLIER-israel-aerospace-industries-ltd-beer-yaakov",
@@ -637,7 +1272,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "ISRAEL AEROSPACE INDUSTRIES LTD (BEER YAAKOV)"
-      ]
+      ],
+      "country": "Israel"
     },
     {
       "supplierId": "SUPPLIER-nvidia-corporation",
@@ -645,7 +1281,10 @@
       "businessArea": "DS&C",
       "aliases": [
         "NVIDIA Corporation"
-      ]
+      ],
+      "country": "USA",
+      "ibu": "Transcore",
+      "spheraCountry": "United States"
     },
     {
       "supplierId": "SUPPLIER-amazon-web-services-singapore-private-limited",
@@ -653,7 +1292,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "AMAZON WEB SERVICES SINGAPORE PRIVATE LIMITED"
-      ]
+      ],
+      "country": "Singapore"
     },
     {
       "supplierId": "SUPPLIER-applied-systems-singapore-pte-ltd",
@@ -661,7 +1301,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "APPLIED SYSTEMS (SINGAPORE) PTE LTD"
-      ]
+      ],
+      "country": "Singapore"
     },
     {
       "supplierId": "SUPPLIER-axiomtek-co-ltd",
@@ -669,7 +1310,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "AXIOMTEK CO., LTD."
-      ]
+      ],
+      "country": "Taiwan"
     },
     {
       "supplierId": "SUPPLIER-flightsafety-defense-corporation",
@@ -677,7 +1319,9 @@
       "businessArea": "DS&C",
       "aliases": [
         "FLIGHTSAFETY DEFENSE CORPORATION"
-      ]
+      ],
+      "country": "USA",
+      "spheraCountry": "United States"
     },
     {
       "supplierId": "SUPPLIER-imagesat-international-i-s-i-ltd",
@@ -685,7 +1329,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "IMAGESAT INTERNATIONAL (I.S.I) LTD"
-      ]
+      ],
+      "country": "Israel"
     },
     {
       "supplierId": "SUPPLIER-lan-system-engineering-pte-ltd",
@@ -693,7 +1338,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "LAN SYSTEM ENGINEERING PTE LTD"
-      ]
+      ],
+      "country": "Singapore"
     },
     {
       "supplierId": "SUPPLIER-mariyani-inc",
@@ -701,7 +1347,9 @@
       "businessArea": "DS&C",
       "aliases": [
         "MARIYANI, INC"
-      ]
+      ],
+      "country": "USA",
+      "spheraCountry": "Philippines"
     },
     {
       "supplierId": "SUPPLIER-orbit-communication-systems-ltd",
@@ -709,7 +1357,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "ORBIT COMMUNICATION SYSTEMS LTD"
-      ]
+      ],
+      "country": "Israel"
     },
     {
       "supplierId": "SUPPLIER-pt-geo-prima-energi",
@@ -717,7 +1366,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "PT. GEO PRIMA ENERGI"
-      ]
+      ],
+      "country": "Indonesia"
     },
     {
       "supplierId": "SUPPLIER-task-comm-engineering-pte-ltd",
@@ -725,7 +1375,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "TASK COMM ENGINEERING PTE LTD"
-      ]
+      ],
+      "country": "Singapore"
     },
     {
       "supplierId": "SUPPLIER-amphenol-corporation",
@@ -733,7 +1384,9 @@
       "businessArea": "DS&C",
       "aliases": [
         "Amphenol Corporation"
-      ]
+      ],
+      "country": "USA",
+      "spheraCountry": "United States"
     },
     {
       "supplierId": "SUPPLIER-glenair-inc",
@@ -741,7 +1394,9 @@
       "businessArea": "DS&C",
       "aliases": [
         "Glenair, Inc"
-      ]
+      ],
+      "country": "USA",
+      "spheraCountry": "United States"
     },
     {
       "supplierId": "SUPPLIER-micron-technology-inc",
@@ -749,7 +1404,9 @@
       "businessArea": "DS&C",
       "aliases": [
         "Micron Technology Inc"
-      ]
+      ],
+      "country": "USA",
+      "spheraCountry": "United States"
     },
     {
       "supplierId": "SUPPLIER-xilinx-inc",
@@ -757,7 +1414,9 @@
       "businessArea": "DS&C",
       "aliases": [
         "Xilinx, Inc"
-      ]
+      ],
+      "country": "USA",
+      "spheraCountry": "United States"
     },
     {
       "supplierId": "SUPPLIER-advanced-micro-devices-inc",
@@ -765,7 +1424,9 @@
       "businessArea": "DS&C",
       "aliases": [
         "Advanced Micro Devices, Inc."
-      ]
+      ],
+      "country": "USA",
+      "spheraCountry": "United States"
     },
     {
       "supplierId": "SUPPLIER-nxp-semiconductors-n-v",
@@ -773,7 +1434,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "NXP Semiconductors N.V."
-      ]
+      ],
+      "country": "Netherlands"
     },
     {
       "supplierId": "SUPPLIER-newspace-india-limited",
@@ -781,7 +1443,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "NEWSPACE INDIA LIMITED"
-      ]
+      ],
+      "country": "India"
     },
     {
       "supplierId": "SUPPLIER-tianyi-satcom-co-ltd",
@@ -789,7 +1452,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "TIANYI SATCOM CO., LTD"
-      ]
+      ],
+      "country": "China"
     },
     {
       "supplierId": "SUPPLIER-schneider-electric-singapore-pte-ltd",
@@ -797,7 +1461,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "SCHNEIDER ELECTRIC SINGAPORE PTE. LTD."
-      ]
+      ],
+      "country": "Singapore"
     },
     {
       "supplierId": "SUPPLIER-pacific-internet-s-pte-ltd",
@@ -805,7 +1470,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "PACIFIC INTERNET (S) PTE. LTD."
-      ]
+      ],
+      "country": "Singapore"
     },
     {
       "supplierId": "SUPPLIER-eaton-electric-singapore-pte-ltd",
@@ -813,7 +1479,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "EATON ELECTRIC (SINGAPORE) PTE. LTD."
-      ]
+      ],
+      "country": "Singapore"
     },
     {
       "supplierId": "SUPPLIER-metasensing-s-r-l",
@@ -821,7 +1488,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "METASENSING S.R.L."
-      ]
+      ],
+      "country": "Italy"
     },
     {
       "supplierId": "SUPPLIER-disti-llc",
@@ -829,7 +1497,9 @@
       "businessArea": "DS&C",
       "aliases": [
         "DISTI, LLC"
-      ]
+      ],
+      "country": "USA",
+      "spheraCountry": "United States"
     },
     {
       "supplierId": "SUPPLIER-blinq-networks-inc",
@@ -837,7 +1507,8 @@
       "businessArea": "DS&C",
       "aliases": [
         "BLINQ NETWORKS INC."
-      ]
+      ],
+      "country": "Canada"
     },
     {
       "supplierId": "SUPPLIER-motorola-solutions-singapore-pte-ltd",
@@ -846,6 +1517,7 @@
       "aliases": [
         "MOTOROLA SOLUTIONS SINGAPORE PTE. LTD."
       ],
+      "country": "Singapore",
       "sharedWith": [
         "URS"
       ]
@@ -857,6 +1529,7 @@
       "aliases": [
         "FRONTIER INTEGRATED TECHNOLOGY PTE LTD"
       ],
+      "country": "Singapore",
       "sharedWith": [
         "URS"
       ]

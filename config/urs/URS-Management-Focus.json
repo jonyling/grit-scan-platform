@@ -1,6 +1,6 @@
 {
   "registerId": "URS-MANAGEMENT-FOCUS",
-  "workbook": "URS_Entity_Info_20261006.xlsx",
+  "workbook": "02_URS_Entity_Info.xlsx",
   "sheet": "10. Management Focus",
   "absence": "The status text is copied unchanged. A status that says research draft means a business area has not validated the item.",
   "requests": [
@@ -33,7 +33,7 @@
     },
     {
       "number": 4,
-      "scope": "Rail, Road & Airport markets for the following countries",
+      "scope": "Mobility Rail; Mobility Road",
       "entity": null,
       "text": "Analyse the Rail, Road and Airport sectors in Thailand, Malaysia, India, Vietnam and Australia. Identify:",
       "countries": [
@@ -90,7 +90,8 @@
         }
       ],
       "notes": [
-        "Updates can be provided on a quarterly basis."
+        "Row 6 is numbered 5, but its text 'Opportunities' is a topic heading, so it continues request 4.",
+        "The countries are the ones the request text names."
       ]
     }
   ],
