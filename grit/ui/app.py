@@ -11,6 +11,7 @@ a workflow row itself.
 
 from __future__ import annotations
 
+import html
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -101,8 +102,10 @@ def main() -> None:
         st.header(meta["title"])
         st.caption(f"{meta['subtitle']} | Scan window {meta['window']} | Prepared for {meta['prepared_for']}" + (" | Draft for review, not approved" if meta.get("show_review_status", True) else ""))
         st.markdown(
-            f"<div style='background:{BOX.get(bottom['label'], '#FFF2CC')};padding:14px 18px;border-radius:6px;border:1px solid #1F3864'>"
-            f"<b style='color:#1F3864'>{bottom['label']} — Bottom line</b><br>{bottom['text']} {bottom.get('escalation') or ''}</div>",
+            # The box is always light, so its text is set dark: in the dark theme the default text is near-white.
+            f"<div style='background:{BOX.get(bottom['label'], '#FFF2CC')};color:#1A1A1A;padding:14px 18px;border-radius:6px;border:1px solid #1F3864'>"
+            f"<b style='color:#1F3864'>{html.escape(str(bottom['label']))} — Bottom line</b><br>"
+            f"<span style='color:#1A1A1A'>{html.escape(str(bottom['text']))} {html.escape(str(bottom.get('escalation') or ''))}</span></div>",
             unsafe_allow_html=True,
         )
         for column, (label, value) in zip(st.columns(6), kpis(routed, brief, packages).items()):
