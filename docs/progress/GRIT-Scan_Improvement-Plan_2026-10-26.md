@@ -124,7 +124,7 @@ Commit `24a4dc8`.
 
 ### Batch F: data and governance
 
-- **Point 1 (done for URS and DS&C, 29 Oct).** Rebuild with `grit pack-build --pack PACK` whenever a workbook changes. Commercial Aerospace (`ca`) has registers but no scan plan yet, so it is not scanned weekly.
+- **Point 1 (done for URS and DS&C, 29 Oct).** Rebuild with `grit pack-build --pack PACK` whenever a workbook changes. Commercial Aerospace (`ca`) has a proposed scan plan (`config/ca/CA-Scan-Plan.json`, about 94 Brave queries a run) for its R&A business partner to review. It is not in the `grit scheduled` timetable, so it runs only with `grit weekly --pack ca`.
 - **Point 26.** Re-base profiles on BA business partners. Needs `config/` access or Jony's edits.
 - **Point 27.** Add Wilson's daily adverse news agent as a lane whose output passes the same deterministic checks. Needs Wilson's prompt.
 - **Point 28.** Record all four feedback routes in one feedback table, with the route, the person and the date.

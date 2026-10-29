@@ -162,7 +162,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-29, 623 tests pass. They make no network call.
+   As of 2026-10-29, 624 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 
@@ -186,7 +186,7 @@ Do not commit `.env`, `secrets/`, or a service-account file, and do not paste cr
 
 Run these commands from the repository root. `DATE` is the run date, `YYYY-MM-DD`; it defaults to today. Without `--pack`, every pack with a scan plan runs, entity packs first. To run one pack, add `--pack urs` or `--pack urs-tw`.
 
-> **Warning:** The scan spends Brave queries. A run costs about 147 queries for DS&C, 140 for URS, 66 for URS Taiwan and 54 for the Group pack (29 October 2026, after the 29 October workbooks added customers and suppliers), and a run date already answered costs nothing more. Brave's free credit covers about 1,000 queries a month; beyond that Brave refuses with HTTP 402, and the scan falls back to Currents for at most 40 queries a run. The local counter in `output/brave-usage.json` stops at `BRAVE_MONTHLY_LIMIT` (default 1,000) and ignores queries sent outside this repository. To rewrite a brief, rerun `grit agents` and `grit report`, which spend no Brave queries, not `grit scan` or `grit weekly` with a new date. `--sweep N` adds up to N queries from the 12-week business-area digest plan.
+> **Warning:** The scan spends Brave queries. A run costs about 147 queries for DS&C, 140 for URS, 94 for Commercial Aerospace, 66 for URS Taiwan and 54 for the Group pack (29 October 2026, after the 29 October workbooks added customers and suppliers), and a run date already answered costs nothing more. Brave's free credit covers about 1,000 queries a month; beyond that Brave refuses with HTTP 402, and the scan falls back to Currents for at most 40 queries a run. The local counter in `output/brave-usage.json` stops at `BRAVE_MONTHLY_LIMIT` (default 1,000) and ignores queries sent outside this repository. To rewrite a brief, rerun `grit agents` and `grit report`, which spend no Brave queries, not `grit scan` or `grit weekly` with a new date. `--sweep N` adds up to N queries from the 12-week business-area digest plan.
 
 1. Print the queries. This sends nothing.
 

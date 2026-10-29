@@ -193,7 +193,8 @@ def seed_watchpoints(pool: Pool, pack: OntologyPack) -> int:
 def plan(pool: Pool, run: ReaderRun) -> list[Any]:
     pack = _load_pack(run.pack)
     if not pack.scan_plan:
-        raise ValueError(f"Pack {run.pack} has no scan plan. Add the pack's *-Scan-Plan.json register.")
+        raise ValueError(f"Pack {run.pack} has no scan plan. Write config/{run.pack}/PREFIX-Scan-Plan.json and name it as scan_plan under "
+                         f"optional in its pack.json (docs/add-a-business-area.md, 'Write the scan plan').")
     seed_watchpoints(pool, pack)
     seed_requests(pool, pack)
     requests = [row for row in pool.management_requests(active_only=True) if row.get("pack") in (None, run.pack)]

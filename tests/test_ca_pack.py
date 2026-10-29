@@ -162,3 +162,20 @@ def test_the_ca_pack_builds_from_its_workbook(tmp_path: Path) -> None:
     assert [theme["tier"] for theme in themes].count("KEY") == 8 and all(len(theme["keywords"]) >= 2 for theme in themes)
     assert len(read("management_focus")["focusItems"]) == 5
     assert all(row["canonicalLob"] for row in read("competitors")["competitors"])
+
+
+def test_the_ca_scan_plan_covers_every_theme_and_rotates_its_name_lanes() -> None:
+    from datetime import date
+
+    from grit.ontology.pack import load_ontology_pack
+    from grit.ontology.reader_plan import reader_queries
+
+    pack = load_ontology_pack(_ROOT / "config", "ca")
+    if not pack.scan_plan:
+        pytest.skip("config/ca has no scan plan on this machine")
+    assert {row["themeId"] for row in pack.scan_plan["themes"]} == {row["themeId"] for row in pack.themes["themes"]}
+    assert all(row["queries"] for row in pack.scan_plan["themes"])
+    lanes = pack.scan_plan["namedItems"]["lanes"]
+    assert lanes["CUSTOMER"]["cadenceWeeks"] >= 12, "458 customers would cost more than the Brave budget allows every week"
+    weekly = reader_queries(pack.scan_plan, pack=pack, run_date=date(2026, 11, 2))
+    assert 60 <= len(weekly) <= 120
