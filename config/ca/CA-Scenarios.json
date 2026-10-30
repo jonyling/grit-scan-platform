@@ -1,0 +1,1637 @@
+{
+  "registerId": "CA-SCENARIOS",
+  "pack": "ca",
+  "status": "REVIEWED",
+  "version": 1,
+  "reviewedBy": "Jony Ling, recorded as approved on instruction for the POC on 30 Oct 2026; BA review pending",
+  "reviewedOn": "2026-10-30",
+  "approvedFrom": "CA-Scenarios-BMW-Proposed_2026-10-30.json",
+  "run": "2026-10-30-ca",
+  "pointOfView": "Best and worst are judged for ST Engineering.",
+  "horizon": "1-5 years",
+  "note": "Reviewed scenarios. Signposts show which case is unfolding; they are counts, never odds. Edit keywords here if a signpost matches badly.",
+  "shifts": [
+    {
+      "themeId": "CA-KEY-01",
+      "name": "Aviation Regulatory Compliance; Quality & Safety of Products or Services",
+      "horizon": "1-5 years",
+      "situation": null,
+      "builds_on": [],
+      "keywords": "PROPOSED",
+      "cases": [
+        {
+          "case": "BEST",
+          "title": "Best case for STE",
+          "name": "Inspection Surge Revenue",
+          "narrative": "A wave of FAA fleet-wide airworthiness directives on high-volume platforms could channel urgent inspection and teardown work directly to certified independent MRO providers. ST Engineering could capitalize on engine shop visits and narrowbody line checks by deploying pre-positioned inspection tooling and slot availability. Smooth parts availability might allow rapid turnaround times, strengthening customer retention across major airline accounts.",
+          "evidence": [
+            "The FAA proposed an airworthiness directive covering all CFM56-7B engines after a fan blade separated in flight on a Boeing 737-800, which would add engine shop-visit workload and teardown demand (avi-go.com, 27 Oct 2026, 20:19 UTC; avi-go.com, 27 Oct 2026, 17:50 UTC; federalregister.gov, 27 Oct 2026).",
+            "The FAA published companion airworthiness directives AD 2026-21862 and AD 2026-21863 ordering detailed inspections of fuel shutoff valve access-panel gaskets across Boeing 737 NG and MAX fleets (theflightbrief.com, 28 Oct 2026)."
+          ],
+          "impact": [
+            "Engines could capture expanded shop-visit volume and technician billable hours across CFM56-7B operators.",
+            "Airframe could secure incremental line maintenance and hangar modification packages for Boeing 737 NG and MAX operators."
+          ],
+          "responses": [
+            {
+              "action": "Prepare dedicated CFM56-7B fan blade inspection lines and tooling kits across key engine MRO facilities",
+              "owner": "Head, Engine Services",
+              "trigger": 1
+            }
+          ],
+          "where_ste_could_gain": "Engines could gain higher shop-visit margins and long-term inspection contracts across global Boeing 737 operators.",
+          "signposts": [
+            {
+              "text": "FAA issues the final rule mandating repetitive fan blade ultrasonic inspections for all CFM56-7B engines with a tight compliance window",
+              "keywords": [
+                "FAA issues the final rule",
+                "fan blade ultrasonic inspections",
+                "CFM56-7B engines"
+              ]
+            },
+            {
+              "text": "Major commercial carriers issue requests for proposals for outsourced 737 fuel shutoff valve gasket compliance packages",
+              "keywords": [
+                "requests for proposals",
+                "737 fuel shutoff valve gasket"
+              ]
+            },
+            {
+              "text": "A commercial airline consortium signs an accelerated MRO service agreement for fleet-wide AD compliance checks",
+              "keywords": [
+                "accelerated MRO service agreement",
+                "AD compliance checks"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Regulators extend AD compliance deadlines by more than twelve months due to industry pushback",
+              "keywords": [
+                "extend AD compliance deadlines",
+                "twelve months",
+                "industry pushback"
+              ]
+            },
+            {
+              "text": "Airlines handle all required gasket and fan blade inspections entirely within internal line maintenance teams",
+              "keywords": [
+                "gasket and fan blade inspections",
+                "internal line maintenance teams"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-aedc6aa61e1f2e52",
+                "outlet": "avi-go.com",
+                "title": "NTSB Cites Lack of Situational Awareness in Night Rooftop Takeoff Crash of Air Evac Lifeteam Bell 407 in Dallas | AviNews",
+                "url": "https://avi-go.com/news/articles/af82fb948116e5365bb92b827e5fd8ad",
+                "when": "27 Oct 2026, 20:19 UTC"
+              },
+              {
+                "signal_id": "SIG-87ba1a78d22681bb",
+                "outlet": "avi-go.com",
+                "title": "FAA Proposes Fan Blade Inspections for All CFM56-7B Engines After In-Flight Blade Separation | AviNews",
+                "url": "https://avi-go.com/news/articles/7594feb3579745b6b5c3ac9e78bea7a2",
+                "when": "27 Oct 2026, 17:50 UTC"
+              },
+              {
+                "signal_id": "SIG-86307a1b96488aae",
+                "outlet": "federalregister.gov",
+                "title": "Federal Register :: Airworthiness Directives; CFM International, S.A. Engines",
+                "url": "https://federalregister.gov/documents/2026/10/27/2026-21852/airworthiness-directives-cfm-international-sa-engines",
+                "when": "27 Oct 2026"
+              },
+              {
+                "signal_id": "SIG-d17bf32e5597600e",
+                "outlet": "theflightbrief.com",
+                "title": "FAA Orders 737 Fuel Gasket Inspections | The Flight Brief",
+                "url": "https://www.theflightbrief.com/articles/faa-orders-737-gasket-inspections",
+                "when": "28 Oct 2026"
+              }
+            ],
+            "reports": []
+          }
+        },
+        {
+          "case": "MEDIUM",
+          "title": "Medium case for STE",
+          "name": "Capacity Friction and Turnaround Stretch",
+          "narrative": "Multiple overlapping airworthiness directives on engine and airframe components could stretch shop capacity and line maintenance schedules without causing grounded fleets. Maintenance facilities might experience technician reallocation and increased audit overhead to log compliance data. Work progress could slow moderately as engineering teams balance scheduled maintenance checks with ad-hoc directive mandates.",
+          "evidence": [
+            "Model-wide fan blade inspections would add engine shop-visit workload and compete for teardown capacity, while line stations require added technician hours and tooling (avi-go.com, 27 Oct 2026, 17:50 UTC).",
+            "The FAA published directives requiring gasket inspections on Boeing 737 NG and MAX fleets as well as passenger service unit monitor retention modifications on Boeing 757 aircraft (theflightbrief.com, 28 Oct 2026)."
+          ],
+          "impact": [
+            "Aerospace MRO could face scheduling delays as standard heavy maintenance checks absorb mandatory directive inspections.",
+            "ST Engineering Aerospace could see higher compliance tracking overhead and quality audit documentation workloads."
+          ],
+          "responses": [
+            {
+              "action": "Review line maintenance technician allocation and integrate automated compliance tracking tools for 737 access-panel leak tests",
+              "owner": "Head, Airframe Services",
+              "trigger": 1
+            }
+          ],
+          "signposts": [
+            {
+              "text": "MRO providers report a measurable lengthening of average Boeing 737 check turnaround times by several days",
+              "keywords": [
+                "lengthening of average Boeing 737 check turnaround times",
+                "MRO providers"
+              ]
+            },
+            {
+              "text": "Airlines request deferrals for non-mandatory cabin modifications to prioritize mandatory AD compliance work",
+              "keywords": [
+                "deferrals for non-mandatory cabin modifications",
+                "mandatory AD compliance work"
+              ]
+            },
+            {
+              "text": "Aviation regulatory bodies increase spot audits on digital compliance tracking records and form-in-place gasket leak test logs",
+              "keywords": [
+                "increase spot audits",
+                "digital compliance tracking records",
+                "form-in-place gasket leak test logs"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Airlines report zero friction or schedule disruption while absorbing all new airworthiness directives",
+              "keywords": [
+                "zero friction or schedule disruption",
+                "airworthiness directives"
+              ]
+            },
+            {
+              "text": "Engine shops report surplus bay capacity and declining technician overtime hours",
+              "keywords": [
+                "surplus bay capacity",
+                "declining technician overtime hours",
+                "Engine shops"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-87ba1a78d22681bb",
+                "outlet": "avi-go.com",
+                "title": "FAA Proposes Fan Blade Inspections for All CFM56-7B Engines After In-Flight Blade Separation | AviNews",
+                "url": "https://avi-go.com/news/articles/7594feb3579745b6b5c3ac9e78bea7a2",
+                "when": "27 Oct 2026, 17:50 UTC"
+              },
+              {
+                "signal_id": "SIG-d17bf32e5597600e",
+                "outlet": "theflightbrief.com",
+                "title": "FAA Orders 737 Fuel Gasket Inspections | The Flight Brief",
+                "url": "https://www.theflightbrief.com/articles/faa-orders-737-gasket-inspections",
+                "when": "28 Oct 2026"
+              }
+            ],
+            "reports": []
+          }
+        },
+        {
+          "case": "WORST",
+          "title": "Worst case for STE",
+          "name": "Supply Bottlenecks and Bay Stagnation",
+          "narrative": "Broad airworthiness directives could collide with severe component shortages, stranding aircraft in hangars and backing up engine bays. Priority defense claims on critical engine parts might starve commercial engine shops of necessary replacement items. Stalled shop visits could trigger customer disputes, penalty liabilities, and regulatory scrutiny over turn times.",
+          "evidence": [
+            "Lufthansa Technik stated that Pentagon demand for TF34 spare parts under the Defense Production Act is delaying commercial CF34 MRO support, leaving customer engines waiting months for bearings (avi-go.com, 27 Oct 2026, 23:06 UTC; avi-go.com, 27 Oct 2026, 17:50 UTC).",
+            "A blade-out event or single sub-tier supplier manufacturing lapse can shift fleet-wide inspection and parts costs onto operators while expanding grounding risks (avi-go.com, 27 Oct 2026, 17:50 UTC; avi-go.com, 25 Oct 2026, 14:35 UTC)."
+          ],
+          "impact": [
+            "Engines could experience extended bay stagnation and deferred revenues as engines await scarce replacement parts.",
+            "Aerospace MRO could incur contractual penalties or customer friction from stretched turnaround schedules."
+          ],
+          "responses": [
+            {
+              "action": "Consider establishing quarantined buffer inventories of critical engine bearings and hardware parts subject to dual-use defense drawdowns",
+              "owner": "Group Procurement",
+              "trigger": 1
+            },
+            {
+              "action": "Review customer turnaround time terms in MRO contracts to protect against regulatory parts shortages",
+              "owner": "Legal and Compliance",
+              "trigger": 2
+            }
+          ],
+          "signposts": [
+            {
+              "text": "Defense Production Act priority orders expand to shared commercial engine components, freezing replacement parts for civilian overhauls",
+              "keywords": [
+                "Defense Production Act priority orders expand",
+                "commercial engine components",
+                "freezing replacement parts"
+              ]
+            },
+            {
+              "text": "A major engine shop operator declares force majeure on commercial turnaround time commitments due to component stockouts",
+              "keywords": [
+                "declares force majeure",
+                "commercial turnaround time commitments",
+                "component stockouts"
+              ]
+            },
+            {
+              "text": "Regulators issue emergency groundings for specific aircraft variants pending unfulfilled parts replacement mandates",
+              "keywords": [
+                "issue emergency groundings",
+                "aircraft variants",
+                "parts replacement mandates"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Military and commercial engine parts distribution pools decouple fully without mutual shortages",
+              "keywords": [
+                "engine parts distribution pools decouple",
+                "without mutual shortages"
+              ]
+            },
+            {
+              "text": "OEM component delivery lead times for engine bearings and fan blades drop to historical lows",
+              "keywords": [
+                "delivery lead times",
+                "engine bearings and fan blades drop"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-43e0a7e959ec0893",
+                "outlet": "avi-go.com",
+                "title": "San Diego's Montgomery-Gibbs Executive Airport Urges National Shift to Unleaded Aviation Fuel | AviNews",
+                "url": "https://avi-go.com/news/articles/eccdcf3451a91a9ca0a452fd0759d048",
+                "when": "27 Oct 2026, 23:06 UTC"
+              },
+              {
+                "signal_id": "SIG-5a06e5aa26b9fa21",
+                "outlet": "avi-go.com",
+                "title": "Pentagon TF34 Parts Demand Constrains Commercial MRO Support for CF34 Engines, Lufthansa Technik Says | AviNews",
+                "url": "https://avi-go.com/news/articles/a3b8617ca178e22848bdbf72d599bf41",
+                "when": "27 Oct 2026, 17:50 UTC"
+              },
+              {
+                "signal_id": "SIG-87ba1a78d22681bb",
+                "outlet": "avi-go.com",
+                "title": "FAA Proposes Fan Blade Inspections for All CFM56-7B Engines After In-Flight Blade Separation | AviNews",
+                "url": "https://avi-go.com/news/articles/7594feb3579745b6b5c3ac9e78bea7a2",
+                "when": "27 Oct 2026, 17:50 UTC"
+              },
+              {
+                "signal_id": "SIG-24a6373831e77bfb",
+                "outlet": "avi-go.com",
+                "title": "FAA Issues Airworthiness Directive Requiring Inspection and Replacement of Main Transmission Drive Shaft Couplings on MD Helicopters Models 369/500N | AviNews",
+                "url": "https://avi-go.com/news/articles/ac6fc0eb70f9dbc0a6ceeba07098f52a",
+                "when": "25 Oct 2026, 14:35 UTC"
+              }
+            ],
+            "reports": []
+          }
+        }
+      ]
+    },
+    {
+      "themeId": "CA-KEY-02",
+      "name": "Competition on Products/Services",
+      "horizon": "1-5 years",
+      "situation": null,
+      "builds_on": [],
+      "keywords": "PROPOSED",
+      "cases": [
+        {
+          "case": "BEST",
+          "title": "Best case for STE",
+          "name": "Independent MRO Premium",
+          "narrative": "Airlines facing widespread engine durability issues and severe parts bottlenecks may turn to top-tier independent MRO providers to avoid long turnarounds. Commercial Aerospace could capture high-margin repair contracts and expand its engine shop load if captive airline and OEM facilities remain backlogged. ST Engineering Aerospace Engines might secure long-term service agreements from global carriers seeking committed shop capacity.",
+          "evidence": [
+            "Airlines globally have been struggling with engine durability issues on newer engines, compounded by shortages in engine parts, repair capacity, and labour (arabianbusiness.com, 29 Oct 2026, 10:37 UTC).",
+            "Pentagon demand for TF34 spare parts under the Defense Production Act has delayed commercial CF34 MRO support, leaving customer engines waiting for months (avi-go.com, 25 Oct 2026, 23:09 UTC)."
+          ],
+          "impact": [
+            "Commercial Aerospace may achieve higher shop throughput and increased pricing power across its Engines line of business.",
+            "ST Engineering Aerospace Engines could expand overhaul capacity and take on spillover fleet volume from European and North American carriers."
+          ],
+          "responses": [
+            {
+              "action": "Consider offering priority turnaround slot packages for narrowbody engine overhauls to international airline customers",
+              "owner": "Head, Engine Services",
+              "trigger": 1
+            }
+          ],
+          "where_ste_could_gain": "ST Engineering Aerospace Engines could capture additional engine shop visit volume and long-term fleet contracts.",
+          "signposts": [
+            {
+              "text": "A major international airline signs a multi-year narrowbody engine MRO contract with an independent Asian maintenance provider",
+              "keywords": [
+                "narrowbody engine MRO contract",
+                "independent Asian maintenance provider",
+                "signs a multi-year"
+              ]
+            },
+            {
+              "text": "Airframe and engine MRO slot booking lead times exceed twelve months across North American and European airline shops",
+              "keywords": [
+                "lead times exceed twelve months",
+                "engine MRO slot booking",
+                "North American and European airline shops"
+              ]
+            },
+            {
+              "text": "OEM service bulletins announce extended intervals for parts delivery on next-generation commercial powerplants",
+              "keywords": [
+                "service bulletins announce extended intervals",
+                "parts delivery",
+                "next-generation commercial powerplants"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "OEM engine turnaround times return to pre-shortage baseline schedules",
+              "keywords": [
+                "OEM engine turnaround times return",
+                "pre-shortage baseline schedules"
+              ]
+            },
+            {
+              "text": "Airlines establish sufficient in-house engine overhaul capacity to eliminate commercial backlogs",
+              "keywords": [
+                "establish sufficient in-house engine overhaul capacity",
+                "eliminate commercial backlogs"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-3f73dd243b5cc785",
+                "outlet": "arabianbusiness.com",
+                "title": "Rolls-Royce gets $3.3 billion deal for new narrowbody jet engine - Arabian Business: Latest News on the Middle East, Real Estate, Finance, and More",
+                "url": "https://arabianbusiness.com/abnews/rolls-royce-gets-3-3-billion-deal-for-new-narrowbody-jet-engine",
+                "when": "29 Oct 2026, 10:37 UTC"
+              },
+              {
+                "signal_id": "SIG-46c5ec4deec928d1",
+                "outlet": "avi-go.com",
+                "title": "Menzies Aviation Wins Ground-Handling Competition for Portugal's Lisbon, Porto and Faro Airports | AviNews",
+                "url": "https://avi-go.com/news/articles/1129f8d5519fa8907cfd20fa6e5904bc",
+                "when": "25 Oct 2026, 23:09 UTC"
+              }
+            ],
+            "reports": []
+          }
+        },
+        {
+          "case": "MEDIUM",
+          "title": "Medium case for STE",
+          "name": "Bifurcated Supply Squeeze",
+          "narrative": "Large public-private technology investments could reinforce OEM dominance over next-generation engine designs while legacy fleets maintain strong demand. Independent providers might experience persistent margin pressure in legacy components while facing high barriers to enter next-generation narrowbody platforms. Commercial Aerospace may need to defend its market share through targeted joint ventures and long-term tooling agreements.",
+          "evidence": [
+            "Rolls-Royce secured UK government support in a framework deal for 2.5 billion pounds ($3.3 billion) to develop a new engine for narrowbody aircraft (arabianbusiness.com, 29 Oct 2026, 10:37 UTC).",
+            "Commercial CF34 engine support faces delays due to military priority orders affecting bearing and component supplies (avi-go.com, 25 Oct 2026, 23:09 UTC)."
+          ],
+          "impact": [
+            "Components and Engines lines of business may encounter margin compression from rising parts costs and extended turnaround schedules.",
+            "Aerospace MRO could see steady legacy narrowbody airframe checks offset by higher parts acquisition delays."
+          ],
+          "responses": [
+            {
+              "action": "Review strategic inventory buffers for high-demand engine sub-assemblies and critical dual-use bearings",
+              "owner": "Head, Component Services",
+              "trigger": 2
+            }
+          ],
+          "where_ste_could_gain": "ST Engineering Aerospace Rotables could gain recurring maintenance volume on transitional narrowbody fleets.",
+          "signposts": [
+            {
+              "text": "A major engine manufacturer forms an exclusive technology alliance with an aerospace tier-one supplier for narrowbody propulsion",
+              "keywords": [
+                "forms an exclusive technology alliance",
+                "aerospace tier-one supplier",
+                "narrowbody propulsion"
+              ]
+            },
+            {
+              "text": "Component lead times for dual-use commercial-military engine models increase by over six months in published catalog notices",
+              "keywords": [
+                "lead times for dual-use commercial-military engine models increase",
+                "published catalog notices"
+              ]
+            },
+            {
+              "text": "An airline consortium tenders for joint MRO tooling procurement to counter rising parts prices",
+              "keywords": [
+                "consortium tenders for joint MRO tooling procurement",
+                "rising parts prices"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Civil engine manufacturers open proprietary repair licenses freely to third-party independent shops",
+              "keywords": [
+                "open proprietary repair licenses freely",
+                "Civil engine manufacturers",
+                "third-party independent shops"
+              ]
+            },
+            {
+              "text": "Government aerospace funding programmes mandate open aftermarket participation for independent MROs",
+              "keywords": [
+                "funding programmes mandate open aftermarket participation",
+                "independent MROs",
+                "Government aerospace funding"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-3f73dd243b5cc785",
+                "outlet": "arabianbusiness.com",
+                "title": "Rolls-Royce gets $3.3 billion deal for new narrowbody jet engine - Arabian Business: Latest News on the Middle East, Real Estate, Finance, and More",
+                "url": "https://arabianbusiness.com/abnews/rolls-royce-gets-3-3-billion-deal-for-new-narrowbody-jet-engine",
+                "when": "29 Oct 2026, 10:37 UTC"
+              },
+              {
+                "signal_id": "SIG-46c5ec4deec928d1",
+                "outlet": "avi-go.com",
+                "title": "Menzies Aviation Wins Ground-Handling Competition for Portugal's Lisbon, Porto and Faro Airports | AviNews",
+                "url": "https://avi-go.com/news/articles/1129f8d5519fa8907cfd20fa6e5904bc",
+                "when": "25 Oct 2026, 23:09 UTC"
+              }
+            ],
+            "reports": []
+          }
+        },
+        {
+          "case": "WORST",
+          "title": "Worst case for STE",
+          "name": "Captive Expansion and Component Choke",
+          "narrative": "Airlines may aggressively build proprietary regional MRO infrastructure to internalize maintenance and cut turnarounds. At the same time, priority defense procurement and export restrictions could sever access to critical components and raw materials. Commercial Aerospace could face contracting commercial volumes alongside escalating material costs and lost regional market access.",
+          "evidence": [
+            "Air India has broken ground on a nine-acre MRO hangar at Delhi's Indira Gandhi International Airport to hold widebody and narrowbody aircraft simultaneously to cut ground time (avi-go.com, 25 Oct 2026, 23:09 UTC).",
+            "China has tightened export controls on refined fuels and instituted export-licensing regimes for critical minerals, disrupting manufacturing supply routes (eiu.com, 27 Oct 2026, 06:41 UTC)."
+          ],
+          "impact": [
+            "Airframe and Aerospace MRO lines of business might lose line and base maintenance volume in emerging Asian markets.",
+            "ST Engineering Aerospace Services could suffer project delays and underutilized hangar bay capacity."
+          ],
+          "responses": [
+            {
+              "action": "Prepare contingency commercial proposals to partner with airline-owned facilities on specialized technical processes rather than standard hangar labor",
+              "owner": "Head, Airframe Services",
+              "trigger": 1
+            }
+          ],
+          "signposts": [
+            {
+              "text": "A national flag carrier completes construction of an internal heavy airframe and engine overhaul hangar facility",
+              "keywords": [
+                "completes construction",
+                "national flag carrier",
+                "heavy airframe and engine overhaul hangar facility"
+              ]
+            },
+            {
+              "text": "Trade ministries announce strict licensing rules or tariffs on specialized aerospace alloy exports",
+              "keywords": [
+                "announce strict licensing rules or tariffs",
+                "aerospace alloy exports",
+                "Trade ministries"
+              ]
+            },
+            {
+              "text": "A commercial airline cancels an outsourced heavy maintenance contract to bring airframe checks completely in-house",
+              "keywords": [
+                "cancels an outsourced heavy maintenance contract",
+                "bring airframe checks completely in-house"
+              ]
+            },
+            {
+              "text": "Pentagon or allied defense tasking expands priority manufacturing mandates across tier-one aero-structure suppliers",
+              "keywords": [
+                "expands priority manufacturing mandates",
+                "tier-one aero-structure suppliers",
+                "allied defense tasking"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Airline-built captive hangars fail to achieve regulatory certification and outsource operations to international MRO partners",
+              "keywords": [
+                "captive hangars fail to achieve regulatory certification",
+                "outsource operations to international MRO partners"
+              ]
+            },
+            {
+              "text": "International export controls on aerospace raw materials and engine parts are rescinded",
+              "keywords": [
+                "export controls on aerospace raw materials",
+                "engine parts are rescinded"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-46c5ec4deec928d1",
+                "outlet": "avi-go.com",
+                "title": "Menzies Aviation Wins Ground-Handling Competition for Portugal's Lisbon, Porto and Faro Airports | AviNews",
+                "url": "https://avi-go.com/news/articles/1129f8d5519fa8907cfd20fa6e5904bc",
+                "when": "25 Oct 2026, 23:09 UTC"
+              },
+              {
+                "signal_id": "SIG-b21e75f0686da4a6",
+                "outlet": "eiu.com",
+                "title": "Managing manufacturing disruption: five geopolitical and market access risks - Economist Intelligence Unit",
+                "url": "https://eiu.com/n/global-themes/blog/five-geopolitical-risks-multinational-manufacturers",
+                "when": "27 Oct 2026, 06:41 UTC"
+              }
+            ],
+            "reports": []
+          }
+        }
+      ]
+    },
+    {
+      "themeId": "CA-KEY-03",
+      "name": "Geopolitical risks, global fragmentation and protectionism impacting business operation and supply chain",
+      "horizon": "1-5 years",
+      "situation": null,
+      "builds_on": [],
+      "keywords": "PROPOSED",
+      "cases": [
+        {
+          "case": "BEST",
+          "title": "Best case for STE",
+          "name": "Regionalized MRO Resilience",
+          "narrative": "Airlines retaining older aircraft amid scarce new deliveries could channel sustained heavy maintenance demand to well-positioned regional hubs. Expanding localized parts pools and in-house repair capabilities might buffer providers against intellectual property access friction. Aerospace MRO could capture long-term maintenance contracts as operators prioritize turnaround time over price.",
+          "evidence": [
+            "According to ING, aircraft scarcity keeps capacity tight, supports high lease rates, and forces airlines to retain older planes, while global air travel growth is set to rebound to 5% in 2027 (seekingalpha.com, 27 Oct 2026, 15:15 UTC).",
+            "An Aviation Week panel poll at MRO Europe found 74% of respondents prioritized turnaround time over price amid European maintenance slot shortages (avi-go.com, 25 Oct 2026, 23:09 UTC)."
+          ],
+          "impact": [
+            "Aerospace MRO could secure higher baseline shop-visit volumes as operators extend legacy fleet operations.",
+            "Engines could see expanded repair demand from airlines seeking rapid turnarounds on older powerplants."
+          ],
+          "responses": [
+            {
+              "action": "Consider establishing dedicated regional parts inventory buffers for high-turnover legacy engine and airframe components",
+              "owner": "Head, Engine Services",
+              "trigger": 2
+            }
+          ],
+          "where_ste_could_gain": "Aerospace MRO could gain long-term maintenance agreements from operators seeking reliable turnaround time amid industry-wide slot shortages.",
+          "signposts": [
+            {
+              "text": "Airline operators announce multi-year airframe and engine heavy maintenance extensions prioritizing turnaround time over cost.",
+              "keywords": [
+                "heavy maintenance extensions",
+                "turnaround time",
+                "Airline operators"
+              ]
+            },
+            {
+              "text": "Major MRO providers sign agreements establishing regionalized component pools to offset transatlantic access risks.",
+              "keywords": [
+                "MRO providers",
+                "regionalized component pools",
+                "transatlantic access risks"
+              ]
+            },
+            {
+              "text": "Industry bodies report average operational aircraft fleet ages climbing across commercial carriers in 2027.",
+              "keywords": [
+                "fleet ages climbing",
+                "operational aircraft fleet",
+                "commercial carriers"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Airlines announce mass retirements of legacy aircraft following rapid acceleration of new aircraft deliveries.",
+              "keywords": [
+                "mass retirements",
+                "legacy aircraft",
+                "new aircraft deliveries"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-d29165acda242f8c",
+                "outlet": "seekingalpha.com",
+                "title": "Geopolitical Turbulence Complicates Airlines' Flight Paths For 2027 | Seeking Alpha",
+                "url": "https://seekingalpha.com/article/4957983-geopolitical-turbulence-complicates-airlines-flight-paths-2027",
+                "when": "27 Oct 2026, 15:15 UTC"
+              },
+              {
+                "signal_id": "SIG-ce5ab8dc5f4cee90",
+                "outlet": "avi-go.com",
+                "title": "Tennessee Airports Generated $54 Billion Statewide Economic Impact in 2025, Analysis Shows | AviNews",
+                "url": "https://avi-go.com/news/articles/15ab38082134b6d3bf146235ac7385cf",
+                "when": "25 Oct 2026, 23:09 UTC"
+              }
+            ],
+            "reports": []
+          }
+        },
+        {
+          "case": "MEDIUM",
+          "title": "Medium case for STE",
+          "name": "Transatlantic Friction and Compliance Drag",
+          "narrative": "Disputes over European aerospace loans and dual-use export scrutiny could create regulatory friction across transatlantic trade lanes. Heightened compliance screening and tariff threats might lengthen customs cycles and inflate inventory carrying costs. Maintenance networks may face localized bottlenecks without suffering a total operational halt.",
+          "evidence": [
+            "A tariff truce between the United States and the European Union faces risk after the European Investment Bank approved 3 billion euros in financing for Airbus (economictimes.indiatimes.com, 27 Oct 2026, 02:01 UTC).",
+            "Dual-use compliance frameworks apply to aircraft systems, requiring strict export licensing checks to avoid shipment delays and trade penalties (oneunionsolutions.com, 25 Oct 2026, 23:11 UTC)."
+          ],
+          "impact": [
+            "Components could face margin compression and slower turnarounds due to expanded dual-use export paperwork.",
+            "Elbe Flugzeugwerke might experience increased component import costs if aerospace tariff exemptions lapse."
+          ],
+          "responses": [
+            {
+              "action": "Review customs classification protocols and export control verification steps across transatlantic shipping corridors",
+              "owner": "Export control and trade compliance office",
+              "trigger": 2
+            }
+          ],
+          "signposts": [
+            {
+              "text": "United States trade officials issue formal warnings or review proceedings regarding aerospace tariff exemptions on European aviation components.",
+              "keywords": [
+                "United States trade officials",
+                "formal warnings",
+                "aerospace tariff exemptions"
+              ]
+            },
+            {
+              "text": "Customs authorities publish updated dual-use enforcement advisories resulting in extended clearing times for avionics and engine parts.",
+              "keywords": [
+                "dual-use enforcement advisories",
+                "extended clearing times",
+                "avionics and engine parts"
+              ]
+            },
+            {
+              "text": "Aerospace component distributors report increased administrative processing times for cross-border shipments between the US and Europe.",
+              "keywords": [
+                "Aerospace component distributors",
+                "administrative processing times",
+                "cross-border shipments"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "The United States and European Union sign a formal multi-year extension of the aerospace tariff truce without preconditions.",
+              "keywords": [
+                "United States and European Union",
+                "multi-year extension",
+                "aerospace tariff truce"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-6a6aaf71088e4d5b",
+                "outlet": "economictimes.indiatimes.com",
+                "title": "US EU trade deal: US official warns EU Airbus loan puts trade deal at risk - The Economic Times",
+                "url": "https://economictimes.indiatimes.com/news/international/business/us-official-warns-eu-airbus-loan-puts-trade-deal-at-risk/articleshow/135222580.cms",
+                "when": "27 Oct 2026, 02:01 UTC"
+              },
+              {
+                "signal_id": "SIG-6ad305c44583c6ec",
+                "outlet": "oneunionsolutions.com",
+                "title": "Export Controls and Customs for Aircraft Components",
+                "url": "https://oneunionsolutions.com/blog/export-controls-and-customs-challenges-for-aircraft-components",
+                "when": "25 Oct 2026, 23:11 UTC"
+              }
+            ],
+            "reports": []
+          }
+        },
+        {
+          "case": "WORST",
+          "title": "Worst case for STE",
+          "name": "Supply Fragmentation and Sanctions Gridlock",
+          "narrative": "Intensifying geopolitical confrontation and secondary sanctions crackdowns could fracture access to crucial propulsion intellectual property and parts. Re-imposed transatlantic aerospace tariffs might disrupt international component supply lines and inflate maintenance input costs. Tightened trade controls could stall component turnaround times and strand work in progress across global facilities.",
+          "evidence": [
+            "Heavy reliance on US-originated engine intellectual property and components exposes maintenance providers worldwide to political access risk (avi-go.com, 27 Oct 2026, 17:56 UTC).",
+            "Investigations revealed clandestine networks evading Western blockades to import aircraft engine components and dual-use hardware, driving stricter enforcement (economictimes.indiatimes.com, 30 Oct 2026, 03:14 UTC; boxden.com, 29 Oct 2026, 14:54 UTC)."
+          ],
+          "impact": [
+            "Nacelles could face production interruptions if cross-border transfers of proprietary components are restricted.",
+            "Aerostructures & Systems could encounter elevated material costs and delayed deliverables due to reciprocal trade tariffs."
+          ],
+          "responses": [
+            {
+              "action": "Prepare contingency sourcing plans and alternate supplier accreditations for critical dual-use engine and aerostructure components",
+              "owner": "Group Procurement",
+              "trigger": 2
+            }
+          ],
+          "signposts": [
+            {
+              "text": "Governments impose retaliatory aerospace import tariffs affecting airframe assemblies and engine components.",
+              "keywords": [
+                "retaliatory aerospace import tariffs",
+                "airframe assemblies",
+                "engine components"
+              ]
+            },
+            {
+              "text": "Western regulators issue emergency export control rules restricting engine technical data and parts transfers to third-party overseas maintenance shops.",
+              "keywords": [
+                "emergency export control rules",
+                "restricting engine technical data",
+                "maintenance shops"
+              ]
+            },
+            {
+              "text": "Civil aviation authorities report widespread maintenance delays caused by component shortages and customs seizures.",
+              "keywords": [
+                "Civil aviation authorities",
+                "widespread maintenance delays",
+                "customs seizures"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Major aviation trading partners introduce mutual fast-track clearance corridors for civil aviation maintenance parts.",
+              "keywords": [
+                "aviation trading partners",
+                "fast-track clearance corridors",
+                "civil aviation maintenance parts"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-03617f585d3e2abc",
+                "outlet": "avi-go.com",
+                "title": "MROs Rethink Network Footprint and Parts Access as Geopolitical Tensions Strain Global Supply Chains | AviNews",
+                "url": "https://avi-go.com/news/articles/c23ca94f834859d7e217aba3edd0affd",
+                "when": "27 Oct 2026, 17:56 UTC"
+              },
+              {
+                "signal_id": "SIG-010fadf197bb5c21",
+                "outlet": "economictimes.indiatimes.com",
+                "title": "Who sent $2 bn military equipment to Iran past US blockade? More than 5,000 agencies - The Economic Times",
+                "url": "https://economictimes.indiatimes.com/news/defence/who-sent-2-bn-military-equipment-to-iran-past-us-blockade-more-than-5000-agencies/articleshow/135340923.cms",
+                "when": "30 Oct 2026, 03:14 UTC"
+              },
+              {
+                "signal_id": "SIG-50bd0baa3281ad10",
+                "outlet": "boxden.com",
+                "title": "Oct 29 - Iran Used 5,000 Hidden Military Agencies to Import Billions in Hardware Despite U.S. Blockade",
+                "url": "https://boxden.com/showthread.php?t=3599252",
+                "when": "29 Oct 2026, 14:54 UTC"
+              }
+            ],
+            "reports": []
+          }
+        }
+      ]
+    },
+    {
+      "themeId": "CA-KEY-06",
+      "name": "Lack of Qualified and Experienced Technical Personnel",
+      "horizon": "1-5 years",
+      "situation": null,
+      "builds_on": [],
+      "keywords": "PROPOSED",
+      "cases": [
+        {
+          "case": "BEST",
+          "title": "Best case for STE",
+          "name": "Institutional Training Alliances Mitigate Talent Deficits",
+          "narrative": "Collaborative educational initiatives and targeted technical vocational pipelines could stabilize workforce availability across critical maintenance hubs. Commercial Aerospace might secure licensed maintenance engineers ahead of peers through structured apprenticeship sponsorships. This could ease turnover pressures and allow Aerospace MRO facilities to capture extra maintenance throughput.",
+          "evidence": [
+            "Industry stakeholders emphasize that addressing technical skills shortages requires collaborative approaches across manufacturers, contractors, and educational institutions to strengthen training opportunities (irishnews.com, 27 Oct 2026, 10:52 UTC).",
+            "Equipment and technical service networks are actively donating specialized equipment to vocational community colleges to enhance practical training and develop regional technician pipelines (thetrucker.com, 28 Oct 2026, 15:21 UTC)."
+          ],
+          "impact": [
+            "Aerospace MRO could expand hangar shift capacity and shorten turnaround schedules.",
+            "Airframe could reduce reliance on premium subcontracted labor across major airframe check lines."
+          ],
+          "responses": [
+            {
+              "action": "Consider establishing direct technical curriculum partnerships and training equipment sponsorships with regional technical colleges",
+              "owner": "Human Resources",
+              "trigger": 1
+            }
+          ],
+          "where_ste_could_gain": "Aerospace MRO could capture maintenance overflow from competitors whose hangar bays remain constrained by technical workforce shortages.",
+          "signposts": [
+            {
+              "text": "Vocational institutions announce co-funded technical apprenticeship programs with commercial aerospace service providers.",
+              "keywords": [
+                "co-funded technical apprenticeship programs",
+                "vocational institutions",
+                "commercial aerospace service providers"
+              ]
+            },
+            {
+              "text": "Regional aviation authorities report an uptick in licensed aircraft maintenance engineer exam completions.",
+              "keywords": [
+                "uptick",
+                "licensed aircraft maintenance engineer exam completions",
+                "regional aviation authorities"
+              ]
+            },
+            {
+              "text": "Aerospace engineering academies expand hands-on equipment donations for airframe technician certifications.",
+              "keywords": [
+                "expand hands-on equipment donations",
+                "aerospace engineering academies",
+                "airframe technician certifications"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Technical college enrollment figures for mechanical and avionics trade programs drop year-on-year.",
+              "keywords": [
+                "drop year-on-year",
+                "technical college enrollment figures",
+                "avionics trade programs"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-5f04dee3cea20c55",
+                "outlet": "irishnews.com",
+                "title": "How manufacturers can help address the construction skills shortage – The Irish News",
+                "url": "https://irishnews.com/news/business/how-manufacturers-can-help-address-the-construction-skills-shortage-NN6MH7NVEZH3NB42AKSJXZCUJY",
+                "when": "27 Oct 2026, 10:52 UTC"
+              },
+              {
+                "signal_id": "SIG-1106cc9311783b93",
+                "outlet": "thetrucker.com",
+                "title": "ATG donates truck to White Mountains Community College diesel program - TheTrucker.com",
+                "url": "https://www.thetrucker.com/trucking-news/truck-driving-jobs-news/atg-donates-truck-to-white-mountains-community-college-diesel-program",
+                "when": "28 Oct 2026, 15:21 UTC"
+              }
+            ],
+            "reports": []
+          }
+        },
+        {
+          "case": "MEDIUM",
+          "title": "Medium case for STE",
+          "name": "Persistent Wage Friction and Margin Compression",
+          "narrative": "The structural scarcity of licensed technicians could persist, driving moderate wage escalation and sporadic recruitment delays. Commercial Aerospace might maintain required maintenance delivery schedules by absorbing higher overtime and retention compensation. Productivity gains from digital maintenance tools could partially offset wage headwinds.",
+          "evidence": [
+            "A published report indicates that technician shortages cost equipment dealerships CA$803 million annually in Canada due to unmet operational demand (randallreilly.com, 27 Oct 2026, 13:47 UTC).",
+            "Even when total job vacancy numbers soften in certain regions, employers face ongoing difficulties finding adequately skilled technical labor (irishnews.com, 27 Oct 2026, 10:52 UTC)."
+          ],
+          "impact": [
+            "Aerospace MRO may face compressed operating margins on fixed-price long-term maintenance contracts.",
+            "Components repair turnaround times could experience modest scheduling buffers to accommodate shift vacancies."
+          ],
+          "responses": [
+            {
+              "action": "Review long-term fleet service agreement escalation clauses to ensure technician labor inflation is indexed",
+              "owner": "Head, Airframe Services",
+              "trigger": 1
+            }
+          ],
+          "signposts": [
+            {
+              "text": "Industry salary surveys indicate steady single-digit wage growth for certified maintenance technicians.",
+              "keywords": [
+                "steady single-digit wage growth",
+                "industry salary surveys",
+                "certified maintenance technicians"
+              ]
+            },
+            {
+              "text": "Maintenance facilities report lengthening time-to-hire metrics for specialized avionics and structural personnel.",
+              "keywords": [
+                "lengthening time-to-hire metrics",
+                "maintenance facilities",
+                "specialized avionics"
+              ]
+            },
+            {
+              "text": "Regional vocational programs report flat graduation rates for certified heavy equipment and aviation mechanics.",
+              "keywords": [
+                "flat graduation rates",
+                "regional vocational programs",
+                "aviation mechanics"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Widespread labor surpluses emerge across regional heavy maintenance and manufacturing markets.",
+              "keywords": [
+                "labor surpluses emerge",
+                "heavy maintenance",
+                "manufacturing markets"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-e6d4b5abae61114c",
+                "outlet": "randallreilly.com",
+                "title": "The AED Technician Shortage Report Canadian Edition - Randall Reilly",
+                "url": "https://randallreilly.com/uncategorized/the-aed-technician-shortage-report-2",
+                "when": "27 Oct 2026, 13:47 UTC"
+              },
+              {
+                "signal_id": "SIG-5f04dee3cea20c55",
+                "outlet": "irishnews.com",
+                "title": "How manufacturers can help address the construction skills shortage – The Irish News",
+                "url": "https://irishnews.com/news/business/how-manufacturers-can-help-address-the-construction-skills-shortage-NN6MH7NVEZH3NB42AKSJXZCUJY",
+                "when": "27 Oct 2026, 10:52 UTC"
+              }
+            ],
+            "reports": []
+          }
+        },
+        {
+          "case": "WORST",
+          "title": "Worst case for STE",
+          "name": "Severe Technician Deficit Throttles Throughput",
+          "narrative": "Intense cross-sector competition for technical trades could precipitate acute personnel shortages and aggressive poaching. Commercial Aerospace facilities might encounter operational bottlenecks, unfulfilled maintenance slots, and substantial penalty costs. Inability to staff inspection shifts could force lines of business to defer scheduled overhaul lines.",
+          "evidence": [
+            "A published report finds that technician shortages cost equipment dealers $7 billion per year in the United States (uk.advfn.com, 28 Oct 2026, 17:06 UTC).",
+            "Technical skills shortages represent an increasingly significant barrier to meeting underlying operational demand across maintenance sectors (irishnews.com, 27 Oct 2026, 10:52 UTC; randallreilly.com, 27 Oct 2026, 13:47 UTC)."
+          ],
+          "impact": [
+            "STE Pensacola Aerospace could experience hangar slot under-utilization due to certified crew shortages.",
+            "Aerospace MRO could incur customer contract penalties for delayed aircraft delivery dates."
+          ],
+          "responses": [
+            {
+              "action": "Prepare contingency technician redeployment plans and enhanced mid-career cross-skilling programs across airframe facilities",
+              "owner": "Head, Airframe Services",
+              "trigger": 1
+            }
+          ],
+          "signposts": [
+            {
+              "text": "Heavy maintenance facilities publicly announce reductions in active maintenance bay capacity due to unfilled technician positions.",
+              "keywords": [
+                "reductions in active maintenance bay capacity",
+                "heavy maintenance facilities",
+                "unfilled technician positions"
+              ]
+            },
+            {
+              "text": "Aviation regulatory bodies issue warnings over mandatory maintenance backlogs linked to certified staff shortages.",
+              "keywords": [
+                "issue warnings",
+                "mandatory maintenance backlogs",
+                "certified staff shortages"
+              ]
+            },
+            {
+              "text": "Technician trade associations report double-digit vacancy rates across commercial airframe overhaul facilities.",
+              "keywords": [
+                "double-digit vacancy rates",
+                "technician trade associations",
+                "commercial airframe overhaul facilities"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Large-scale automation rollouts reduce total certified technician staffing requirements across major maintenance depots.",
+              "keywords": [
+                "automation rollouts reduce",
+                "staffing requirements",
+                "maintenance depots"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-2f18b9d6c378ae64",
+                "outlet": "uk.advfn.com",
+                "title": "New Report Finds Technician Shortage Costs U.S. Equipment Dealers $7 Billion Per Year",
+                "url": "https://uk.advfn.com/stock-market/share-news/New-Report-Finds-Technician-Shortage-Costs-U-S-Eq/99579091",
+                "when": "28 Oct 2026, 17:06 UTC"
+              },
+              {
+                "signal_id": "SIG-5f04dee3cea20c55",
+                "outlet": "irishnews.com",
+                "title": "How manufacturers can help address the construction skills shortage – The Irish News",
+                "url": "https://irishnews.com/news/business/how-manufacturers-can-help-address-the-construction-skills-shortage-NN6MH7NVEZH3NB42AKSJXZCUJY",
+                "when": "27 Oct 2026, 10:52 UTC"
+              },
+              {
+                "signal_id": "SIG-e6d4b5abae61114c",
+                "outlet": "randallreilly.com",
+                "title": "The AED Technician Shortage Report Canadian Edition - Randall Reilly",
+                "url": "https://randallreilly.com/uncategorized/the-aed-technician-shortage-report-2",
+                "when": "27 Oct 2026, 13:47 UTC"
+              }
+            ],
+            "reports": []
+          }
+        }
+      ]
+    },
+    {
+      "themeId": "CA-KEY-07",
+      "name": "Cyber Security Attack / Breach",
+      "horizon": "1-5 years",
+      "situation": null,
+      "builds_on": [],
+      "keywords": "PROPOSED",
+      "cases": [
+        {
+          "case": "BEST",
+          "title": "Best case for STE",
+          "name": "Trusted Digital Haven",
+          "narrative": "Third-party aviation IT attacks could remain confined to reservation platforms and commercial software vulnerabilities without breaching STE production environments. STE could position its Aerospace MRO and Components operations as digitally secure havens, reassuring major carriers seeking verified cybersecurity resilience across their supply chains. Commercial airlines could increasingly prioritize MRO partners with audited IT/OT segregation and robust vulnerability management.",
+          "evidence": [
+            "Amadeus system credential compromises affected reservation data across carriers like Japan Airlines, Korean Air, and Asiana Airlines without penetrating airlines' internal networks or databases (visaverge.com, 29 Oct 2026, 18:56 UTC; finance.biggo.com, 29 Oct 2026, 10:06 UTC; rescana.com, 26 Oct 2026).",
+            "Japan Airlines reported 92,000 customer records exposed through an external reservation system breach while flight operations were unaffected (visaverge.com, 29 Oct 2026, 18:56 UTC)."
+          ],
+          "impact": [
+            "Aerospace MRO could secure multi-year maintenance service renewals by demonstrating secure data handling and operational network isolation.",
+            "ST Engineering Aerospace could win market share from competitors unable to comply with stricter airline cybersecurity standards."
+          ],
+          "responses": [
+            {
+              "action": "Consider launching a proactive cybersecurity assurance program for airline customers detailing operational IT/OT safeguards across hangars and component shops.",
+              "owner": "Group Information Security Officer (GISO)",
+              "trigger": 1
+            }
+          ],
+          "where_ste_could_gain": "Aerospace MRO could capture additional maintenance volume in Singapore by marketing hardened, audited digital engineering and MRO data environments to security-conscious commercial airlines.",
+          "signposts": [
+            {
+              "text": "Global airline alliances announce mandatory cybersecurity audit standards for all third-party maintenance contractors.",
+              "keywords": [
+                "mandatory cybersecurity audit standards",
+                "airline alliances",
+                "third-party maintenance contractors"
+              ]
+            },
+            {
+              "text": "Civil aviation authorities publish guidance mandating zero-trust architecture between airline enterprise IT and MRO maintenance tracking platforms.",
+              "keywords": [
+                "Civil aviation authorities",
+                "zero-trust architecture",
+                "MRO maintenance tracking platforms"
+              ]
+            },
+            {
+              "text": "Major commercial carriers issue requests for proposals demanding audited supply-chain cybersecurity certifications for airframe maintenance.",
+              "keywords": [
+                "commercial carriers",
+                "audited supply-chain cybersecurity certifications",
+                "airframe maintenance"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Airlines reduce cybersecurity compliance budgets for technical operations to offset revenue pressures.",
+              "keywords": [
+                "reduce cybersecurity compliance budgets",
+                "technical operations",
+                "revenue pressures"
+              ]
+            },
+            {
+              "text": "A cyber intrusion compromises maintenance records at a top-tier aerospace MRO facility.",
+              "keywords": [
+                "cyber intrusion",
+                "compromises maintenance records",
+                "aerospace MRO facility"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-942ee4b88a6776b8",
+                "outlet": "visaverge.com",
+                "title": "Japan Airlines Data Breach: 92,000 Customer Records Exposed",
+                "url": "https://www.visaverge.com/travel/japan-airlines-says-92000-customers-hit-in-data-breach",
+                "when": "29 Oct 2026, 18:56 UTC"
+              },
+              {
+                "signal_id": "SIG-c1a2b38016d44fb4",
+                "outlet": "finance.biggo.com",
+                "title": "South Korea's Jin Air Reports Data Breach Affecting 1,454 Members; API Hack Also Hit Hanjin Affiliates — BigGo Finance",
+                "url": "https://finance.biggo.com/news/1a7a0087-3f54-4130-ba2a-eeec154210ee",
+                "when": "29 Oct 2026, 10:06 UTC"
+              },
+              {
+                "signal_id": "SIG-c27c1beb38a8a673",
+                "outlet": "rescana.com",
+                "title": "Korean Air and Asiana Airlines Data Breach via Amadeus: Cybersecurity Incident Analysis and Third-Party Risks – Rescana",
+                "url": "https://www.rescana.com/post/korean-air-and-asiana-airlines-data-breach-via-amadeus-cybersecurity-incident-analysis-and-third-party-risks",
+                "when": "26 Oct 2026"
+              }
+            ],
+            "reports": []
+          }
+        },
+        {
+          "case": "MEDIUM",
+          "title": "Medium case for STE",
+          "name": "Supply-Chain Compliance Drag",
+          "narrative": "Escalating software vulnerabilities and airline third-party data breaches could trigger stringent regulatory scrutiny and emergency patching mandates across the aviation supply chain. Commercial Aerospace entities might face operational friction and higher administrative costs to repeatedly patch critical enterprise software and satisfy customer audit requirements. While core aircraft maintenance throughput could stay largely intact, project turnaround times could lengthen intermittently.",
+          "evidence": [
+            "CISA added critical PHP2Shell vulnerabilities to its catalog of actively exploited security flaws and ordered federal agencies to patch systems rapidly (bleepingcomputer.com, 27 Oct 2026, 08:20 UTC).",
+            "South Korea's revised Personal Information Protection Act prompted heightened regulatory scrutiny across aviation industry entities following consecutive airline data compromises (finance.biggo.com, 29 Oct 2026, 10:06 UTC; rescana.com, 26 Oct 2026).",
+            "GitLab issued emergency out-of-band patches for CVSS 10.0 remote code execution flaws affecting enterprise deployment environments (blog.aimactgrow.com, 30 Oct 2026, 04:22 UTC)."
+          ],
+          "impact": [
+            "ST Engineering Aerospace Services could experience localized administrative delays and increased overheads to comply with intensified airline customer audit questionnaires.",
+            "Precision Manufacturing could incur higher IT maintenance costs to continuously monitor and patch software across manufacturing tool chains."
+          ],
+          "responses": [
+            {
+              "action": "Review vulnerability management workflows and emergency patching protocols across all Commercial Aerospace software environments.",
+              "owner": "Group Information Security Officer (GISO)",
+              "trigger": 1
+            },
+            {
+              "action": "Prepare standardized cybersecurity compliance dossiers to expedite customer contract reviews and mitigate indemnity exposure.",
+              "owner": "Legal and Compliance",
+              "trigger": 2
+            }
+          ],
+          "signposts": [
+            {
+              "text": "Aviation regulators mandate accelerated emergency patching timelines for critical vulnerabilities in aviation maintenance planning software.",
+              "keywords": [
+                "Aviation regulators",
+                "accelerated emergency patching timelines",
+                "aviation maintenance planning software"
+              ]
+            },
+            {
+              "text": "Commercial airlines demand indemnity clauses covering third-party IT breaches in standard airframe maintenance agreements.",
+              "keywords": [
+                "Commercial airlines",
+                "indemnity clauses",
+                "third-party IT breaches",
+                "airframe maintenance agreements"
+              ]
+            },
+            {
+              "text": "Enterprise software vendors report delays in scheduled MRO software releases due to mandatory emergency vulnerability remediation.",
+              "keywords": [
+                "delays in scheduled MRO software releases",
+                "mandatory emergency vulnerability remediation",
+                "Enterprise software vendors"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Cybersecurity authorities relax reporting thresholds and allow extended remediation windows for aerospace supply chains.",
+              "keywords": [
+                "Cybersecurity authorities",
+                "relax reporting thresholds",
+                "extended remediation windows",
+                "aerospace supply chains"
+              ]
+            },
+            {
+              "text": "Airline maintenance procurement teams waive cybersecurity questionnaires to expedite hangar slot bookings.",
+              "keywords": [
+                "waive cybersecurity questionnaires",
+                "Airline maintenance procurement",
+                "hangar slot bookings"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-860bd2d07e63e772",
+                "outlet": "bleepingcomputer.com",
+                "title": "CISA confirms PHP2Shell vulnerabilities now exploited in attacks",
+                "url": "https://www.bleepingcomputer.com/news/security/cisa-confirms-php2shell-vulnerabilities-now-exploited-in-attacks",
+                "when": "27 Oct 2026, 08:20 UTC"
+              },
+              {
+                "signal_id": "SIG-c1a2b38016d44fb4",
+                "outlet": "finance.biggo.com",
+                "title": "South Korea's Jin Air Reports Data Breach Affecting 1,454 Members; API Hack Also Hit Hanjin Affiliates — BigGo Finance",
+                "url": "https://finance.biggo.com/news/1a7a0087-3f54-4130-ba2a-eeec154210ee",
+                "when": "29 Oct 2026, 10:06 UTC"
+              },
+              {
+                "signal_id": "SIG-c27c1beb38a8a673",
+                "outlet": "rescana.com",
+                "title": "Korean Air and Asiana Airlines Data Breach via Amadeus: Cybersecurity Incident Analysis and Third-Party Risks – Rescana",
+                "url": "https://www.rescana.com/post/korean-air-and-asiana-airlines-data-breach-via-amadeus-cybersecurity-incident-analysis-and-third-party-risks",
+                "when": "26 Oct 2026"
+              },
+              {
+                "signal_id": "SIG-9a7c3526b6431b7d",
+                "outlet": "blog.aimactgrow.com",
+                "title": "Classes from cybersecurity Black Week – blog.aimactgrow.com",
+                "url": "https://blog.aimactgrow.com/classes-from-cybersecurity-black-week",
+                "when": "30 Oct 2026, 04:22 UTC"
+              }
+            ],
+            "reports": []
+          }
+        },
+        {
+          "case": "WORST",
+          "title": "Worst case for STE",
+          "name": "Operational Lockdown",
+          "narrative": "Exploits targeting core web and network storage infrastructure, such as PHP2Shell or GitLab flaws, could penetrate MRO network assets and trigger ransomware outages. Critical hangar systems, parts tracking databases, and composite manufacturing lines might be forced offline to halt lateral infection. Extended operational halts could disrupt redelivery schedules, exposing STE to liquidated damages and customer flight disruption claims.",
+          "evidence": [
+            "Attackers weaponized PHP2Shell and GitLab RCE flaws to deploy L0CK3D ransomware across network-attached storage systems and web infrastructure (blog.aimactgrow.com, 30 Oct 2026, 04:22 UTC; guru3d.com, 29 Oct 2026, 17:32 UTC).",
+            "Jin Air and affiliated airline groups suffered repeated customer-data compromises through external API hacking attacks and third-party credential abuse (finance.biggo.com, 29 Oct 2026, 10:06 UTC; rescana.com, 26 Oct 2026)."
+          ],
+          "impact": [
+            "Airframe maintenance hangars across STE Pensacola Aerospace and STE San Antonio Aerospace could face delivery delays if planning and diagnostics systems require containment offline.",
+            "Components and Engines lines could face inventory tracking disruptions and contractual delay penalties if internal network mounts are isolated.",
+            "ST Engineering Aerospace could incur substantial containment costs and reputation damage if customer maintenance data is exposed."
+          ],
+          "responses": [
+            {
+              "action": "Prepare isolated, offline failover protocols and immutable backup procedures for all shop-floor execution and airworthiness sign-off tools.",
+              "owner": "Head, Airframe Services",
+              "trigger": 1
+            },
+            {
+              "action": "Review incident response playbooks and insurance coverage terms regarding operational technology ransomware containment.",
+              "owner": "Group Risk & Assurance",
+              "trigger": 2
+            }
+          ],
+          "signposts": [
+            {
+              "text": "A major ransomware campaign forces emergency offline isolation of aircraft maintenance planning software across international hangars.",
+              "keywords": [
+                "ransomware campaign",
+                "emergency offline isolation",
+                "aircraft maintenance planning software"
+              ]
+            },
+            {
+              "text": "Aviation safety regulators temporarily suspend automated release-to-service sign-offs following an integrity breach in maintenance logging tools.",
+              "keywords": [
+                "temporarily suspend automated release-to-service sign-offs",
+                "integrity breach",
+                "maintenance logging tools"
+              ]
+            },
+            {
+              "text": "An aviation parts distributor experiences a ransomware freeze that blocks aircraft spare shipments worldwide.",
+              "keywords": [
+                "aviation parts distributor",
+                "ransomware freeze",
+                "blocks aircraft spare shipments"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Enterprise container isolation and perimeter defenses successfully halt zero-day RCE exploits without requiring server shutdowns.",
+              "keywords": [
+                "container isolation",
+                "successfully halt zero-day RCE exploits",
+                "server shutdowns"
+              ]
+            },
+            {
+              "text": "Underwriters expand coverage for ransomware business interruption without imposing higher operational technology exclusions.",
+              "keywords": [
+                "expand coverage",
+                "ransomware business interruption",
+                "operational technology exclusions"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-9a7c3526b6431b7d",
+                "outlet": "blog.aimactgrow.com",
+                "title": "Classes from cybersecurity Black Week – blog.aimactgrow.com",
+                "url": "https://blog.aimactgrow.com/classes-from-cybersecurity-black-week",
+                "when": "30 Oct 2026, 04:22 UTC"
+              },
+              {
+                "signal_id": "SIG-273a3be17ca098d2",
+                "outlet": "guru3d.com",
+                "title": "Synology NAS Devices Hit by L0CK3D Ransomware Campaign",
+                "url": "https://guru3d.com/story/synology-nas-devices-hit-by-l0ck3d-ransomware-campaign",
+                "when": "29 Oct 2026, 17:32 UTC"
+              },
+              {
+                "signal_id": "SIG-c1a2b38016d44fb4",
+                "outlet": "finance.biggo.com",
+                "title": "South Korea's Jin Air Reports Data Breach Affecting 1,454 Members; API Hack Also Hit Hanjin Affiliates — BigGo Finance",
+                "url": "https://finance.biggo.com/news/1a7a0087-3f54-4130-ba2a-eeec154210ee",
+                "when": "29 Oct 2026, 10:06 UTC"
+              },
+              {
+                "signal_id": "SIG-c27c1beb38a8a673",
+                "outlet": "rescana.com",
+                "title": "Korean Air and Asiana Airlines Data Breach via Amadeus: Cybersecurity Incident Analysis and Third-Party Risks – Rescana",
+                "url": "https://www.rescana.com/post/korean-air-and-asiana-airlines-data-breach-via-amadeus-cybersecurity-incident-analysis-and-third-party-risks",
+                "when": "26 Oct 2026"
+              }
+            ],
+            "reports": []
+          }
+        }
+      ]
+    },
+    {
+      "themeId": "CA-KEY-08",
+      "name": "Legal & Regulatory Compliance (e.g., Sanctions, Trade Compliance, intermediaries)",
+      "horizon": "1-5 years",
+      "situation": null,
+      "builds_on": [],
+      "keywords": "PROPOSED",
+      "cases": [
+        {
+          "case": "BEST",
+          "title": "Best case for STE",
+          "name": "Standardized Global Compliance Moat",
+          "narrative": "Multilateral jurisdictions could establish clearer compliance frameworks and automated licensing paths that reduce operational friction across international aerospace supply chains. Commercial Aerospace might leverage its mature screening controls to reassure global airframers and airlines, capturing market share from less sophisticated competitors. Enhanced supply chain transparency may enable smooth cross-border MRO without major regulatory disruptions.",
+          "evidence": [
+            "China's MOFCOM confirmed that products manufactured using listed technologies fall outside control scopes and noted automatic licensing mechanisms for qualifying open technology filings (pillsburylaw.com, 28 Oct 2026).",
+            "Regulatory authorities such as OFAC weigh voluntary self-disclosures and effective compliance programmes as mitigating factors under enforcement guidelines (markdowneditor.cc, 24 Oct 2026)."
+          ],
+          "impact": [
+            "Commercial Aerospace could see faster contract approvals and reduced turnaround times across its Components line of business.",
+            "ST Engineering Aerospace could win high-value maintenance contracts from global carriers seeking audit-proof supply chain integrity."
+          ],
+          "responses": [
+            {
+              "action": "Consider establishing a unified multi-jurisdictional compliance certification program across all commercial aviation business units",
+              "owner": "Export control and trade compliance office",
+              "trigger": 1
+            }
+          ],
+          "where_ste_could_gain": "Commercial Aerospace could gain additional component MRO market share by marketing its audited multi-jurisdiction compliance framework as a low-risk alternative for Western airlines.",
+          "signposts": [
+            {
+              "text": "Publishing of harmonized sanctions and export control screening standards across EU and US agencies",
+              "keywords": [
+                "harmonized sanctions",
+                "export control screening standards",
+                "EU and US agencies"
+              ]
+            },
+            {
+              "text": "Introduction of streamlined automatic export licensing procedures by major Asian trade ministries for dual-use components",
+              "keywords": [
+                "automatic export licensing procedures",
+                "Asian trade ministries",
+                "dual-use components"
+              ]
+            },
+            {
+              "text": "Commercial airlines prioritizing MRO partners that hold verified multi-jurisdictional compliance certifications",
+              "keywords": [
+                "Commercial airlines",
+                "MRO partners",
+                "multi-jurisdictional compliance certifications"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Proliferation of conflicting national countermeasure regulations penalizing foreign compliance mandates",
+              "keywords": [
+                "conflicting national countermeasure regulations",
+                "foreign compliance mandates"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-885ee728ec903075",
+                "outlet": "pillsburylaw.com",
+                "title": "China Proposes Expanded Tech Export Restrictions, Announces New Export Control Measures",
+                "url": "https://pillsburylaw.com/en/news-and-insights/china-technology-export-restrictions-controls.html",
+                "when": "28 Oct 2026"
+              },
+              {
+                "signal_id": "SIG-80ffa3b9c4268901",
+                "outlet": "markdowneditor.cc",
+                "title": "Sanctions Compliance Procedure Template (OFAC, EBA/GL/2024/14, OFSI)",
+                "url": "https://markdowneditor.cc/en/templates/compliance/sanctions-compliance-procedure",
+                "when": "24 Oct 2026"
+              }
+            ],
+            "reports": []
+          }
+        },
+        {
+          "case": "MEDIUM",
+          "title": "Medium case for STE",
+          "name": "Divergent Rules and Screening Friction",
+          "narrative": "Diverging sanctions and export regimes between the US, EU, and Asian trading partners may persist, forcing aerospace firms to maintain parallel screening architectures. Commercial Aerospace could face increased administrative overhead and slower component deliveries due to stringent know-your-distributor audits and foreign direct product rule checks. Operational continuity might hold, but margins on cross-border logistics could tighten.",
+          "evidence": [
+            "Diverging US and EU sanctions regimes increase compliance risks as meeting one jurisdiction's rules does not necessarily satisfy another's (tradefinanceglobal.com, 29 Oct 2026, 14:32 UTC).",
+            "Enforcement bodies have scrutinized automatic software updates and post-designation transmissions under existing licenses as unauthorized exports (bassberrygovcontrade.com, 26 Oct 2026, 20:51 UTC)."
+          ],
+          "impact": [
+            "The Aerospace MRO line of business could absorb higher administrative costs and slower turnaround times due to enhanced distributor vetting.",
+            "ST Engineering Aerospace Systems may need to continually re-evaluate digital maintenance tools and automated software patches against updated entity lists."
+          ],
+          "responses": [
+            {
+              "action": "Review know-your-distributor protocols and intermediary screening procedures across regional spare parts distribution networks",
+              "owner": "Legal and Compliance",
+              "trigger": 1
+            },
+            {
+              "action": "Prepare audit protocols for automated software updates and digital tooling deployed across international maintenance sites",
+              "owner": "Export control and trade compliance office",
+              "trigger": 3
+            }
+          ],
+          "signposts": [
+            {
+              "text": "Expansion of know-your-distributor audit requirements across international aerospace logistics hubs",
+              "keywords": [
+                "Expansion",
+                "know-your-distributor audit requirements",
+                "aerospace logistics hubs"
+              ]
+            },
+            {
+              "text": "Regulatory inquiries into unauthorized aftermarket distribution channels across secondary aviation markets",
+              "keywords": [
+                "Regulatory inquiries",
+                "unauthorized aftermarket distribution channels",
+                "secondary aviation markets"
+              ]
+            },
+            {
+              "text": "Multi-week shipping delays for avionics and digital systems caused by foreign direct product rule reviews",
+              "keywords": [
+                "Multi-week shipping delays",
+                "avionics and digital systems",
+                "foreign direct product rule reviews"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Formal alignment of trade control perimeters and price caps between the US and European Union",
+              "keywords": [
+                "Formal alignment",
+                "trade control perimeters",
+                "price caps",
+                "European Union"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-e4c6a4da7819bea6",
+                "outlet": "tradefinanceglobal.com",
+                "title": "Diverging sanctions regimes require a collective response — Trade Finance Global",
+                "url": "https://www.tradefinanceglobal.com/posts/diverging-sanctions-regimes-require-a-collective-response",
+                "when": "29 Oct 2026, 14:32 UTC"
+              },
+              {
+                "signal_id": "SIG-cae2edb6a26fdb1e",
+                "outlet": "bassberrygovcontrade.com",
+                "title": "BIS Enforcement Action Highlights Export Control Risks for Software Updates and Entity List Transactions | GovCon & Trade",
+                "url": "https://bassberrygovcontrade.com/bis-enforcement-export-control-software-updates-entity-list",
+                "when": "26 Oct 2026, 20:51 UTC"
+              }
+            ],
+            "reports": []
+          }
+        },
+        {
+          "case": "WORST",
+          "title": "Worst case for STE",
+          "name": "Regulatory Crossfire and Technology Decoupling",
+          "narrative": "Unilateral export restrictions and conflicting countermeasure laws could trap multinational aerospace operations in cross-border enforcement disputes. Stricter extraterritorial controls might paralyze shared engineering initiatives, overseas tooling deployment, and joint maintenance facilities. Commercial Aerospace could risk severe regulatory penalties or forced divestment from critical international partnerships if compliance with one regime triggers legal liability in another.",
+          "evidence": [
+            "Arrangements such as outbound licensing, joint R&D, and overseas deployment have become subject to technology export controls, turning conventional risk mitigation tools into new sources of conflict (lexology.com, 29 Oct 2026).",
+            "Global manufacturers face mandatory audits, inquiries, and enforcement pressure when components appear in restricted jurisdictions through parallel trade networks (whalesbook.com, 29 Oct 2026, 21:10 UTC).",
+            "Enforcement actions by BIS against software exports and updates have resulted in dozens of alleged violations and formal administrative settlements (bassberrygovcontrade.com, 26 Oct 2026, 20:51 UTC)."
+          ],
+          "impact": [
+            "Elbe Flugzeugwerke or other overseas joint ventures could face operational halts if technology transfers or software licenses are revoked under extraterritorial rules.",
+            "The Aerostructures & Systems line of business might lose access to dual-use tooling and cross-border manufacturing partnerships.",
+            "Aviation Asset Management could encounter lease termination complexities and repossession blocks under conflicting international sanctions regimes."
+          ],
+          "responses": [
+            {
+              "action": "Prepare contingency operational plans to ring-fence shared engineering systems and joint ventures exposed to conflicting export and countermeasure rules",
+              "owner": "Legal and Compliance",
+              "trigger": 2
+            },
+            {
+              "action": "Review end-use monitoring controls and intermediary contracts for critical engine and airframe components to prevent diversion",
+              "owner": "Business area head",
+              "trigger": 3
+            }
+          ],
+          "signposts": [
+            {
+              "text": "Enforcement actions penalizing third-country manufacturers under extraterritorial foreign direct product rules for commercial parts",
+              "keywords": [
+                "Enforcement actions",
+                "third-country manufacturers",
+                "foreign direct product rules",
+                "commercial parts"
+              ]
+            },
+            {
+              "text": "Passage of national countermeasure laws forbidding domestic entities from complying with foreign trade restrictions",
+              "keywords": [
+                "Passage",
+                "countermeasure laws",
+                "foreign trade restrictions"
+              ]
+            },
+            {
+              "text": "Mandatory government audits initiated into global aerospace supply chains following diversion reports in restricted regions",
+              "keywords": [
+                "Mandatory government audits",
+                "aerospace supply chains",
+                "diversion reports"
+              ]
+            }
+          ],
+          "counter_indicators": [
+            {
+              "text": "Bilateral trade agreements carving out commercial aerospace maintenance and flight-safety spares from export bans",
+              "keywords": [
+                "Bilateral trade agreements",
+                "commercial aerospace maintenance",
+                "flight-safety spares",
+                "export bans"
+              ]
+            }
+          ],
+          "sources": {
+            "signals": [
+              {
+                "signal_id": "SIG-3d9155e776e994b1",
+                "outlet": "lexology.com",
+                "title": "Navigating Through the Gordian Knot: Compliance Pathways for Multinational Companies Under Conflicting Export Control and Countermeasure Rules - Lexology",
+                "url": "https://lexology.com/library/detail.aspx?g=9627faf3-b7bf-4313-a698-6f95e732e317",
+                "when": "29 Oct 2026"
+              },
+              {
+                "signal_id": "SIG-436881b59781850f",
+                "outlet": "whalesbook.com",
+                "title": "Iran Military Network Uses Global Brands for $2 Billion Procurement | Whalesbook",
+                "url": "https://www.whalesbook.com/news/English/international-news/Iran-Military-Network-Uses-Global-Brands-for-dollar2-Billion-Procurement/6ae3b6444fc30694db52cedf",
+                "when": "29 Oct 2026, 21:10 UTC"
+              },
+              {
+                "signal_id": "SIG-cae2edb6a26fdb1e",
+                "outlet": "bassberrygovcontrade.com",
+                "title": "BIS Enforcement Action Highlights Export Control Risks for Software Updates and Entity List Transactions | GovCon & Trade",
+                "url": "https://bassberrygovcontrade.com/bis-enforcement-export-control-software-updates-entity-list",
+                "when": "26 Oct 2026, 20:51 UTC"
+              }
+            ],
+            "reports": []
+          }
+        }
+      ]
+    }
+  ],
+  "notReviewed": [
+    "CA-KEY-04",
+    "CA-KEY-05"
+  ],
+  "carriedForward": []
+}
