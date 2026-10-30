@@ -74,7 +74,9 @@ A date is kept only when a source linked to the business area states it as a day
 
 `grit scenarios` now drafts best, medium and worst cases for a business-area pack's key risks, as it does for the Group pack's shifts. `grit scenarios-approve` makes the reviewed draft the pack's register, and every brief whose pack has a register shows its outlook and the leading indicators.
 
-On 30 October 2026 the URS (5 key risks) and DS&C (6) registers were recorded as approved by Jony Ling on instruction, for the POC, with BA review pending. The CA draft had evidence for one key risk only, because its 29 October run fell back to Currents; CA was re-scanned with Brave and redrafted.
+On 30 October 2026 the URS (5 key risks) and DS&C (6) registers were recorded as approved by Jony Ling on instruction, for the POC, with BA review pending. CA's 29 October run fell back to Currents and gave evidence for one key risk only. CA was scanned again with Brave for 30 October (131 queries, 369 pages kept); its register covers 6 of its 8 key risks, recorded in the same way. Key risks 4 and 5 had no evidence that week.
+
+A package already pending review is not replaced by a new layout: a reviewer returns it for rework first. Previews in format v2 for Wilson are in `output/runs/RUN/preview-format-v2/`.
 
 ## 8. Not built
 

@@ -2,6 +2,10 @@
 
 This page compares the GRIT-Scan URS brief with Wilson's hand-prepared report, *URS GRIT Scan, BA-wide, 22–29 October 2026 (v2, final-checked)*. It maps the six requests of 30 October 2026 to the gaps and proposes one change-controlled release to close them. Use it to agree scope with Hwai May and Wilson before any build starts.
 
+## Status
+
+Steps 1 to 5 were built on 30 October 2026 (spec 44, commit `36526b2`). URS, DS&C and CA scenario registers are recorded as approved on Jony Ling's instruction, for the POC, with BA review pending. Step 6 is not started.
+
 ## Context
 
 Hwai May froze the requirements on 28 October 2026, as Wilson's report records in section 4b. The six requests below change the report's layout and add forward-looking content. They are not new intelligence sources. The proposal is to accept them once, as **brief format v2**, written as spec 44, and to hold every later request for the MVP backlog.
