@@ -7,421 +7,541 @@
       "domain": "aac.moj.gov.tw",
       "sourceName": "Taiwan MOJ / Agency Against Corruption",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "aei.org",
       "sourceName": "American Enterprise Institute (AEI)",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "aisi.gov.uk",
       "sourceName": "UK AI Security Institute",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "anthropic.com",
       "sourceName": "Anthropic Research",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "apnews.com",
       "sourceName": "Associated Press",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "atlanticcouncil.org",
       "sourceName": "Atlantic Council",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "bis.doc.gov",
       "sourceName": "BIS (US export controls)",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "bis.gov",
       "sourceName": "US Bureau of Industry and Security",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "bloomberg.com",
       "sourceName": "Bloomberg",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH; STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH; STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "breakingdefense.com",
       "sourceName": "Breaking Defense",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "chinadaily.com.cn",
       "sourceName": "China Daily",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "cisa.gov",
       "sourceName": "CISA",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH; STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH; STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "csis.org",
       "sourceName": "CSIS",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "cwa.gov.tw",
       "sourceName": "Taiwan Central Weather Administration",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "defensenews.com",
       "sourceName": "Defense News",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "deloitte.com",
       "sourceName": "Deloitte",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "digitimes.com",
       "sourceName": "DigiTimes",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "epoch.ai",
       "sourceName": "Epoch AI",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "federalreserve.gov",
       "sourceName": "US Federal Reserve",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "focustaiwan.tw",
       "sourceName": "CNA / Focus Taiwan",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "ft.com",
       "sourceName": "Financial Times",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "gfma.org",
       "sourceName": "GFMA",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "globalriskinstitute.org",
       "sourceName": "Global Risk Institute",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "gov.uk",
       "sourceName": "UK Government",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "ibm.com",
       "sourceName": "IBM Quantum",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "ifc.org",
       "sourceName": "IFC",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "imf.org",
       "sourceName": "IMF",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "independent.co.uk",
       "sourceName": "The Independent",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "urs-tw: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "indianexpress.com",
       "sourceName": "The Indian Express",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "urs-tw: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "investing.com",
       "sourceName": "Investing.com",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "urs-tw: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "investor.tsmc.com",
       "sourceName": "TSMC Investor Relations",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "janes.com",
       "sourceName": "Janes",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "kpmg.com",
       "sourceName": "KPMG",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "metr.org",
       "sourceName": "METR",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "mnd.gov.tw",
       "sourceName": "Taiwan Ministry of National Defense",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "motor1.com",
       "sourceName": "Motor1",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "urs-tw: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "neom.com",
       "sourceName": "NEOM",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "nist.gov",
       "sourceName": "NIST",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "nytimes.com",
       "sourceName": "The New York Times",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "ofac.treasury.gov",
       "sourceName": "OFAC",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "pif.gov.sa",
       "sourceName": "Public Investment Fund",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "pwc.com",
       "sourceName": "PwC",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "railwaygazette.com",
       "sourceName": "Railway Gazette",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "reuters.com",
       "sourceName": "Reuters",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH; STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH; STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "rte.ie",
       "sourceName": "RTE",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "urs-tw: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "rusi.org",
       "sourceName": "RUSI",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "semianalysis.com",
       "sourceName": "SemiAnalysis",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "sipri.org",
       "sourceName": "SIPRI",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "straitstimes.com",
       "sourceName": "The Straits Times",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "taipeitimes.com",
       "sourceName": "Taipei Times",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "themoscowtimes.com",
       "sourceName": "The Moscow Times",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "urs-tw: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "thequantuminsider.com",
       "sourceName": "The Quantum Insider",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "thestar.com.my",
       "sourceName": "The Star (Malaysia)",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "urs-tw: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "tomshardware.com",
       "sourceName": "Tom's Hardware",
-      "rating": "LOW",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: LOW."
+      "rating": "MEDIUM",
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: LOW.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "trade.gov",
       "sourceName": "US International Trade Administration",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "trendforce.com",
       "sourceName": "TrendForce",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: MEDIUM."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: MEDIUM.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "u.ae",
       "sourceName": "UAE Government",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "understandingwar.org",
       "sourceName": "Institute for the Study of War (ISW)",
       "rating": "MEDIUM",
-      "status": "PROPOSED",
-      "basis": "urs-tw: HIGH; STE-SOURCES: MEDIUM. The registers differ, so the lower rating is used."
+      "status": "CONFIRMED",
+      "basis": "urs-tw: HIGH; STE-SOURCES: MEDIUM. The registers differ, so the lower rating is used.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "vision2030.gov.sa",
       "sourceName": "Saudi Vision 2030",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     },
     {
       "domain": "worldbank.org",
       "sourceName": "World Bank",
       "rating": "HIGH",
-      "status": "PROPOSED",
-      "basis": "STE-SOURCES: HIGH."
+      "status": "CONFIRMED",
+      "basis": "STE-SOURCES: HIGH.",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-10-30"
     }
   ]
 }
