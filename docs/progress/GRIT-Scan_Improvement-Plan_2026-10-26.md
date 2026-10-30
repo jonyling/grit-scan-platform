@@ -17,7 +17,7 @@ Every agent working on this repository must follow these rules:
   .venv/bin/python -m pytest -q
   ```
 
-  As of 29 October 2026, 623 tests pass. The URS, DS&C and CA registers in `config/` were rebuilt from `02_URS_Entity_Info.xlsx`, `04_DSC_Entity_Info.xlsx` and `01_CA_Entity_Info.xlsx` on 29 October 2026.
+  As of 30 October 2026, 629 tests pass. Outlet ratings live in `config/source-ratings.json` (`grit ratings`), shared by every pack. The URS, DS&C and CA registers in `config/` were rebuilt from `02_URS_Entity_Info.xlsx`, `04_DSC_Entity_Info.xlsx` and `01_CA_Entity_Info.xlsx` on 29 October 2026.
 
 - End each commit message with this trailer:
 

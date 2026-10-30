@@ -41,10 +41,10 @@ def test_urs_pack_is_rebuilt_from_the_workbook_and_does_not_invent() -> None:
     matched = exposure_entity_match(entity["entityName"], pack.exposure)
     assert matched["matchCount"] == 1
     assert matched["matchedEntities"][0]["entityType"] == "ENTITY"
-    assert credibility_lookup("https://www.bbc.com/news/story", pack.source_register)["credibilityRating"] == "UNRATED"
-    reuters = credibility_lookup("https://www.reuters.com/world/story", pack.source_register)
+    assert credibility_lookup("https://www.bbc.com/news/story", pack.source_register, {"ratings": []})["credibilityRating"] == "UNRATED"
+    reuters = credibility_lookup("https://www.reuters.com/world/story", pack.source_register, {"ratings": []})  # the register alone
     assert reuters["matched"] is True and reuters["credibilityRating"] == "UNRATED"
-    assert credibility_lookup("https://example-unlisted-outlet.com/story", pack.source_register)["matched"] is False
+    assert credibility_lookup("https://example-unlisted-outlet.com/story", pack.source_register, {"ratings": []})["matched"] is False
 
 
 def test_lob_hierarchy_fills_every_lob_and_leaves_unresolved_labels_unassigned() -> None:

@@ -162,7 +162,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-29, 624 tests pass. They make no network call.
+   As of 2026-10-30, 629 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 
@@ -358,7 +358,18 @@ The proposal and a review file, with each change's quote and a diff, go to `secr
 | `config/urs-tw/` | The Taiwan reader pack: ten standing conditions, named projects, customers, suppliers and sites, 26 rated sources, the scan plan (`URS-TW-Scan-Plan.json`), and order-book anchors (`URS-TW-Order-Book.json`). |
 | `config/risk/` | The Group risk universe (101 risks and their keywords), and `Risk-Cascade.json`, which orders entity, BA, and Group registers by weight and crosswalks BA themes to Group codes. Every crosswalk row is proposed until R&A approves it. |
 | `config/red-patterns.json` | The small RED patterns. |
+| `config/source-ratings.json` | Shared outlet credibility ratings (HIGH, MEDIUM or LOW) for every pack, owned by R&A. Seeded on 30 October 2026 with the 60 outlets already rated in the URS Taiwan and Group registers, all PROPOSED. |
 | `config/profiles/` | Reader profiles. |
+
+**Rate sources.** Each rating is PROPOSED until a named person confirms it. These commands list the ratings, set or change one outlet's rating (confirmed by you), and confirm proposed ratings:
+
+```bash
+.venv/bin/python -m grit ratings list
+.venv/bin/python -m grit ratings set reuters.com HIGH --by "Wilson Yeo" --name Reuters
+.venv/bin/python -m grit ratings confirm --by "Wilson Yeo"
+```
+
+A new rating applies from the next `grit assess`, `grit agents` or `grit weekly`.
 
 To add a reader pack for another business area or entity, follow [Add a business area](docs/add-a-business-area.md). It is a data change, not a code change.
 
@@ -381,7 +392,7 @@ To add a reader pack for another business area or entity, follow [Add a business
 
 **Briefing priority** (`grit/core/priority.py`). A big event hits a KEY theme and meets two of three cues: three or more outlets, a regulator or government action, a war, or a pandemic, and a stated figure of at least one million in a major currency. Tier 1 is big and direct, tier 2 is big or direct and significant, tier 3 is linked, and tier 4 is not linked.
 
-**Confidence** (`grit/core/confidence.py`). `HIGH` needs two independent outlets and one rated `HIGH` in the reader's source register. `MEDIUM` needs two outlets or one `HIGH`-rated outlet. Otherwise it is `LOW`.
+**Confidence** (`grit/core/confidence.py`). `HIGH` needs two independent publishers and one rated `HIGH`. `MEDIUM` needs two publishers or one `HIGH`-rated publisher. Otherwise it is `LOW`, and with nothing cited it is "not established". An outlet's rating comes from the pack's own source register first, then from the shared list in `config/source-ratings.json`, which `grit pack-build` never touches. Without a rating, a business-area brief cannot reach `HIGH`.
 
 **RED** (`grit/core/red_alert.py`). A pattern must hit the title or lead, in a sentence that is not a forecast, an assessment, or a drill, and the event must be corroborated or carried by a `HIGH`-rated source. "Invasion of Taiwan unlikely before 2028" is not RED. The events added on 28 October 2026 (a declared pandemic, a Chinese attack on Taiwan, an earthquake of magnitude 8.0 or greater, and the others in `grit/core/red_events.py`) are merged at assessment. A rule already in `config/red-patterns.json` is left as it stands. Events that name a linked party need a direct or counterparty link. Death of STE staff, a legal dispute, and a riot need a direct link.
 

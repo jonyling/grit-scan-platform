@@ -387,6 +387,7 @@ def _takes_argv(target: Callable[..., Any]) -> bool:
 def _delegates() -> dict[str, tuple[str, Callable[[], Callable[..., Any]], str]]:
     return {
         "pack-build": ("Rebuild a business-area pack's registers from its workbook.", lambda: __import__("grit.ontology.build_pack", fromlist=["_main"])._main, "grit pack-build"),
+        "ratings": ("List, seed, set or confirm the shared source credibility ratings.", lambda: __import__("grit.ontology.source_ratings", fromlist=["main"]).main, "grit ratings"),
         "pack-show": ("Print what a reader pack contains.", lambda: __import__("grit.ontology.pack", fromlist=["_main"])._main, "grit pack-show"),
         "library-ingest": ("Read the reports in secrets/reports/ into the library and embed their passages.", lambda: __import__("grit.library.sots", fromlist=["_ingest_main"])._ingest_main, "grit library-ingest"),
         "sots": ("Draft State of the Situation documents from the report library, for sign-off.", lambda: __import__("grit.library.sots", fromlist=["_main"])._main, "grit sots"),
