@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -20,7 +21,10 @@ from grit.report.notices import DISCLAIMER
 NAVY = RGBColor(0x1F, 0x38, 0x64)
 GREY = RGBColor(0x55, 0x55, 0x55)
 LIGHT = RGBColor(0x77, 0x77, 0x77)
-BOX_FILL = {"WATCHPOINT": "FFF2CC", "STABLE": "E2EFDA", "RED": "F8CBAD"}
+BOX_FILL = {"WATCHPOINT": "FFF2CC", "ELEVATED": "FFF2CC", "STABLE": "E2EFDA", "RED": "F8CBAD"}
+# Format v2 (spec 44): while a brief renders, every cited source gets a number, [S1], [S2], ..., and its link goes to the
+# source register at the end. None when a renderer is not inside render_docx.
+_REGISTER: dict[str, Any] | None = None
 # Defaults. A pack's scan plan can rename any section through sectionTitles.
 SECTION_TITLES = {
     "ORDER_BOOK": "Order-book baseline and context",
@@ -80,6 +84,34 @@ def _hyperlink(paragraph: Any, text: str, url: str, *, size: float | None = None
     paragraph._p.append(link)
 
 
+def _number(ref: Mapping[str, Any]) -> str:
+    """The source's number in the register, given on first use."""
+    numbers, refs = _REGISTER["numbers"], _REGISTER["refs"]
+    key = str(ref.get("signal_id") or ref.get("url") or ref.get("title"))
+    if key not in numbers:
+        numbers[key] = f"S{len(numbers) + 1}"
+        refs[key] = dict(ref)
+    return numbers[key]
+
+
+def _source_link(paragraph: Any, text: str, ref: Mapping[str, Any], *, size: float | None = None) -> None:
+    """A title or outlet with its source: [S#] when the brief keeps links in its source register, else a hyperlink."""
+    if _REGISTER is not None:
+        run = paragraph.add_run(f"{text} [{_number(ref)}]")
+        if size:
+            run.font.size = Pt(size)
+    elif ref.get("url"):
+        _hyperlink(paragraph, text, str(ref["url"]), size=size)
+    else:
+        run = paragraph.add_run(text)
+        if size:
+            run.font.size = Pt(size)
+
+
+def _marks(refs: Sequence[Mapping[str, Any]]) -> str:
+    return ", ".join(_number(ref) for ref in refs) if _REGISTER is not None else ""
+
+
 def _runs(paragraph: Any, rendered: Mapping[str, Any] | None, *, size: float | None = None, fallback: str = NOTHING) -> None:
     """Write text with its citations as linked '(Outlet, 1 Oct 2026)' references."""
     if not rendered:
@@ -102,10 +134,7 @@ def _runs(paragraph: Any, rendered: Mapping[str, Any] | None, *, size: float | N
                 if size:
                     sep.font.size = Pt(size)
             label = f"{ref['outlet']}, {ref['date']}" if ref.get("date") else str(ref["outlet"])
-            if ref.get("url"):
-                _hyperlink(paragraph, label, ref["url"], size=size)
-            else:
-                paragraph.add_run(label)
+            _source_link(paragraph, label, ref, size=size)
         close = paragraph.add_run(")")
         if size:
             close.font.size = Pt(size)
@@ -178,6 +207,22 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
     run = notice.add_run(DISCLAIMER)
     run.italic, run.font.size, run.font.color.rgb = True, Pt(9), LIGHT
 
+    global _REGISTER
+    v2 = brief.get("v2")
+    _REGISTER = {"numbers": {}, "refs": {}, "tiers": (v2 or {}).get("tiers") or {}} if v2 else None
+    if v2:
+        line = document.add_paragraph()
+        run = line.add_run(f"STATUS: {v2['status']}")
+        run.bold, run.font.size, run.font.color.rgb = True, Pt(12), NAVY
+        detail = []
+        if v2["arrows"]:
+            detail.append("Trend: " + "; ".join(v2["arrows"]) + ".")
+        if v2["risk_window"]:
+            detail.append("Next dated items: " + "; ".join(v2["risk_window"]) + ".")
+        if detail:
+            run = line.add_run("  " + " ".join(detail))
+            run.font.size = Pt(9.5)
+
     bottom = brief["bottom_line"]
     box = document.add_table(rows=1, cols=1)
     box.style = "Table Grid"
@@ -194,9 +239,14 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
     run = note.add_run(f"Drafted by the {bottom['drafted_by']}.")
     run.italic, run.font.size, run.font.color.rgb = True, Pt(8), LIGHT
 
-    number = 0
+    number = 1 if v2 else 0
+    if v2:
+        for title, renderer in V2_SECTIONS:
+            if renderer(document, brief, f"{number}. {title}", dry=True):
+                renderer(document, brief, f"{number}. {title}", dry=False)
+                number += 1
     for key in meta["sections"]:
-        if key == "BOTTOM_LINE":
+        if key == "BOTTOM_LINE" or (v2 and key in V2_REPLACES):
             continue
         renderer = _SECTIONS.get(key)
         if renderer is None:
@@ -206,7 +256,13 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
             continue
         renderer(document, brief, title, dry=False)
         number += 1
+    if v2:
+        _quality(document, brief, f"{number}. Quality and completeness check")
+        number += 1
     _method(document, brief)
+    if v2:
+        _source_register(document, brief, f"{number}. Source register")
+    _REGISTER = None
     _apply_first_use(document)
     _footers(document)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -396,10 +452,7 @@ def _key_risk_table(document: Any, brief: Mapping[str, Any], rows: Sequence[Mapp
         for number, ref in enumerate(row.get("sources") or [], start=1):
             paragraph = cells[1].paragraphs[0] if number == 1 else cells[1].add_paragraph()
             paragraph.add_run(f"{number}. ").font.size = Pt(8.5)
-            if ref.get("url"):
-                _hyperlink(paragraph, str(ref["outlet"]), str(ref["url"]), size=8.5)
-            else:
-                paragraph.add_run(str(ref["outlet"])).font.size = Pt(8.5)
+            _source_link(paragraph, str(ref["outlet"]), ref, size=8.5)
             if ref.get("title"):
                 title = paragraph.add_run(f": {str(ref['title'])[:90]}")
                 title.font.size, title.italic = Pt(8), True
@@ -495,10 +548,7 @@ def _requests(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool)
         for item in row["signals"]:
             line = document.add_paragraph()
             line.paragraph_format.left_indent = Cm(1.0)
-            if item["url"]:
-                _hyperlink(line, item["title"], item["url"], size=10)
-            else:
-                line.add_run(item["title"]).font.size = Pt(10)
+            _source_link(line, item["title"], item, size=10)
             line.add_run(f" ({item['outlet']}, {item['date'] or 'date not stated'})").font.size = Pt(10)
     proposed = [row["title"] for row in rows if row["status"] == "PROPOSED"]
     if proposed:
@@ -569,10 +619,7 @@ def _findings(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool)
     for item in brief["findings"]:
         paragraph = document.add_paragraph(style="List Bullet")
         paragraph.add_run((f"[{item['priority']} · tier {item['tier']}] " if item['priority'] else f"[tier {item['tier']}] ")).bold = True
-        if item["url"]:
-            _hyperlink(paragraph, item["title"], item["url"])
-        else:
-            paragraph.add_run(item["title"])
+        _source_link(paragraph, item["title"], item)
         paragraph.add_run(f" ({item['outlet']}, {item['date'] or 'date not stated'})")
         detail = document.add_paragraph()
         detail.paragraph_format.left_indent = Cm(1.0)
@@ -601,8 +648,7 @@ def _others(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -
     for item in brief["other_signals"]:
         paragraph = document.add_paragraph(style="List Bullet")
         paragraph.add_run((f"[{item['priority']}] " if item['priority'] else ""))
-        if item["url"]:
-            _hyperlink(paragraph, item["title"], item["url"], size=10)
+        _source_link(paragraph, item["title"], item, size=10)
         paragraph.add_run(f" ({item['outlet']}, {item['date'] or 'date not stated'})").font.size = Pt(10)
     return True
 
@@ -778,3 +824,196 @@ _SECTIONS = {
     "QA_LOG": _qa,
     "WATCHPOINTS": _watchpoints,
 }
+
+
+# Format v2 sections (spec 44) -----------------------------------------------------------------------------------------
+
+V2_NOTE = "Rows are AI-drafted suggestions for consideration, checked by rule against their sources. A named person reviews them before anyone acts."
+
+
+def _text_cell(cell: Any, text: str, *, size: float = 8.5, bold: bool = False) -> None:
+    run = cell.paragraphs[0].add_run(text)
+    run.font.size, run.bold = Pt(size), bold
+
+
+def _marks_cell(cell: Any, refs: Sequence[Mapping[str, Any]], *, size: float = 8.5) -> None:
+    _text_cell(cell, _marks(refs) or "No source", size=size)
+
+
+def _note(document: Any, text: str) -> None:
+    run = document.add_paragraph().add_run(text)
+    run.italic, run.font.size, run.font.color.rgb = True, Pt(8), LIGHT
+
+
+def _escalating(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    rows = brief["v2"]["escalating"]
+    if dry:
+        return True
+    _heading(document, title)
+    if not rows:
+        document.add_paragraph("No event met the escalation rule this week: none was RED, tier 1, or a corroborated tier 2 event linked to a risk.")
+        return True
+    short = brief["v2"]["short"]
+    widths = (0.7, 3.0, 4.6, 4.0, 3.4, 1.4)
+    table = _table(document, ("#", "Item and risk", "Summary", f"Implications for {short}", "Suggested response (owner)", "Sources"), widths)
+    for number, row in enumerate(rows, start=1):
+        cells = table.add_row().cells
+        for cell, width in zip(cells, widths):
+            cell.width = Cm(width)
+        _text_cell(cells[0], f"{number}")
+        _cell_lines(cells[1], [f"{row['band']} {row['item']}", f"[{row['risk']}]" if row["risk"] else "No register risk matched."], bold_first=True)
+        if row.get("summary"):
+            _runs(cells[2].paragraphs[0], row["summary"], size=8.5)
+            _runs(cells[3].paragraphs[0], row["implications"], size=8.5)
+            response = row.get("response") or {}
+            _cell_lines(cells[4], [str(response.get("action") or ""), f"Owner: {response.get('owner') or 'to assign'}."])
+        else:
+            _cell_lines(cells[2], ["The drafted row failed its checks, so only the lead report is shown. See the QA log."])
+            _cell_lines(cells[3], ["Not drafted."])
+            _cell_lines(cells[4], ["Not drafted."])
+        _marks_cell(cells[5], row.get("sources") or [])
+    _note(document, V2_NOTE)
+    return True
+
+
+def _changes(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    rows = brief["v2"]["changes"]
+    if dry:
+        return bool(rows)
+    _heading(document, title)
+    prior = brief["meta"].get("prior_run_date") or "the last report"
+    widths = (4.6, 4.6, 5.0, 2.9)
+    table = _table(document, ("Item", f"Last report ({prior})", "This report", "Direction"), widths)
+    for row in rows:
+        _row(table, [f"{row['item']}" + (f" [{row['risk']}]" if row["risk"] else ""), row["before"], row["now"] + (f" [{_marks(row['sources'])}]" if row.get("sources") and _REGISTER is not None else ""), row["direction"]], widths)
+    return True
+
+
+def _look_ahead(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    rows = brief["v2"]["look_ahead"]
+    if dry:
+        return True
+    _heading(document, title)
+    if rows:
+        widths = (2.2, 9.4, 3.8, 1.7)
+        table = _table(document, ("Date", "Event, as the source states it", f"Relevance to {brief['v2']['short']}", "Sources"), widths)
+        for row in rows:
+            when = date.fromisoformat(row["date"])
+            _row(table, [f"{when.strftime('%a')} {when.day} {when.strftime('%b')}", row["event"], row["relevance"] or "Linked by the scan", _marks(row["sources"])], widths)
+        _note(document, "Dates come only from the week's sources, as stated. Nothing here is a forecast.")
+    else:
+        document.add_paragraph("No source linked to the business area states a dated event in the next 30 days.")
+    indicators = (brief.get("scenarios") or {}).get("indicators") or []
+    if indicators:
+        from grit.pipeline.indicators import indicator_line
+
+        document.add_paragraph("Leading indicators:")
+        for item in indicators:
+            document.add_paragraph(f"{item['name']}: {indicator_line(item)}", style="List Bullet")
+    return True
+
+
+def _priorities(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    rows = brief["v2"]["priorities"]
+    if dry:
+        return bool(rows)
+    _heading(document, title)
+    widths = (0.7, 7.0, 2.6, 3.4, 3.4)
+    table = _table(document, ("#", "Item", "Trend", "Risk linkage", "Owner or forum"), widths)
+    for number, row in enumerate(rows, start=1):
+        item = row["item"] + (f" [{_marks(row['sources'])}]" if row.get("sources") and _REGISTER is not None else "")
+        _row(table, [number, item, row["trend"], row["risk"] or "No register risk matched", row["owner"]], widths)
+    return True
+
+
+def _coverage(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    v2 = brief["v2"]
+    if dry:
+        return bool(v2["coverage"])
+    _heading(document, title)
+    document.add_paragraph("Each cell is a finding, a nil from a search that ran, or not searched this week. A nil is never claimed without a search.")
+    widths = (3.0, *(2.82 for _ in v2["categories"]))
+    table = _table(document, ("Line of business", *v2["categories"]), widths)
+    for line in v2["coverage"]:
+        values = []
+        for category in v2["categories"]:
+            cell = line["cells"][category]
+            text = cell["text"] + (f" [{_marks(cell['sources'])}]" if cell.get("sources") and _REGISTER is not None else "")
+            values.append(text + (f" (and {cell['more']} more)" if cell.get("more") else ""))
+        _row(table, [line["lob"], *values], widths)
+    return True
+
+
+def _jurisdictions(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    rows = brief["v2"]["jurisdictions"]
+    if dry:
+        return bool(rows)
+    _heading(document, title)
+    widths = (2.6, 5.4, 7.6, 1.5)
+    table = _table(document, ("Jurisdiction", f"{brief['v2']['short']} entities", "In-window finding", "Trend"), widths)
+    for row in rows:
+        entities = "; ".join(row["entities"]) + (f"; and {row['more_entities']} more" if row["more_entities"] else "")
+        finding = row["finding"] + (f" [{_marks(row['sources'])}]" if row.get("sources") and _REGISTER is not None else "")
+        _row(table, [row["country"], entities, finding, row["trend"]], widths)
+    return True
+
+
+def _watch(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    v2 = brief["v2"]
+    if dry:
+        return bool(v2["watch"]) or bool(v2["watch_note"]["total"])
+    _heading(document, title)
+    if v2["watch"]:
+        widths = (4.4, 2.2, 10.5)
+        table = _table(document, ("Name", "Type", "This week"), widths)
+        for row in v2["watch"]:
+            _row(table, [row["name"], row["type"], row["text"]], widths)
+    note = v2["watch_note"]
+    document.add_paragraph(f"{note['total'] - note['not_searched']} of {note['total']} named suppliers, customers and competitors were searched or reported this week. "
+                           "The others rotate on the scan plan's cadence and were not searched this week.")
+    return True
+
+
+def _quality(document: Any, brief: Mapping[str, Any], title: str) -> None:
+    v2 = brief["v2"]
+    _heading(document, title)
+    _heading(document, "Self-challenge gate", level=3)
+    widths = (7.0, 1.8, 8.3)
+    table = _table(document, ("Question", "Answer", "Note"), widths)
+    for row in v2["gate"]:
+        _row(table, [row["question"], row["answer"], row["note"]], widths)
+    if v2["conflicts"]:
+        _heading(document, "Conflicts between sources", level=3)
+        widths = (4.0, 7.0, 6.1)
+        table = _table(document, ("Item", "What the sources say", "Treatment"), widths)
+        for row in v2["conflicts"]:
+            _row(table, [row["item"], row["said"], row["treatment"]], widths)
+
+
+def _source_register(document: Any, brief: Mapping[str, Any], title: str) -> None:
+    refs = _REGISTER["refs"] if _REGISTER else {}
+    if not refs:
+        return
+    _heading(document, title)
+    _note(document, "T1 official or primary; T2 an outlet rated HIGH; T3 an outlet rated MEDIUM or LOW; T4 an aggregator or an unrated outlet.")
+    tiers = _REGISTER["tiers"]
+    for key, number in _REGISTER["numbers"].items():
+        ref = refs[key]
+        paragraph = document.add_paragraph()
+        run = paragraph.add_run(f"[{number}] {ref.get('outlet') or 'source'}, {ref.get('title') or ''}, {ref.get('when') or ref.get('date') or 'date not stated'} ({tiers.get(str(ref.get('signal_id')), 'T4')}) ")
+        run.font.size = Pt(8.5)
+        if ref.get("url"):
+            _hyperlink(paragraph, str(ref["url"]), str(ref["url"]), size=8)
+
+
+# The named watch table replaces these prose sections in a format v2 brief.
+V2_REPLACES = frozenset({"SUPPLIERS", "CUSTOMERS", "COMPETITORS"})
+V2_SECTIONS = (
+    ("Escalating and elevated items", _escalating),
+    ("What changed since the last report", _changes),
+    ("Look-ahead: the next 30 days", _look_ahead),
+    ("Prioritisation", _priorities),
+    ("Coverage matrix", _coverage),
+    ("Jurisdiction coverage", _jurisdictions),
+    ("Named supplier, customer and competitor watch", _watch),
+)

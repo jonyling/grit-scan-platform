@@ -162,7 +162,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-30, 629 tests pass. They make no network call.
+   As of 2026-10-30, 635 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 
@@ -203,6 +203,8 @@ Run these commands from the repository root. `DATE` is the run date, `YYYY-MM-DD
    To run the stages one at a time, use `grit scan`, `grit agents`, and `grit report` with the same `--date`. `grit assess` reruns the deterministic assessment with no network call. A query already answered in a run is not sent again, so an interrupted scan resumes.
 
 3. Open the packs. Each reader's files are in `output/runs/DATE-PACK/PROFILE/vN/`: a Word brief, a PowerPoint executive summary in the format of `docs/reference/GRIT-Scan_Executive_Summary.pptx`, an Excel signal list, a Markdown copy, and the brief model as JSON. RED drafts are in `output/runs/DATE-PACK/alerts/`.
+
+   The brief follows Wilson's BA-wide layout (spec 44): a status line with ▲ = ▼ per event, the bottom line, then escalating and elevated items (summary, implications and a suggested response for each), what changed since the last report, a 30-day look-ahead, prioritisation, a coverage matrix by line of business, jurisdictions, and the named supplier, customer and competitor watch. A quality check and a numbered source register close it; the body cites sources as [S1], [S2]. Each business area's brief also shows its best, medium and worst scenarios once its register is approved (`grit scenarios --pack PACK`, then `grit scenarios-approve`).
 
    Each Word brief, Markdown preview, and slide says that the content is GRIT-Scan AI-generated suggestions for consideration, and that a named person reviews it before anyone acts on it. The deck uses one summary slide for up to two critical items, two slides for three or four, and three slides when there are five or more. Each summary point says what it means for that pack. A repeated point is kept at its first use; a different fact that happens to share a figure stays. A suggestion appears only when a proposed option or a triggered scenario response already cites that signal, and it is marked "Suggestion for the business area to consider."
 

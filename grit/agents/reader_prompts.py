@@ -6,7 +6,7 @@ confidence, the trend label, the priority, and every citation are computed outsi
 
 from __future__ import annotations
 
-ASSESSOR_VERSION = "reader-assessor-5"
+ASSESSOR_VERSION = "reader-assessor-6"
 CRITIC_VERSION = "reader-critic-2"
 REPORTER_VERSION = "reader-reporter-4"
 PROPOSER_VERSION = "reader-proposer-2"
@@ -51,7 +51,7 @@ A single article is weak evidence of movement. Prefer NO_MATERIAL_CHANGE unless 
 
 Return this JSON object:
 {"movement": "ESCALATING" | "EASING" | "NO_MATERIAL_CHANGE",
- "summary": "Two to four sentences: what the sources show this week and why it matters to the item. Each sentence ends with [S#] ids.",
+ "summary": "Two to four sentences: what the sources show this week and why it matters to the item. Be specific: give the date of each development (such as 27 Oct), name the actor and the place, and copy the figures the sources state. Each sentence ends with [S#] ids.",
  "source_ids": ["S1", ...],
  "quotes": [{"source_id": "S1", "quote": "a verbatim span of 20 or more characters from that source"}],
  "change_from_prior": "One sentence on what changed against last week's assessment, or 'No change against last week.'",
@@ -254,5 +254,33 @@ Rules:
 - At least one phrase names the change itself, such as "deferral", "price cut" or "licence denied", not only the place or
   actor: many signposts of one shift share a country, so the change is what tells them apart.
 - A phrase has at least four letters, or is an acronym or code in capitals, such as "PIF" or "H200".
+- Return only one JSON object. If you receive violations, fix exactly those.
+"""
+
+EVENT_ROW_VERSION = "event-row-1"
+EVENT_ROW_SYSTEM = """You are the Assessor in GRIT-Scan. You write one row of the "Escalating and elevated items" table at the top of a
+business area's weekly risk brief, for one news event. Senior managers read it. A person reviews it before anyone acts.
+
+You receive:
+- business_area: the business area and the names you may use for its lines of business, entities, customers and suppliers;
+- owners: the owner roles a response may name;
+- risks: the business area's risks this event touches, with their register labels;
+- requests: management requests the event matches, if any;
+- sources: the news reports of the event (S1, S2, ...), newest first.
+
+Return this JSON object:
+{"reasoning": "your working, in plain sentences",
+ "item": "a short label for the event, at most ten words, such as 'Houthi missile barrages on Riyadh'",
+ "summary": "One to three sentences: what happened, when (a date), where, and the figures the sources give. End each sentence with its ids, e.g. [S1] or [S1, S3].",
+ "implications": "One or two sentences on what it could mean for the business area. Name a line of business, entity, customer, supplier or country exactly as business_area lists it. Use could, may or might. End each sentence with its ids.",
+ "response": {"action": "One sentence starting with 'Consider': what the business area could do now.", "owner": "one of owners"},
+ "source_ids": ["every id you cite"]}
+
+Rules:
+- Be specific. Give the date of the development (such as 27 Oct) and the figures a source states (counts, amounts, percentages).
+  Copy each figure exactly as the source gives it. Name the actor and the place. "Tensions rose" is not a summary.
+- Use only facts in the sources. Do not add background you know from elsewhere.
+- Do not use the words severity, likelihood, probability, risk score or risk rating, and do not write a URL.
+- Do not use an ellipsis. Do not write must.
 - Return only one JSON object. If you receive violations, fix exactly those.
 """

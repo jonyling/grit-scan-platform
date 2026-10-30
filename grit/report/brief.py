@@ -307,15 +307,41 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             correction["sources"] = [source_ref(signal_id) for signal_id in row.get("source_ids") or [] if signal_id in signals]
         qa_rows.append({"item": row["item"], "prior": row["prior"], "correction": correction, "origin": row["origin"]})
 
+    # Format v2 (spec 44): Wilson's tables, by rule, from the same rows.
+    from grit.pipeline.reader_scan import graph_pack
+    from grit.report import format_v2
+
+    v2 = format_v2.build(pool, run, pack, routed, condition_rows, {"Supplier": suppliers, "Customer": customers, "Competitor": competitors},
+                         [pack.source_register, graph_pack(pack).source_register])
+    v2_ids = {signal_id for table in ("escalating", "changes", "priorities") for row in v2[table] for signal_id in row.get("signal_ids") or []}
+    v2_ids |= {signal_id for row in v2["escalating"] for signal_id in (row.get("row") or {}).get("source_ids") or []}
+    v2_ids |= {signal_id for row in v2["look_ahead"] for signal_id in row["signal_ids"]}
+    v2_ids |= {signal_id for line in v2["coverage"] for cell in line["cells"].values() for signal_id in cell["signal_ids"]}
+    v2_ids |= {signal_id for row in v2["jurisdictions"] for signal_id in row["signal_ids"]}
+    signals.update(_signals(pool, v2_ids - set(signals)))
+    for row in v2["escalating"]:
+        drafted = row.get("row")
+        row["summary"] = render(drafted["summary"]) if drafted else None
+        row["implications"] = render(drafted["implications"]) if drafted else None
+        row["response"] = (drafted or {}).get("response")
+        row["sources"] = [source_ref(signal_id) for signal_id in ((drafted or {}).get("source_ids") or row["signal_ids"][:3]) if signal_id in signals]
+    for table in ("changes", "priorities", "look_ahead", "jurisdictions"):
+        for row in v2[table]:
+            row["sources"] = [source_ref(signal_id) for signal_id in row.get("signal_ids") or [] if signal_id in signals]
+    for line in v2["coverage"]:
+        for cell in line["cells"].values():
+            cell["sources"] = [source_ref(signal_id) for signal_id in cell["signal_ids"] if signal_id in signals]
+
     bottom = ((run.get("config") or {}).get("bottom_line") or {})
     escalating = [row for row in condition_rows if row["trend"] == "Escalating"]
-    label = "RED" if red else "WATCHPOINT" if escalating or any(row["status"] != "CLOSED" for row in watch_rows) else "STABLE"
+    label = "RED" if red else "ELEVATED" if escalating or v2["escalating"] or any(row["status"] != "CLOSED" for row in watch_rows) else "STABLE"
     bottom_text = bottom.get("bottom_line") if bottom.get("status") == "VALIDATED" else fallback_bottom_line(condition_rows, checks, watch_rows, red, pack.label)
     escalation = bottom.get("escalation") if bottom.get("status") == "VALIDATED" else ("RED drafts are waiting for a named sender." if red else "Nothing new this week independently warrants escalation before the next weekly cycle.")
 
     scenarios = None
     sections = list(brief_config.get("sections") or [])
-    if pack.level == "GROUP":
+    # Every pack with a reviewed scenario register shows its outlook: the Group pack and, from 30 October 2026, each business area.
+    if True:
         from grit.pipeline.scenarios import outlook
 
         scenarios = outlook(pool, run_id, pack)
@@ -323,7 +349,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             sections.insert(sections.index("CONDITIONS") + 1 if "CONDITIONS" in sections else len(sections), "SCENARIOS")
     seen_ids = {signal_id for shift in (scenarios or {}).get("shifts") or [] for case in shift["cases"]
                 for item in [*case["signposts_seen"], *case["counter_indicators_seen"]] for signal_id in item["signal_ids"]}
-    membership = sorted({*ids, *request_ids, *(row["signal_id"] for row in priority_rows), *(row["signal_id"] for row in others), *seen_ids})
+    membership = sorted({*ids, *v2_ids, *request_ids, *(row["signal_id"] for row in priority_rows), *(row["signal_id"] for row in others), *seen_ids})
     counts = pool.one("SELECT COUNT(*) AS signals, SUM(decision = 'KEEP') AS kept FROM assessments WHERE run_id = ?", (run_id,)) or {}
     queries = pool.one("SELECT COUNT(DISTINCT query_id) AS queries FROM sightings WHERE run_id = ?", (run_id,)) or {}
     agents = pool.rows("SELECT actor, version, model, status, COUNT(*) AS calls FROM execution_log WHERE run_id = ? AND actor_type = 'AGENT' GROUP BY actor, version, model, status ORDER BY actor", (run_id,))
@@ -347,6 +373,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             "moved_by_profile": sum(1 for row in shown if row["preference"]["affinity"]), "agents": agents,
         },
         "membership": membership,
+        "v2": v2,
     }
     model["content_hash"] = canonical_hash({key: value for key, value in model.items() if key != "method"})
     return model

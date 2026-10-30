@@ -309,7 +309,7 @@ def test_the_group_pack_runs_end_to_end(tmp_path: Path, monkeypatch) -> None:
     assert model["meta"]["sections"].index("SCENARIOS") == model["meta"]["sections"].index("CONDITIONS") + 1 and signal in model["membership"]
     assert "Scenario outlook" in load_workbook(render_xlsx(model, [], tmp_path / "radar.xlsx")).sheetnames
     text = render_markdown(model)
-    assert "## 1. Scenario outlook: best, medium and worst case for STE" in text and "| **Semiconductor/GPU access**<br>Best case: Best path<br>" in text
+    assert ". Scenario outlook: best, medium and worst case for STE" in text and "| **Semiconductor/GPU access**<br>Best case: Best path<br>" in text
 
 
 def test_a_country_alone_or_outside_a_group_pack_is_not_on_the_footprint_rung(tmp_path: Path, monkeypatch) -> None:

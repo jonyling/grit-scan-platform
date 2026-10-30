@@ -166,11 +166,13 @@ def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
 
     deck = Presentation(rich["files"]["pptx"])
     slides = list(deck.slides)
-    items = deck_items(build_brief(pool, run.run_id, with_options))
+    deck_brief = build_brief(pool, run.run_id, with_options)
+    items = deck_items(deck_brief)
     from grit.report.office import summary_slide_count
 
     summaries = summary_slide_count(len(items))
-    assert len(slides) == 1 + summaries + len(items), "a cover, one to three summary slides, and one appendix slide per key risk or escalating theme"
+    extra = int(bool(deck_brief["v2"]["escalating"])) + int(bool((deck_brief.get("scenarios") or {}).get("shifts")))
+    assert len(slides) == 1 + summaries + extra + len(items), "a cover, one to three summary slides, the escalating-items and scenario slides when present, and one appendix slide per key risk or escalating theme"
     assert slides[0].slide_layout.name == COVER_LAYOUT and all(slide.slide_layout.name == CONTENT_LAYOUT for slide in slides[1:])
     texts = ["\n".join(shape.text_frame.text for shape in slide.shapes if shape.has_text_frame) for slide in slides]
     assert "GRIT-Scan" in texts[0] and "SCAN WINDOW" in texts[0] and "REPORT OWNER" in texts[0]
@@ -182,7 +184,8 @@ def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
     for label in ("WHAT IT MEANS FOR", "WHAT HAPPENED", "OPTIONS FOR MANAGEMENT CONSIDERATION", "RISK LINKAGE", "OWNER", "SOURCES", "Back to Executive Summary"):
         assert label in detail, label
     targets = lambda slide: {deck.slides.index(shape.click_action.target_slide) for shape in slide.shapes if shape.click_action.target_slide is not None}  # noqa: E731
-    assert 1 + summaries in targets(slides[1]) and all(targets(slide) == {1} for slide in slides[1 + summaries:]), "summary links to the appendix, and each appendix slide links back"
+    first = 1 + summaries + extra
+    assert first in targets(slides[1]) and all(targets(slide) == {1} for slide in slides[first:]), "summary links to the appendix, and each appendix slide links back"
     assert not any(REASONING in text for text in texts)
 
     wilson = write_pack(pool, run.run_id, profiles["wilson"], folder=tmp_path / "wilson")
@@ -191,7 +194,8 @@ def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
     assert "Proposed Response/Management Consideration" not in [cell.text for cell in key_table.rows[0].cells], "no response column without RESPONSE_OPTIONS"
     text = "\n".join([paragraph.text for paragraph in document.paragraphs] + [cell.text for table in document.tables for row in table.rows for cell in row.cells])
     assert "GRIT-Scan: Urban Solutions" in text
-    for heading in ("Standing risk themes (URS annual risks)", "Management-requested topics", "Entity reader packs", "STE entities by line of business", "Customer watch"):
+    for heading in ("Standing risk themes (URS annual risks)", "Management-requested topics", "Entity reader packs", "STE entities by line of business", "Named supplier, customer and competitor watch",
+                    "Escalating and elevated items", "Coverage matrix", "Self-challenge gate", "Source register"):
         assert heading in text, heading
     assert "CBTC resignalling of the North-South line delayed again" in text, "a P1 request match is listed under its request"
     assert "Bottom line for URS Taiwan weekly risk scan" in text, "the BA brief carries the entity pack's bottom line"

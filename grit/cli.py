@@ -218,8 +218,8 @@ def scenarios_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
 
     from grit.pipeline.reader_scan import _load_pack
 
-    if _load_pack(pack).level != "GROUP":
-        print(f"Skipped {pack}: this command is for Group packs.")
+    if _load_pack(pack).level not in {"GROUP", "BA"}:
+        print(f"Skipped {pack}: scenarios are drafted for the Group pack and the business-area packs.")
         return 0
     run = ReaderRun(run_id_for(args.date, pack), args.date, pack)
     if pool.run(run.run_id) is None:

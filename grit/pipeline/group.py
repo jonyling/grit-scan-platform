@@ -159,6 +159,9 @@ def propose_scenarios(pool: Pool, run: ReaderRun, *, client: Any, model: str, lo
 
     pack = _load_pack(run.pack)
     shifts = list((pack.themes or {}).get("themes") or [])
+    if pack.level == "BA":
+        # A business area's scenarios cover its key risks (format v2, 30 October 2026). Tier-2 and emerging risks stay in the brief's risk table.
+        shifts = [theme for theme in shifts if theme.get("tier") == "KEY"]
     area = business_area_context(pack)
     owners = owner_roles(pack)
     rows = _kept(pool, run)

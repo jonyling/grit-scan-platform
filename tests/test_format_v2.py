@@ -1,0 +1,107 @@
+"""Brief format v2 (spec 44): the event register, the escalating-items row checks, the look-ahead, and the rule-built tables."""
+
+from __future__ import annotations
+
+from datetime import date
+from pathlib import Path
+
+from grit.agents.reader import check_event_row, specificity_problems
+from grit.pipeline.events import DOWN, SAME, UP, event_register, risk_labels
+from grit.pool import Pool
+from grit.report.format_v2 import NIL, NOT_SEARCHED, category_of_name, clean_title, source_tier
+from grit.report.lookahead import dates_in, look_ahead
+
+SOURCES = {"S1": {"title": "Houthis fire five missiles at Riyadh", "text": "Saudi forces intercepted five ballistic missiles on 27 Oct over Riyadh.", "date": "27 Oct 2026"}}
+ANCHORS = ["ST Engineering Saudi Limited", "Mobility Rail"]
+OWNERS = ["Business area head", "Human Resources"]
+
+
+def _row(**changes) -> dict:
+    row = {
+        "item": "Houthi missile barrages on Riyadh",
+        "summary": "Saudi forces intercepted five ballistic missiles over Riyadh on 27 Oct 2026 [S1].",
+        "implications": "Staff of ST Engineering Saudi Limited in Riyadh could face disruption [S1].",
+        "response": {"action": "Consider reconfirming the safety of Riyadh staff.", "owner": "Human Resources"},
+        "source_ids": ["S1"],
+    }
+    return {**row, **changes}
+
+
+def test_an_escalating_row_passes_only_when_specific_grounded_and_conditional() -> None:
+    assert check_event_row(_row(), SOURCES, ANCHORS, OWNERS) == []
+    vague = check_event_row(_row(summary="Tensions rose in the Gulf [S1]."), SOURCES, ANCHORS, OWNERS)
+    assert any(item.startswith("NO_DATE") for item in vague) and any(item.startswith("NO_FIGURE") for item in vague)
+    assert any(item.startswith("UNGROUNDED_NUMBER") for item in check_event_row(_row(summary="Saudi forces intercepted 12 missiles on 27 Oct [S1]."), SOURCES, ANCHORS, OWNERS))
+    certain = check_event_row(_row(implications="Staff of ST Engineering Saudi Limited will be hurt [S1]."), SOURCES, ANCHORS, OWNERS)
+    assert any("NOT_CONDITIONAL" in item for item in certain)
+    assert any(item.startswith("UNKNOWN_OWNER") for item in check_event_row(_row(response={"action": "Consider it.", "owner": "CEO"}), SOURCES, ANCHORS, OWNERS))
+    assert any(item.startswith("BAD_ITEM") for item in check_event_row(_row(item="One two three four five six seven eight nine ten eleven"), SOURCES, ANCHORS, OWNERS))
+    assert specificity_problems("Riyadh was hit on 2026-10-27 by 5 missiles [S1].", SOURCES, ["S1"]) == [], "an ISO date counts"
+
+
+def test_risk_labels_follow_the_register_numbering() -> None:
+    assert risk_labels(["URS-KEY-05", "URS-KEY-03", "URS-TIER_2-07", "TW-GLOBAL-03"], {"TW-GLOBAL-03": "Taiwan Strait pressure"}) == "Key Risks 5, 3; Tier-2 Risk 7; Taiwan Strait pressure"
+
+
+def _signal(pool: Pool, sid: str, title: str, run: str, *, tier: int, day: str, rung: str | None = "DIRECT", themes: tuple = ("URS-KEY-05",), publisher: str = "reuters.com") -> None:
+    signal_id = pool.add_signal(url=f"https://{publisher}/{sid}", title=title, text=title, publisher=publisher, published_at=f"{day}T08:00:00Z", lane="BRAVE", content_hash=sid)
+    pool.upsert("assessments", {"signal_id": signal_id, "run_id": run, "pack": "urs", "decision": "KEEP", "tier": tier, "rung": rung, "red": 0, "assessed_at": day,
+                                "themes_json": [{"theme_id": theme, "strong": True} for theme in themes], "condition_ids_json": list(themes)}, ["signal_id", "run_id", "pack"])
+
+
+def test_the_event_register_bands_new_continuing_and_quiet_events(tmp_path: Path) -> None:
+    pool = Pool(tmp_path / "grit.sqlite")
+    pool.start_run("2026-10-22-urs", run_date="2026-10-22", pack="urs", kind="READER_SCAN", config={})
+    pool.finish_run("2026-10-22-urs")
+    pool.start_run("2026-10-29-urs", run_date="2026-10-29", pack="urs", kind="READER_SCAN", config={})
+    pool.finish_run("2026-10-29-urs")
+    _signal(pool, "old", "Gulf airport closed", "2026-10-22-urs", tier=1, day="2026-10-21")
+    _signal(pool, "new", "Missiles hit Riyadh", "2026-10-29-urs", tier=1, day="2026-10-27")
+    _signal(pool, "minor", "A trade fair opens", "2026-10-29-urs", tier=3, day="2026-10-28", themes=())
+    events = {event["lead"]["title"]: event for event in event_register(pool, "2026-10-29-urs", names={})}
+    assert events["Missiles hit Riyadh"]["band"] == UP and events["Missiles hit Riyadh"]["elevated"] and events["Missiles hit Riyadh"]["risk_label"] == "Key Risk 5"
+    assert events["A trade fair opens"]["band"] == SAME and not events["A trade fair opens"]["elevated"]
+    assert events["Gulf airport closed"]["band"] == DOWN and events["Gulf airport closed"]["members"] == []
+    assert list(events)[0] == "Missiles hit Riyadh", "elevated new events come first"
+
+
+def test_look_ahead_keeps_only_stated_future_dates_inside_the_window() -> None:
+    run = date(2026, 10, 29)
+    assert dates_in("Since the 1st of November 1998 the rule applied.", run) == [date(1998, 11, 1)]
+    rows = [
+        {"signal_id": "A", "title": "Midterms", "text": "The US midterm elections are on 3 November. Talks may follow.", "tier": 2},
+        {"signal_id": "B", "title": "Rates", "text": "The next FOMC meeting is on Dec 9, 2026, after the window.", "tier": 2},
+        {"signal_id": "C", "title": "History", "text": "The plant opened on 3 November 1998 and still runs today.", "tier": 2},
+        {"signal_id": "D", "title": "Midterms again", "text": "US voters go to the polls for the midterm elections on 3 November.", "tier": 1},
+    ]
+    found = look_ahead(rows, run, event_of={"A": "E1", "D": "E1"})
+    assert [(item["date"], item["signal_ids"]) for item in found] == [(date(2026, 11, 3), ["A", "D"])], "one row per event and date; past and far dates are left out"
+
+
+def test_source_tiers_titles_and_categories() -> None:
+    assert source_tier("https://www.mas.gov.sg/news", None, None) == "T1"
+    assert source_tier("https://www.reuters.com/x", "HIGH", None) == "T2"
+    assert source_tier("https://www.example.com/x", "MEDIUM", None) == "T3"
+    assert source_tier("https://www.example.com/x", None, None) == "T4"
+    assert clean_title("ST Engineering bags $5.6 billion | The Straits Times") == "ST Engineering bags $5.6 billion"
+    assert category_of_name("Financial volatility (inflation, interest rate)") == "Financial / macro"
+    assert category_of_name("Violation of Trade Compliance") == "Regulatory / legal"
+    assert category_of_name("Workplace health and safety") == "Operational"
+    assert NIL != NOT_SEARCHED
+
+
+def test_the_word_brief_moves_links_to_a_numbered_source_register(tmp_path: Path) -> None:
+    from docx import Document
+
+    from grit.report import docx_brief
+
+    document = Document()
+    docx_brief._REGISTER = {"numbers": {}, "refs": {}, "tiers": {"SIG-1": "T2"}}
+    paragraph = document.add_paragraph()
+    docx_brief._runs(paragraph, {"runs": [{"text": "Missiles hit Riyadh"}, {"cite": [{"signal_id": "SIG-1", "outlet": "reuters.com", "date": "27 Oct 2026", "url": "https://reuters.com/a", "title": "Missiles"}]}]})
+    docx_brief._source_register(document, {}, "9. Source register")
+    docx_brief._REGISTER = None
+    text = "\n".join(item.text for item in document.paragraphs)
+    assert "Missiles hit Riyadh (reuters.com, 27 Oct 2026 [S1])" in text
+    assert "[S1] reuters.com, Missiles, 27 Oct 2026 (T2)" in text
+    assert document.paragraphs[0]._p.find(".//{http://schemas.openxmlformats.org/wordprocessingml/2006/main}hyperlink") is None, "no link in the body"

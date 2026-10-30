@@ -824,7 +824,11 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
     checks = _item_checks(pool, run, pack, rows, client=client, model=model, write_log=write_log, log=log)
     watch = update_watchpoints(pool, run, rows)
     bottom = _bottom_line(pool, run, client=client, model=model, write_log=write_log)
+    from grit.pipeline.events import draft_rows
+
+    events = draft_rows(pool, run, client=client, model=model, log=log)
     return {
+        "events": events,
         "standing": {key: draft["status"] for key, draft in drafts.items()}, "critic_accepted": len(accepted),
         "implications": sum(1 for draft in drafts.values() if draft.get("implication")), "options": {key: len(rows) for key, rows in options.items()},
         "items": checks, "watchpoints": watch, "bottom_line": bottom["status"],

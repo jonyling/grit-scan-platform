@@ -23,6 +23,8 @@ from grit.agents.reader_prompts import (
     BASELINER_VERSION,
     CRITIC_SYSTEM,
     CRITIC_VERSION,
+    EVENT_ROW_SYSTEM,
+    EVENT_ROW_VERSION,
     PROPOSER_SYSTEM,
     PROPOSER_VERSION,
     REPORTER_BOTTOM_LINE_SYSTEM,
@@ -763,3 +765,88 @@ def propose_keywords(client: Any, model: str, *, subject: str, items: Mapping[st
     if log.status != "LLM_ERROR":
         log.status = "WITHHELD"
     return {"status": "WITHHELD", "keywords": {}, "violations": violations or log.violations}, log
+
+
+_DAY_MONTH = re.compile(
+    r"\b(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?\b"
+    r"|(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)|(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b|\b20\d\d-\d\d-\d\d\b)", re.I)
+_FIGURE = re.compile(r"\d")
+
+
+def specificity_problems(summary: str, sources: Mapping[str, Mapping[str, Any]], ids: Sequence[str], where: str = "summary") -> list[str]:
+    """A summary gives a date, and a figure when its cited sources state one (format v2, improvement point 4)."""
+    found: list[str] = []
+    plain = strip_marks(summary)
+    if not _DAY_MONTH.search(plain):
+        found.append(f"NO_DATE: {where}: give the date of the development, such as 27 Oct, as the sources state it.")
+    cited = " ".join(str(sources[item].get("title") or "") + " " + str(sources[item].get("text") or "")[:600] for item in ids if item in sources)
+    if _FIGURE.search(cited) and not _FIGURE.search(plain):
+        found.append(f"NO_FIGURE: {where}: the cited sources give figures; state the main one exactly as written.")
+    if "\u2026" in summary or "..." in summary:
+        found.append(f"ELLIPSIS: {where}: write whole sentences, with no ellipsis.")
+    return found
+
+
+def check_event_row(draft: Any, sources: Mapping[str, Mapping[str, Any]], anchors: Sequence[str], owners: Sequence[str]) -> list[str]:
+    if not isinstance(draft, Mapping):
+        return ["BAD_SHAPE: the draft is not an object"]
+    found: list[str] = []
+    item, summary = draft.get("item"), draft.get("summary")
+    if not isinstance(item, str) or not item.strip() or len(item.split()) > 10 or "\u2026" in item or "..." in item:
+        found.append("BAD_ITEM: item: a label of at most ten words, with no ellipsis.")
+    if not isinstance(summary, str) or not summary.strip():
+        return found + ["BAD_SHAPE: summary is empty"]
+    found += source_problems(draft.get("source_ids"), sources, "source_ids")
+    ids = [ref for ref in draft.get("source_ids") or [] if isinstance(ref, str) and ref in sources]
+    marks = marked_ids(summary)
+    if not marks:
+        found.append("UNCITED: summary: end each sentence with [S#] ids.")
+    found += [f"UNLISTED_SOURCE: summary cites {mark}, which is not in source_ids." for mark in marks if mark not in ids]
+    # A source's own date is a fact the row may state, so it counts as grounded text.
+    dated = f"{haystack(sources, ids)} " + " ".join(str(sources[item].get("date") or "") for item in ids if item in sources)
+    found += text_problems(summary, dated, "summary")
+    found += specificity_problems(summary, sources, marks or ids)
+    found += check_implication(draft.get("implications"), ids, sources, anchors, "implications")
+    response = draft.get("response") if isinstance(draft.get("response"), Mapping) else {}
+    action, owner = str(response.get("action") or ""), response.get("owner")
+    if not action.startswith("Consider"):
+        found.append("NOT_FOR_CONSIDERATION: response.action: start with 'Consider'.")
+    if _MUST.search(action):
+        found.append("DIRECTIVE: response.action: do not write must.")
+    if owner not in owners:
+        found.append(f"UNKNOWN_OWNER: response.owner: '{str(owner)[:40]}' is not one of owners.")
+    found += text_problems(strip_marks(action), haystack(sources, ids), "response.action")
+    return found
+
+
+def draft_event_row(
+    client: Any, model: str, *, event_id: str, business_area: Mapping[str, Any], owners: Sequence[str], risks: Sequence[Mapping[str, Any]],
+    requests: Sequence[str], sources: Mapping[str, Mapping[str, Any]],
+) -> tuple[dict[str, Any], CallLog]:
+    """Returns {status, item, summary, implications, response, source_ids, violations}. status is VALIDATED or WITHHELD."""
+    anchors = [str(item) for item in business_area.get("anchors") or []]
+    payload: dict[str, Any] = {
+        "business_area": {key: value for key, value in business_area.items() if key != "anchors"}, "owners": list(owners),
+        "risks": [dict(item) for item in risks], "requests": list(requests), "sources": sources,
+    }
+    log = CallLog("EventAssessor", EVENT_ROW_VERSION, model, event_id, canonical_hash(payload))
+    violations: list[str] = []
+    for _attempt in range(2):
+        draft = _call(client, model, EVENT_ROW_SYSTEM, payload, log)
+        if draft is None:
+            break
+        if isinstance(draft, Mapping) and isinstance(draft.get("reasoning"), str):
+            log.reasoning = draft["reasoning"].strip()
+        violations = check_event_row(draft, sources, anchors, owners)
+        if not violations:
+            log.status = "VALIDATED"
+            return {
+                "status": "VALIDATED", "item": draft["item"].strip(), "summary": draft["summary"].strip(), "implications": draft["implications"].strip(),
+                "response": {"action": strip_marks(draft["response"]["action"]), "owner": draft["response"]["owner"]},
+                "source_ids": [ref for ref in draft["source_ids"] if ref in sources], "violations": [],
+            }, log
+        log.violations.extend(violations)
+        payload = payload | {"previous_draft": {key: value for key, value in dict(draft).items() if key != "reasoning"} if isinstance(draft, Mapping) else draft, "violations": violations}
+    if log.status != "LLM_ERROR":
+        log.status = "WITHHELD"
+    return {"status": "WITHHELD", "violations": violations or log.violations}, log

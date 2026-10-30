@@ -30,6 +30,7 @@ STEADY = ("= NO MATERIAL CHANGE", MUTED, RGBColor(0xEE, 0xF1, 0xF6), RGBColor(0x
 STATUS = {
     "RED": ("\u25cf  RED", RGBColor(0xB9, 0x3A, 0x22), RGBColor(0xFB, 0xED, 0xE9)),
     "WATCHPOINT": ("\u25cf  WATCHPOINT", RGBColor(0xA0, 0x5F, 0x00), AMBER_FILL),
+    "ELEVATED": ("\u25cf  ELEVATED", RGBColor(0xA0, 0x5F, 0x00), AMBER_FILL),
     "STABLE": ("\u25cf  STABLE", MUTED, RGBColor(0xEE, 0xF1, 0xF6)),
 }
 ASK = ("\U0001f4ac  Ask GRIT-Scan chat about this risk", "mitigation  \u00b7  watchpoints  \u00b7  response plans  \u00b7  what to escalate")
@@ -198,6 +199,40 @@ def _dedupe_deck(deck: Any, slides: int | None = None) -> None:
                         run.text = ""
 
 
+def _escalation_slide(slide: Any, rows: Sequence[Mapping[str, Any]], short: str) -> None:
+    """YK's table (format v2): each escalating or elevated event with its summary, implications and suggested response.
+    Whole sentences only; the Word brief carries every source."""
+    from pptx.util import Inches, Pt as PptPt
+
+    _words(slide, 0.5, 0.22, 9.0, 0.28, [("ESCALATING AND ELEVATED ITEMS  \u00b7  GRIT-SCAN", 13, True, EYEBROW)])
+    _words(slide, 0.5, 0.5, 12.3, 0.45, [(f"What escalated this week, and what it could mean for {short}", 22, True, INK)])
+    shown = list(rows[:5])
+    table = slide.shapes.add_table(len(shown) + 1, 4, Inches(0.5), Inches(1.15), Inches(12.33), Inches(0.4 + 0.95 * len(shown))).table
+    for column, width in enumerate((2.6, 3.6, 3.2, 2.93)):
+        table.columns[column].width = Inches(width)
+    for column, text in enumerate(("Item and risk", "Summary", f"Implications for {short}", "Suggested response")):
+        cell = table.cell(0, column)
+        cell.text = text
+        cell.text_frame.paragraphs[0].runs[0].font.size = PptPt(11)
+        cell.text_frame.paragraphs[0].runs[0].font.bold = True
+    for number, row in enumerate(shown, start=1):
+        response = row.get("response") or {}
+        values = (
+            f"{row['band']} {row['item']}" + (f" [{row['risk']}]" if row["risk"] else ""),
+            whole_sentences((row.get("summary") or {}).get("plain") or "Withheld: the draft failed its checks. See the Word brief's QA log.", 330),
+            whole_sentences((row.get("implications") or {}).get("plain") or "Not drafted.", 260),
+            whole_sentences(f"{response.get('action') or 'Not drafted.'} Owner: {response.get('owner') or 'to assign'}.", 220),
+        )
+        for column, text in enumerate(values):
+            cell = table.cell(number, column)
+            cell.text = text
+            for paragraph in cell.text_frame.paragraphs:
+                for run in paragraph.runs:
+                    run.font.size = PptPt(9.5)
+    if len(rows) > len(shown):
+        _words(slide, 0.5, 6.0, 12.3, 0.3, [(f"{len(rows) - len(shown)} more in the Word brief.", 10, False, MUTED)])
+
+
 def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
     """The executive summary in the reference deck's format: a cover, one to three summary slides, and one appendix slide per item."""
     from grit.report.deck_template import CONTENT_LAYOUT, COVER_LAYOUT, TEMPLATE
@@ -209,7 +244,9 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
     groups = summary_groups(items)
     cover = _blank(deck, COVER_LAYOUT)
     summaries = [_blank(deck, CONTENT_LAYOUT) for _ in groups]
-    outlook = brief.get("scenarios") if meta.get("level") == "GROUP" else None
+    elevated_rows = (brief.get("v2") or {}).get("escalating") or []
+    escalation_slide = _blank(deck, CONTENT_LAYOUT) if elevated_rows else None
+    outlook = brief.get("scenarios")
     scenario_slide = _blank(deck, CONTENT_LAYOUT) if outlook and outlook.get("shifts") else None
     appendix = [_blank(deck, CONTENT_LAYOUT) for _ in items]
 
@@ -267,6 +304,10 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
         elif page < len(summaries):
             _link(summary, 0.5, 6.22, "Continued on the next summary slide", summaries[page], dot=GOLD)
         _notice(summary, deck)
+
+    if escalation_slide is not None:
+        _escalation_slide(escalation_slide, elevated_rows, short)
+        _notice(escalation_slide, deck)
 
     if scenario_slide is not None:
         _scenario_slide(scenario_slide, outlook)

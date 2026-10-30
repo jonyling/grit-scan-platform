@@ -25,5 +25,6 @@ Specs 13–33 state the rules. Spec 34 states the rebuild order. Spec 35 describ
 | [41](41_Profiler_Fit_Report_and_Web_Search.md) | The Profiler's checked profile proposals, the fit report, the Co-Pilot's web search and budget, and Add to pool. |
 | [42](42_Daily_Lane_and_Nightly_Index.md) | The daily feed register and lane, events, daily digests, retention, and the Co-Pilot's `whats_new`. |
 | [43](43_Best_Medium_Worst_Scenarios.md) | The best, medium and worst case for STE under each strategic shift: grounding, checks, and the steps to sign-off, tracking and the radar. |
+| [44](44_Brief_Format_v2.md) | Brief format v2, in Wilson's BA-wide layout: events and the escalating-items table, what changed, look-ahead, prioritisation, coverage, jurisdictions, quality gate, the source register, and scenarios for every business area. |
 
 `archive/` holds an early draft of spec 17 for reference. It does not govern.
