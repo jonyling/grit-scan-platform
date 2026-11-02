@@ -78,7 +78,20 @@ On 30 October 2026 the URS (5 key risks) and DS&C (6) registers were recorded as
 
 A package already pending review is not replaced by a new layout: a reviewer returns it for rework first. Previews in format v2 for Wilson are in `output/runs/RUN/preview-format-v2/`.
 
-## 8. Not built
+## 8. Signpost Judge (added 2 November 2026)
+
+The first business-area briefs showed "No signpost seen" for every risk, although each risk had 9 to 49 relevant signals. The tracker matched signposts by keyword phrases written for a 1 to 5 year horizon, such as "multi-protocol electronic tolling", and needed two of them in one report. Weekly news rarely uses those phrases.
+
+`grit agents` now runs the Signpost Judge after the escalating-items rows:
+
+1. For each signpost and counter-indicator, the signals that touch the risk are ranked by embedding similarity to its text. The closest 3 with cosine 0.60 or more are candidates.
+2. The Signpost Judge (`signpost-judge-1`) names the candidates that report the development itself, not just the subject, each with a verbatim quote.
+3. A match is kept only when the report was a candidate for that item, the quote is verbatim, and the quote shares at least one specific word stem with the item's text (`OFF_TOPIC` otherwise).
+4. Kept matches are stored on the run (`signposts_seen`, `signpost_quotes`) and count as seen with keyword matches. The scenario table prints the quote as the evidence.
+
+On 2 November 2026: URS 1 match (a report of a Rs 4.4 trillion infrastructure cost overrun, URS Key Risk 3, worst case), CA 3, DS&C none. A judged match without a shared specific word, such as an airport's unleaded-fuel campaign offered for a Defense Production Act signpost, is dropped.
+
+## 9. Not built
 
 - Internal facts (staff locations, safety confirmations, EBIT bands, RSC dates) from a business partner's weekly notes.
 - Probabilities or odds. Scenarios show signposts seen.

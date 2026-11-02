@@ -162,7 +162,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-10-30, 635 tests pass. They make no network call.
+   As of 2026-11-02, 637 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 

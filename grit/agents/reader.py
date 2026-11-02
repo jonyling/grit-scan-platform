@@ -25,6 +25,8 @@ from grit.agents.reader_prompts import (
     CRITIC_VERSION,
     EVENT_ROW_SYSTEM,
     EVENT_ROW_VERSION,
+    SIGNPOST_JUDGE_SYSTEM,
+    SIGNPOST_JUDGE_VERSION,
     PROPOSER_SYSTEM,
     PROPOSER_VERSION,
     REPORTER_BOTTOM_LINE_SYSTEM,
@@ -850,3 +852,75 @@ def draft_event_row(
     if log.status != "LLM_ERROR":
         log.status = "WITHHELD"
     return {"status": "WITHHELD", "violations": violations or log.violations}, log
+
+
+_GENERIC = frozenset({
+    "about", "above", "across", "after", "against", "among", "around", "below", "between", "major", "global", "other", "under", "their",
+    "these", "those", "which", "while", "where", "within", "would", "could", "should", "being", "since", "until", "there", "price", "prices",
+    "level", "levels", "large", "public", "report", "reports", "announce", "issue", "issues", "increase", "increased", "growth", "market",
+    "markets", "company", "companies", "government", "governments", "national", "official", "officials", "including", "following",
+})
+
+
+def _stems(text: str) -> set[str]:
+    """Specific words, compared by their first five letters, so 'overruns' meets 'overrun'."""
+    return {word[:5] for word in re.findall(r"[a-z]{5,}", normalise(text)) if word not in _GENERIC}
+
+
+def check_signpost_matches(draft: Any, items: Mapping[str, Mapping[str, Any]], sources: Mapping[str, Mapping[str, Any]]) -> tuple[list[dict[str, str]], list[str]]:
+    """The matches that pass, and the problems of those that do not. A match names a known item, one of that item's own
+    candidates, and a verbatim quote from it. A failing match is dropped; the others stand."""
+    if not isinstance(draft, Mapping) or not isinstance(draft.get("matches"), list):
+        return [], ["BAD_SHAPE: return {\"matches\": [...]}"]
+    kept: list[dict[str, str]] = []
+    problems: list[str] = []
+    for number, match in enumerate(draft["matches"], start=1):
+        where = f"match {number}"
+        if not isinstance(match, Mapping):
+            problems.append(f"BAD_SHAPE: {where}: each match is an object")
+            continue
+        item, source_id = str(match.get("item") or ""), str(match.get("source_id") or "")
+        if item not in items:
+            problems.append(f"UNKNOWN_ITEM: {where}: {item[:30]} is not an item id")
+            continue
+        if source_id not in (items[item].get("candidates") or []):
+            problems.append(f"NOT_A_CANDIDATE: {where}: {source_id} is not a candidate for {item}")
+            continue
+        found = quote_problems([{"source_id": source_id, "quote": match.get("quote")}], sources, where)
+        if found:
+            problems += found
+            continue
+        if not _stems(str(match.get("quote"))) & _stems(str(items[item].get("text") or "")):
+            problems.append(f"OFF_TOPIC: {where}: the quote shares no specific word with {item}. Quote the words that show its development, or drop the match.")
+            continue
+        kept.append({"item": item, "source_id": source_id, "quote": str(match["quote"]).strip()})
+    return kept, problems
+
+
+def judge_signposts(
+    client: Any, model: str, *, risk: str, items: Mapping[str, Mapping[str, Any]], sources: Mapping[str, Mapping[str, Any]], subject: str,
+) -> tuple[dict[str, Any], CallLog]:
+    """Returns {status, matches, violations}. status is VALIDATED (every match passed), PARTIAL (some dropped) or WITHHELD."""
+    payload: dict[str, Any] = {"risk": risk, "items": {key: {"text": value["text"], "candidates": value["candidates"]} for key, value in items.items()}, "sources": sources}
+    log = CallLog("SignpostJudge", SIGNPOST_JUDGE_VERSION, model, subject, canonical_hash(payload))
+    if not sources or not items:
+        log.status = "SKIPPED_NO_SOURCES"
+        return {"status": "SKIPPED", "matches": [], "violations": []}, log
+    kept: list[dict[str, str]] = []
+    problems: list[str] = []
+    for _attempt in range(2):
+        draft = _call(client, model, SIGNPOST_JUDGE_SYSTEM, payload, log)
+        if draft is None:
+            break
+        kept, problems = check_signpost_matches(draft, items, sources)
+        if not problems:
+            log.status = "VALIDATED"
+            return {"status": "VALIDATED", "matches": kept, "violations": []}, log
+        log.violations.extend(problems)
+        payload = payload | {"previous_draft": draft, "violations": problems}
+    if kept:
+        log.status = "PARTIAL"
+        return {"status": "PARTIAL", "matches": kept, "violations": problems}, log
+    if log.status != "LLM_ERROR":
+        log.status = "WITHHELD"
+    return {"status": "WITHHELD", "matches": [], "violations": problems or log.violations}, log

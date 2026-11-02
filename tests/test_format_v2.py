@@ -105,3 +105,34 @@ def test_the_word_brief_moves_links_to_a_numbered_source_register(tmp_path: Path
     assert "Missiles hit Riyadh (reuters.com, 27 Oct 2026 [S1])" in text
     assert "[S1] reuters.com, Missiles, 27 Oct 2026 (T2)" in text
     assert document.paragraphs[0]._p.find(".//{http://schemas.openxmlformats.org/wordprocessingml/2006/main}hyperlink") is None, "no link in the body"
+
+
+def test_a_signpost_match_needs_a_candidate_a_verbatim_quote_and_a_shared_specific_word() -> None:
+    from grit.agents.reader import check_signpost_matches
+
+    items = {"WORST-S1": {"text": "Monitoring bodies publish reports documenting trillions in cumulative project cost overruns", "candidates": ["S1", "S2"]}}
+    sources = {"S1": {"title": "Infrastructure projects show cost overrun of Rs 4.4 trillion", "text": "The ministry found 400 projects with a cost overrun of Rs 4.4 trillion."},
+               "S2": {"title": "Airport urges unleaded fuel", "text": "The airport urged a national shift to unleaded aviation fuel this week."},
+               "S3": {"title": "Other", "text": "Projects with a cost overrun of Rs 4.4 trillion were listed."}}
+    draft = {"matches": [
+        {"item": "WORST-S1", "source_id": "S1", "quote": "projects with a cost overrun of Rs 4.4 trillion"},
+        {"item": "WORST-S1", "source_id": "S2", "quote": "urged a national shift to unleaded aviation fuel"},
+        {"item": "WORST-S1", "source_id": "S3", "quote": "Projects with a cost overrun of Rs 4.4 trillion"},
+        {"item": "WORST-S1", "source_id": "S1", "quote": "a cost overrun of Rs 9 trillion was found"},
+    ]}
+    kept, problems = check_signpost_matches(draft, items, sources)
+    assert kept == [{"item": "WORST-S1", "source_id": "S1", "quote": "projects with a cost overrun of Rs 4.4 trillion"}]
+    assert [problem.split(":")[0] for problem in problems] == ["OFF_TOPIC", "NOT_A_CANDIDATE", "QUOTE_NOT_VERBATIM"]
+
+
+def test_the_tracker_counts_a_judged_signpost_as_seen(tmp_path: Path) -> None:
+    from grit.pipeline.scenarios import track
+
+    pool = Pool(tmp_path / "grit.sqlite")
+    pool.start_run("2026-11-02-urs", run_date="2026-11-02", pack="urs", kind="READER_SCAN", config={"signposts_seen": {"URS-KEY-03": {"WORST-S1": ["SIG-x"]}}})
+    pool.finish_run("2026-11-02-urs")
+    register = {"shifts": [{"themeId": "URS-KEY-03", "name": "Costs", "cases": [
+        {"case": case, "name": case, "signposts": [{"text": f"{case} signpost", "keywords": ["no such phrase anywhere"]}], "counter_indicators": [], "responses": []}
+        for case in ("BEST", "MEDIUM", "WORST")]}]}
+    (reading,) = track(pool, "2026-11-02-urs", register)
+    assert reading["lean"] == "WORST" and reading["cases"][2]["signposts_seen"][0]["signal_ids"] == ["SIG-x"]

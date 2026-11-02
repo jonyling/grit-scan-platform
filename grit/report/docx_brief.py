@@ -683,8 +683,12 @@ def scenario_cells(reading: Mapping[str, Any]) -> list[list[str]]:
     """One row of the scenario outlook, as lines per cell: shared by the Word, Markdown, Excel and deck renderers."""
     from grit.pipeline.scenarios import lean_text
 
-    seen = [f"{case['title'].split(' case')[0]}: {item['text']} {_ref_text(item)}".strip() for case in reading["cases"] for item in case["signposts_seen"]]
-    against = [f"{case['title'].split(' case')[0]}: {item['text']} {_ref_text(item)}".strip() for case in reading["cases"] for item in case["counter_indicators_seen"]]
+    def line(case: Mapping[str, Any], item: Mapping[str, Any]) -> str:
+        quote = f" Evidence: \u201c{item['quotes'][0]}\u201d" if item.get("quotes") else ""
+        return f"{case['title'].split(' case')[0]}: {item['text']}{quote} {_ref_text(item)}".strip()
+
+    seen = [line(case, item) for case in reading["cases"] for item in case["signposts_seen"]]
+    against = [line(case, item) for case in reading["cases"] for item in case["counter_indicators_seen"]]
     from grit.report.notices import HYPOTHESIS_LABEL, suggestion_line
 
     triggered = [line for case in reading["cases"] for response in case["responses_triggered"] if (line := suggestion_line(f"{response['action']} Owner: {response['owner']}."))]

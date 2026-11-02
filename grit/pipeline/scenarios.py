@@ -11,6 +11,11 @@
   needs all its keywords. A keyword that the period's news uses everywhere (in more than 8% of the shift's signals, and at
   least 5) is common too, and does not count as distinctive. The case with the most signposts seen is where the evidence
   leans. These are counts, never odds.
+- Judge (from 2 November 2026): keyword matching misses most sightings, because the signposts were written for a 1-5 year
+  horizon and weekly news rarely uses their phrases. For each signpost and counter-indicator, the signals touching the
+  shift are ranked by embedding similarity to its text; the closest JUDGE_CANDIDATES above JUDGE_FLOOR go to the Signpost
+  Judge, which names the reports that show the development, each with a verbatim quote that a check confirms. Its matches
+  are stored on the run (config "signposts_seen") and count as seen, together with keyword matches.
 - Outlook: what a Group brief, deck and the Co-Pilot show: the lean per shift, the signposts seen with their sources, the
   counter-indicators seen, and the planned responses whose trigger signpost has been seen.
 """
@@ -28,6 +33,9 @@ from grit.pool import Pool
 from grit.settings import CONFIG_DIR
 
 REVIEWED = "REVIEWED"
+JUDGE_CANDIDATES = 3  # closest signals per signpost or counter-indicator sent to the Signpost Judge
+JUDGE_FLOOR = 0.60  # cosine below this is not a candidate
+JUDGE_SOURCES = 18  # distinct candidate reports per shift
 LEAD_CHARS = 800
 COMMON_SHARE, COMMON_MIN = 0.08, 5  # a keyword in more of the period's shift signals than this is common, not distinctive
 CASE_TITLES = {"BEST": "Best case for STE", "MEDIUM": "Medium case for STE", "WORST": "Worst case for STE"}
@@ -232,8 +240,76 @@ def _lean(seen: Mapping[str, int]) -> str:
     return leaders[0] if len(leaders) == 1 else "MIXED"
 
 
+def _items(shift: Mapping[str, Any]) -> list[tuple[str, Mapping[str, Any]]]:
+    """('BEST-S1', item) ... for every signpost and counter-indicator of a shift, in register order."""
+    found = []
+    for case in shift["cases"]:
+        found += [(f"{case['case']}-S{number}", item) for number, item in enumerate(case["signposts"], start=1)]
+        found += [(f"{case['case']}-C{number}", item) for number, item in enumerate(case["counter_indicators"], start=1)]
+    return found
+
+
+def judge_run(pool: Pool, run_id: str, pack: Any, *, client: Any, model: str, embedder: Any | None = None, log: Callable[[str], None] = print,
+              config_dir: Path | None = None) -> dict[str, Any]:
+    """Shortlist by embedding similarity, then the Signpost Judge confirms. Saves {themeId: {item id: [signal ids]}} on the run."""
+    import numpy as np
+
+    from grit.agents import reader as agents
+    from grit.retrieval.embedder import DEFAULT_DIMENSIONS, DEFAULT_MODEL, Embedder
+
+    register = load_register(pack.pack, config_dir or Path(pack.config_dir).parent)
+    if register is None:
+        return {"skipped": "no reviewed scenario register"}
+    rows = window_rows(pool, run_id)
+    vectors = pool.vectors([row["signal_id"] for row in rows], model=DEFAULT_MODEL, task="RETRIEVAL_DOCUMENT", dimensions=DEFAULT_DIMENSIONS)
+    covered = shift_conditions(pack)
+    texts = [item["text"] for shift in register.get("shifts") or [] for _key, item in _items(shift)]
+    if not texts or not vectors:
+        return {"skipped": "no signpost text or no signal vectors"}
+    queries = iter((embedder or Embedder()).embed(texts, task="RETRIEVAL_QUERY"))
+    saved: dict[str, dict[str, list[str]]] = {}
+    quotes: dict[str, dict[str, list[dict[str, str]]]] = {}
+    counts = {"shifts": 0, "matches": 0}
+    for shift in register.get("shifts") or []:
+        relevant = [row for row in rows if _touches(row, shift["themeId"], set(covered.get(shift["themeId"]) or [])) and row["signal_id"] in vectors]
+        matrix = np.asarray([vectors[row["signal_id"]] for row in relevant], dtype=np.float32) if relevant else None
+        if matrix is not None:
+            matrix /= np.linalg.norm(matrix, axis=1, keepdims=True)
+        items, picked = {}, []
+        for key, item in _items(shift):
+            query = np.asarray(next(queries), dtype=np.float32)
+            if matrix is None:
+                continue
+            scores = matrix @ (query / np.linalg.norm(query))
+            best = [int(index) for index in np.argsort(-scores)[:JUDGE_CANDIDATES] if scores[index] >= JUDGE_FLOOR]
+            if best:
+                items[key] = {"text": item["text"], "candidates": [relevant[index]["signal_id"] for index in best]}
+                picked += items[key]["candidates"]
+        chosen = list(dict.fromkeys(picked))[:JUDGE_SOURCES]
+        if not items or not chosen:
+            continue
+        table, back = agents.source_table([next(row for row in relevant if row["signal_id"] == signal_id) for signal_id in chosen])
+        ids = {signal_id: key for key, signal_id in back.items()}
+        for value in items.values():
+            value["candidates"] = [ids[signal_id] for signal_id in value["candidates"] if signal_id in ids]
+        result, call = agents.judge_signposts(client, model, risk=shift["name"], items=items, sources=table, subject=shift["themeId"])
+        pool.log(actor_type="AGENT", run_id=run_id, **call.as_record())
+        found: dict[str, list[str]] = {}
+        for match in result["matches"]:
+            found.setdefault(match["item"], []).append(back[match["source_id"]])
+            quotes.setdefault(shift["themeId"], {}).setdefault(match["item"], []).append({"signal_id": back[match["source_id"]], "quote": match["quote"]})
+        saved[shift["themeId"]] = found
+        counts["shifts"] += 1
+        counts["matches"] += sum(len(value) for value in found.values())
+        log(f"  SignpostJudge {shift['themeId']:14} {result['status']:9} candidates {len(chosen):2}  matches {sum(len(value) for value in found.values())}")
+    pool.update_run_config(run_id, signposts_seen=saved, signpost_quotes=quotes)
+    return counts
+
+
 def track(pool: Pool, run_id: str, register: Mapping[str, Any], *, shift_conditions: Mapping[str, Sequence[str]] | None = None) -> list[dict[str, Any]]:
-    """One reading per shift: for each case, the signposts and counter-indicators seen with their signal ids, and the lean."""
+    """One reading per shift: for each case, the signposts and counter-indicators seen with their signal ids, and the lean.
+    Seen means a keyword match or a Signpost Judge match stored on the run."""
+    judged = (((pool.run(run_id) or {}).get("config") or {}).get("signposts_seen") or {})
     rows = window_rows(pool, run_id)
     readings = []
     for shift in register.get("shifts") or []:
@@ -243,17 +319,18 @@ def track(pool: Pool, run_id: str, register: Mapping[str, Any], *, shift_conditi
         everyday = _everyday(shift, list(texts.values()))
         shared, position = {number: words | everyday for number, words in _shared(shift).items()}, 0
         cases, seen_counts = [], {}
+        confirmed = judged.get(shift["themeId"]) or {}
         for case in shift["cases"]:
             seen = []
             for number, item in enumerate(case["signposts"], start=1):
                 common, position = shared[position], position + 1
-                ids = sorted(signal_id for signal_id, text in texts.items() if matches_item(text, item.get("keywords") or [], common))
+                ids = sorted({*(signal_id for signal_id, text in texts.items() if matches_item(text, item.get("keywords") or [], common)), *confirmed.get(f"{case['case']}-S{number}", [])})
                 if ids:
                     seen.append({"number": number, "text": item["text"], "signal_ids": ids})
             against = []
             for number, item in enumerate(case["counter_indicators"], start=1):
                 common, position = shared[position], position + 1
-                ids = sorted(signal_id for signal_id, text in texts.items() if matches_item(text, item.get("keywords") or [], common))
+                ids = sorted({*(signal_id for signal_id, text in texts.items() if matches_item(text, item.get("keywords") or [], common)), *confirmed.get(f"{case['case']}-C{number}", [])})
                 if ids:
                     against.append({"number": number, "text": item["text"], "signal_ids": ids})
             fired = {item["number"] for item in seen}
@@ -278,7 +355,7 @@ def shift_conditions(pack: Any) -> dict[str, list[str]]:
 
 
 def outlook(pool: Pool, run_id: str, pack: Any, *, config_dir: Path | None = None) -> dict[str, Any] | None:
-    """The scenario outlook for a Group brief: this run's reading against the reviewed register, the previous run's lean,
+    """The scenario outlook for a brief: this run's reading against the reviewed register, the previous run's lean,
     and source references for every signal seen. None when the pack has no reviewed register."""
     register = load_register(pack.pack, config_dir or Path(pack.config_dir).parent)
     if register is None:
@@ -295,9 +372,13 @@ def outlook(pool: Pool, run_id: str, pack: Any, *, config_dir: Path | None = Non
         signal = pool.signal(signal_id)
         return {"signal_id": signal_id, "outlet": signal["publisher"], "date": fmt_date(signal["published_at"]), "url": signal["url"], "title": signal["title"]} if signal else None
 
+    quotes = ((run.get("config") or {}).get("signpost_quotes") or {})
     for reading in now:
         reading["previous_lean"] = before.get(reading["themeId"])
         for case in reading["cases"]:
+            for kind, items in (("S", case["signposts_seen"]), ("C", case["counter_indicators_seen"])):
+                for item in items:
+                    item["quotes"] = [entry["quote"] for entry in (quotes.get(reading["themeId"]) or {}).get(f"{case['case']}-{kind}{item['number']}", [])]
             for item in [*case["signposts_seen"], *case["counter_indicators_seen"]]:
                 item["sources"] = [found for found in (ref(signal_id) for signal_id in item["signal_ids"][:3]) if found]
                 item["more"] = max(0, len(item["signal_ids"]) - 3)

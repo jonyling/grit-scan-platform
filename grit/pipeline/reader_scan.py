@@ -827,8 +827,15 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
     from grit.pipeline.events import draft_rows
 
     events = draft_rows(pool, run, client=client, model=model, log=log)
+    from grit.pipeline.scenarios import judge_run
+
+    try:
+        signposts = judge_run(pool, run.run_id, pack, client=client, model=model, log=log)
+    except Exception as exc:  # embeddings or the model may be unavailable; keyword matching still stands
+        signposts = {"skipped": f"{type(exc).__name__}: {str(exc)[:80]}"}
+        log(f"  SignpostJudge skipped: {signposts['skipped']}")
     return {
-        "events": events,
+        "events": events, "signposts": signposts,
         "standing": {key: draft["status"] for key, draft in drafts.items()}, "critic_accepted": len(accepted),
         "implications": sum(1 for draft in drafts.values() if draft.get("implication")), "options": {key: len(rows) for key, rows in options.items()},
         "items": checks, "watchpoints": watch, "bottom_line": bottom["status"],
