@@ -334,7 +334,7 @@ def build_graph(pack: Any, *, reviewed_aliases: Mapping[str, Any] | None = None,
     unlinked_suppliers = 0
     for row in exposure.get("suppliers") or []:
         aliases, basis = with_aliases(row["supplierId"], row["supplierName"], row.get("aliases") or [])
-        add_node(Node(row["supplierId"], "Supplier", "SUPPLIER", row["supplierName"], aliases, basis))
+        add_node(Node(row["supplierId"], "Supplier", "SUPPLIER", row["supplierName"], aliases, basis, {key: row[key] for key in ("country", "category") if row.get(key)}))
         for label in [part.strip() for part in str(row.get("businessArea") or "").split(";") if part.strip()]:
             if label not in unit_ids:
                 unit = add_node(Node(f"STE-UNIT-{slugify(label)}", "STE", "UNIT", label))

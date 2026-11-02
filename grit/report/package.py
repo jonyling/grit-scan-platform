@@ -27,7 +27,18 @@ def write_pack(pool: Pool, run_id: str, profile: Profile, *, folder: Path | None
     brief_config = profile.brief_for(str(run.get("pack")))
     if brief_config is None:
         return {"profile": profile.profile_id, "skipped": f"This profile receives no brief for the {run.get('pack')} pack."}
-    brief = build_brief(pool, run_id, profile)
+    reasoned = (run.get("config") or {}).get("weekly_mode") == "reasoned"
+    snapshot = None
+    if reasoned:
+        from grit.pipeline.weekly import frozen_report
+        snapshot = frozen_report(pool, run_id, profile.profile_id, ready=submit)
+    brief = snapshot["brief"] if snapshot else build_brief(pool, run_id, profile)
+    if snapshot and snapshot["status"] != "READY":
+        from grit.pipeline.weekly import report_hash
+        brief["meta"]["status"] = "INCOMPLETE_PREVIEW"
+        brief["bottom_line"]["text"] = "Incomplete analysis: do not treat this preview as a cleared conclusion. " + brief["bottom_line"]["text"]
+        brief["bottom_line"]["drafted_by"] = "Reporting; unresolved critique or missing coverage"
+        brief["content_hash"] = report_hash(brief)
     package_id = f"PKG-{run_id}-{profile.profile_id}"
     latest = pool.one("SELECT * FROM packages WHERE package_id = ? ORDER BY version DESC LIMIT 1", (package_id,))
     if submit and latest and latest["status"] == "PENDING_REVIEW":
@@ -45,7 +56,7 @@ def write_pack(pool: Pool, run_id: str, profile: Profile, *, folder: Path | None
     if "pptx" in formats:
         files["pptx"] = str(render_pptx(brief, folder / f"{stem}.pptx"))
     if "xlsx" in formats:
-        files["xlsx"] = str(render_xlsx(brief, routed_signals(pool, run_id, profile), folder / f"{stem}.xlsx"))
+        files["xlsx"] = str(render_xlsx(brief, snapshot["routed"] if snapshot else routed_signals(pool, run_id, profile), folder / f"{stem}.xlsx"))
     (folder / f"{stem}.md").write_text(render_markdown(brief), encoding="utf-8")
     (folder / f"{stem}.brief.json").write_text(json.dumps(brief, indent=2, ensure_ascii=False, default=str) + "\n", encoding="utf-8")
     files["md"] = str(folder / f"{stem}.md")

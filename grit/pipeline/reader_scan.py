@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, timezone, timedelta
@@ -420,6 +421,7 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
     seed_watchpoints(pool, reader)
     seed_requests(pool, reader)
     from_graph = ((reader.scan_plan or {}).get("namedItems") or {}).get("source") == "graph"
+    terms = business_terms(business)
     readers = ReaderIndex({} if from_graph else reader.exposure, reader.scan_plan, reader.baseline, pool.watchpoints(run.pack))
     requests = [row for row in pool.management_requests(active_only=True) if row.get("pack") in (None, run.pack)]
     themes_in_plan = {item["id"] for item in standing_items(reader)} if standing_set(reader) == "themes" else set()
@@ -430,6 +432,8 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
     conditions = {condition["id"]: condition for condition in reader.baseline.get("conditions") or []}
     registers = [reader.source_register, business.source_register]
     window = scan_window(reader)
+    if ((pool.run(run.run_id) or {}).get("config") or {}).get("weekly_mode") == "reasoned":
+        pool.update_run_config(run.run_id, window_days=window)
 
     signals = pool.signals_for_run(run.run_id)
     records: list[dict[str, Any]] = []
@@ -445,6 +449,7 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
         link = link_candidate(candidate, index, business.lob_profiles)
         if from_graph:
             link = generic_name_rule(link, f"{signal['title']}\n{signal['text']}", (reader.scan_plan.get("namedItems") or {}).get("genericNames"), graph)
+            link = public_body_rule(link, f"{signal['title']}\n{signal['text']}", graph, terms)
         hits = readers.hits(signal["title"], signal["text"])
         if from_graph:
             hits += graph_hits(link, graph)
@@ -484,8 +489,13 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
             "condition_ids_json": condition_ids, "exposure_json": exposure, "priority_json": decision["priority"] or {},
             "tier": (decision["priority"] or {}).get("tier"), "corroboration": decision["corroboration"],
         }
-        if decision["decision"] == KEEP:
-            kept += 1
+        if decision["decision"] == KEEP or ((pool.run(run.run_id) or {}).get("config") or {}).get("weekly_mode") == "reasoned":
+            kept += int(decision["decision"] == KEEP)
+            if not decision["priority"]:
+                from grit.core.priority import assess as assess_priority
+
+                controlled = assess_priority(rung=decision["rung"], themes=link.themes, cues=record["scale"], publishers=[record["publisher"]], config=ReaderFilterConfig().priority)
+                row["priority_json"], row["tier"] = controlled.as_record(), controlled.tier
             outlets = [{"url": record["url"], "publisher": record["publisher"]}, *decision["also_reported_by"]]
             credibility = [_credibility(item["url"], item.get("publisher"), registers) for item in outlets]
             harm = score_harm_fn(record, run_date=run.run_date, credibility=credibility, lob=link.canonical_lob, pack=run.pack)
@@ -522,10 +532,69 @@ def generic_name_rule(link: Any, text: str, rule: Mapping[str, Any] | None, grap
     if cued:
         return link
     changed = [item for item in link.involves if item.strong and item.cls in {"Customer", "Supplier"} and generic.search(item.name)]
-    if not changed:
+    return _demote(link, {item: f"Not a link: '{item.matched}' is a generic public-body name, and the page names none of the pack's places." for item in changed}, graph)
+
+
+PUBLIC_BODY = re.compile(r"\b(?:Ministry|Authority|Agency|Board|Council|Department|Bureau|Commission|Police|Force|Navy|Army|Customs|Government|"
+                         r"Office|Administration|Directorate|Institute|Academy|Statutory)\b", re.I)
+BUSINESS_CUES = ("contract", "tender", "award", "procure", "digital", "technology", "software", "cyber", "data", "platform", "artificial intelligence",
+                 "automation", "sensor", "satellite", "smart nation", "smart city", "system integrat", "it system", "it outage", "outsourc", "vendor")
+
+
+_GENERIC_WORDS = frozenset({
+    "infrastructure", "management", "services", "service", "solutions", "systems", "system", "operations", "maintenance", "public", "government",
+    "safety", "security", "technology", "technologies", "digital", "energy", "advanced", "resilience", "modernisation", "investment", "funding",
+    "quality", "reliability", "network", "networks", "integration", "platform", "platforms", "monitoring", "analytics", "predictive", "driven",
+    "national", "global", "sector", "industry", "project", "projects", "programme", "program", "development", "health", "healthcare", "building",
+    "buildings", "construction", "transformation", "ageing", "threats", "vulnerabilities", "growth", "market", "support", "products", "product",
+    "general", "emerging", "access", "change", "changes", "critical", "control", "controls", "compliance", "commercial", "capacity", "capital",
+    "customer", "customers", "credit", "costs", "claims", "coverage", "checks", "cross", "backed", "analysis", "assurance", "availability",
+    "efficiency", "expansion", "dynamic", "detection", "communications", "centre", "centres", "adoption", "concentration", "constraints",
+})
+
+
+def business_terms(business: Any) -> tuple[str, ...]:
+    """The business area's own vocabulary: its LOB keywords as phrases, their specific words of six or more letters (generic
+    words left out), and contract and technology words."""
+    phrases = {str(keyword).casefold() for lob in (business.lob_profiles or {}).get("lobs") or [] for keyword in lob.get("keywords") or [] if len(str(keyword)) >= 4}
+    words = {word for phrase in phrases for word in re.findall(r"[a-z]{6,}", phrase) if word not in _GENERIC_WORDS}
+    return tuple(sorted(phrases | words | set(BUSINESS_CUES)))
+
+
+def public_body_rule(link: Any, text: str, graph: Any, terms: Sequence[str]) -> Any:
+    """A public body named as a customer or supplier is a link only when the page does not place it in another country (the
+    page names a country, but not the body's own from the register) and uses the business area's own vocabulary. 'Building and Construction Authority' in a Malta report is Malta's;
+    food poisoning at 'MOE' kindergartens is not DS&C business. The mention stays recorded; the rung falls back."""
+    from grit.core.countries import canonical, named
+
+    folded = text.casefold()
+    business = any(re.search(rf"(?<![a-z0-9]){re.escape(term)}", folded) for term in terms)
+    reasons: dict[Any, str] = {}
+    for item in link.involves:
+        if not (item.strong and item.cls in {"Customer", "Supplier"} and PUBLIC_BODY.search(item.name)):
+            continue
+        node = graph.nodes.get(item.node_id) if graph is not None else None
+        country = str(((node.attrs if node else None) or {}).get("country") or "").strip()
+        home = canonical(country) if country else None
+        if home:
+            places = named(text)
+            if places and home not in places:
+                reasons[item] = f"Not a link: the page names '{item.matched}' and {', '.join(sorted(places)[:2])}, not {home}, so it is likely another country's body of the same name."
+                continue
+        if not business:
+            reasons[item] = f"Not a link: the page names '{item.matched}' in a matter outside the business area's lines of business."
+    return _demote(link, reasons, graph)
+
+
+def _demote(link: Any, reasons_for: Mapping[Any, str], graph: Any) -> Any:
+    """Make the named involvements passing mentions, and let the rung fall back down the link ladder."""
+    import dataclasses
+
+    if not reasons_for:
         return link
+    changed = set(reasons_for)
     involves = tuple(dataclasses.replace(item, strong=False) if item in changed else item for item in link.involves)
-    reasons = [*link.reasons, *(f"Not a link: '{item.matched}' is a generic public-body name, and the page names none of the pack's places." for item in changed)]
+    reasons = [*link.reasons, *reasons_for.values()]
     rung = link.rung
     if rung == "COUNTERPARTY" and not any(item.strong and item.cls in {"Customer", "Supplier"} for item in involves):
         near = [place for place in link.place_ids if graph is not None and graph.entities_in_place(place) & graph.entities_in_lob(link.lob_id)] if link.lob_id else []
@@ -566,7 +635,7 @@ def _count(decisions: Mapping[str, Mapping[str, Any]]) -> dict[str, int]:
 
 
 def _kept(pool: Pool, run: ReaderRun) -> list[dict[str, Any]]:
-    return pool.assessments(run.run_id, kept_only=True)
+    return pool.weekly_assessments(run.run_id)
 
 
 def _recent_first(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
@@ -628,7 +697,7 @@ def condition_sources(rows: Sequence[Mapping[str, Any]], condition_id: str, *, t
 def child_sources(pool: Pool, run: ReaderRun, child: str) -> list[Mapping[str, Any]]:
     """For a theme an entity pack covers: that pack's kept signals on the same date that name its projects, suppliers or
     customers, or reach briefing tier 2."""
-    rows = pool.assessments(run_id_for(run.run_date, child), kept_only=True)
+    rows = pool.weekly_assessments(run_id_for(run.run_date, child))
     chosen = [row for row in rows if any(hit.get("strong") for hit in row.get("exposure") or []) or (row.get("tier") or 9) <= 2]
     return materiality_order(chosen)[:MAX_CONDITION_SOURCES]
 
@@ -683,7 +752,7 @@ def owner_roles(pack: OntologyPack) -> list[str]:
     return list(dict.fromkeys([*roles, *GROUP_FUNCTIONS]))
 
 
-def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Callable[[str], None] = print) -> dict[str, Any]:
+def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Callable[[str], None] = print, condition_critique: bool = True) -> dict[str, Any]:
     from grit.agents import reader as agents
     from grit.core.conditions import import_scan, rank, revise
 
@@ -692,12 +761,12 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
     by_id = {item["id"]: item for item in items}
     rows = _kept(pool, run)
     previous_run, priors = _prior(pool, run)
-    with pool.transaction() as conn:
-        conn.execute("DELETE FROM qa_log WHERE run_id = ?", (run.run_id,))  # derived per run; a rerun of the agents writes it again
     registers = [pack.source_register, graph_pack(pack).source_register]
     by_signal = {row["signal_id"]: row for row in rows}
 
     def write_log(entry: agents.CallLog) -> None:
+        if not condition_critique:
+            entry.reasoning = None
         pool.log(actor_type="AGENT", run_id=run.run_id, **entry.as_record())
 
     def prior_view(key: str) -> dict[str, Any] | None:
@@ -732,7 +801,7 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
         for key, draft in drafts.items() if draft["status"] == "VALIDATED"
     ]
     accepted: list[dict[str, Any]] = []
-    if critic_view:
+    if critic_view and condition_critique:
         accepted, rejected, call = agents.critique(client, model, drafts=critic_view, priors={key: str(row.get("summary") or "") for key, row in priors.items()}, sources=combined)
         write_log(call)
         log(f"  Critic   issues accepted {len(accepted)}, rejected {len(rejected)}")
@@ -741,7 +810,7 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
         table, back = tables[key]
         source_signal = combined_back.get(str(issue.get("source_id")))
         local = next((sid for sid, signal in back.items() if signal == source_signal), None)
-        if local is None:
+        if local is None and issue.get("source_id") in combined:
             local = f"S{len(table) + 1}"
             table[local] = combined[str(issue["source_id"])]
             back[local] = str(source_signal)
@@ -752,9 +821,9 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
         before = drafts[key].get("summary")
         if refined["status"] in {"VALIDATED", "NO_EVIDENCE"}:
             drafts[key] = refined
-            pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=str(issue.get("problem") or before), correction=agents.strip_marks(fixed_issue["correction"]), source_ids=[str(source_signal)], origin="CRITIC")
+            pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=str(issue.get("problem") or before), correction=agents.strip_marks(fixed_issue["correction"]), source_ids=[str(source_signal)] if source_signal else [], origin="CRITIC")
         else:
-            pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=str(issue.get("problem")), correction="Raised by the Critic. The redraft failed its checks, so the earlier draft stands.", source_ids=[str(source_signal)], origin="CRITIC")
+            pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=str(issue.get("problem")), correction="Raised by the Critic. The redraft failed its checks, so the earlier draft stands.", source_ids=[str(source_signal)] if source_signal else [], origin="CRITIC")
 
     # Proposer: options for a key risk whose validated assessment is escalating or cites a material source (spec 36).
     options: dict[str, list[dict[str, Any]]] = {}
@@ -1053,7 +1122,7 @@ def _bottom_line(pool: Pool, run: ReaderRun, *, client: Any, model: str, write_l
 # Findings --------------------------------------------------------------------------------------------------------
 
 
-def findings(pool: Pool, run: ReaderRun, *, client: Any, model: str, top: int = 6, max_tier: int = 2, search: Callable[..., Any] | None = None, log: Callable[[str], None] = print) -> dict[str, Any]:
+def findings(pool: Pool, run: ReaderRun, *, client: Any, model: str, top: int = 6, max_tier: int = 2, search: Callable[..., Any] | None = None, log: Callable[[str], None] = print, max_iterations: int = 3) -> dict[str, Any]:
     """The six-question card for the strongest register-linked signals. Signals linked only through the reader pack have no
     business-area graph path, so the loop is not run on them; their reader-pack entries carry them instead."""
     from grit.agents.loop.engine import FindingLoop, LoopConfig
@@ -1071,7 +1140,7 @@ def findings(pool: Pool, run: ReaderRun, *, client: Any, model: str, top: int = 
     pool_records = [{"url": s["url"], "title": s["title"], "text": s["text"], "publisher": s["publisher"], "published_at": s["published_at"]} for s in every]
     tool = FollowUpTool(search=search, embed=None, index=index, pool=pool_records, vectors=vectors, same_event=0.90, budget=top)
     names = (business.label, str((business.manifest or {}).get("shortLabel") or business.label))
-    engine = FindingLoop(client, model, graph=graph, index=index, themes=business.themes["themes"], pool=pool_records, vectors=vectors, tool=tool, config=LoopConfig(), business_area=names)
+    engine = FindingLoop(client, model, graph=graph, index=index, themes=business.themes["themes"], pool=pool_records, vectors=vectors, tool=tool, config=LoopConfig(max_iterations=max_iterations), business_area=names)
     written = 0
     for number, row in enumerate(rows, start=1):
         signal = {

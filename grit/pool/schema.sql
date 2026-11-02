@@ -4,6 +4,117 @@
 
 PRAGMA foreign_keys = ON;
 
+CREATE TABLE IF NOT EXISTS weekly_runs (
+    run_id TEXT PRIMARY KEY REFERENCES runs(run_id),
+    version INTEGER NOT NULL DEFAULT 1,
+    evidence_hash TEXT NOT NULL,
+    search_limit INTEGER NOT NULL CHECK(search_limit >= 0),
+    searches_used INTEGER NOT NULL DEFAULT 0 CHECK(searches_used >= 0),
+    revisions_used INTEGER NOT NULL DEFAULT 0 CHECK(revisions_used BETWEEN 0 AND 2),
+    status TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS weekly_calls (
+    call_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id TEXT NOT NULL REFERENCES runs(run_id),
+    version INTEGER NOT NULL,
+    role TEXT NOT NULL,
+    task TEXT NOT NULL,
+    prompt_version TEXT NOT NULL,
+    model TEXT NOT NULL,
+    input_hash TEXT NOT NULL,
+    input_json TEXT NOT NULL,
+    output_json TEXT NOT NULL,
+    output_hash TEXT,
+    status TEXT NOT NULL,
+    error TEXT,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_weekly_call_replay ON weekly_calls(run_id, version, role, task, input_hash);
+CREATE TABLE IF NOT EXISTS weekly_selections (
+    selection_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id TEXT NOT NULL REFERENCES runs(run_id),
+    version INTEGER NOT NULL,
+    signal_id TEXT NOT NULL REFERENCES signals(signal_id),
+    call_id INTEGER NOT NULL REFERENCES weekly_calls(call_id),
+    selection_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS weekly_issues (
+    revision_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id TEXT NOT NULL REFERENCES runs(run_id),
+    version INTEGER NOT NULL,
+    issue_id TEXT NOT NULL,
+    call_id INTEGER NOT NULL REFERENCES weekly_calls(call_id),
+    status TEXT NOT NULL CHECK(status IN ('OPEN', 'RESOLVED')),
+    issue_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS weekly_reports (
+    report_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id TEXT NOT NULL REFERENCES runs(run_id),
+    version INTEGER NOT NULL,
+    profile_id TEXT NOT NULL,
+    content_hash TEXT NOT NULL,
+    selection_hash TEXT NOT NULL,
+    critique_call_id INTEGER NOT NULL REFERENCES weekly_calls(call_id),
+    status TEXT NOT NULL,
+    brief_json TEXT NOT NULL,
+    routed_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS weekly_memory (
+    memory_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    package_id TEXT NOT NULL,
+    package_version INTEGER NOT NULL,
+    call_id INTEGER NOT NULL REFERENCES weekly_calls(call_id),
+    proposal_json TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PROPOSED',
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS weekly_evidence (
+    evidence_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id TEXT NOT NULL REFERENCES runs(run_id),
+    signal_id TEXT NOT NULL REFERENCES signals(signal_id),
+    kind TEXT NOT NULL,
+    provenance_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS weekly_memory_admissions (
+    memory_id INTEGER PRIMARY KEY REFERENCES weekly_memory(memory_id),
+    reviewer_id TEXT NOT NULL,
+    intent TEXT NOT NULL CHECK(intent IN ('ADMIT', 'REJECT')),
+    created_at TEXT NOT NULL
+);
+CREATE TRIGGER IF NOT EXISTS weekly_reports_no_update BEFORE UPDATE ON weekly_reports
+BEGIN SELECT RAISE(ABORT, 'Weekly report snapshots are immutable'); END;
+CREATE TRIGGER IF NOT EXISTS weekly_reports_no_delete BEFORE DELETE ON weekly_reports
+BEGIN SELECT RAISE(ABORT, 'Weekly report snapshots are immutable'); END;
+CREATE TRIGGER IF NOT EXISTS weekly_selections_no_update BEFORE UPDATE ON weekly_selections
+BEGIN SELECT RAISE(ABORT, 'Weekly selections are append-only'); END;
+CREATE TRIGGER IF NOT EXISTS weekly_selections_no_delete BEFORE DELETE ON weekly_selections
+BEGIN SELECT RAISE(ABORT, 'Weekly selections are append-only'); END;
+CREATE TRIGGER IF NOT EXISTS weekly_issues_no_update BEFORE UPDATE ON weekly_issues
+BEGIN SELECT RAISE(ABORT, 'Weekly critique history is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS weekly_issues_no_delete BEFORE DELETE ON weekly_issues
+BEGIN SELECT RAISE(ABORT, 'Weekly critique history is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS weekly_memory_admissions_no_update BEFORE UPDATE ON weekly_memory_admissions
+BEGIN SELECT RAISE(ABORT, 'Memory admissions are immutable'); END;
+CREATE TRIGGER IF NOT EXISTS weekly_memory_admissions_no_delete BEFORE DELETE ON weekly_memory_admissions
+BEGIN SELECT RAISE(ABORT, 'Memory admissions are immutable'); END;
+CREATE TRIGGER IF NOT EXISTS weekly_calls_no_rewrite BEFORE UPDATE ON weekly_calls WHEN OLD.status != 'STARTED'
+BEGIN SELECT RAISE(ABORT, 'Completed weekly invocations are immutable'); END;
+CREATE TRIGGER IF NOT EXISTS weekly_calls_no_delete BEFORE DELETE ON weekly_calls
+BEGIN SELECT RAISE(ABORT, 'Weekly invocation history is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS weekly_evidence_no_update BEFORE UPDATE ON weekly_evidence
+BEGIN SELECT RAISE(ABORT, 'Weekly evidence is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS weekly_evidence_no_delete BEFORE DELETE ON weekly_evidence
+BEGIN SELECT RAISE(ABORT, 'Weekly evidence is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS weekly_memory_no_update BEFORE UPDATE ON weekly_memory
+BEGIN SELECT RAISE(ABORT, 'Memory proposals are append-only'); END;
+CREATE TRIGGER IF NOT EXISTS weekly_memory_no_delete BEFORE DELETE ON weekly_memory
+BEGIN SELECT RAISE(ABORT, 'Memory proposals are append-only'); END;
+
 CREATE TABLE IF NOT EXISTS runs (
     run_id        TEXT PRIMARY KEY,           -- e.g. 2026-10-07-urs-tw
     run_date      TEXT NOT NULL,

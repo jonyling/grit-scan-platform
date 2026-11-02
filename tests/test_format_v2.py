@@ -136,3 +136,37 @@ def test_the_tracker_counts_a_judged_signpost_as_seen(tmp_path: Path) -> None:
         for case in ("BEST", "MEDIUM", "WORST")]}]}
     (reading,) = track(pool, "2026-11-02-urs", register)
     assert reading["lean"] == "WORST" and reading["cases"][2]["signposts_seen"][0]["signal_ids"] == ["SIG-x"]
+
+
+def test_a_public_body_counts_only_in_its_own_country_and_the_business_areas_own_business() -> None:
+    from types import SimpleNamespace
+
+    from grit.ontology.link import Involvement, Link
+    from grit.pipeline.reader_scan import public_body_rule
+
+    def involvement(node_id: str, name: str) -> Involvement:
+        return Involvement(node_id, "Customer", name, name, "REGISTER", "LEAD", 1, True, False)
+
+    graph = SimpleNamespace(nodes={"BCA": SimpleNamespace(attrs={"country": "Singapore"}), "MOE": SimpleNamespace(attrs={"country": "Singapore"}),
+                                   "PTC": SimpleNamespace(attrs={"country": "USA"})})
+
+    def link(node_id: str, name: str) -> Link:
+        return Link("COUNTERPARTY", (involvement(node_id, name),), None, None, (), (), (), ())
+
+    terms = ("cybersecurity", "software", "contract", "tolling", "travel information")
+    malta = public_body_rule(link("BCA", "Building and Construction Authority"), "Man crushed to death at Hal Far, Malta. The Building and Construction Authority stopped works.", graph, terms)
+    assert malta.rung is None and not malta.involves[0].strong and "Malta" in malta.reasons[-2]
+    food = public_body_rule(link("MOE", "Ministry of Education"), "Gastroenteritis outbreak at two Ministry of Education kindergartens in Singapore.", graph, terms)
+    assert food.rung is None and "outside the business area" in food.reasons[-2]
+    tender = public_body_rule(link("MOE", "Ministry of Education"), "Singapore's Ministry of Education awards a software contract for schools.", graph, terms)
+    assert tender.rung == "COUNTERPARTY" and tender.involves[0].strong
+    turnpike = public_body_rule(link("PTC", "Pennsylvania Turnpike Commission"), "The Pennsylvania Turnpike Commission upgraded its travel information service.", graph, terms)
+    assert turnpike.rung == "COUNTERPARTY", "a US state body is not rejected for not writing 'United States'"
+
+
+def test_countries_are_named_by_common_name_and_alias() -> None:
+    from grit.core.countries import canonical, named
+
+    assert named("Blasts in Riyadh; Saudi forces intercept missiles") == {"Saudi Arabia"}
+    assert named("Tell us about it") == set() and named("US carriers head to the Gulf") == {"United States"}
+    assert canonical("USA") == "United States" and canonical("Republic of Korea") == "South Korea"

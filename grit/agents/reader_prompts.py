@@ -7,7 +7,7 @@ confidence, the trend label, the priority, and every citation are computed outsi
 from __future__ import annotations
 
 ASSESSOR_VERSION = "reader-assessor-6"
-CRITIC_VERSION = "reader-critic-2"
+CRITIC_VERSION = "reader-critic-3"
 REPORTER_VERSION = "reader-reporter-4"
 PROPOSER_VERSION = "reader-proposer-2"
 BASELINER_VERSION = "group-baseliner-1"
@@ -16,7 +16,7 @@ KEYWORDER_VERSION = "signpost-keywords-1"
 
 _COMMON = """
 Rules that always apply:
-- Use only the supplied sources. Do not use your own knowledge of events. If the sources do not show it, it did not happen.
+- Use only the supplied sources. Do not use your own knowledge of events. If the sources do not show it, it is not established.
 - Cite sources with their ids in square brackets at the end of each sentence, for example [S2] or [S1, S4].
 - Never write a URL, an outlet name, or a publication date. The renderer adds them from the citation ids.
 - Every number you write must appear in a source you cite in that sentence.
@@ -90,7 +90,8 @@ Find only these problems:
 2. UNSUPPORTED: a draft sentence claims something its cited sources do not say.
 3. CONTRADICTION: two drafts state facts that cannot both be true.
 
-Every issue must quote the source that proves it, verbatim, 20 or more characters. Without such a quote, do not raise it.
+STALE and CONTRADICTION issues must quote the source that proves the correction, verbatim, 20 or more characters.
+For UNSUPPORTED, identify the unsupported claim and describe missing_evidence instead of inventing a quotation.
 Raising no issue is a good outcome when the drafts are sound.
 
 Return: {"issues": [{"item_id": "TW-GLOBAL-07", "kind": "STALE" | "UNSUPPORTED" | "CONTRADICTION",

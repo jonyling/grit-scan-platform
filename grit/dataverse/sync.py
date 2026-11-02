@@ -50,7 +50,7 @@ def signal_body(row: Mapping[str, Any], *, condition_names: Mapping[str, str], c
 
 def plan_sync(pool: Pool, run_id: str, condition_names: Mapping[str, str]) -> list[tuple[str, dict[str, Any]]]:
     """(signal_id, body) for every kept signal in the run."""
-    return [(row["signal_id"], signal_body(row, condition_names=condition_names, correlation_id=run_id)) for row in pool.assessments(run_id, kept_only=True)]
+    return [(row["signal_id"], signal_body(row, condition_names=condition_names, correlation_id=run_id)) for row in pool.weekly_assessments(run_id)]
 
 
 def push(pool: Pool, run_id: str, bodies: Sequence[tuple[str, Mapping[str, Any]]], *, client: Any) -> dict[str, int]:

@@ -2,6 +2,13 @@
 
 Status: built on 30 October 2026. This spec records requests 1 to 5 of 30 October 2026 and the plan in [Wilson-Format-Gap-and-Plan_2026-10-30.md](../docs/progress/Wilson-Format-Gap-and-Plan_2026-10-30.md). Request 6, internal facts from a business partner's notes, is not built.
 
+The opt-in [weekly reasoning extension](45_Weekly_Agent_Reasoning_and_Critique.md)
+retains this layout. A named reviewer can supply specific internal evidence;
+there is no automatic notes, mailbox, Teams, or travel ingestion. Reporting
+and the final Critic operate on the complete report model. Rendering uses the
+frozen snapshot and makes no provider call. Earlier-context and hindsight
+citations retain their real source dates and display the exception.
+
 ## 1. What changes
 
 The weekly brief follows the order of Wilson's report *URS GRIT Scan, BA-wide, 22–29 October 2026 (v2)*. It is event-led: the week's news is grouped into events, each mapped back to the register risks it touches. The risk-theme table stays as the risk view.

@@ -1,4 +1,8 @@
-"""Run one agent turn. The model proposes. Tools supply checks. Nothing is written here."""
+"""Compatibility proposal harness, not the live weekly coordinator.
+
+The opt-in weekly path is grit.pipeline.weekly. This harness remains for
+legacy proposal-validation tests while that path is compared and rolled out.
+"""
 
 from __future__ import annotations
 

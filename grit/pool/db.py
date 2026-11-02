@@ -20,6 +20,7 @@ from grit.settings import db_path
 SCHEMA = Path(__file__).with_name("schema.sql")
 # Columns added after a table was first created. CREATE TABLE IF NOT EXISTS does not add them to an existing pool.
 MIGRATIONS = {
+    "weekly_reports": {"selection_hash": "TEXT NOT NULL DEFAULT ''"},
     "watchpoint_updates": {"cycles_before": "INTEGER NOT NULL DEFAULT 0"},
     "management_requests": {"pack": "TEXT", "queries_json": "TEXT NOT NULL DEFAULT '[]'", "source": "TEXT"},
     "condition_assessments": {"implication": "TEXT", "options_json": "TEXT NOT NULL DEFAULT '[]'", "opportunity": "TEXT", "counter_indicator": "TEXT"},
@@ -233,6 +234,33 @@ class Pool:
                 ORDER BY COALESCE(a.tier, 9), a.red DESC, s.published_at DESC, a.signal_id""",
             (run_id,),
         )
+
+    def weekly_assessments(self, run_id: str, *, include_excluded: bool = False) -> list[dict[str, Any]]:
+        """Effective editorial selection; the deterministic rows are never overwritten."""
+        run = self.run(run_id) or {}
+        if (run.get("config") or {}).get("weekly_mode") != "reasoned":
+            return self.assessments(run_id, kept_only=True)
+        state = self.one("SELECT * FROM weekly_runs WHERE run_id = ?", (run_id,))
+        if state is None:
+            raise ValueError(f"{run_id}: weekly editorial selection has not run.")
+        selected = self.rows(
+            """SELECT w.* FROM weekly_selections w
+               WHERE w.run_id = ? AND w.version = ? AND w.selection_id = (
+                 SELECT MAX(s.selection_id) FROM weekly_selections s
+                 WHERE s.run_id = w.run_id AND s.version = w.version AND s.signal_id = w.signal_id)""",
+            (run_id, state["version"]),
+        )
+        by_id = {row["signal_id"]: row["selection"] for row in selected}
+        baseline = self.assessments(run_id)
+        if {row["signal_id"] for row in self.signals_for_run(run_id)} - {row["signal_id"] for row in baseline}:
+            raise ValueError(f"{run_id}: candidates are missing deterministic assessments.")
+        if set(by_id) != {row["signal_id"] for row in baseline}:
+            raise ValueError(f"{run_id}: incomplete weekly editorial coverage.")
+        return [
+            {**row, "baseline_decision": row["decision"], "editorial": by_id[row["signal_id"]]}
+            for row in baseline
+            if include_excluded or by_id[row["signal_id"]]["decision"] in {"INCLUDE", "WATCH"}
+        ]
 
     # Layer 1 and Layer 5 --------------------------------------------------------------------------------------
 

@@ -381,7 +381,11 @@ def check_issue(issue: Any, item_ids: set[str], sources: Mapping[str, Mapping[st
     if issue.get("kind") not in {"STALE", "UNSUPPORTED", "CONTRADICTION"}:
         found.append("BAD_VALUE: kind")
     source_id = issue.get("source_id")
-    found += quote_problems([{"source_id": source_id, "quote": issue.get("quote")}], sources, "issue quote")
+    if issue.get("kind") == "UNSUPPORTED" and isinstance(issue.get("missing_evidence"), str) and issue["missing_evidence"].strip():
+        if source_id is not None and source_id not in sources:
+            found.append("UNKNOWN_SOURCE: unsupported claim")
+    else:
+        found += quote_problems([{"source_id": source_id, "quote": issue.get("quote")}], sources, "issue quote")
     correction = str(issue.get("correction") or "")
     if not correction.strip():
         found.append("BAD_SHAPE: correction is empty")
@@ -391,18 +395,23 @@ def check_issue(issue: Any, item_ids: set[str], sources: Mapping[str, Mapping[st
 
 
 def critique(client: Any, model: str, *, drafts: Sequence[Mapping[str, Any]], priors: Mapping[str, str], sources: Mapping[str, Mapping[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], CallLog]:
-    """Returns (accepted issues, rejected issues with reasons, log). An issue without a verbatim proving quote is rejected."""
+    """Return accepted and rejected objections; missing support does not need a proving quote."""
     payload = {"drafts": [dict(item) for item in drafts], "last_week": dict(priors), "sources": sources}
     log = CallLog("Critic", CRITIC_VERSION, model, "reader-drafts", canonical_hash(payload))
     raw = _call(client, model, CRITIC_SYSTEM, payload, log)
     if raw is None:
         return [], [], log
+    if not isinstance(raw, Mapping) or not isinstance(raw.get("issues"), list):
+        log.status = "WITHHELD"
+        log.violations = ["BAD_SHAPE: the Critic must return an issues list; missing output is not a clean review."]
+        return [], [], log
     item_ids = {str(item.get("item_id")) for item in drafts}
     accepted, rejected = [], []
-    for issue in (raw.get("issues") if isinstance(raw.get("issues"), list) else [])[:12]:
+    for issue in raw["issues"]:
         problems = check_issue(issue, item_ids, sources)
-        (rejected if problems else accepted).append(dict(issue) | ({"rejected_because": problems} if problems else {}))
-    log.status = "VALIDATED"
+        value = dict(issue) if isinstance(issue, Mapping) else {"raw_issue": issue}
+        (rejected if problems else accepted).append(value | ({"rejected_because": problems} if problems else {}))
+    log.status = "WITHHELD" if rejected else "VALIDATED"
     log.violations = [f"REJECTED_ISSUE: {item.get('item_id')}: {item['rejected_because'][0]}" for item in rejected]
     return accepted, rejected, log
 

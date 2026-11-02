@@ -115,6 +115,8 @@ CANONICAL_FIELDS = (
     "restoration_source_is_authoritative",
     "score_risk_only",
     "final_score_available",
+    "controlled_assessment_status",
+    "controlled_assessment_hash",
     "supervisor_validation_passed",
     "expected_transition_sequence",
     "authoritative_latest_transition_sequence",
@@ -277,7 +279,11 @@ def _evidence_problem(envelope: dict[str, Any]) -> str | None:
             return problem
         if envelope.get("score_risk_only") is True or envelope.get("trigger_function_name") == "ScoreRisk":
             return "EVIDENCE_NOT_COMPLETE"
-        if envelope.get("final_score_available") is False:
+        outcome = envelope.get("controlled_assessment_status")
+        if outcome is not None:
+            if outcome not in {"SCORED", "NOT_RUN", "NOT_ASSESSED", "INSUFFICIENT_DATA"} or not envelope.get("controlled_assessment_hash"):
+                return "EVIDENCE_NOT_COMPLETE"
+        elif envelope.get("final_score_available") is False:
             return "EVIDENCE_NOT_COMPLETE"
         return None
     if pair == ("CRITIQUED", "PENDING_REVIEW"):

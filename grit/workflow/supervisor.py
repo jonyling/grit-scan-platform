@@ -162,8 +162,9 @@ class Supervisor:
         function_name: str,
         status: str,
         correlation_id: str,
+        source_record_id: str | None = None,
     ) -> str:
-        record_id = f"fn-{len(self.function_log) + 1:03d}"
+        record_id = source_record_id or f"fn-{len(self.function_log) + 1:03d}"
         self.function_log.append(
             {
                 "record_id": record_id,
@@ -185,12 +186,13 @@ class Supervisor:
         status: str,
         correlation_id: str,
         proposal: dict[str, Any],
+        source_record_id: str | None = None,
     ) -> str:
         cited = [str(item) for item in proposal.get("cited_entity_ids") or []]
         references = list(proposal.get("evidence_references") or [])
         unknown = [item for item in cited if item not in self.known_entity_ids]
         validation_passed = status == "SUCCEEDED" and not unknown and bool(references)
-        record_id = f"ag-{len(self.agent_log) + 1:03d}"
+        record_id = source_record_id or f"ag-{len(self.agent_log) + 1:03d}"
         self.agent_log.append(
             {
                 "record_id": record_id,
@@ -739,7 +741,12 @@ class Supervisor:
         if record is not None and record.get("function_name") == "ScoreRisk":
             filled["score_risk_only"] = True
         if record is not None and record.get("agent_name") == "Critic":
-            filled["final_score_available"] = bool(record.get("proposal", {}).get("final_score_available", True))
+            proposal = record.get("proposal", {})
+            if "controlled_assessment_status" in proposal:
+                filled["controlled_assessment_status"] = proposal["controlled_assessment_status"]
+                filled["controlled_assessment_hash"] = proposal.get("controlled_assessment_hash")
+            else:
+                filled["final_score_available"] = bool(proposal.get("final_score_available", True))
             filled["score_risk_only"] = False
         envelope.update(filled)
         if filled.get("trigger_record_exists") is True:

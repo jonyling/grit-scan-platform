@@ -76,6 +76,11 @@ def citations(text: str | None, signals: Mapping[str, Mapping[str, Any]]) -> tup
                 "signal_id": signal_id, "outlet": signal.get("publisher") or "source", "date": fmt_date(signal.get("published_at")),
                 "when": fmt_when(signal.get("published_at")), "url": signal.get("url"), "title": signal.get("title"),
             }
+            scope_label = {"HINDSIGHT": "hindsight", "EARLIER_CONTEXT": "earlier context"}.get(signal.get("time_scope"))
+            if scope_label:
+                for key in ("date", "when"):
+                    if ref.get(key):
+                        ref[key] = f"{ref[key]} ({scope_label})"
             refs.append(ref)
             cited[signal_id] = ref
         if refs:
@@ -117,7 +122,7 @@ def _cited_ids(*texts: str | None) -> set[str]:
 def routed_signals(pool: Pool, run_id: str, profile: Profile) -> list[dict[str, Any]]:
     """Every kept signal with this reader's route and profile effect. Signals outside the aperture stay in the list with the
     reason; the profile only reorders."""
-    rows = pool.assessments(run_id, kept_only=True)
+    rows = pool.weekly_assessments(run_id, include_excluded=True)
     memory = None
     if profile.signal_buttons:
         feedback = pool.feedback(profile.profile_id)
@@ -127,7 +132,8 @@ def routed_signals(pool: Pool, run_id: str, profile: Profile) -> list[dict[str, 
     for row in rows:
         route = aperture_routing(row, aperture=profile.aperture, packs=profile.packs, requests=requests)
         effect = profile_effect(row, profile, protected=bool(row.get("red")) or route.priority == "P1", memory=memory)
-        out.append({**row, "route": route.as_record(), "preference": effect.as_record(), "shown": route.include})
+        selected = (row.get("editorial") or {}).get("decision", "INCLUDE") in {"INCLUDE", "WATCH"}
+        out.append({**row, "route": route.as_record(), "preference": effect.as_record(), "shown": route.include and selected})
     out.sort(key=lambda row: str(row.get("published_at") or ""), reverse=True)
     out.sort(key=lambda row: (not row["shown"], row["route"]["priority"] or "P9", row.get("tier") or 9, not row.get("condition_ids"), -row["preference"]["affinity"], -(row.get("corroboration") or 1)))
     return out

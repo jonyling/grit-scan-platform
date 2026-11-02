@@ -6,6 +6,14 @@
 **Workflow authority:** Supervisor Agent only  
 **State ledger:** `GRIT_WorkflowState`
 
+**Weekly extension:** In the opt-in path described by
+[spec 45](45_Weekly_Agent_Reasoning_and_Critique.md), a genuine Critic invocation
+references the recorded controlled assessment status and hash. Explicit
+`NOT_RUN`, `NOT_ASSESSED`, and `INSUFFICIENT_DATA` outcomes do not require an
+invented numeric score or `final_score_available` flag. Exact-report readiness
+is checked before submitting the transition. Legacy envelopes retain their
+existing behavior.
+
 ## 1. Function Purpose and Authority
 
 `TransitionGuard()` determines whether one requested GRIT signal workflow transition is legally permitted. It evaluates only the authoritative transition envelope supplied by the Supervisor and returns a deterministic `TransitionDecisionResult`.

@@ -84,9 +84,9 @@ def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]]
     from grit.core.priority import outlet_groups
 
     run = pool.run(run_id)
-    rows = list(rows if rows is not None else pool.assessments(run_id, kept_only=True))
+    rows = list(rows if rows is not None else pool.weekly_assessments(run_id))
     previous = pool.latest_run(run["pack"], before=run["run_date"], kind="READER_SCAN")
-    before = _group(pool, pool.assessments(previous["run_id"], kept_only=True)) if previous else {}
+    before = _group(pool, pool.weekly_assessments(previous["run_id"])) if previous else {}
     names = dict(names or {})
     rising = set(escalating)
     events = []

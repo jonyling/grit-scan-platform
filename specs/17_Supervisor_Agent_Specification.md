@@ -6,6 +6,11 @@
 **Workflow authority:** Supervisor Agent only
 **Publication authority:** Human approver only
 
+**Weekly implementation:** [Spec 45](45_Weekly_Agent_Reasoning_and_Critique.md)
+defines the opt-in six-role coordinator. Its model Supervisor chooses permitted
+next work; deterministic services retain workflow and release authority.
+Editorial inclusion is an agent decision, separate from controlled scores.
+
 ## 1. Mission
 
 The Supervisor Agent is the authoritative workflow orchestrator for GRIT-Scan Phase 1. It receives a scan request, coordinates the Phase 1 deterministic function set and connected reasoning agents, persists every state transition and execution event to Dataverse, and produces an approval-ready risk-monitoring package.

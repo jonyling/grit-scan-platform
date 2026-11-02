@@ -23,7 +23,8 @@ def _address(profile: Any) -> str:
 def draft_red_alerts(pool: Pool, run_id: str, pack: str, profiles: Sequence[Any], folder: Path) -> list[dict[str, Any]]:
     recipients = [profile for profile in profiles if profile.profile_id in red_recipients(profiles, pack)]
     drafts = []
-    for row in pool.assessments(run_id, kept_only=True):
+    reasoned = ((pool.run(run_id) or {}).get("config") or {}).get("weekly_mode") == "reasoned"
+    for row in pool.assessments(run_id, kept_only=not reasoned):
         if not row.get("red"):
             continue
         alert_id = f"RED-{run_id}-{row['signal_id']}"

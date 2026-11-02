@@ -3,6 +3,13 @@
 **Status:** Draft for review. Describes the code as built on 2026-10-07.
 **Supersedes:** Nothing. Specs 13–34 still govern the rules. This spec records how the proof of concept meets them, and it is the baseline for the MVP specifications written under Specifications-Driven Development (SDD).
 
+**Opt-in weekly extension:** [Spec 45](45_Weekly_Agent_Reasoning_and_Critique.md)
+documents the independently invoked six-role path, effective editorial
+selection, genuine invocation references, and frozen final-report critique.
+The generic proposal harness is compatibility/test scaffolding, not evidence
+that a live weekly role executed. The legacy package path is labeled
+`LEGACY_RECONSTRUCTED`; it does not satisfy the new assurance contract.
+
 ## 1. Purpose
 
 GRIT-Scan scans the external environment for risks that could affect ST Engineering's business performance, and briefs each executive in the form they need. The proof of concept serves the Group Head of Risk & Assurance (Wilson) and the Urban Solutions (URS) business partner (Hwaimay). It runs two reader packs: Urban Solutions, the first business-area (BA) pack, and URS Taiwan, an entity pack under it. The other six business areas follow the Urban Solutions pattern ([Add a business area](../docs/add-a-business-area.md)).

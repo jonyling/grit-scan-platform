@@ -55,7 +55,29 @@ def _packs(args: argparse.Namespace) -> list[str]:
 def _run(pool: Any, args: argparse.Namespace, pack: str) -> Any:
     from grit.pipeline.reader_scan import new_run
 
-    return new_run(pool, args.date, pack)
+    run = new_run(pool, args.date, pack)
+    config = (pool.run(run.run_id) or {}).get("config") or {}
+    if getattr(args, "reasoned", False) or config.get("weekly_mode") == "reasoned":
+        state = pool.one("SELECT * FROM weekly_runs WHERE run_id = ?", (run.run_id,)) or {}
+        limit = getattr(args, "countersearch_limit", None)
+        if limit is None:
+            limit = state.get("search_limit", config.get("countersearch_limit"))
+        if type(limit) is not int or limit < 0:
+            raise SystemExit("--reasoned requires --countersearch-limit N (0 explicitly disables countersearch).")
+        if state and state["search_limit"] != limit:
+            raise SystemExit("A resumed weekly run must retain its recorded countersearch limit.")
+        if getattr(args, "follow_ups", False):
+            raise SystemExit("Reasoned weekly runs share one countersearch budget; do not pass --follow-ups.")
+        pool.update_run_config(run.run_id, weekly_mode="reasoned", countersearch_limit=limit)
+        if getattr(args, "reasoned", False):
+            workers = getattr(args, "workers", None) or 6
+            if workers < 1:
+                raise SystemExit("--workers must be at least 1.")
+            pool.update_run_config(run.run_id, weekly_review="fast" if getattr(args, "fast", False) else "full",
+                                   agent_workers=workers)
+    elif getattr(args, "fast", False):
+        raise SystemExit("--fast applies only to --reasoned runs.")
+    return run
 
 
 def _for_each_pack(step: Callable[[Any, argparse.Namespace, str], int]) -> Callable[[argparse.Namespace], int]:
@@ -114,6 +136,17 @@ def plan_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
     return 0
 
 
+def _admit_supplied_evidence(pool: Any, run: Any, args: argparse.Namespace) -> None:
+    if not getattr(args, "internal_evidence", None):
+        return
+    if not getattr(args, "evidence_approved_by", None) or ((pool.run(run.run_id) or {}).get("config") or {}).get("weekly_mode") != "reasoned":
+        raise SystemExit("--internal-evidence needs --reasoned and --evidence-approved-by PROFILE.")
+    from pathlib import Path
+    from grit.pipeline.weekly import add_internal_evidence
+    records = json.loads(Path(args.internal_evidence).read_text(encoding="utf-8"))
+    add_internal_evidence(pool, run.run_id, records, _profiles([args.evidence_approved_by])[0])
+
+
 def scan_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
     """Researcher, embed, and the deterministic assessment."""
     from grit.pipeline import reader_scan
@@ -126,6 +159,7 @@ def scan_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
         for spec in chosen:
             print(f"  {spec.lane:10} {spec.query}")
         return 0
+    _admit_supplied_evidence(pool, run, args)
     from grit.core.red_events import report_synced
     from grit.settings import CONFIG_DIR
 
@@ -153,6 +187,31 @@ def agents_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
     from grit.pipeline import reader_scan
 
     run = _run(pool, args, pack)
+    if ((pool.run(run.run_id) or {}).get("config") or {}).get("weekly_mode") == "reasoned":
+        from grit.pipeline.weekly import countersearch, run_weekly
+
+        config = pool.run(run.run_id)["config"]
+        ontology = reader_scan._load_pack(pack)
+        pool.update_run_config(run.run_id, weekly_context={
+            "business": reader_scan.business_area_context(ontology),
+            "standing_items": reader_scan.standing_items(ontology),
+            "owner_roles": reader_scan.owner_roles(ontology),
+        })
+        _admit_supplied_evidence(pool, run, args)
+        reader_scan.assess(pool, run)
+        client, model = _client(), _model(args.model)
+        def draft_sections() -> None:
+            reader_scan.run_agents(pool, run, client=client, model=model, condition_critique=False)
+            if args.findings:
+                reader_scan.findings(pool, run, client=client, model=model, top=args.findings, max_iterations=1)
+        result = run_weekly(
+            pool, run, client=client, model=model, search_limit=config["countersearch_limit"],
+            profiles=_profiles(getattr(args, "profile", None)), search=countersearch,
+            reassess=lambda: reader_scan.assess(pool, run), draft_sections=draft_sections,
+            progress=lambda message: print(message, flush=True),
+        )
+        print(json.dumps(result, indent=2, default=str))
+        return 0 if result["status"] == "READY" else 2
     client, model = _client(), _model(args.model)
     print(f"Run {run.run_id}: agents on {model}.")
     print(reader_scan.run_agents(pool, run, client=client, model=model))
@@ -173,8 +232,9 @@ def report_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
     from grit.report.red import draft_red_alerts
 
     run = _run(pool, args, pack)
-    if (pool.run(run.run_id) or {}).get("status") != "COMPLETE":
-        pool.finish_run(run.run_id)
+    state = pool.run(run.run_id) or {}
+    if state.get("status") != "COMPLETE" and not (args.no_submit and (state.get("config") or {}).get("weekly_mode") == "reasoned"):
+        raise SystemExit("The analysis is not complete. Run the agents first, or render an incomplete reasoned preview with --no-submit.")
     for profile in _profiles(args.profile):
         result = write_pack(pool, run.run_id, profile, submit=not args.no_submit)
         print(json.dumps({key: value for key, value in result.items() if key != "package"} | {"package": {k: v for k, v in (result.get("package") or {}).items() if k != "members"}}, indent=2, default=str))
@@ -271,6 +331,22 @@ def cmd_review(args: argparse.Namespace) -> int:
     package = args.package if args.package.startswith("PKG-") else f"PKG-{args.package}"  # package ids start with PKG-
     result = review_package(pool, package_id=package, version=args.version, reviewer=reviewer, intent=args.intent)
     print(f"{result['outcome']}: package is now {result['status']}.")
+    row = pool.one("SELECT * FROM packages WHERE package_id = ? AND version = ?", (package, args.version))
+    if row and row["membership"].get("weekly_report_id"):
+        from grit.pipeline.weekly import run_memory
+        print(run_memory(pool, package_id=package, version=args.version, client=_client(), model=_model(None)))
+    return 0
+
+
+def cmd_weekly_memory(args: argparse.Namespace) -> int:
+    from grit.pipeline.weekly import run_memory
+    print(run_memory(_pool(), package_id=args.package, version=args.version, client=_client(), model=_model(args.model)))
+    return 0
+
+
+def cmd_memory_admit(args: argparse.Namespace) -> int:
+    from grit.pipeline.weekly import admit_memory
+    print(admit_memory(_pool(), args.id, _profiles([args.profile])[0], args.intent))
     return 0
 
 
@@ -434,6 +510,12 @@ def build_parser() -> argparse.ArgumentParser:
         sub.add_argument("--dry-run", action="store_true", help="Print the queries and stop. Spends nothing.")
         sub.add_argument("--sweep", type=int, default=0, help="Add up to N due queries from a business-area pack's 12-week digest plan. Default 0.")
         if name == "weekly":
+            sub.add_argument("--reasoned", action="store_true", help="Use whole-pool reasoning and exact-report critique (opt-in).")
+            sub.add_argument("--countersearch-limit", type=int, help="Required for --reasoned: explicit maximum searches for the run, including 0.")
+            sub.add_argument("--fast", action="store_true", help="With --reasoned: Critic screens dropped signals from compact records and calls run in parallel.")
+            sub.add_argument("--workers", type=int, help="With --reasoned --fast: model calls in flight at once. Default 6.")
+            sub.add_argument("--internal-evidence", help="Explicit JSON file of approved human-supplied evidence; no folder scanning.")
+            sub.add_argument("--evidence-approved-by", help="Reviewer profile admitting the supplied evidence.")
             sub.add_argument("--model")
             sub.add_argument("--findings", type=int, default=6, help="Finding cards to write. 0 skips the loop.")
             sub.add_argument("--follow-ups", action="store_true", help="Let the finding loop spend Brave follow-up searches.")
@@ -448,9 +530,27 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--model")
     sub.add_argument("--findings", type=int, default=6)
     sub.add_argument("--follow-ups", action="store_true")
+    sub.add_argument("--reasoned", action="store_true")
+    sub.add_argument("--countersearch-limit", type=int)
+    sub.add_argument("--fast", action="store_true")
+    sub.add_argument("--workers", type=int)
+    sub.add_argument("--profile", nargs="*", default=["all"])
+    sub.add_argument("--internal-evidence")
+    sub.add_argument("--evidence-approved-by")
     sub = reader("report", cmd_report, "Write each reader's Word, PowerPoint, Excel and Markdown pack, submit it for review, and draft RED emails.")
     sub.add_argument("--profile", nargs="*", default=["all"])
     sub.add_argument("--no-submit", action="store_true")
+
+    sub = commands.add_parser("weekly-memory", help="Resume typed Memory proposals after a named human package decision.")
+    sub.add_argument("--package", required=True)
+    sub.add_argument("--version", required=True, type=int)
+    sub.add_argument("--model")
+    sub.set_defaults(handler=cmd_weekly_memory)
+    sub = commands.add_parser("memory-admit", help="A named human admits or rejects a typed Memory proposal.")
+    sub.add_argument("--id", type=int, required=True)
+    sub.add_argument("--profile", required=True)
+    sub.add_argument("--intent", choices=("ADMIT", "REJECT"), required=True)
+    sub.set_defaults(handler=cmd_memory_admit)
 
     sub = commands.add_parser("feedback", help="Record a reader's approve, reject, or watch decision on a signal. It counts only when the reader's profile turns on signal buttons.")
     sub.add_argument("--profile", required=True)

@@ -8,6 +8,10 @@ This repository is the proof of concept (POC) for the Group Head of Risk & Assur
 
 Agents propose. Deterministic functions decide. A named human approves.
 
+The opt-in weekly reasoning path lets agents change **editorial inclusion**, not
+controlled scores or approval. [Spec 45](specs/45_Weekly_Agent_Reasoning_and_Critique.md)
+describes the distinction and the rollout gate.
+
 - No scoring path calls a language model. Confidence, news priority, trend labels, RED status, and the harm verdict are rules.
 - A missing fact stays missing. The brief prints "not established" or "nothing found". It never fills a gap with a default.
 - A draft that cites no source, quotes a source inexactly, or states a number its source lacks is withheld, not published.
@@ -24,11 +28,85 @@ A deterministic layer sits under seven agent roles:
 | Supervisor | The order of steps for a reader and week. | `TransitionGuard()` on each workflow advance, and `ReviewGate()` on each package. |
 | Researcher | Search results, and one follow-up search for a thin finding. | The query plan, the monthly search guard, and the dedupe rule. |
 | Assessor | A draft for each standing condition or theme, the implication of each key risk for the business area, and the answers on a finding card. | Quote, number, citation, and banned-word checks. An implication must name the business area's own lines of business, entities, customers, or suppliers. Confidence is a rule. |
-| Critic | Stale, unsupported, or contradictory claims in the drafts. | An issue counts only with a verbatim quote from a supplied source. |
+| Critic | In the legacy path, stale, unsupported, or contradictory condition claims. In the opt-in weekly path, inclusion decisions across all candidates and the exact final report. | Factual corrections need source passages. Missing support needs an explicit missing-evidence marker, not a fabricated quote. Malformed critique is withheld. |
 | Profiler | The next version of a reader's `profile.md`, from their notes, each change with a quote (spec 41). | Version, vocabulary, quote and grounding checks; Jony accepts it. Then a bounded emphasis rule that reorders within a tier, hides nothing, and never moves a P1 or RED signal down. |
 | Reporter | Entries for named items, the bottom line, and Co-Pilot answers. | The same checks, then one brief model rendered to every format. Co-Pilot answers also need cited sentences, attributed forecasts and hedged inferences (spec 40). |
 | Proposer | Two to four options for management to consider on a key risk that is escalating or has material evidence. | Each option must name an owner role, quote the key control or action plan it builds on, and cite its sources. The Proposer's reasoning goes to the execution log, never to the brief (spec 36). |
 | Strategist | A best, medium and worst case for STE under each strategic shift, with signposts and planned responses; the Keyworder adds signpost keywords once Wilson approves. | Grounding, citation, forecast-attribution, possibility, anchor, owner and trigger checks; Wilson approves before any reader sees a case. Leans are counts of signposts seen, never odds (spec 43). |
+
+## Use weekly reasoning
+
+The compatibility path remains the default. To run the six-role weekly path,
+use `--reasoned` and supply an explicit countersearch limit:
+
+```bash
+.venv/bin/python -m grit weekly --pack PACK --date YYYY-MM-DD \
+  --reasoned --countersearch-limit N --profile PROFILE
+```
+
+Replace `PACK`, `PROFILE`, and the date with the requested scope. `N` is your
+nonnegative network-tool limit for the run; there is no numeric default.
+Use `0` to disable countersearch and page verification explicitly. Requested
+checks that cannot run remain visible and block ordinary readiness.
+Initial scheduled searches retain their existing query and provider limits.
+A reasoned run makes two model calls for every 16 candidates. A pool of about
+2,000 candidates takes 250 or more calls, which is roughly 1.5 hours or longer
+per pass. Run it in a persistent terminal session.
+
+To shorten the review, add `--fast` to the reasoned command:
+
+```bash
+.venv/bin/python -m grit weekly --pack PACK --date YYYY-MM-DD \
+  --reasoned --fast --countersearch-limit N --profile PROFILE
+```
+
+With `--fast`, the Critic screens deterministic drops from compact records,
+about 80 per call. Only the drops it doubts receive the full Assessment and
+Critic review. Up to six calls run at once; `--workers N` changes this. Batches
+whose input has not changed reuse their earlier answers, even after the pool
+changes. A pool of about 2,000 candidates takes about 120 calls, roughly 10 to
+15 minutes for the review. The terminal prints progress for each phase.
+
+Fast review can miss a wrongly dropped signal that a full-text review would
+catch. Compare it with a full reasoned run on the same date before you rely
+on it. Switching between the modes starts a new analysis version.
+
+Assessment and an independent Critic account for deterministic keeps and drops,
+including acquired counterevidence. The Critic can rescue or exclude candidates.
+Original assessments and source dates remain separate from versioned selections.
+Reporting revises the existing sections, and a final Critic checks the exact
+per-reader snapshot. Up to two reconciliation rounds are shared across the run
+and survive resume. An unresolved material objection prevents submission;
+`grit report --pack PACK --date YYYY-MM-DD --no-submit` can render its incomplete
+preview. Word, PowerPoint, Excel, Markdown, and JSON use the frozen report.
+
+For approved internal confirmations, add `--internal-evidence FILE` and
+`--evidence-approved-by PROFILE` to the reasoned weekly or agents command.
+`FILE` is a JSON list of records with `title`, `text`, `reference`, and an optional
+actual `published_at` date. The admitting profile must be a reviewer or BA head.
+No private folder is scanned. Missing staff presence, operational impact, or
+structured observations remain missing. Mail, Teams, and travel connectors are
+not implemented.
+
+After a named package decision, the CLI invokes Memory for typed proposals.
+Retry a failed Memory call with `grit weekly-memory --package PACKAGE --version V`.
+Proposals do not alter facts or appetite automatically. A named reviewer can
+admit a shared correction with `grit memory-admit --id ID --profile PROFILE
+--intent ADMIT`; only the affected reader can admit a reader preference.
+Admissions do not rewrite an approved report.
+
+The new path remains opt-in until an authorized, explicitly budgeted provider
+comparison and review of the generated reports. No production effectiveness
+claim follows from the offline tests.
+
+For fixture-only validation without local registers, output, or environment
+credentials, set `GRIT_TEST_ROOT` to a disposable directory before pytest:
+
+```bash
+GRIT_TEST_ROOT=/tmp/grit-weekly-fixtures .venv/bin/python -m pytest \
+  tests/test_weekly_reasoning.py tests/test_p3_transition_guard.py \
+  tests/test_p3_supervisor.py tests/test_p3_review_gate.py -q
+```
 
 ## Reader packs
 
@@ -162,7 +240,7 @@ Use the project virtual environment. Do not install packages into system Python,
    .venv/bin/python -m pytest -q
    ```
 
-   As of 2026-11-02, 637 tests pass. They make no network call.
+   As of 2026-11-02, 639 tests pass. They make no network call.
 
 ## Provide the workbook and credentials
 
@@ -386,6 +464,7 @@ To add a reader pack for another business area or entity, follow [Add a business
 - A name followed by another capitalized word is a different name. "Chan Chun Sing" is not the supplier Chan Chun.
 - A supplier, customer, or site needs one of the pack's context cues; for URS Taiwan, a Taiwan place or a rail word. Global Leonardo news is a passing mention.
 - In a BA pack, names come from the typed graph and the link ladder. A generic public-body name such as "MINISTRY OF DEFENCE" counts only with one of the pack's place cues, so India's Home Ministry is not a URS customer.
+- A public body named as a customer or supplier (a Ministry, Authority, Agency, Board, Police and the like) counts as a link only when the page does not place it in another country and uses the business area's own vocabulary: its LOB keywords and their specific words, or contract and technology words. So Malta's Building and Construction Authority is not Singapore's, and food poisoning at MOE kindergartens is not DS&C business. The mention stays recorded and the rung falls back (`public_body_rule` in `grit/pipeline/reader_scan.py`).
 - In a BA pack, a theme keyword counts for that theme only on a page the theme's own query found, or on a page that already links to the register.
 - A project alias without its city, such as "Purple Line", needs the city in the text and matches in its own case.
 - A watchpoint update needs a subject keyword and an issue keyword.

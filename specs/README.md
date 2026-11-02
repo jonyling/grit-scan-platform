@@ -26,5 +26,6 @@ Specs 13–33 state the rules. Spec 34 states the rebuild order. Spec 35 describ
 | [42](42_Daily_Lane_and_Nightly_Index.md) | The daily feed register and lane, events, daily digests, retention, and the Co-Pilot's `whats_new`. |
 | [43](43_Best_Medium_Worst_Scenarios.md) | The best, medium and worst case for STE under each strategic shift: grounding, checks, and the steps to sign-off, tracking and the radar. |
 | [44](44_Brief_Format_v2.md) | Brief format v2, in Wilson's BA-wide layout: events and the escalating-items table, what changed, look-ahead, prioritisation, coverage, jurisdictions, quality gate, the source register, and scenarios for every business area. |
+| [45](45_Weekly_Agent_Reasoning_and_Critique.md) | Opt-in weekly reasoning: whole-pool selection, independent critique, bounded research and reconciliation, frozen report snapshots, and post-decision Memory proposals. |
 
 `archive/` holds an early draft of spec 17 for reference. It does not govern.

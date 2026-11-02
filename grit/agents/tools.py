@@ -1,4 +1,4 @@
-"""Tools an agent may call. Results come from supplied registers, never from the model."""
+"""Supplied fixtures for the compatibility harness; not live search or URL verification."""
 
 from __future__ import annotations
 

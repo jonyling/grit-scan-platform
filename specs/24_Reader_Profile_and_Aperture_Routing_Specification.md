@@ -4,6 +4,11 @@
 **Type:** Deterministic routing function  
 **System of record:** Dataverse `GRIT_ReaderProfile`
 
+**Weekly extension:** [Spec 45](45_Weekly_Agent_Reasoning_and_Critique.md) adds
+versioned editorial inclusion before this function. Routing and priority remain
+deterministic. Excluded candidates, including P1 and RED records, remain
+available in the review audit; exclusion does not cancel a RED alert draft.
+
 ## 1. Purpose
 
 `ApertureRouting()` selects the required assessment and reporting routes from a governed Reader Profile and configuration. It changes what is surfaced to a reader, not shared theme, event, or signal facts. The same validated evidence population can therefore generate different Group and LOB views without modifying source facts.

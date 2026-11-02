@@ -426,8 +426,11 @@ def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], 
                 "yes" if row["shown"] else "no", row["route"]["priority"], row.get("tier"), row.get("rung"), "RED" if row.get("red") else "", row["title"], row["publisher"], row["published_at"],
                 row.get("corroboration"), ", ".join(row.get("condition_ids") or []), ", ".join(hit["item_name"] for hit in row.get("exposure") or [] if hit.get("strong")),
                 "; ".join(f"{hit['level']} {hit['risk_id']} {hit['name']}" for hit in (row.get("risk_cascade") or [])[:4]), row.get("harm_verdict") or "not established",
-                row.get("evidence_confidence"), " ".join(row["route"]["matched"][:2]) or row.get("relevance_basis"),
-                row["route"]["suppression_reason"] or "", row["url"], row["signal_id"],
+                row.get("evidence_confidence"),
+                ((" ".join(row["route"]["matched"][:2]) or row.get("relevance_basis") or "") +
+                 (f" Editorial {row['editorial']['decision']}; {row['editorial']['time_scope']}: {row['editorial']['reason']}" if row.get("editorial") else "")),
+                row["route"]["suppression_reason"] or (row["editorial"]["reason"] if row.get("editorial") and not row["shown"] else ""),
+                row["url"], row["signal_id"],
             )
             for row in signals
         ],
