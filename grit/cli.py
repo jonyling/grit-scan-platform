@@ -268,7 +268,8 @@ def cmd_review(args: argparse.Namespace) -> int:
 
     pool = _pool()
     reviewer = _profiles([args.profile])[0]
-    result = review_package(pool, package_id=args.package, version=args.version, reviewer=reviewer, intent=args.intent)
+    package = args.package if args.package.startswith("PKG-") else f"PKG-{args.package}"  # package ids start with PKG-
+    result = review_package(pool, package_id=package, version=args.version, reviewer=reviewer, intent=args.intent)
     print(f"{result['outcome']}: package is now {result['status']}.")
     return 0
 
@@ -458,7 +459,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--rationale")
     sub.set_defaults(handler=cmd_feedback)
 
-    sub = commands.add_parser("review", help="A named reviewer's decision on a package, through ReviewGate.")
+    sub = commands.add_parser("review", help="A named reviewer's decision on a package, through ReviewGate. Package ids look like PKG-2026-11-02-urs-wilson; the PKG- prefix may be left out.")
     sub.add_argument("--package", required=True)
     sub.add_argument("--version", type=int, required=True)
     sub.add_argument("--profile", required=True)
