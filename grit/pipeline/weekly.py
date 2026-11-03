@@ -371,6 +371,7 @@ class WeeklyCoordinator:
         size = len(json.dumps(envelope, ensure_ascii=False, default=str))
         if size > MAX_PAYLOAD_CHARS:
             self.store.finish("INCOMPLETE")
+            self.pool.finish_run(self.run_id, "INCOMPLETE", notes="Weekly reasoning: INCOMPLETE")
             raise ContractError(f"{role} {task}: input of {size} characters exceeds the {MAX_PAYLOAD_CHARS}-character model budget.")
         record = self.pool.insert("weekly_calls", {
             "run_id": self.run_id, "version": version, "role": role, "task": task,
@@ -384,15 +385,24 @@ class WeeklyCoordinator:
         raw: Any = {}
         rejected: list[dict[str, Any]] = []
         try:
-            raw = self.call(self.client, model=self.model, system=job["system"], payload=job["envelope"], retries=self.retries)
-            try:
-                validate(raw)
-            except ContractError as first:
-                # One repair attempt; the rejected output stays in the audit log.
-                rejected.append({"error": str(first), "output": raw})
-                raw = self.call(self.client, model=self.model, system=job["system"], retries=self.retries,
-                                payload={**job["envelope"], "contract_feedback": f"Your previous output was rejected: {first} Return a corrected complete response."})
-                validate(raw)
+            repairs = 3 if job["role"] == "Reporting" else 1
+            for attempt in range(repairs + 1):
+                payload = job["envelope"]
+                if rejected:
+                    errors = "; ".join(item["error"] for item in rejected)
+                    payload = {**job["envelope"], "previous_output": raw,
+                               "contract_feedback": f"Your previous output was rejected: {errors} Return a corrected complete response."}
+                    size = len(json.dumps(payload, ensure_ascii=False, default=str))
+                    if size > MAX_PAYLOAD_CHARS:
+                        raise ContractError(f"{job['role']} {job['task']}: repair input of {size} characters exceeds the {MAX_PAYLOAD_CHARS}-character model budget.")
+                raw = self.call(self.client, model=self.model, system=job["system"], payload=payload, retries=self.retries)
+                try:
+                    validate(raw)
+                    break
+                except ContractError as exc:
+                    if attempt == repairs:
+                        raise
+                    rejected.append({"error": str(exc), "output": raw})
         except (LoopError, ContractError) as exc:
             return raw, rejected, exc
         return raw, rejected, None
@@ -409,6 +419,7 @@ class WeeklyCoordinator:
                 conn.execute("UPDATE weekly_calls SET status = 'FAILED', output_json = ?, error = ? WHERE call_id = ?",
                              (json.dumps(raw), str(error), record))
             self.store.finish("INCOMPLETE")
+            self.pool.finish_run(self.run_id, "INCOMPLETE", notes="Weekly reasoning: INCOMPLETE")
             self.pool.log(actor_type="AGENT", actor=role, run_id=self.run_id, version=VERSION,
                           model=self.model, subject=task, input_hash=digest, status="FAILED",
                           detail={"call_id": record, "error": str(error)})
@@ -661,13 +672,25 @@ class WeeklyCoordinator:
                 # Fast round 1 is the post-research pass, so its revision rounds are numbered from 2.
                 self.review(round_number + 1 if self.fast else round_number, scope)
 
+    def report_payload(self, profile_id: str, brief: Mapping[str, Any],
+                       sources: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
+        return {
+            "report": model_brief(brief), "editable_fields": narrative_fields(brief),
+            "sources": self.report_sources(brief, sources), "open_issues": self.store.issues(), "budget": self.store.state,
+            "reader_memory": memory_context(self.pool, self.run_id, profile_id),
+            "human_feedback": [row["membership"].get("review") for row in self.pool.rows(
+                "SELECT * FROM packages WHERE run_id = ? AND profile_id = ? AND status IN ('RETURNED_FOR_REWORK', 'REJECTED') ORDER BY version",
+                (self.run_id, profile_id))],
+        }
+
     def report(self, profile: Any, draft: Mapping[str, Any], routed: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         brief = copy.deepcopy(dict(draft))
         sources = self.sources
         task = f"report-{profile.profile_id}"
         target = f"REPORT:{profile.profile_id}"
         while True:
-            editable = narrative_fields(brief)
+            payload = self.report_payload(profile.profile_id, brief, sources)
+            editable = payload["editable_fields"]
             def validate_edits(raw: Any) -> None:
                 raw = object_response(raw)
                 no_controlled_fields(raw)
@@ -696,12 +719,7 @@ class WeeklyCoordinator:
                     problems = text_problems(CITE.sub("", edit["text"]), " ".join(sources[ref]["text"] for ref in refs), "report edit")
                     if problems:
                         raise ContractError("; ".join(problems))
-            response, _ = self.invoke("Reporting", task, {"report": model_brief(brief), "editable_fields": editable,
-                "sources": self.report_sources(brief, sources), "open_issues": self.store.issues(), "budget": self.store.state,
-                "reader_memory": memory_context(self.pool, self.run_id, profile.profile_id),
-                "human_feedback": [row["membership"].get("review") for row in self.pool.rows(
-                    "SELECT * FROM packages WHERE run_id = ? AND profile_id = ? AND status IN ('RETURNED_FOR_REWORK', 'REJECTED') ORDER BY version",
-                    (self.run_id, profile.profile_id))]}, validate_edits)
+            response, _ = self.invoke("Reporting", task, payload, validate_edits)
             for edit in response["edits"]:
                 apply_edit(brief, edit, sources)
             brief["evidence_ids"] = sorted(set(brief.get("evidence_ids", [])) | set(brief["membership"]))
@@ -713,10 +731,11 @@ class WeeklyCoordinator:
                 "issues": list(self.store.issues().values()), "selections": selection_summary(self.pool.weekly_assessments(self.run_id, include_excluded=True)),
                 "evidence_scope": "stored excerpts; full-page and internal checks are not implied"}
             brief["content_hash"] = report_hash(brief)
+            open_issues = self.store.issues()
             critique, critic_id = self.invoke("Critic", f"final-{profile.profile_id}", {
                 "report": model_brief(brief), "report_hash": brief["content_hash"], "targets": [target],
-                "sources": self.report_sources(brief, sources), "open_issues": self.store.issues(),
-            }, lambda raw: check_critique(raw, {target}, sources, set(self.store.issues())))
+                "sources": self.report_sources(brief, sources), "open_issues": open_issues,
+            }, self.scoped({target}, sources, open_issues, selections=False))
             self.store.record_critique(critic_id, critique)
             material = any(row["issue"]["material"] for row in self.store.issues().values())
             if not material or not self.store.reserve("revision"):
@@ -843,13 +862,82 @@ def run_weekly(pool: Pool, run: Any, *, client: Any, model: str, search_limit: i
     coordinator.reconcile_pool(search=search, reassess=reassess)
     coordinator.supervise(["DRAFT_REPORT"], {"stage": "pool reconciled", "issues": store.issues()})
     draft_sections()
+    return _finish_weekly_reports(pool, run, profiles, coordinator)
+
+
+def _finish_weekly_reports(pool: Pool, run: Any, profiles: Sequence[Any], coordinator: WeeklyCoordinator) -> dict[str, Any]:
     from grit.report.brief import build_brief, routed_signals
     results = [coordinator.report(profile, build_brief(pool, run.run_id, profile), routed_signals(pool, run.run_id, profile))
                for profile in profiles if profile.brief_for(run.pack)]
     ready = bool(results) and all(result["status"] == "READY" for result in results)
-    store.finish("READY" if ready else "INCOMPLETE")
-    pool.finish_run(run.run_id, "COMPLETE" if ready else "INCOMPLETE", notes="Weekly reasoning: " + store.state["status"])
-    return {"status": store.state["status"], "reports": results, "budget": store.state}
+    coordinator.store.finish("READY" if ready else "INCOMPLETE")
+    pool.finish_run(run.run_id, "COMPLETE" if ready else "INCOMPLETE", notes="Weekly reasoning: " + coordinator.store.state["status"])
+    return {"status": coordinator.store.state["status"], "reports": results, "budget": coordinator.store.state}
+
+
+def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | None,
+                            profiles: Sequence[Any], call: RoleCall = call_json,
+                            progress: Callable[[str], Any] | None = None) -> dict[str, Any]:
+    state = pool.one("SELECT * FROM weekly_runs WHERE run_id = ?", (run.run_id,))
+    saved_run = pool.run(run.run_id)
+    if not state or not saved_run or (saved_run.get("config") or {}).get("weekly_mode") != "reasoned":
+        raise ValueError("No saved reasoned weekly analysis exists for this run.")
+    if state["status"] != "INCOMPLETE":
+        raise ValueError("Report recovery requires an incomplete weekly analysis.")
+    if state["evidence_hash"] != analysis_hash(pool, run.run_id):
+        raise ValueError("Weekly evidence changed after the saved review; report recovery cannot skip reassessment.")
+    failed = pool.one("SELECT * FROM weekly_calls WHERE run_id = ? AND version = ? ORDER BY call_id DESC LIMIT 1",
+                      (run.run_id, state["version"]))
+    if not failed or failed["role"] != "Reporting" or failed["status"] != "FAILED" or not failed["task"].startswith("report-"):
+        raise ValueError("Report recovery requires the latest weekly call to be a failed Reporting call.")
+    supervisors = pool.rows(
+        "SELECT * FROM weekly_calls WHERE run_id = ? AND version = ? AND role = 'Supervisor' AND status = 'VALIDATED' AND call_id < ? ORDER BY call_id DESC",
+        (run.run_id, state["version"], failed["call_id"]))
+    checkpoint = next((row for row in supervisors if row["input"].get("context", {}).get("stage") == "pool reconciled"
+                       and row["output"].get("next_action") == "DRAFT_REPORT"), None)
+    if not checkpoint:
+        raise ValueError("The saved analysis has no validated pool-reconciliation checkpoint.")
+    selected = pool.weekly_assessments(run.run_id, include_excluded=True)
+    latest = pool.rows(
+        """SELECT s.signal_id, c.role, c.status, c.task, c.call_id FROM weekly_selections s
+           JOIN weekly_calls c ON c.call_id = s.call_id
+           WHERE s.run_id = ? AND s.version = ? AND s.selection_id = (
+             SELECT MAX(t.selection_id) FROM weekly_selections t
+             WHERE t.run_id = s.run_id AND t.version = s.version AND t.signal_id = s.signal_id)""",
+        (run.run_id, state["version"]))
+    if not selected or {row["signal_id"] for row in latest} != {row["signal_id"] for row in selected} or any(
+        row["role"] != "Critic" or row["status"] != "VALIDATED" or not row["task"].startswith(("pool-", "screen-"))
+        or row["call_id"] >= checkpoint["call_id"] for row in latest
+    ):
+        raise ValueError("The latest selection for every candidate must have a validated Critic before the report checkpoint.")
+    profile_id = failed["task"][len("report-"):]
+    anchor = next((profile for profile in profiles if profile.profile_id == profile_id and profile.brief_for(run.pack)), None)
+    if anchor is None:
+        raise ValueError("Report recovery requires the profile whose Reporting call failed.")
+    store = WeeklyStore(pool, run.run_id, search_limit=state["search_limit"], refresh=False)
+    config = saved_run.get("config") or {}
+    fast = config.get("weekly_review") == "fast"
+    coordinator = WeeklyCoordinator(store, client=client, model=model or failed["model"], call=call, fast=fast,
+                                    workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
+    from grit.report.brief import build_brief
+    draft = build_brief(pool, run.run_id, anchor)
+    current = coordinator.report_payload(profile_id, draft, coordinator.sources)
+    previous = failed["input"]
+    def report_core(value: Mapping[str, Any]) -> dict[str, Any]:
+        return {key: item for key, item in value.items() if key not in {"method", "content_hash"}}
+    if not isinstance(previous.get("report"), Mapping) or canonical_hash(report_core(current["report"])) != canonical_hash(report_core(previous["report"])):
+        raise ValueError("The saved report draft changed after the failed call; report recovery cannot reuse it.")
+    for key in ("editable_fields", "sources", "open_issues", "reader_memory", "human_feedback"):
+        if key not in previous or canonical_hash(current[key]) != canonical_hash(previous[key]):
+            raise ValueError(f"The saved report input changed: {key}.")
+    old_budget = previous.get("budget") or {}
+    if any(old_budget.get(key) != state[key] for key in ("version", "evidence_hash", "search_limit", "searches_used", "revisions_used")):
+        raise ValueError("The saved analysis budget changed after the failed call.")
+    coordinator.progress("Resuming the report from saved critique; no search or signal review will run.")
+    store.finish("STARTED")
+    with pool.transaction() as conn:
+        conn.execute("UPDATE runs SET status = 'STARTED', finished_at = NULL WHERE run_id = ?", (run.run_id,))
+    return _finish_weekly_reports(pool, run, profiles, coordinator)
 
 
 def run_memory(pool: Pool, *, package_id: str, version: int, client: Any, model: str, call: RoleCall = call_json) -> dict[str, Any]:

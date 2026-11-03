@@ -69,18 +69,29 @@ against the full stored text.
 
 A request above 2,000,000 characters fails before any model call and leaves
 the analysis incomplete. A response that breaks its contract gets one repair
-attempt. The model receives the validation error, and the rejected output is
-logged. A second violation leaves the analysis incomplete. A false-positive
-objection must identify the challenged evidence but need not quote it. Factual
-corrections still need a verbatim quote. Critic batches cannot see each
-other's issue IDs. If a batch reuses an ID that already belongs to another
-target, the new issue is stored as `ID@target`. Recording a critique twice
-does not duplicate its issues.
+attempt, or up to three for Reporting. Each repair receives the rejected
+output and accumulated validation errors. The attempts are logged, and a
+response that still fails leaves the analysis incomplete. Repair inputs obey
+the same size limit. A false-positive objection must identify the challenged
+evidence but need not quote it. Factual corrections still need a verbatim
+quote. Critic batches cannot see each other's issue IDs. If a batch reuses an
+ID that already belongs to another target, the new issue is stored as
+`ID@target`. Recording a critique twice does not duplicate its issues.
 
 The exact report snapshot and its membership require critique and human
 approval. New evidence or prose invalidates the corresponding readiness
 result. Rendering makes no provider call. Explicit unassessed score outcomes
 must remain unassessed; they cannot be replaced with invented score values.
+
+`grit resume-report` can recover a failed Reporting call without rerunning
+search, signal review, or section drafting. It requires the latest call to be
+a failed Reporting call and verifies the unchanged evidence, complete Critic
+selections, reconciliation checkpoint, report draft, report inputs, and
+budget. It refuses recovery if a check fails. Open material objections remain
+open, and the normal final-report critique and readiness rules still apply.
+The final Critic can resolve only report-targeted issues; attempts to resolve
+signal-level issues are recorded but do not clear them.
+`--no-submit` renders an incomplete preview without submitting it for review.
 
 ## Fast review
 

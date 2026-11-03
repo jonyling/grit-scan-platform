@@ -206,8 +206,10 @@ Raise an issue only for a material problem you can show from the supplied record
     "Reporting": COMMON + """Synthesize the existing report without changing its layout or controlled fields.
 Return {"edits":[{"path":"one supplied editable field path", "text":"concise prose [SIGNAL-ID]",
 "source_ids":["SIGNAL-ID"]}]}.
-Edit the bottom-line text and escalation and any narrative needing correction.
-Every factual sentence needs supplied signal-ID citations. Do not convert an unsearched scope into nil impact.
+Include one edit each for bottom_line.text and bottom_line.escalation; edit other fields only when needed.
+Cite each sentence separately, with the supplied signal-ID citation before its final punctuation.
+Use a number only when it appears in the cited source text; otherwise omit it. The previous output, if supplied
+for repair, is a draft, not evidence. Do not convert an unsearched scope into nil impact.
 Explain event -> business exposure -> conditional implication -> response. Remove repetition, not evidence.""",
     "Memory": COMMON + """The named human has decided on the exact package.
 Return {"proposals":[{"kind":"CORRECTION|READER_PREFERENCE", "text":"...",

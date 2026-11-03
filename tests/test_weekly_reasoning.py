@@ -866,3 +866,163 @@ def test_cli_fast_review_needs_reasoned_mode():
     from grit.cli import build_parser
     args = build_parser().parse_args(["weekly", "--reasoned", "--fast", "--workers", "4", "--countersearch-limit", "0"])
     assert args.fast and args.workers == 4
+
+
+def test_reporting_repairs_receive_previous_output_and_all_errors(weekly):
+    pool, _, coordinator, _, _ = weekly
+    replies = iter([{"problem": "number"}, {"problem": "citation"}, {"ok": True}])
+    payloads = []
+    def call(*args, payload, **kwargs):
+        payloads.append(payload)
+        return next(replies)
+    def validate(raw):
+        if not raw.get("ok"):
+            raise ContractError(raw["problem"])
+    coordinator.call = call
+    result, _ = coordinator.invoke("Reporting", "repair-report", {}, validate)
+    assert result == {"ok": True}
+    assert payloads[1]["previous_output"] == {"problem": "number"}
+    assert payloads[2]["previous_output"] == {"problem": "citation"}
+    assert "number" in payloads[2]["contract_feedback"]
+    assert "citation" in payloads[2]["contract_feedback"]
+    assert pool.one("SELECT COUNT(*) AS n FROM execution_log WHERE actor = 'Reporting' AND status = 'REJECTED'")["n"] == 2
+
+
+def test_reporting_repair_input_obeys_model_size_limit(weekly, monkeypatch):
+    from grit.pipeline import weekly as module
+    pool, store, coordinator, _, _ = weekly
+    calls = []
+    def call(*args, **kwargs):
+        calls.append(1)
+        return {"draft": "x" * 2000}
+    def validate(raw):
+        raise ContractError("The draft needs repair.")
+    monkeypatch.setattr(module, "MAX_PAYLOAD_CHARS", 1000)
+    coordinator.call = call
+    with pytest.raises(ContractError, match="repair input"):
+        coordinator.invoke("Reporting", "large-repair", {}, validate)
+    assert calls == [1]
+    assert store.state["status"] == pool.run("R")["status"] == "INCOMPLETE"
+
+
+def _failed_report_checkpoint(weekly, monkeypatch, *, material=False):
+    from grit.agents.weekly import PROMPTS
+    pool, store, coordinator, ids, original = weekly
+    coordinator.reconcile_pool(search=None, reassess=lambda: None)
+    if material:
+        research = pool.one("SELECT call_id FROM weekly_calls WHERE role = 'Researcher' AND status = 'VALIDATED'")
+        store._issue(research["call_id"], "PAGE", "OPEN", {
+            "issue_id": "PAGE", "target": ids[0], "kind": "COVERAGE", "material": True,
+            "problem": "Page verification did not run.", "source_ids": [ids[0]], "missing_evidence": "Budget exhausted",
+        })
+        assert store.reserve("revision") and store.reserve("revision")
+    coordinator.supervise(["DRAFT_REPORT"], {"stage": "pool reconciled", "issues": store.issues()})
+    profile = _profile()
+    profile.brief_for = lambda pack: {"formats": ["docx"]}
+    monkeypatch.setattr("grit.report.brief.build_brief", lambda *args: _draft(ids[0]))
+    monkeypatch.setattr("grit.report.brief.routed_signals", lambda *args: [])
+    attempts = []
+    def invalid(*args, system, payload, **kwargs):
+        if system != PROMPTS["Reporting"]:
+            return original(*args, system=system, payload=payload, **kwargs)
+        attempts.append(payload)
+        text = f"Alpha has 28 airports [{ids[0]}]." if len(attempts) == 1 else f"Alpha is open. A second claim is made [{ids[0]}]."
+        return {"edits": [{"path": path, "text": text, "source_ids": [ids[0]]}
+                          for path in ("bottom_line.text", "bottom_line.escalation")]}
+    coordinator.call = invalid
+    with pytest.raises(ContractError, match="Cite each factual sentence"):
+        coordinator.report(profile, _draft(ids[0]), [])
+    assert len(attempts) == 4
+    assert store.state["status"] == pool.run("R")["status"] == "INCOMPLETE"
+    return profile
+
+
+@pytest.mark.parametrize("material", [False, True])
+def test_resume_reporting_uses_saved_review_and_preserves_material_issues(weekly, monkeypatch, material):
+    from types import SimpleNamespace
+    from grit.agents.weekly import PROMPTS
+    from grit.pipeline.weekly import frozen_report, resume_weekly_reporting
+    pool, store, _, _, original = weekly
+    profile = _failed_report_checkpoint(weekly, monkeypatch, material=material)
+    calls = []
+    def report_only(*args, system, payload, **kwargs):
+        assert system == PROMPTS["Reporting"] or (system == PROMPTS["Critic"] and "targets" in payload)
+        calls.append((system, kwargs["model"]))
+        return original(*args, system=system, payload=payload, **kwargs)
+    before = pool.one("SELECT COUNT(*) AS n FROM weekly_selections")["n"]
+    budget = (store.state["searches_used"], store.state["revisions_used"])
+    result = resume_weekly_reporting(pool, SimpleNamespace(run_id="R", pack="test"), client=None, model=None,
+                                     profiles=[profile], call=report_only)
+    assert result["status"] == ("INCOMPLETE" if material else "READY")
+    assert pool.run("R")["status"] == ("INCOMPLETE" if material else "COMPLETE")
+    assert (store.state["searches_used"], store.state["revisions_used"]) == budget
+    assert pool.one("SELECT COUNT(*) AS n FROM weekly_selections")["n"] == before
+    assert calls == [(PROMPTS["Reporting"], "offline"), (PROMPTS["Critic"], "offline")]
+    assert frozen_report(pool, "R", "reader", ready=False)["status"] == result["status"]
+    if material:
+        with pytest.raises(ValueError, match="not ready"):
+            frozen_report(pool, "R", "reader")
+        assert store.issues()["PAGE"]["issue"]["material"]
+
+
+def test_final_critic_cannot_resolve_signal_coverage_from_a_report_review(weekly, monkeypatch):
+    from types import SimpleNamespace
+    from grit.agents.weekly import PROMPTS
+    from grit.pipeline.weekly import resume_weekly_reporting
+    pool, store, _, _, original = weekly
+    profile = _failed_report_checkpoint(weekly, monkeypatch, material=True)
+    def report_with_out_of_scope_resolution(*args, system, payload, **kwargs):
+        if system == PROMPTS["Critic"] and "targets" in payload:
+            return {"reviewed_ids": payload["targets"], "issues": [], "resolved_issue_ids": ["PAGE"],
+                    "resolutions": [{"issue_id": "PAGE", "response": "The report mentions it.", "source_ids": []}]}
+        return original(*args, system=system, payload=payload, **kwargs)
+    result = resume_weekly_reporting(pool, SimpleNamespace(run_id="R", pack="test"), client=None, model=None,
+                                     profiles=[profile], call=report_with_out_of_scope_resolution)
+    assert result["status"] == "INCOMPLETE"
+    assert store.issues()["PAGE"]["issue"]["material"]
+    call = pool.one("SELECT * FROM weekly_calls WHERE role = 'Critic' AND task = 'final-reader' ORDER BY call_id DESC")
+    assert call["output"]["resolved_issue_ids"] == []
+    assert call["output"]["ignored_resolutions"] == ["PAGE"]
+
+
+@pytest.mark.parametrize("changed", ["evidence", "selection", "draft", "issues", "budget"])
+def test_resume_reporting_rejects_changed_checkpoint(weekly, monkeypatch, changed):
+    from types import SimpleNamespace
+    from grit.pipeline.weekly import resume_weekly_reporting
+    pool, store, _, ids, _ = weekly
+    profile = _failed_report_checkpoint(weekly, monkeypatch)
+    if changed == "evidence":
+        pool.save_assessment({"signal_id": ids[0], "run_id": "R", "pack": "test", "decision": "DROP", "drop_reason": "STALE"})
+    elif changed == "selection":
+        assessment = pool.one("SELECT * FROM weekly_calls WHERE role = 'Assessment' AND status = 'VALIDATED' LIMIT 1")
+        store.select(assessment["call_id"], assessment["output"]["selections"])
+    elif changed == "draft":
+        draft = _draft(ids[0])
+        draft["bottom_line"]["text"] = "Changed draft"
+        monkeypatch.setattr("grit.report.brief.build_brief", lambda *args: draft)
+    elif changed == "issues":
+        call_id = pool.one("SELECT call_id FROM weekly_calls WHERE role = 'Researcher'")["call_id"]
+        store._issue(call_id, "NEW", "OPEN", {"issue_id": "NEW", "target": ids[0], "kind": "COVERAGE",
+                     "problem": "New check", "material": True, "source_ids": [], "missing_evidence": "New evidence"})
+    else:
+        assert store.reserve("revision")
+    with pytest.raises(ValueError, match="changed|validated Critic"):
+        resume_weekly_reporting(pool, SimpleNamespace(run_id="R", pack="test"), client=None, model=None, profiles=[profile],
+                                call=lambda *args, **kwargs: pytest.fail("Changed checkpoints must not call the model"))
+    assert store.state["status"] == "INCOMPLETE"
+
+
+def test_resume_report_cli_can_render_an_incomplete_preview(weekly, monkeypatch):
+    from grit import cli
+    pool, _, _, _, _ = weekly
+    args = cli.build_parser().parse_args(["resume-report", "--pack", "test", "--date", "2026-11-02", "--no-submit"])
+    seen = []
+    monkeypatch.setattr(cli, "_pool", lambda: pool)
+    monkeypatch.setattr(cli, "_packs", lambda args: ["test"])
+    monkeypatch.setattr(cli, "_profiles", lambda names: [])
+    monkeypatch.setattr(cli, "_client", lambda: None)
+    monkeypatch.setattr("grit.pipeline.weekly.resume_weekly_reporting",
+                        lambda pool, run, **kwargs: seen.append((run.run_id, kwargs["model"])) or {"status": "INCOMPLETE"})
+    monkeypatch.setattr(cli, "report_step", lambda pool, args, pack: seen.append((pack, args.no_submit)))
+    assert args.handler(args) == 2
+    assert seen == [("2026-11-02-test", None), ("test", True)]

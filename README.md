@@ -80,6 +80,22 @@ and survive resume. An unresolved material objection prevents submission;
 `grit report --pack PACK --date YYYY-MM-DD --no-submit` can render its incomplete
 preview. Word, PowerPoint, Excel, Markdown, and JSON use the frozen report.
 
+If a reasoned run stops on a Reporting call after the signal review, recover
+the report stage without repeating search or the signal assessment and critique:
+
+```bash
+.venv/bin/python -m grit resume-report --pack PACK --date YYYY-MM-DD
+```
+
+Recovery requires the saved evidence, critique, draft, and report inputs to
+remain unchanged. It uses the original budget and, unless you supply `--model`,
+the original model. Open material issues still block readiness.
+
+Rendering can overwrite report files in the run's usual output folder. Copy
+existing files first if you need to keep them. To render the resulting reports
+or incomplete previews, add `--no-submit`. An incomplete analysis returns exit
+code 2 even when its preview is written.
+
 For approved internal confirmations, add `--internal-evidence FILE` and
 `--evidence-approved-by PROFILE` to the reasoned weekly or agents command.
 `FILE` is a JSON list of records with `title`, `text`, `reference`, and an optional

@@ -312,6 +312,29 @@ def cmd_weekly(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_resume_report(args: argparse.Namespace) -> int:
+    from grit.agents.loop.llm import LoopError
+    from grit.pipeline.reader_scan import ReaderRun, run_id_for
+    from grit.pipeline.weekly import resume_weekly_reporting
+
+    if not args.pack or len(args.pack) != 1:
+        raise SystemExit("Report recovery requires exactly one --pack.")
+    pack = _packs(args)[0]
+    run = ReaderRun(run_id_for(args.date, pack), args.date, pack)
+    pool = _pool()
+    try:
+        result = resume_weekly_reporting(
+            pool, run, client=_client(), model=args.model, profiles=_profiles(args.profile),
+            progress=lambda message: print(message, flush=True),
+        )
+    except (ValueError, LoopError) as exc:
+        raise SystemExit(f"Report recovery stopped: {exc}") from None
+    print(json.dumps(result, indent=2, default=str))
+    if args.no_submit:
+        report_step(pool, args, pack)
+    return 0 if result["status"] == "READY" else 2
+
+
 # Review, memory, requests, AIRIS -----------------------------------------------------------------------------------
 
 
@@ -540,6 +563,11 @@ def build_parser() -> argparse.ArgumentParser:
     sub = reader("report", cmd_report, "Write each reader's Word, PowerPoint, Excel and Markdown pack, submit it for review, and draft RED emails.")
     sub.add_argument("--profile", nargs="*", default=["all"])
     sub.add_argument("--no-submit", action="store_true")
+
+    sub = reader("resume-report", cmd_resume_report, "Resume a failed reasoned Reporting call from its saved, unchanged review.")
+    sub.add_argument("--model", help="Model for reporting. Default: the model used by the failed call.")
+    sub.add_argument("--profile", nargs="*", default=["all"])
+    sub.add_argument("--no-submit", action="store_true", help="Render the resulting reports or incomplete previews without submission.")
 
     sub = commands.add_parser("weekly-memory", help="Resume typed Memory proposals after a named human package decision.")
     sub.add_argument("--package", required=True)
