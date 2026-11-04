@@ -28,7 +28,7 @@ A deterministic layer sits under seven agent roles:
 | Supervisor | The order of steps for a reader and week. | `TransitionGuard()` on each workflow advance, and `ReviewGate()` on each package. |
 | Researcher | Search results, and one follow-up search for a thin finding. | The query plan, the monthly search guard, and the dedupe rule. |
 | Assessor | A draft for each standing condition or theme, the implication of each key risk for the business area, and the answers on a finding card. | Quote, number, citation, and banned-word checks. An implication must name the business area's own lines of business, entities, customers, or suppliers. Confidence is a rule. |
-| Critic | In the legacy path, stale, unsupported, or contradictory condition claims. In the opt-in weekly path, inclusion decisions across all candidates and the exact final report. | Factual corrections need source passages. Missing support needs an explicit missing-evidence marker, not a fabricated quote. Malformed critique is withheld. |
+| Critic | Stale, unsupported, or contradictory condition claims, in both paths. In the opt-in weekly path, also inclusion decisions across all candidates and the exact final report. | Factual corrections need source passages. Missing support needs an explicit missing-evidence marker, not a fabricated quote. Malformed critique is withheld. |
 | Profiler | The next version of a reader's `profile.md`, from their notes, each change with a quote (spec 41). | Version, vocabulary, quote and grounding checks; Jony accepts it. Then a bounded emphasis rule that reorders within a tier, hides nothing, and never moves a P1 or RED signal down. |
 | Reporter | Entries for named items, the bottom line, and Co-Pilot answers. | The same checks, then one brief model rendered to every format. Co-Pilot answers also need cited sentences, attributed forecasts and hedged inferences (spec 40). |
 | Proposer | Two to four options for management to consider on a key risk that is escalating or has material evidence. | Each option must name an owner role, quote the key control or action plan it builds on, and cite its sources. The Proposer's reasoning goes to the execution log, never to the brief (spec 36). |
@@ -48,6 +48,9 @@ Replace `PACK`, `PROFILE`, and the date with the requested scope. `N` is your
 nonnegative network-tool limit for the run; there is no numeric default.
 Use `0` to disable countersearch and page verification explicitly. Requested
 checks that cannot run remain visible and block ordinary readiness.
+Each of the top five findings needs a search that tries to contradict it, so
+set `N` to at least 5; 10 leaves room for other checks. With `0`, the report discloses that the top findings
+were not challenged.
 Initial scheduled searches retain their existing query and provider limits.
 A reasoned run makes two model calls for every 16 candidates. A pool of about
 2,000 candidates takes 250 or more calls, which is roughly 1.5 hours or longer
@@ -76,7 +79,14 @@ including acquired counterevidence. The Critic can rescue or exclude candidates.
 Original assessments and source dates remain separate from versioned selections.
 Reporting revises the existing sections, and a final Critic checks the exact
 per-reader snapshot. Up to two reconciliation rounds are shared across the run
-and survive resume. An unresolved material objection prevents submission;
+and survive resume. Each report also gets one rewrite when the final Critic
+raises a material objection against it, even if the pool used both rounds.
+The Critic treats a missing internal check as material only when the report
+claims confirmed exposure or impact; correctly labeled possible exposure is
+listed as a missing check. An unresolved material objection prevents submission. So does
+a critical completeness-gate answer of "No", such as no answered financial
+search or a line of business with no aimed search and no item; the report is
+then `INCOMPLETE` and the rendered gate names the blocker.
 `grit report --pack PACK --date YYYY-MM-DD --no-submit` can render its incomplete
 preview. Word, PowerPoint, Excel, Markdown, and JSON use the frozen report.
 
@@ -91,6 +101,11 @@ Recovery requires the saved evidence, critique, draft, and report inputs to
 remain unchanged. It uses the original budget and, unless you supply `--model`,
 the original model. Open material issues still block readiness.
 
+To rebuild every report from a finished review, for example after an R&A RED
+decision or a report-stage fix, add `--refresh`. The evidence must be unchanged
+since the review. No search or signal review runs; Reporting and the final
+Critic run again for each report.
+
 Rendering can overwrite report files in the run's usual output folder. Copy
 existing files first if you need to keep them. To render the resulting reports
 or incomplete previews, add `--no-submit`. An incomplete analysis returns exit
@@ -99,7 +114,65 @@ code 2 even when its preview is written.
 For approved internal confirmations, add `--internal-evidence FILE` and
 `--evidence-approved-by PROFILE` to the reasoned weekly or agents command.
 `FILE` is a JSON list of records with `title`, `text`, `reference`, and an optional
-actual `published_at` date. The admitting profile must be a reviewer or BA head.
+actual `published_at` date. A record can also state the business's own exposure:
+
+```json
+{"title": "Site register", "text": "STE A operates a depot at the airport.", "reference": "Site register 2026",
+ "exposure": {"type": "SITE", "status": "CONFIRMED", "entity": "STE A"}}
+```
+
+`type` is `SITE`, `STAFF`, `CONTRACT`, `TRAVEL`, `ASSET`, or `OTHER`. `status` is
+`CONFIRMED`, `POSSIBLE`, or `NOT_EXPOSED`. Only such a record lets Assessment or
+the Critic call exposure confirmed or ruled out; a claim without it is recorded
+as possible exposure. The admitting profile must be a reviewer or BA head.
+
+Keyword matching proposes each signal's risk links. In a reasoned run,
+Assessment and the Critic may remove a link that the fact does not support, but
+never add one. The report shows the reviewed links, and the cascade to business
+area and Group risks follows them (spec 45).
+
+A weekly report's status is `RED` only after the Risk & Assurance operator
+confirms the impact. Neither a rule nor an agent can set it. A RED alert
+candidate from a headline pattern still drafts an alert, but it does not make
+the weekly report RED. A finding that Assessment marks as confirmed impact,
+with an internal record behind it, makes the report `ELEVATED` until the
+operator decides. Otherwise the status is `ELEVATED`, `WATCHPOINT`, or
+`NORMAL`, as set out in
+[spec 45](specs/45_Weekly_Agent_Reasoning_and_Critique.md).
+
+To decide, list the candidates and record a decision with your name and the
+impact. `GRIT_RED_CONFIRMERS` in `.env` names who may decide, separated by
+commas. The command refuses anyone else.
+
+```bash
+.venv/bin/python -m grit red list --pack urs --run 2026-11-02-urs
+.venv/bin/python -m grit red confirm --pack urs --signal SIGNAL_ID --by "Jony Ling" --impact "IMPACT"
+.venv/bin/python -m grit red reject --pack urs --signal SIGNAL_ID --by "Jony Ling" --impact "REASON"
+```
+
+Replace the placeholders:
+
+- `SIGNAL_ID`: an ID from the first column of `grit red list`, such as
+  `SIG-bdf6ea260c06752b`.
+- `IMPACT`: the confirmed effect on the business, for example "Riyadh office
+  closed for two days."
+- `REASON`: why the impact is not confirmed, for example "No STE site or staff
+  in the area."
+
+Decisions are kept per pack and signal, and the latest one stands. A report
+written before a decision does not change by itself. To reissue the run's
+reports without repeating the review, run:
+
+```bash
+.venv/bin/python -m grit resume-report --refresh --pack urs --date 2026-11-02 --no-submit
+```
+
+The refresh needs a finished reasoned run for that date in the same database.
+A run made with `GRIT_DB` pointing at another file is not visible to it.
+
+A RED candidate that the review excluded is not listed in the report. The
+status basis gives the number of excluded candidates, and `grit red list`
+still shows them.
 No private folder is scanned. Missing staff presence, operational impact, or
 structured observations remain missing. Mail, Teams, and travel connectors are
 not implemented.

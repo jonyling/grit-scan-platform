@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from grit.agents.reader import check_event_row, specificity_problems
 from grit.pipeline.events import DOWN, SAME, UP, event_register, risk_labels
 from grit.pool import Pool
@@ -87,6 +89,8 @@ def test_source_tiers_titles_and_categories() -> None:
     assert category_of_name("Financial volatility (inflation, interest rate)") == "Financial / macro"
     assert category_of_name("Violation of Trade Compliance") == "Regulatory / legal"
     assert category_of_name("Workplace health and safety") == "Operational"
+    assert category_of_name("Uncertainty in key markets due to economic slowdown, geopolitical risks") == "Financial / macro"
+    assert category_of_name("Sanctions, export controls and selective economic pressure") == "Regulatory / legal"
     assert NIL != NOT_SEARCHED
 
 
@@ -138,6 +142,22 @@ def test_the_tracker_counts_a_judged_signpost_as_seen(tmp_path: Path) -> None:
     assert reading["lean"] == "WORST" and reading["cases"][2]["signposts_seen"][0]["signal_ids"] == ["SIG-x"]
 
 
+def test_a_signal_the_reviewed_selection_excluded_is_not_a_signpost(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from grit.pipeline.scenarios import track
+
+    pool = Pool(tmp_path / "grit.sqlite")
+    pool.start_run("2026-11-02-urs", run_date="2026-11-02", pack="urs", kind="READER_SCAN",
+                   config={"weekly_mode": "reasoned", "signposts_seen": {"URS-KEY-03": {"BEST-S1": ["SIG-x", "SIG-y"]}}})
+    pool.finish_run("2026-11-02-urs")
+    monkeypatch.setattr(pool, "weekly_assessments", lambda run_id, include_excluded=False: [
+        {"signal_id": "SIG-x", "editorial": {"decision": "EXCLUDE"}}, {"signal_id": "SIG-y", "editorial": {"decision": "INCLUDE"}}])
+    register = {"shifts": [{"themeId": "URS-KEY-03", "name": "Costs", "cases": [
+        {"case": case, "name": case, "signposts": [{"text": f"{case} signpost", "keywords": ["no such phrase anywhere"]}], "counter_indicators": [], "responses": []}
+        for case in ("BEST", "MEDIUM", "WORST")]}]}
+    (reading,) = track(pool, "2026-11-02-urs", register)
+    assert reading["cases"][0]["signposts_seen"][0]["signal_ids"] == ["SIG-y"]
+
+
 def test_a_public_body_counts_only_in_its_own_country_and_the_business_areas_own_business() -> None:
     from types import SimpleNamespace
 
@@ -170,3 +190,33 @@ def test_countries_are_named_by_common_name_and_alias() -> None:
     assert named("Blasts in Riyadh; Saudi forces intercept missiles") == {"Saudi Arabia"}
     assert named("Tell us about it") == set() and named("US carriers head to the Gulf") == {"United States"}
     assert canonical("USA") == "United States" and canonical("Republic of Korea") == "South Korea"
+
+
+def test_coverage_counts_answered_searches_and_scopes_them_to_the_line_they_aim_at(tmp_path: Path) -> None:
+    from grit.report.format_v2 import COMPETITOR, FINANCIAL, SUPPLY, _names_country, _searched
+
+    pool = Pool(tmp_path / "pool.db")
+    pool.start_run("R", run_date="2026-11-02", pack="urs", kind="READER_SCAN", config={})
+    pool.record_search("R", query_id="q1", engine="BRAVE", query="rates outlook", lane="CONDITION", target_id="T-FIN", canonical_lob=None,
+                       results=0, fetched_at="2026-11-02T00:00:00Z")
+    pool.record_search("R", query_id="q2", engine="BRAVE", query="Rail rival wins", lane="COMPETITOR", target_id="C1", canonical_lob="Rail",
+                       results=3, fetched_at="2026-11-02T00:00:00Z")
+    pool.record_search("R", query_id="q3", engine="BRAVE", query="Acme supply", lane="SUPPLIER", target_id="S1", canonical_lob=None,
+                       results=1, fetched_at="2026-11-02T00:00:00Z")
+    scope = _searched(pool, "R", {"T-FIN": "Financial volatility"}, {"S1": "Aviation"})
+    assert scope["counts"] == {FINANCIAL: 1, COMPETITOR: 1, SUPPLY: 1}, "a search answered with nothing still counts"
+    assert scope["scoped"] == {("Rail", COMPETITOR), ("Aviation", SUPPLY)}, "the wide financial search marks no line as specifically searched"
+    assert _names_country("United Arab Emirates", "Port strike in the UAE") and not _names_country("United States", "Rail rival wins in Busan")
+    pool.close()
+
+
+def test_the_scenario_window_includes_the_run_being_reported_before_it_finishes(tmp_path: Path) -> None:
+    from grit.pipeline.scenarios import window_rows
+
+    pool = Pool(tmp_path / "grit.sqlite")
+    pool.start_run("2026-11-02-urs", run_date="2026-11-02", pack="urs", kind="READER_SCAN", config={"weekly_mode": "reasoned"})
+    signal = pool.add_signal(url="https://news.example/costs", title="Costs rise", text="Project costs rise.", publisher="News",
+                             published_at="2026-11-01", lane="THEME", content_hash="costs")
+    pool.add_sighting(signal, "2026-11-02-urs", query_id="q", query="costs", lane="THEME", target_id=None, rank=1)
+    pool.save_assessment({"signal_id": signal, "run_id": "2026-11-02-urs", "pack": "urs", "decision": "KEEP"})
+    assert [row["signal_id"] for row in window_rows(pool, "2026-11-02-urs")] == [signal]

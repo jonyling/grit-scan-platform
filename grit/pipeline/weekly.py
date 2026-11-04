@@ -13,6 +13,8 @@ from typing import Any, Callable, Mapping, Sequence
 from grit.agents.checks import text_problems
 from grit.agents.loop.llm import LoopError, call_json
 from grit.agents.weekly import (
+    significance_band,
+    EXPOSURE_STATUSES, EXPOSURE_TYPES,
     PROMPTS, VERSION, ContractError, check_critique, check_selections,
     no_controlled_fields, object_response, source_ids, time_scope,
 )
@@ -27,8 +29,14 @@ FULL_TEXT_CHARS = 4000
 INDEX_TEXT_CHARS = 240
 RELATED_LIMIT = 30
 MAX_PAYLOAD_CHARS = 2_000_000
-INDEX_FIELDS = ("signal_id", "title", "publisher", "published_at", "time_scope", "decision", "drop_reason",
-                "tier", "condition_ids", "red", "assessment_missing")
+INDEX_FIELDS = ("signal_id", "title", "publisher", "published_at", "event_dates", "time_scope", "decision", "drop_reason",
+                "tier", "condition_ids", "red", "assessment_missing", "internal_exposure", "hindsight_checks")
+EVENT_LEAD_CHARS, EVENT_DATES_MAX = 600, 3
+# The included findings that must each have a recorded contradiction search before release.
+TOP_FINDINGS = 5
+# Rewrites each report gets after a material final critique, separate from the pool's revision rounds.
+REPORT_REWRITES = 1
+QUERY_PURPOSES = frozenset({"CONTRADICT", "COVERAGE", "CORROBORATE"})
 # Fast review (opt-in): dropped signals get a compact Critic screen; kept and escalated signals get full review.
 FULL_BATCH, FULL_BATCH_MAX = 16, 24
 SCREEN_BATCH, SCREEN_BATCH_MAX = 80, 120
@@ -52,7 +60,7 @@ def stable_batches(keys: Sequence[str], target: int, limit: int) -> list[list[st
 
 def full_view(row: Mapping[str, Any], limit: int = FULL_TEXT_CHARS) -> dict[str, Any]:
     text = str(row.get("text") or "")
-    value = {key: item for key, item in row.items() if key not in {"evidence_records", "harm", "link"}}
+    value = {key: item for key, item in row.items() if key not in {"evidence_records", "harm", "link", "revision"}}
     value["text"] = text if len(text) <= limit else text[:limit] + " [truncated]"
     harm = row.get("harm") or {}
     if harm:
@@ -61,6 +69,39 @@ def full_view(row: Mapping[str, Any], limit: int = FULL_TEXT_CHARS) -> dict[str,
     if link:
         value["link"] = link
     return value
+
+
+def late_evidence(entry: Mapping[str, Any], run_date: str | None) -> bool:
+    """A check retrieved or approved after the run date is hindsight. The source it checks keeps its own date."""
+    return bool(run_date) and entry.get("status") == "SUCCEEDED" and max(
+        str(entry.get("retrieved_at") or ""), str(entry.get("approved_at") or ""))[:10] > str(run_date)
+
+
+def evidence_text(row: Mapping[str, Any], run_date: str | None = None) -> str:
+    """The text a role reads: a verified source page first, then the latest revision seen by the run date, then the
+    text first stored. Labels appear only when there is more than the stored text, so excerpts lead with the freshest."""
+    verified = [(entry["text"], late_evidence(entry, run_date)) for entry in row.get("evidence_records", [])
+                if entry.get("status") == "SUCCEEDED" and entry.get("scope") == "EXTRACTED_PAGE" and entry.get("text")]
+    revision = row.get("revision") or {}
+    if not verified and not revision.get("text"):
+        return str(row.get("text") or "")
+    parts = [f"Extracted source page (verified{', retrieved after the run date: hindsight' if late else ''}):\n{text}"
+             for text, late in verified]
+    if revision.get("text"):
+        parts.append(f"Updated page text (published {str(revision.get('published_at') or '')[:10]}, seen {str(revision.get('seen_at') or '')[:10]}):\n{revision['text']}")
+    parts.append(f"Text first stored:\n{row.get('text') or ''}")
+    return "\n\n".join(parts)
+
+
+def event_dates(row: Mapping[str, Any], run_date: date, *, lead_chars: int = EVENT_LEAD_CHARS) -> list[str]:
+    """Dates (day and month) stated in the title or lead, within a year of the run date. These are the dates an event is
+    said to happen; published_at is only when it was reported."""
+    from grit.report.lookahead import dates_in
+
+    lead = (row.get("revision") or {}).get("text") or row.get("text") or ""
+    text = f"{row.get('title') or ''}. {' '.join(str(lead).split())[:lead_chars]}"
+    found = [day for day in dates_in(text, run_date) if abs((day - run_date).days) <= 366]
+    return [day.isoformat() for day in found[:EVENT_DATES_MAX]]
 
 
 def index_view(row: Mapping[str, Any], chars: int = INDEX_TEXT_CHARS) -> dict[str, Any]:
@@ -76,6 +117,37 @@ def index_view(row: Mapping[str, Any], chars: int = INDEX_TEXT_CHARS) -> dict[st
     return value
 
 
+SCREEN_LEAD_CHARS = 240
+
+
+def matched_terms(row: Mapping[str, Any]) -> list[str]:
+    """The pack terms the deterministic reader matched on this page."""
+    link = row.get("link") or {}
+    terms = [hit.get("matched") for key in ("involves", "reader_hits") for hit in link.get(key) or [] if isinstance(hit, Mapping)]
+    terms += [term if isinstance(term, str) else (term or {}).get("matched") for key in ("lob_keywords", "hazards") for term in link.get(key) or []]
+    return list(dict.fromkeys(str(term) for term in terms if term))
+
+
+def screen_view(row: Mapping[str, Any], chars: int = SCREEN_TEXT_CHARS) -> dict[str, Any]:
+    """The lead, then the sentences naming a matched pack term, so a screen sees why the page was linked or dropped."""
+    value = index_view(row, chars)
+    text = " ".join(str(row.get("text") or "").split())
+    terms = [term.lower() for term in matched_terms(row)]
+    if len(text) <= chars or not terms:
+        return value
+    excerpt = text[:SCREEN_LEAD_CHARS]
+    for sentence in re.split(r"(?<=[.!?])\s+", text[SCREEN_LEAD_CHARS:]):
+        if any(term in sentence.lower() for term in terms):
+            room = chars - len(excerpt) - 5
+            if room <= 40:
+                break
+            excerpt += " … " + sentence[:room]
+    value["excerpt"] = excerpt
+    if terms:
+        value["matched_terms"] = matched_terms(row)[:6]
+    return value
+
+
 def evidence_snapshot(pool: Pool, run_id: str) -> list[dict[str, Any]]:
     assessed = {row["signal_id"]: row for row in pool.assessments(run_id)}
     for signal in pool.signals_for_run(run_id):
@@ -84,6 +156,12 @@ def evidence_snapshot(pool: Pool, run_id: str) -> list[dict[str, Any]]:
     for evidence in pool.rows("SELECT * FROM weekly_evidence WHERE run_id = ? ORDER BY evidence_id", (run_id,)):
         if evidence["signal_id"] in assessed:
             assessed[evidence["signal_id"]].setdefault("evidence_records", []).append(evidence["provenance"])
+    run_date = str((pool.run(run_id) or {}).get("run_date") or "") or None
+    for row in pool.rows("SELECT DISTINCT signal_id FROM signal_revisions"):
+        if row["signal_id"] in assessed:
+            revision = pool.latest_revision(row["signal_id"], by=run_date)
+            if revision:
+                assessed[row["signal_id"]]["revision"] = {key: revision[key] for key in ("content_hash", "title", "text", "published_at", "seen_at")}
     return [{key: value for key, value in row.items() if key not in {"assessed_at", "first_seen_at", "last_seen_at"}}
             for row in sorted(assessed.values(), key=lambda row: row["signal_id"])]
 
@@ -117,6 +195,25 @@ def model_brief(brief: Mapping[str, Any]) -> dict[str, Any]:
         changed = [row for row in rows if (row.get("baseline_decision") == "KEEP") != (row["editorial"]["decision"] in {"INCLUDE", "WATCH"})]
         weekly["selections"] = {"counts": counts, "changed_from_baseline": changed}
     return value
+
+
+FIXED_VALUES_RULE = (
+    "These values are set by rule before Reporting and no rewrite can change them. Status follows the agreed policy: "
+    "ELEVATED needs identifiable possible or confirmed exposure, credible evidence and near-term timing, or a credible "
+    "immediate threat; it does not need confirmed impact. RED needs impact confirmed by the Risk & Assurance operator. "
+    "A condition trend comes from that condition's own assessment, which a Critic has already challenged. "
+    "Do not raise a material issue against these values. "
+    "Text that states a value and its basis accurately is correct. If you think a value is wrong, raise a non-material "
+    "issue so the Risk & Assurance operator sees it; challenge overstated wording, not the value. An open issue that "
+    "objects only to one of these values may be resolved with source_ids [] and a response saying so.")
+
+
+def fixed_values(brief: Mapping[str, Any]) -> dict[str, Any]:
+    """The rule-set values in a report that the final Critic reviews but Reporting cannot edit."""
+    basis = ((brief.get("v2") or {}).get("status_basis") or {}) if isinstance(brief.get("v2"), Mapping) else {}
+    return {"rule": FIXED_VALUES_RULE, "status": (brief.get("v2") or {}).get("status"), "status_basis": basis.get("basis"),
+            "condition_trends": {str(row.get("condition_id")): row.get("trend") for row in brief.get("conditions") or []
+                                 if isinstance(row, Mapping) and row.get("condition_id")}}
 
 
 class WeeklyStore:
@@ -171,10 +268,9 @@ class WeeklyStore:
                 value |= {"decision": "EXCLUDE", "duplicate_of": duplicate,
                           "reason": f"Source attached to representative {duplicate}. Proposed decision: {selection['reason']}"}
             value["time_scope"] = time_scope(signal.get("published_at"), date.fromisoformat(run["run_date"]), int(config.get("window_days") or 7))
-            for entry in self.pool.rows("SELECT * FROM weekly_evidence WHERE run_id = ? AND signal_id = ?", (self.run_id, signal["signal_id"])):
-                provenance = entry["provenance"]
-                if provenance.get("status") == "SUCCEEDED" and max(provenance.get("retrieved_at", ""), provenance.get("approved_at", ""))[:10] > run["run_date"]:
-                    value["time_scope"] = "HINDSIGHT"
+            if any(late_evidence(entry["provenance"], run["run_date"]) for entry in self.pool.rows(
+                    "SELECT * FROM weekly_evidence WHERE run_id = ? AND signal_id = ?", (self.run_id, signal["signal_id"]))):
+                value["hindsight_checks"] = True
             self.pool.insert("weekly_selections", {
                 "run_id": self.run_id, "version": self.state["version"], "signal_id": selection["signal_id"],
                 "call_id": call_id, "selection_json": value, "created_at": utc_now(),
@@ -194,7 +290,7 @@ class WeeklyStore:
                 continue  # already resolved by another batch reviewed in the same parallel wave
             previous = opened[key]["issue"]
             if previous["target"] not in response["reviewed_ids"]:
-                raise ContractError("Cannot resolve an issue outside the reviewed scope.")
+                continue  # only a batch that reviewed the target may resolve it; the attempt stays in the call output
             resolution = next(item for item in response["resolutions"] if item["issue_id"] == key)
             self._issue(call_id, key, "RESOLVED", {**previous, "resolution": resolution})
         targets: dict[str, set[str]] = {}
@@ -241,13 +337,19 @@ class WeeklyCoordinator:
     def sources(self) -> dict[str, dict[str, Any]]:
         run = self.pool.run(self.run_id)
         sources = {}
+        run_date = date.fromisoformat(run["run_date"])
         for row in evidence_snapshot(self.pool, self.run_id):
-            verified = [entry for entry in row.get("evidence_records", []) if entry.get("status") == "SUCCEEDED" and entry.get("scope") == "EXTRACTED_PAGE"]
-            sources[row["signal_id"]] = {**row, "text": row["text"] + "".join("\nExtracted source page:\n" + entry["text"] for entry in verified),
-                                        "time_scope": time_scope(row.get("published_at"), date.fromisoformat(run["run_date"]), int(run["config"].get("window_days") or 7))}
-            if any(max(entry.get("retrieved_at", ""), entry.get("approved_at", ""))[:10] > run["run_date"]
-                   for entry in row.get("evidence_records", []) if entry.get("status") == "SUCCEEDED"):
-                sources[row["signal_id"]]["time_scope"] = "HINDSIGHT"
+            sources[row["signal_id"]] = {**row, "text": evidence_text(row, run["run_date"]),
+                                        "time_scope": time_scope(row.get("published_at"), run_date, int(run["config"].get("window_days") or 7))}
+            stated = event_dates(row, run_date)
+            if stated:
+                sources[row["signal_id"]]["event_dates"] = stated
+            exposure = [entry["exposure"] for entry in row.get("evidence_records", [])
+                        if entry.get("status") == "SUCCEEDED" and entry.get("scope") == "APPROVED_INTERNAL" and entry.get("exposure")]
+            if exposure:
+                sources[row["signal_id"]]["internal_exposure"] = exposure
+            if any(late_evidence(entry, run["run_date"]) for entry in row.get("evidence_records", [])):
+                sources[row["signal_id"]]["hindsight_checks"] = True
         return sources
 
     def included_ids(self, sources: Mapping[str, Mapping[str, Any]], before_round: int | None = None) -> list[str]:
@@ -385,7 +487,7 @@ class WeeklyCoordinator:
         raw: Any = {}
         rejected: list[dict[str, Any]] = []
         try:
-            repairs = 3 if job["role"] == "Reporting" else 1
+            repairs = 3 if job["role"] == "Reporting" else 2
             for attempt in range(repairs + 1):
                 payload = job["envelope"]
                 if rejected:
@@ -450,6 +552,8 @@ class WeeklyCoordinator:
             for query in raw["queries"]:
                 if not isinstance(query, Mapping) or not isinstance(query.get("query"), str) or not query["query"].strip() or not isinstance(query.get("reason"), str):
                     raise ContractError("A search needs query text and a rationale.")
+                if query.get("purpose") is not None and query["purpose"] not in QUERY_PURPOSES:
+                    raise ContractError("A search purpose must be CONTRADICT, COVERAGE or CORROBORATE.")
                 source_ids(query.get("signal_ids"), self.sources)
             source_ids(raw.get("verify_source_ids", []), self.sources)
             history = raw.get("history_queries", [])
@@ -462,18 +566,24 @@ class WeeklyCoordinator:
             if key not in included:
                 reason = str(row.get("drop_reason") or ("ASSESSMENT_MISSING" if row.get("assessment_missing") else "EXCLUDED"))
                 dropped[reason] = dropped.get(reason, 0) + 1
+        top = self.top_findings(sources, included)
         response, call_id = self.invoke("Researcher", task, {
             "sources": {key: index_view(sources[key]) for key in included},
             "excluded_counts": dropped, "open_issues": self.store.issues(),
-            "search_budget": self.store.state,
+            "search_budget": self.store.state, "top_findings": top, "contradiction_searched": sorted(self.contradicted()),
             "evidence_scope": "index of currently included items with short excerpts; excluded items summarized by reason",
         }, validate)
         added = False
-        for request in response["queries"]:
+        # Contradiction searches for top findings spend the budget first.
+        # A contradiction search that only repeats completed ones is skipped, so the budget reaches the rest.
+        challenged = self.contradicted()
+        ordered = sorted(response["queries"], key=lambda request: not (
+            request.get("purpose") == "CONTRADICT" and (set(request["signal_ids"]) & set(top)) - challenged))
+        for request in ordered:
             query = request["query"].strip()
             key = canonical_hash({"query": query})
             previous = self.pool.one("SELECT * FROM execution_log WHERE run_id = ? AND actor = 'WeeklyCountersearch' AND input_hash = ? AND status = 'SUCCEEDED'", (self.run_id, key))
-            if previous:
+            if previous or (request.get("purpose") == "CONTRADICT" and set(request["signal_ids"]) <= challenged):
                 continue
             status, result = "NOT_SEARCHED", {"reason": "Search is disabled or the recorded run budget is exhausted."}
             if search is not None and self.store.reserve("search"):
@@ -482,6 +592,8 @@ class WeeklyCoordinator:
                     status = "FAILED"
                 else:
                     status = "SUCCEEDED"
+                    if request.get("purpose") == "CONTRADICT":
+                        challenged |= set(request["signal_ids"])
                     for rank, candidate in enumerate(result["candidates"], 1):
                         signal_id = self.pool.add_signal(
                             url=candidate["url"], title=candidate["title"], text=candidate["text"],
@@ -498,29 +610,36 @@ class WeeklyCoordinator:
                           subject=str(call_id), input_hash=key, output_hash=canonical_hash(result), status=status,
                           detail={"request": request, "result": result})
             if status != "SUCCEEDED":
+                # Only a failed search is material. One the budget could not run is disclosed: the contradiction rule
+                # (CONTRA issues) already decides which searches a READY report needs.
                 self.store._issue(call_id, f"SEARCH-{key[:16]}", "OPEN", {
                     "issue_id": f"SEARCH-{key[:16]}", "target": "RESEARCH", "kind": "COVERAGE",
-                    "problem": f"Required countercheck not completed: {query}", "material": True,
-                    "source_ids": request["signal_ids"], "missing_evidence": status,
+                    "problem": (f"Required countercheck not completed: {query}" if status == "FAILED"
+                                else f"Countercheck not run because the search budget was spent or disabled: {query}"),
+                    "material": status == "FAILED", "source_ids": request["signal_ids"], "missing_evidence": status,
                 })
         for signal_id in response.get("verify_source_ids", []):
             previous = self.pool.one("SELECT * FROM weekly_evidence WHERE run_id = ? AND signal_id = ? AND kind = 'PAGE_VERIFICATION' ORDER BY evidence_id DESC LIMIT 1", (self.run_id, signal_id))
-            if previous and previous["provenance"].get("status") == "SUCCEEDED":
+            # The source's own answer is final for this run; fetching it again would only spend the budget.
+            if previous and (previous["provenance"].get("status") == "SUCCEEDED" or previous["provenance"].get("attempted")):
                 continue
             result = {"status": "NOT_CHECKED", "reason": "The explicit network budget is exhausted or disabled."}
             if self.store.reserve("search"):
                 from grit.agents.weekly_evidence import verify_page
-                result = verify_page(self.sources[signal_id]["url"])
+                result = {**verify_page(self.sources[signal_id]["url"]), "attempted": True}
             self.pool.insert("weekly_evidence", {"run_id": self.run_id, "signal_id": signal_id,
                 "kind": "PAGE_VERIFICATION", "provenance_json": {**result, "invocation_id": call_id, "retrieved_at": utc_now()}, "created_at": utc_now()})
             added = True
             self.pool.log(actor_type="FUNCTION", actor="WeeklyPageVerification", run_id=self.run_id, version=VERSION,
                           subject=signal_id, status=result["status"], output_hash=canonical_hash(result), detail=result)
             if result["status"] != "SUCCEEDED":
+                # Material only while budget could still complete the check; a page the source refused is disclosed.
+                attempted = bool(result.get("attempted"))
                 self.store._issue(call_id, f"PAGE-{signal_id}", "OPEN", {
-                    "issue_id": f"PAGE-{signal_id}", "target": signal_id, "kind": "COVERAGE", "material": True,
-                    "problem": "Requested source-page verification was not completed.", "source_ids": [signal_id],
-                    "missing_evidence": result["reason"],
+                    "issue_id": f"PAGE-{signal_id}", "target": signal_id, "kind": "COVERAGE", "material": not attempted,
+                    "problem": ("The source page could not be verified, so the report relies on the retrieved text."
+                                if attempted else "Requested source-page verification was not completed."),
+                    "source_ids": [signal_id], "missing_evidence": result["reason"],
                 })
             elif f"PAGE-{signal_id}" in self.store.issues():
                 self.store._issue(call_id, f"PAGE-{signal_id}", "RESOLVED", self.store.issues()[f"PAGE-{signal_id}"]["issue"])
@@ -539,12 +658,181 @@ class WeeklyCoordinator:
                 added = True
         for check in response["missing_checks"]:
             self.pool.add_qa(self.run_id, item="Research coverage", correction=check, origin="WEEKLY_RESEARCHER")
+        self.require_contradiction(call_id, top)
         if added:
             reassess()
             with self.pool.transaction() as conn:
                 conn.execute("UPDATE weekly_runs SET evidence_hash = ?, status = 'STARTED' WHERE run_id = ?",
                              (analysis_hash(self.pool, self.run_id), self.run_id))
         return added
+
+    def top_findings(self, sources: Mapping[str, Mapping[str, Any]], included: Sequence[str]) -> list[str]:
+        """The included findings a reader is most likely to act on: RED first, then by source tier and corroboration."""
+        latest = {row["signal_id"]: row["selection"] for row in self.pool.rows(
+            "SELECT signal_id, selection_json FROM weekly_selections WHERE run_id = ? AND version = ? ORDER BY selection_id",
+            (self.run_id, self.store.state["version"]))}
+        if not latest:
+            # Before review there are no scores, so there is no stable top finding to contradict yet.
+            return []
+        chosen = [key for key in included if (latest.get(key) or {}).get("decision", "INCLUDE") == "INCLUDE"]
+        chosen.sort(key=lambda key: (-significance_score(latest.get(key) or {}), not sources[key].get("red"),
+                                     sources[key].get("tier") or 9, -(sources[key].get("corroboration") or 1), key))
+        return chosen[:TOP_FINDINGS]
+
+    def status_policy(self) -> dict[str, Any]:
+        """The report status from the reviewed selections (URS methodology section 14), separate from headline severity.
+        RED: impact on the business confirmed by the Risk & Assurance operator. ELEVATED: identifiable exposure, credible
+        evidence and near-term immediacy, a credible immediate threat, or an assessed impact awaiting R&A confirmation.
+        A headline-pattern RED candidate alone raises nothing; it is listed for the R&A decision.
+        WATCHPOINT: anything included or watched. NORMAL: nothing."""
+        decisions = self.pool.red_decisions(str((self.pool.run(self.run_id) or {}).get("pack") or ""))
+        rows = [dict(row.get("editorial") or {"decision": "INCLUDE"}) | {"signal_id": row["signal_id"], "red_candidate": bool(row.get("red"))}
+                for row in self.pool.weekly_assessments(self.run_id)]
+        for row in rows:
+            row["red_decision"] = (decisions.get(row["signal_id"]) or {}).get("decision")
+        included = [row for row in rows if row["decision"] == "INCLUDE"]
+        red = [row for row in rows if row["red_decision"] == "CONFIRMED"]
+        awaiting = [row for row in included if row["red_decision"] is None and row.get("impact_status") == "CONFIRMED"]
+        elevated = [row for row in included if row.get("immediate_threat") or (
+            row.get("exposure_status") in {"CONFIRMED", "POSSIBLE"}
+            and all(int((row.get("significance") or {}).get(key, 0)) >= 2 for key in ("exposure", "immediacy", "evidence")))]
+        elevated += [row for row in awaiting if row not in elevated]
+        candidates = sorted(row["signal_id"] for row in rows if row["red_candidate"])
+        if red:
+            status, basis, ids = "RED", f"The Risk & Assurance operator confirmed the impact of {len(red)} findings.", red
+        elif elevated:
+            status, basis, ids = "ELEVATED", (f"{len(elevated)} included findings combine identifiable exposure, credible evidence and "
+                                              "near-term timing, or a credible immediate threat; no impact is confirmed."), elevated
+        elif rows:
+            status, basis, ids = "WATCHPOINT", f"{len(rows)} findings are worth watching; none shows identifiable near-term exposure.", []
+        else:
+            status, basis, ids = "NORMAL", "No finding was included or watched this week.", []
+        if awaiting:
+            basis += f" {len(awaiting)} included findings with assessed impact await R&A confirmation."
+        undecided = [key for key in candidates if key not in {row["signal_id"] for row in awaiting} and not decisions.get(key)]
+        if undecided and status != "RED":
+            basis += f" {len(undecided)} RED alert candidates matched a headline pattern and await the R&A decision; none has confirmed impact."
+        rejected = [row for row in rows if row["red_decision"] == "NOT_CONFIRMED"]
+        if rejected:
+            basis += f" R&A did not confirm RED impact for {len(rejected)} findings."
+        excluded = sorted(row["signal_id"] for row in self.pool.weekly_assessments(self.run_id, include_excluded=True)
+                          if row.get("red") and (row.get("editorial") or {}).get("decision") == "EXCLUDE")
+        if excluded:
+            basis += f" The review excluded {len(excluded)} further RED alert candidates, so the report does not list them."
+        ranked = sorted(included, key=lambda row: -significance_score(row))
+        return {"status": status, "basis": basis, "signal_ids": sorted(row["signal_id"] for row in ids), "red_candidates": candidates,
+                "red_awaiting_confirmation": sorted({row["signal_id"] for row in awaiting} | set(undecided)), "red_excluded": excluded,
+                "red_decisions": {row["signal_id"]: row["red_decision"] for row in rows if row["red_decision"]},
+                "priorities": [{"signal_id": row["signal_id"], "score": significance_score(row),
+                                "band": significance_band(significance_score(row), bool(row.get("immediate_threat")))} for row in ranked]}
+
+    def require_decisions(self) -> None:
+        """A DEFER is a question the review has not answered. It opens a material issue, so a revision round revisits the
+        candidate; one still deferred when the revision budget is spent keeps the reports INCOMPLETE, visibly."""
+        issues = self.store.issues()
+        latest = self.pool.rows(
+            """SELECT s.signal_id, s.call_id, s.selection_json FROM weekly_selections s
+               WHERE s.run_id = ? AND s.version = ? AND s.selection_id = (SELECT MAX(t.selection_id) FROM weekly_selections t
+                 WHERE t.run_id = s.run_id AND t.version = s.version AND t.signal_id = s.signal_id)""",
+            (self.run_id, self.store.state["version"]))
+        for row in latest:
+            issue_id, deferred = f"DEFER-{row['signal_id']}", row["selection"].get("decision") == "DEFER"
+            if deferred and issue_id not in issues:
+                self.store._issue(row["call_id"], issue_id, "OPEN", {
+                    "issue_id": issue_id, "target": row["signal_id"], "kind": "COVERAGE", "material": True,
+                    "source_ids": [row["signal_id"]], "missing_evidence": "An editorial decision",
+                    "problem": f"The review deferred this candidate ({str(row['selection'].get('reason') or 'no reason given').strip()}). "
+                               "Decide INCLUDE, WATCH or EXCLUDE."})
+            elif not deferred and issue_id in issues:
+                self.store._issue(row["call_id"], issue_id, "RESOLVED", {
+                    **issues[issue_id]["issue"], "resolution": {"response": f"Decided: {row['selection'].get('decision')}."}})
+
+    def check_contradiction(self) -> None:
+        """Review can change which findings rank top after the last research pass; each current top finding still needs
+        its contradiction search, and an issue for a finding that left the top set is resolved."""
+        latest = self.pool.one(
+            "SELECT MAX(call_id) AS call_id FROM weekly_calls WHERE run_id = ? AND version = ? AND role = 'Researcher' AND status = 'VALIDATED'",
+            (self.run_id, self.store.state["version"]))
+        if latest and latest.get("call_id"):
+            sources = self.sources
+            self.require_contradiction(latest["call_id"], self.top_findings(sources, self.included_ids(sources)))
+
+    def contradicted(self) -> set[str]:
+        """Findings with a completed contradiction search in this run."""
+        return {str(key) for row in self.pool.rows(
+            "SELECT detail_json FROM execution_log WHERE run_id = ? AND actor = 'WeeklyCountersearch' AND status = 'SUCCEEDED'", (self.run_id,))
+            if (row["detail"].get("request") or {}).get("purpose") == "CONTRADICT"
+            for key in (row["detail"].get("request") or {}).get("signal_ids") or []}
+
+    def require_contradiction(self, call_id: int, top: Sequence[str]) -> None:
+        """Each top finding needs a completed contradiction search. Without one, an issue stays open: material when the
+        run had a search budget, a disclosed limitation when the operator set the budget to zero."""
+        done, issues = self.contradicted(), self.store.issues()
+        enabled = int(self.store.state["search_limit"]) > 0
+        for key in top:
+            issue_id = f"CONTRA-{key}"
+            if key in done:
+                if issue_id in issues:
+                    self.store._issue(call_id, issue_id, "RESOLVED", {**issues[issue_id]["issue"], "resolution": {"response": "A contradiction search completed."}})
+            elif issue_id not in issues:
+                self.store._issue(call_id, issue_id, "OPEN", {
+                    "issue_id": issue_id, "target": "RESEARCH", "kind": "COVERAGE", "material": enabled, "source_ids": [key],
+                    "problem": "No completed search tried to contradict this top finding." if enabled
+                               else "Countersearch is disabled for this run, so no search tried to contradict this top finding.",
+                    "missing_evidence": "Contradiction search"})
+        for issue_id, row in issues.items():
+            if issue_id.startswith("CONTRA-") and issue_id.removeprefix("CONTRA-") not in top and issue_id.removeprefix("CONTRA-") not in done:
+                self.store._issue(call_id, issue_id, "RESOLVED", {**row["issue"], "resolution": {"response": "No longer a top finding."}})
+
+    def prepare_report(self, brief: dict[str, Any], sources: Mapping[str, Mapping[str, Any]]) -> None:
+        """Policy fields set before Reporting sees the draft; report recovery repeats this to compare inputs."""
+        self.disclose_contradiction(brief, sources)
+        self.disclose_unverified_pages(brief)
+        self.disclose_unrun_searches(brief)
+        policy = self.status_policy()
+        if isinstance(brief.get("v2"), dict):
+            brief["v2"]["status"], brief["v2"]["status_basis"] = policy["status"], policy
+        if isinstance(brief.get("bottom_line"), dict):
+            brief["bottom_line"]["label"] = policy["status"]
+
+    def disclose_unverified_pages(self, brief: dict[str, Any]) -> None:
+        """A requested page check the source refused is a limitation of the report, not a blocker."""
+        completeness = (brief.get("v2") or {}).get("completeness")
+        refused = sorted(row["issue"]["target"] for issue_id, row in self.store.issues().items()
+                         if issue_id.startswith("PAGE-") and row["status"] == "OPEN" and not row["issue"].get("material"))
+        if isinstance(completeness, dict) and refused:
+            completeness.setdefault("limitations", []).append(
+                f"{len(refused)} requested source-page checks could not be completed because the source page could not be retrieved: "
+                + ", ".join(refused) + ". These findings rely on the retrieved text.")
+
+    def disclose_unrun_searches(self, brief: dict[str, Any]) -> None:
+        """Countersearches the budget could not run are a limitation of the report, not a blocker."""
+        completeness = (brief.get("v2") or {}).get("completeness")
+        unrun = sorted(row["issue"]["problem"].split(": ", 1)[-1] for issue_id, row in self.store.issues().items()
+                       if issue_id.startswith("SEARCH-") and row["status"] == "OPEN" and not row["issue"].get("material"))
+        if isinstance(completeness, dict) and unrun:
+            completeness.setdefault("limitations", []).append(
+                f"{len(unrun)} requested countersearches were not run because the search budget was spent: "
+                + "; ".join(unrun) + ".")
+
+    def disclose_contradiction(self, brief: dict[str, Any], sources: Mapping[str, Mapping[str, Any]]) -> None:
+        """A gate row states how many top findings a contradiction search challenged. It is not critical: when search
+        was available, the open CONTRA issue already blocks readiness."""
+        gate = (brief.get("v2") or {}).get("gate")
+        if not isinstance(gate, list):
+            return
+        top = self.top_findings(sources, self.included_ids(sources))
+        checked = [key for key in top if key in self.contradicted()]
+        answer = "Yes" if len(checked) == len(top) else "No" if not checked else "Partial"
+        note = (f"{len(checked)} of {len(top)} top findings were searched for denials, corrections or reversals."
+                if top else "No finding was included, so none needed a contradiction search.")
+        if int(self.store.state["search_limit"]) <= 0 and len(checked) < len(top):
+            note += " Countersearch was disabled for this run."
+        gate.append({"question": "Were the top findings challenged by a contradiction search?", "answer": answer if top else "Yes",
+                     "note": note, "critical": False})
+        completeness = brief["v2"].get("completeness")
+        if isinstance(completeness, dict) and answer != "Yes" and top:
+            completeness.setdefault("limitations", []).append(f"{gate[-1]['question']} {answer}: {note}")
 
     def assess_and_critique(self, round_number: int, only: set[str] | None = None) -> None:
         sources = self.sources
@@ -578,9 +866,13 @@ class WeeklyCoordinator:
         self.full_review(round_number, sorted(full), sources)
 
     def scoped(self, members: set[str], sources: Mapping[str, Any], open_issues: Mapping[str, Any],
-               selections: bool = True) -> Callable[[Any], Any]:
+               selections: bool = True, chain: bool = True) -> Callable[[Any], Any]:
         """A thread-safe critique check against a snapshot of the open issues."""
         def validate(raw: Any) -> None:
+            if not selections and isinstance(raw, dict) and "selections" in raw:
+                # Selections are not this task's output; an unrequested list is set aside rather than failing the run.
+                extra = raw.pop("selections")
+                raw["ignored_selections"] = len(extra) if isinstance(extra, list) else 1
             check_critique(raw, members, sources, set(open_issues))
             outside = [key for key in raw["resolved_issue_ids"] if str(open_issues[key]["issue"].get("target")) not in members]
             if outside and isinstance(raw, dict):
@@ -589,7 +881,7 @@ class WeeklyCoordinator:
                 raw["resolutions"] = [item for item in raw.get("resolutions", []) if item.get("issue_id") not in outside]
                 raw["ignored_resolutions"] = outside
             if selections:
-                check_selections(raw, sources, members)
+                check_selections(raw, sources, members, chain=chain)
         return validate
 
     def screen(self, round_number: int, keys: Sequence[str], sources: Mapping[str, Any]) -> set[str]:
@@ -600,10 +892,10 @@ class WeeklyCoordinator:
         for batch in stable_batches(keys, SCREEN_BATCH, SCREEN_BATCH_MAX):
             members = set(batch)
             jobs.append(("Critic", f"screen-{round_number}-{batch[0]}", {
-                "candidates": {key: index_view(sources[key], SCREEN_TEXT_CHARS) for key in batch},
+                "candidates": {key: screen_view(sources[key]) for key in batch},
                 "open_issues": {key: row for key, row in open_issues.items() if str(row["issue"].get("target")) in members},
                 "admitted_corrections": corrections,
-            }, self.scoped(members, sources, open_issues), "Screen"))
+            }, self.scoped(members, sources, open_issues, chain=False), "Screen"))
         escalated: set[str] = set()
         for critique, call_id in self.invoke_many(jobs, f"Critic screen of {len(keys)} dropped signals"):
             self.store.select(call_id, critique["selections"])
@@ -654,9 +946,21 @@ class WeeklyCoordinator:
         elif added:
             # Fast review re-examines only signals whose evidence changed; full review repeats the pass.
             self.review(1, self.changed(before) if self.fast else None)
+        sources = self.sources
+        if set(self.top_findings(sources, self.included_ids(sources))) - self.contradicted():
+            # Review scores can change which findings rank top; each new top finding still needs its contradiction search.
+            before = self.digests() if self.fast else {}
+            if self.research("contradiction", search, reassess):
+                self.review(2, self.changed(before) if self.fast else None)
+        self.require_decisions()
+        self.check_contradiction()
         while any(row["issue"]["material"] for row in self.store.issues().values()) and self.store.reserve("revision"):
             round_number = self.store.state["revisions_used"] + 1
-            action = self.supervise(["RESEARCH", "REASSESS"], {"stage": "pool reconciliation", "issues": self.store.issues()})
+            issues = self.store.issues()
+            # Only research can close a research issue, such as a top finding without a contradiction search.
+            research_needed = any(row["issue"]["material"] and row["issue"].get("target") == "RESEARCH" for row in issues.values())
+            action = self.supervise(["RESEARCH"] if research_needed else ["RESEARCH", "REASSESS"],
+                                    {"stage": "pool reconciliation", "issues": issues})
             before = self.digests() if self.fast else {}
             added = action == "RESEARCH" and self.research(f"counterevidence-{round_number}", search, reassess)
             # Revision rounds revisit only challenged candidates and any newly acquired evidence.
@@ -666,11 +970,15 @@ class WeeklyCoordinator:
                 "SELECT DISTINCT signal_id FROM weekly_selections WHERE run_id = ? AND version = ?", (self.run_id, self.store.state["version"]))}
             if added and not self.fast:
                 self.assess_and_critique(round_number)
+                self.require_decisions()
+                self.check_contradiction()
                 continue
             scope = (targets | unselected | (self.changed(before) if added else set())) & set(sources)
             if scope:
                 # Fast round 1 is the post-research pass, so its revision rounds are numbered from 2.
                 self.review(round_number + 1 if self.fast else round_number, scope)
+            self.require_decisions()
+            self.check_contradiction()
 
     def report_payload(self, profile_id: str, brief: Mapping[str, Any],
                        sources: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
@@ -684,10 +992,18 @@ class WeeklyCoordinator:
         }
 
     def report(self, profile: Any, draft: Mapping[str, Any], routed: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+        """Write, critique and decide one report. Several reports are decided together, after every final Critic."""
+        brief, critic_id = self.write_report(profile, draft)
+        return self.decide_report(profile, brief, routed, critic_id)
+
+    def write_report(self, profile: Any, draft: Mapping[str, Any]) -> tuple[dict[str, Any], int]:
         brief = copy.deepcopy(dict(draft))
         sources = self.sources
+        self.prepare_report(brief, sources)
         task = f"report-{profile.profile_id}"
         target = f"REPORT:{profile.profile_id}"
+        rewrites = 0
+        self.progress(f"  Report {profile.profile_id}: Reporting is writing the narrative")
         while True:
             payload = self.report_payload(profile.profile_id, brief, sources)
             editable = payload["editable_fields"]
@@ -711,12 +1027,17 @@ class WeeklyCoordinator:
                         last = 0
                         for mark in CITE.finditer(edit["text"]):
                             claim = edit["text"][last:mark.start()].strip(" .!?")
-                            if re.search(r"[.!?]\s+[A-Z]", claim):
-                                raise ContractError("Cite each factual sentence, not an entire paragraph.")
+                            fragment = sentence_break(claim)
+                            if fragment:
+                                raise ContractError("Cite each factual sentence, not an entire paragraph: a sentence ends "
+                                                    f"inside '{fragment}' before its citation. Put a citation before each "
+                                                    "sentence's final punctuation.")
                             last = mark.end()
                         if edit["text"][last:].strip(" .!?\n"):
                             raise ContractError("Uncited narrative after the final reference.")
-                    problems = text_problems(CITE.sub("", edit["text"]), " ".join(sources[ref]["text"] for ref in refs), "report edit")
+                    # A cited source's title is part of its evidence, as it is for quotes.
+                    cited = " ".join(f"{sources[ref].get('title') or ''} {sources[ref]['text']}" for ref in refs)
+                    problems = text_problems(CITE.sub("", edit["text"]), cited, "report edit")
                     if problems:
                         raise ContractError("; ".join(problems))
             response, _ = self.invoke("Reporting", task, payload, validate_edits)
@@ -729,31 +1050,89 @@ class WeeklyCoordinator:
             brief["bottom_line"]["drafted_by"] = "Reporting; independently critiqued before readiness"
             brief["method"]["weekly"] = {"contract": VERSION, "budget": self.store.state,
                 "issues": list(self.store.issues().values()), "selections": selection_summary(self.pool.weekly_assessments(self.run_id, include_excluded=True)),
-                "evidence_scope": "stored excerpts; full-page and internal checks are not implied"}
+                "evidence_scope": "stored excerpts; full-page and internal checks are not implied",
+                "completeness": {"blocking": completeness_blockers(brief),
+                                 "limitations": list(((brief.get("v2") or {}).get("completeness") or {}).get("limitations") or [])}}
             brief["content_hash"] = report_hash(brief)
             open_issues = self.store.issues()
+            self.progress(f"  Report {profile.profile_id}: the final Critic is reviewing it")
             critique, critic_id = self.invoke("Critic", f"final-{profile.profile_id}", {
                 "report": model_brief(brief), "report_hash": brief["content_hash"], "targets": [target],
                 "sources": self.report_sources(brief, sources), "open_issues": open_issues,
+                "fixed_values": fixed_values(brief),
             }, self.scoped({target}, sources, open_issues, selections=False))
             self.store.record_critique(critic_id, critique)
-            material = any(row["issue"]["material"] for row in self.store.issues().values())
-            if not material or not self.store.reserve("revision"):
+            # Each report has its own rewrite: pool revision rounds must not use up the chance to fix a report objection.
+            own = any(row["issue"]["material"] and row["issue"].get("target") == target for row in self.store.issues().values())
+            if not own or rewrites >= REPORT_REWRITES:
                 break
+            rewrites += 1
+            self.progress(f"  Report {profile.profile_id}: rewriting after a material objection")
             self.supervise(["REVISE_REPORT"], {"profile": profile.profile_id, "issues": self.store.issues()})
-        status = "INCOMPLETE" if material or not sources or not self.store.current() or not set(brief["evidence_ids"]).issubset(sources) or any(row.get("assessment_missing") for row in sources.values()) or any(
-            row["editorial"]["decision"] == "DEFER" for row in self.pool.weekly_assessments(self.run_id, include_excluded=True)) else "READY"
+        return brief, critic_id
+
+    def decide_report(self, profile: Any, brief: dict[str, Any], routed: Sequence[Mapping[str, Any]], critic_id: int) -> dict[str, Any]:
+        """Readiness from the issues as they stand now. Any open material issue blocks every report, so reports are
+        decided after all of them are critiqued: a later final Critic can resolve an objection to an earlier report."""
+        sources = self.sources
+        unreviewed = sorted(set(brief["evidence_ids"]) - set(sources))
+        # Every reason is stated, so an INCOMPLETE report always says what keeps it from READY.
+        blocked_by = [
+            *(f"Completeness: {item}" for item in brief["method"]["weekly"]["completeness"]["blocking"]),
+            *(f"Open material issue {key}: {str(row['issue'].get('problem') or '')[:200]}"
+              for key, row in self.store.issues().items() if row["issue"].get("material")),
+            *(["No reviewed sources."] if not sources else []),
+            *(["The evidence changed after the review."] if not self.store.current() else []),
+            *([f"Cites signals the review did not cover: {', '.join(unreviewed)}."] if unreviewed else []),
+            *(f"Deterministic assessment missing: {key}." for key, row in sources.items() if row.get("assessment_missing")),
+            *(f"Deferred candidate: {row['signal_id']}." for row in self.pool.weekly_assessments(self.run_id, include_excluded=True)
+              if row["editorial"]["decision"] == "DEFER"),
+        ]
+        status = "INCOMPLETE" if blocked_by else "READY"
+        self.progress(f"  Report {profile.profile_id}: {status}" + (f", {len(blocked_by)} blockers" if blocked_by else ""))
         self.pool.insert("weekly_reports", {
             "run_id": self.run_id, "version": self.store.state["version"], "profile_id": profile.profile_id,
             "content_hash": brief["content_hash"], "selection_hash": selection_hash(self.pool, self.run_id),
             "critique_call_id": critic_id, "status": status,
             "brief_json": brief, "routed_json": list(routed), "created_at": utc_now(),
         })
-        return {"profile_id": profile.profile_id, "status": status, "content_hash": brief["content_hash"]}
+        return {"profile_id": profile.profile_id, "status": status, "content_hash": brief["content_hash"], "blocked_by": blocked_by}
+
+
+# A period after an initial or one of these words ends an abbreviation, not a sentence: "U.S. State", "J. Smith", "Pte. Ltd".
+ABBREVIATIONS = frozenset({
+    "mr", "mrs", "ms", "dr", "prof", "st", "no", "nos", "vs", "approx", "inc", "ltd", "co", "corp", "pte", "bhd", "plc",
+    "jr", "sr", "gen", "lt", "col", "gov", "sen", "rep", "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept",
+    "oct", "nov", "dec",
+})
+
+
+def sentence_break(text: str) -> str | None:
+    """The text around the first sentence break, or None when the text is one sentence."""
+    for match in re.finditer(r"[.!?]\s+[A-Z]", text):
+        if text[match.start()] == ".":
+            token = re.search(r"(\S*)$", text[:match.start()]).group(1).lstrip("([\"'\u2018\u201c")
+            if re.fullmatch(r"(?:[A-Za-z]\.)*[A-Za-z]", token) or token.casefold() in ABBREVIATIONS:
+                continue
+        return text[max(0, match.start() - 40):match.end() + 20]
+    return None
 
 
 def report_hash(brief: Mapping[str, Any]) -> str:
     return canonical_hash({key: value for key, value in brief.items() if key != "content_hash"})
+
+
+def significance_score(selection: Mapping[str, Any]) -> int:
+    score = selection.get("significance")
+    return sum(int(value) for value in score.values()) if isinstance(score, Mapping) else 0
+
+
+def completeness_blockers(brief: Mapping[str, Any]) -> list[str]:
+    """Critical completeness-gate questions answered No. Any one keeps the report from READY, whatever the Critic said."""
+    v2 = brief.get("v2") or {}
+    if isinstance(v2.get("completeness"), Mapping):
+        return list(v2["completeness"].get("blocking") or [])
+    return [str(row.get("question")) for row in v2.get("gate") or [] if row.get("critical") and row.get("answer") == "No"]
 
 
 def selection_hash(pool: Pool, run_id: str) -> str:
@@ -867,8 +1246,9 @@ def run_weekly(pool: Pool, run: Any, *, client: Any, model: str, search_limit: i
 
 def _finish_weekly_reports(pool: Pool, run: Any, profiles: Sequence[Any], coordinator: WeeklyCoordinator) -> dict[str, Any]:
     from grit.report.brief import build_brief, routed_signals
-    results = [coordinator.report(profile, build_brief(pool, run.run_id, profile), routed_signals(pool, run.run_id, profile))
+    written = [(profile, routed_signals(pool, run.run_id, profile), *coordinator.write_report(profile, build_brief(pool, run.run_id, profile)))
                for profile in profiles if profile.brief_for(run.pack)]
+    results = [coordinator.decide_report(profile, brief, routed, critic_id) for profile, routed, brief, critic_id in written]
     ready = bool(results) and all(result["status"] == "READY" for result in results)
     coordinator.store.finish("READY" if ready else "INCOMPLETE")
     pool.finish_run(run.run_id, "COMPLETE" if ready else "INCOMPLETE", notes="Weekly reasoning: " + coordinator.store.state["status"])
@@ -877,18 +1257,27 @@ def _finish_weekly_reports(pool: Pool, run: Any, profiles: Sequence[Any], coordi
 
 def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | None,
                             profiles: Sequence[Any], call: RoleCall = call_json,
-                            progress: Callable[[str], Any] | None = None) -> dict[str, Any]:
+                            progress: Callable[[str], Any] | None = None, refresh: bool = False) -> dict[str, Any]:
+    """Recover a failed Reporting call, or with refresh, rebuild every report from a finished review whose evidence has
+    not changed, for example after an R&A RED decision. Neither runs search or signal review."""
     state = pool.one("SELECT * FROM weekly_runs WHERE run_id = ?", (run.run_id,))
     saved_run = pool.run(run.run_id)
     if not state or not saved_run or (saved_run.get("config") or {}).get("weekly_mode") != "reasoned":
-        raise ValueError("No saved reasoned weekly analysis exists for this run.")
-    if state["status"] != "INCOMPLETE":
-        raise ValueError("Report recovery requires an incomplete weekly analysis.")
+        raise ValueError(f"No reasoned weekly analysis exists for {run.run_id} in this database. Run "
+                         "`grit weekly --reasoned` for this date first; report recovery and refresh rebuild the reports of an existing one.")
+    if state["status"] not in ({"INCOMPLETE", "READY"} if refresh else {"INCOMPLETE"}):
+        raise ValueError("Report refresh requires a finished weekly analysis." if refresh
+                         else "Report recovery requires an incomplete weekly analysis.")
     if state["evidence_hash"] != analysis_hash(pool, run.run_id):
         raise ValueError("Weekly evidence changed after the saved review; report recovery cannot skip reassessment.")
     failed = pool.one("SELECT * FROM weekly_calls WHERE run_id = ? AND version = ? ORDER BY call_id DESC LIMIT 1",
                       (run.run_id, state["version"]))
-    if not failed or failed["role"] != "Reporting" or failed["status"] != "FAILED" or not failed["task"].startswith("report-"):
+    if refresh:
+        finished = bool(failed) and failed["role"] == "Critic" and failed["status"] == "VALIDATED" and failed["task"].startswith("final-")
+        stopped = bool(failed) and failed["role"] == "Reporting" and failed["status"] == "FAILED" and failed["task"].startswith("report-")
+        if not (finished or stopped):
+            raise ValueError("Report refresh requires a review whose report stage finished or stopped on a Reporting call.")
+    elif not failed or failed["role"] != "Reporting" or failed["status"] != "FAILED" or not failed["task"].startswith("report-"):
         raise ValueError("Report recovery requires the latest weekly call to be a failed Reporting call.")
     supervisors = pool.rows(
         "SELECT * FROM weekly_calls WHERE run_id = ? AND version = ? AND role = 'Supervisor' AND status = 'VALIDATED' AND call_id < ? ORDER BY call_id DESC",
@@ -910,6 +1299,17 @@ def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | N
         or row["call_id"] >= checkpoint["call_id"] for row in latest
     ):
         raise ValueError("The latest selection for every candidate must have a validated Critic before the report checkpoint.")
+    if refresh:
+        store = WeeklyStore(pool, run.run_id, search_limit=state["search_limit"], refresh=False)
+        config = saved_run.get("config") or {}
+        fast = config.get("weekly_review") == "fast"
+        coordinator = WeeklyCoordinator(store, client=client, model=model or failed["model"], call=call, fast=fast,
+                                        workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
+        coordinator.progress("Refreshing every report from the saved review; no search or signal review will run.")
+        store.finish("STARTED")
+        with pool.transaction() as conn:
+            conn.execute("UPDATE runs SET status = 'STARTED', finished_at = NULL WHERE run_id = ?", (run.run_id,))
+        return _finish_weekly_reports(pool, run, profiles, coordinator)
     profile_id = failed["task"][len("report-"):]
     anchor = next((profile for profile in profiles if profile.profile_id == profile_id and profile.brief_for(run.pack)), None)
     if anchor is None:
@@ -921,6 +1321,7 @@ def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | N
                                     workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
     from grit.report.brief import build_brief
     draft = build_brief(pool, run.run_id, anchor)
+    coordinator.prepare_report(draft, coordinator.sources)
     current = coordinator.report_payload(profile_id, draft, coordinator.sources)
     previous = failed["input"]
     def report_core(value: Mapping[str, Any]) -> dict[str, Any]:
@@ -1029,6 +1430,12 @@ def add_internal_evidence(pool: Pool, run_id: str, records: Any, approver: Any) 
             raise ValueError("Each internal record needs title, text, and a document reference.")
         if row.get("published_at") is not None:
             date.fromisoformat(row["published_at"][:10])
+        exposure = row.get("exposure")
+        if exposure is not None and (not isinstance(exposure, dict) or exposure.get("type") not in EXPOSURE_TYPES
+                                     or exposure.get("status") not in EXPOSURE_STATUSES
+                                     or not isinstance(exposure.get("entity"), str) or not exposure["entity"].strip()):
+            raise ValueError("An internal exposure needs a type (" + ", ".join(sorted(EXPOSURE_TYPES)) + "), a status ("
+                             + ", ".join(sorted(EXPOSURE_STATUSES)) + ") and the entity it concerns.")
     ids = []
     for row in records:
         digest = canonical_hash(row)
@@ -1040,7 +1447,8 @@ def add_internal_evidence(pool: Pool, run_id: str, records: Any, approver: Any) 
         if not pool.one("SELECT 1 FROM weekly_evidence WHERE run_id = ? AND signal_id = ? AND kind = 'HUMAN_APPROVED'", (run_id, signal_id)):
             pool.insert("weekly_evidence", {"run_id": run_id, "signal_id": signal_id, "kind": "HUMAN_APPROVED",
                 "provenance_json": {"status": "SUCCEEDED", "scope": "APPROVED_INTERNAL", "reference": row["reference"],
-                                    "approved_by": approver.profile_id, "approved_at": utc_now()}, "created_at": utc_now()})
+                                    "approved_by": approver.profile_id, "approved_at": utc_now(),
+                                    **({"exposure": dict(row["exposure"])} if row.get("exposure") else {})}, "created_at": utc_now()})
         ids.append(signal_id)
     return ids
 

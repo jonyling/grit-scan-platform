@@ -226,12 +226,23 @@ def acquire(
     from grit.acquisition.brave_plan import candidates_from_searches, collect_plan
 
     run.folder.mkdir(parents=True, exist_ok=True)
+    by_id = {spec.query_id: spec for spec in specs}
+
+    def record(entry: Mapping[str, Any]) -> None:
+        spec = by_id.get(str(entry.get("query_id") or ""))
+        if spec is not None and entry.get("status") == 200:
+            pool.record_search(run.run_id, query_id=spec.query_id, engine=str(entry.get("engine") or "BRAVE"), query=spec.query, lane=spec.lane,
+                               target_id=target_of(spec), canonical_lob=spec.canonical_lob, results=len(entry.get("results") or []),
+                               fetched_at=str(entry.get("fetched_at") or ""))
+
+    logged = _entries(run.folder / "searches.jsonl")
+    for entry in logged:
+        record(entry)
     answered = {row["query_id"] for row in pool.rows("SELECT DISTINCT query_id FROM sightings WHERE run_id = ?", (run.run_id,))}
-    answered |= {entry["query_id"] for entry in _entries(run.folder / "searches.jsonl") if entry.get("query_id")}
+    answered |= {entry["query_id"] for entry in logged if entry.get("query_id")}
     todo = [spec for spec in specs if spec.query_id not in answered]
     if limit is not None:
         todo = _balanced(todo, limit)
-    by_id = {spec.query_id: spec for spec in specs}
     fetched_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     found = {"queries_sent": 0, "results": 0, "signals_new": 0, "skipped_answered": len(specs) - len([s for s in specs if s.query_id not in answered])}
     returned: dict[str, int] = {}
@@ -239,6 +250,7 @@ def acquire(
     def on_search(entry: dict[str, Any]) -> None:
         with (run.folder / "searches.jsonl").open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        record(entry)
         candidates, hits = candidates_from_searches([entry], fetched_at=entry["fetched_at"])
         spec = by_id[entry["query_id"]]
         engine = entry.get("engine") or "BRAVE"
@@ -694,12 +706,37 @@ def condition_sources(rows: Sequence[Mapping[str, Any]], condition_id: str, *, t
     return (materiality_order(chosen) if theme else _recent_first(chosen))[:MAX_CONDITION_SOURCES]
 
 
-def child_sources(pool: Pool, run: ReaderRun, child: str) -> list[Mapping[str, Any]]:
+def child_sources(pool: Pool, run: ReaderRun, child: str, *, reviewed: bool = True) -> list[Mapping[str, Any]]:
     """For a theme an entity pack covers: that pack's kept signals on the same date that name its projects, suppliers or
-    customers, or reach briefing tier 2."""
+    customers, or reach briefing tier 2. A reasoned run reviews them in its own pool (cover_child_sources), and a signal
+    its review excluded is not cited."""
     rows = pool.weekly_assessments(run_id_for(run.run_date, child))
     chosen = [row for row in rows if any(hit.get("strong") for hit in row.get("exposure") or []) or (row.get("tier") or 9) <= 2]
-    return materiality_order(chosen)[:MAX_CONDITION_SOURCES]
+    top = materiality_order(chosen)[:MAX_CONDITION_SOURCES]
+    if not reviewed:
+        return top
+    from grit.pipeline.scenarios import editorial_exclusions
+
+    excluded = editorial_exclusions(pool, run.run_id)
+    return [row for row in top if row["signal_id"] not in excluded]
+
+
+def cover_child_sources(pool: Pool, run: ReaderRun) -> list[str]:
+    """The signals a covered theme can cite join this run's pool as sightings, so the weekly agents review every signal
+    the report can cite. Returns the signal IDs added."""
+    added: list[str] = []
+    for item in standing_items(_load_pack(run.pack)):
+        child = item.get("coveredBy")
+        if not child:
+            continue
+        query_id = f"covered-{child}-{item['id']}"
+        for row in child_sources(pool, run, child, reviewed=False):
+            if pool.one("SELECT 1 FROM sightings WHERE signal_id = ? AND run_id = ? AND query_id = ?", (row["signal_id"], run.run_id, query_id)):
+                continue
+            pool.add_sighting(row["signal_id"], run.run_id, query_id=query_id, query=f"Covered by the {child} pack: {item['name']}",
+                              lane="COVERED_BY_CHILD", target_id=item["id"], rank=None)
+            added.append(row["signal_id"])
+    return added
 
 
 def _prior(pool: Pool, run: ReaderRun) -> tuple[dict[str, Any] | None, dict[str, dict[str, Any]]]:

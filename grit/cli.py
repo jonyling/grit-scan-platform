@@ -198,10 +198,11 @@ def agents_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
             "owner_roles": reader_scan.owner_roles(ontology),
         })
         _admit_supplied_evidence(pool, run, args)
+        reader_scan.cover_child_sources(pool, run)
         reader_scan.assess(pool, run)
         client, model = _client(), _model(args.model)
         def draft_sections() -> None:
-            reader_scan.run_agents(pool, run, client=client, model=model, condition_critique=False)
+            reader_scan.run_agents(pool, run, client=client, model=model)
             if args.findings:
                 reader_scan.findings(pool, run, client=client, model=model, top=args.findings, max_iterations=1)
         result = run_weekly(
@@ -325,7 +326,7 @@ def cmd_resume_report(args: argparse.Namespace) -> int:
     try:
         result = resume_weekly_reporting(
             pool, run, client=_client(), model=args.model, profiles=_profiles(args.profile),
-            progress=lambda message: print(message, flush=True),
+            progress=lambda message: print(message, flush=True), refresh=args.refresh,
         )
     except (ValueError, LoopError) as exc:
         raise SystemExit(f"Report recovery stopped: {exc}") from None
@@ -370,6 +371,57 @@ def cmd_weekly_memory(args: argparse.Namespace) -> int:
 def cmd_memory_admit(args: argparse.Namespace) -> int:
     from grit.pipeline.weekly import admit_memory
     print(admit_memory(_pool(), args.id, _profiles([args.profile])[0], args.intent))
+    return 0
+
+
+RED_CONFIRMERS_ENV = "GRIT_RED_CONFIRMERS"
+
+
+def red_confirmers() -> list[str]:
+    return [name.strip() for name in os.environ.get(RED_CONFIRMERS_ENV, "").split(",") if name.strip()]
+
+
+def cmd_red(args: argparse.Namespace) -> int:
+    """RED impact is confirmed or rejected only by a named Risk & Assurance confirmer (GRIT_RED_CONFIRMERS)."""
+    pool = _pool()
+    decisions = pool.red_decisions(args.pack)
+    if args.action == "list":
+        where, params = ("AND a.run_id = ?", (args.pack, args.run)) if args.run else ("", (args.pack,))
+        candidates = {row["signal_id"]: row for row in pool.rows(
+            f"""SELECT a.signal_id, a.run_id, a.red_rule_json, s.title, s.url FROM assessments a JOIN signals s ON s.signal_id = a.signal_id
+                WHERE a.pack = ? AND a.red = 1 {where} ORDER BY a.assessed_at""", params)}
+        assessed: dict[str, str] = {}
+        if args.run and ((pool.run(args.run) or {}).get("config") or {}).get("weekly_mode") == "reasoned":
+            try:
+                rows = pool.weekly_assessments(args.run)
+            except ValueError:
+                rows = []
+            assessed = {row["signal_id"]: row["title"] for row in rows if (row.get("editorial") or {}).get("impact_status") == "CONFIRMED"}
+        if not candidates and not assessed:
+            print(f"No RED candidate for {args.pack}" + (f" in {args.run}." if args.run else "."))
+            return 0
+        for signal_id in sorted(set(candidates) | set(assessed)):
+            row = candidates.get(signal_id) or {}
+            decision = decisions.get(signal_id)
+            state = f"{decision['decision']} by {decision['decided_by']} {decision['decided_at']}" if decision else "AWAITING R&A"
+            basis = ", ".join(part for part in [
+                f"rule {(row.get('red_rule') or {}).get('rule_id')}" if row else "", "assessed impact" if signal_id in assessed else ""] if part)
+            print(f"{signal_id}  {state:52}  {basis:28}  {row.get('title') or assessed.get(signal_id)}")
+        return 0
+    missing = [flag for flag, value in (("--signal", args.signal), ("--by", args.by), ("--impact", args.impact)) if not (value or "").strip()]
+    if missing:
+        raise SystemExit(f"red {args.action} needs {', '.join(missing)}.")
+    allowed = red_confirmers()
+    if not allowed:
+        raise SystemExit(f"Set {RED_CONFIRMERS_ENV} in .env to the names of the Risk & Assurance operators who confirm RED impact.")
+    if args.by.strip().casefold() not in {name.casefold() for name in allowed}:
+        raise SystemExit(f"{args.by} is not a named RED confirmer in {RED_CONFIRMERS_ENV}.")
+    if pool.signal(args.signal) is None:
+        raise SystemExit(f"No signal {args.signal} in the pool. Use a signal ID from `grit red list --pack {args.pack}`.")
+    row = pool.record_red_decision(pack=args.pack, signal_id=args.signal, decision="CONFIRMED" if args.action == "confirm" else "NOT_CONFIRMED",
+                                   impact=args.impact, decided_by=args.by)
+    print(f"Recorded {row['decision']} for {args.signal} ({args.pack}) by {row['decided_by']}. "
+          "Rerun the weekly command for the run to re-issue its reports with this decision.")
     return 0
 
 
@@ -565,6 +617,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--no-submit", action="store_true")
 
     sub = reader("resume-report", cmd_resume_report, "Resume a failed reasoned Reporting call from its saved, unchanged review.")
+    sub.add_argument("--refresh", action="store_true",
+                     help="Rebuild every report from a finished review whose evidence has not changed, for example after an R&A RED decision.")
     sub.add_argument("--model", help="Model for reporting. Default: the model used by the failed call.")
     sub.add_argument("--profile", nargs="*", default=["all"])
     sub.add_argument("--no-submit", action="store_true", help="Render the resulting reports or incomplete previews without submission.")
@@ -579,6 +633,15 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--profile", required=True)
     sub.add_argument("--intent", choices=("ADMIT", "REJECT"), required=True)
     sub.set_defaults(handler=cmd_memory_admit)
+
+    sub = commands.add_parser("red", help="List RED candidates, or record the R&A decision that confirms or rejects a RED impact.")
+    sub.add_argument("action", choices=("list", "confirm", "reject"))
+    sub.add_argument("--pack", required=True)
+    sub.add_argument("--run", help="For list: one run, which also lists findings the agents assessed as confirmed impact.")
+    sub.add_argument("--signal", help="For confirm or reject: the signal id.")
+    sub.add_argument("--by", help="For confirm or reject: your name, as listed in GRIT_RED_CONFIRMERS.")
+    sub.add_argument("--impact", help="For confirm or reject: the impact on the business, or why there is none.")
+    sub.set_defaults(handler=cmd_red)
 
     sub = commands.add_parser("feedback", help="Record a reader's approve, reject, or watch decision on a signal. It counts only when the reader's profile turns on signal buttons.")
     sub.add_argument("--profile", required=True)

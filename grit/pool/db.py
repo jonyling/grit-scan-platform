@@ -28,6 +28,31 @@ MIGRATIONS = {
 _JSON_SUFFIX = "_json"
 
 
+def reviewed_links(row: dict[str, Any]) -> dict[str, Any]:
+    """Apply the reviewed risk_ids. A link the agents removed leaves condition_ids, together with the cascade entries
+    and strong theme that trace only to it. Every other entry stands, so a pack whose conditions are not themes keeps
+    its cascade. Without risk_ids the deterministic links stand. The keyword links stay in keyword_condition_ids."""
+    kept = (row.get("editorial") or {}).get("risk_ids")
+    if not isinstance(kept, list):
+        return row
+    keep = {str(item) for item in kept}
+    links = [str(item) for item in row.get("condition_ids") or []]
+    removed = {item for item in links if item not in keep}
+    if not removed:
+        return {**row, "keyword_condition_ids": links}
+
+    def traces(hit: Mapping[str, Any], ids: set[str]) -> bool:
+        risk_id, matched = str(hit.get("risk_id") or ""), str(hit.get("matched") or "")
+        return any(item == risk_id or (risk_id and item.endswith("-" + risk_id)) or matched.startswith(item + " ") for item in ids)
+
+    themes = [{**item, "strong": False, "reviewed_out": True}
+              if isinstance(item, Mapping) and item.get("strong") and str(item.get("theme_id")) in removed else item
+              for item in row.get("themes") or []]
+    return {**row, "keyword_condition_ids": links, "condition_ids": [item for item in links if item in keep],
+            "risk_cascade": [hit for hit in row.get("risk_cascade") or [] if traces(hit, keep) or not traces(hit, removed)],
+            "themes": themes}
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -159,13 +184,19 @@ class Pool:
     # Signals --------------------------------------------------------------------------------------------------
 
     def add_signal(self, *, url: str, title: str, text: str, publisher: str | None, published_at: str | None, lane: str, content_hash: str, seen_at: str | None = None) -> str:
-        """Insert a page or refresh its last-seen time. The first text seen is kept, so a signal's facts do not drift."""
+        """Insert a page or refresh its last-seen time. The first text seen is kept, so a signal's facts do not drift.
+        Different text with a later stated publication day is kept as a revision; a snippet that only varies by query is not."""
         signal_id = signal_id_for(url)
         now = seen_at or utc_now()
-        existing = self.one("SELECT signal_id FROM signals WHERE signal_id = ?", (signal_id,))
+        existing = self.one("SELECT signal_id, text, published_at FROM signals WHERE signal_id = ?", (signal_id,))
         with self.transaction() as conn:
             if existing:
                 conn.execute("UPDATE signals SET last_seen_at = ? WHERE signal_id = ?", (now, signal_id))
+                latest = conn.execute("SELECT MAX(published_at) FROM signal_revisions WHERE signal_id = ?", (signal_id,)).fetchone()[0]
+                newer = str(published_at or "")[:10] > str(latest or existing["published_at"] or "")[:10]
+                if newer and existing["published_at"] and (text or "").strip() and text != existing["text"]:
+                    conn.execute("INSERT OR IGNORE INTO signal_revisions (signal_id, content_hash, title, text, published_at, seen_at) VALUES (?,?,?,?,?,?)",
+                                 (signal_id, content_hash, title, text, published_at, now))
             else:
                 conn.execute(
                     "INSERT INTO signals (signal_id, url, title, publisher, published_at, lane, text, content_hash, first_seen_at, last_seen_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
@@ -173,12 +204,34 @@ class Pool:
                 )
         return signal_id
 
+    def latest_revision(self, signal_id: str, *, by: str | None = None) -> dict[str, Any] | None:
+        """The newest revision of a page seen on or before the date `by` (YYYY-MM-DD), or ever when `by` is None."""
+        return self.one("SELECT * FROM signal_revisions WHERE signal_id = ? AND (? IS NULL OR substr(seen_at, 1, 10) <= ?) "
+                        "ORDER BY seen_at DESC, content_hash LIMIT 1", (signal_id, by, by))
+
     def add_sighting(self, signal_id: str, run_id: str, *, query_id: str, query: str, lane: str | None, target_id: str | None, rank: int | None) -> None:
         self.insert(
             "sightings",
             {"signal_id": signal_id, "run_id": run_id, "query_id": query_id, "query": query, "lane": lane, "target_id": target_id, "rank": rank},
             replace=True,
         )
+
+    def record_search(self, run_id: str, *, query_id: str, engine: str, query: str, lane: str | None, target_id: str | None,
+                      canonical_lob: str | None, results: int, fetched_at: str) -> None:
+        """An answered planned search, including one with no results. A failed search is not recorded."""
+        self.insert("searches", {"run_id": run_id, "query_id": query_id, "engine": engine, "query": query, "lane": lane, "target_id": target_id,
+                                 "canonical_lob": canonical_lob, "results": int(results), "fetched_at": fetched_at}, replace=True)
+
+    def answered_searches(self, run_id: str) -> list[dict[str, Any]]:
+        """One row per answered planned query: the search ledger, plus sightings from runs recorded before the ledger.
+        A history lookup, an approved internal record or a covered pack's signal is not a search, so it never counts."""
+        rows = {row["query_id"]: row for row in self.rows(
+            "SELECT query_id, query, lane, target_id, canonical_lob, SUM(results) AS results FROM searches WHERE run_id = ? GROUP BY query_id", (run_id,))}
+        for row in self.rows("SELECT query_id, MIN(query) AS query, MIN(lane) AS lane, MIN(target_id) AS target_id, COUNT(*) AS results "
+                             "FROM sightings WHERE run_id = ? AND COALESCE(lane, '') NOT IN ('HISTORICAL_EVIDENCE', 'HUMAN_APPROVED', 'COVERED_BY_CHILD') "
+                             "GROUP BY query_id", (run_id,)):
+            rows.setdefault(row["query_id"], {**row, "canonical_lob": None})
+        return list(rows.values())
 
     def signal(self, signal_id: str) -> dict[str, Any] | None:
         return self.one("SELECT * FROM signals WHERE signal_id = ?", (signal_id,))
@@ -257,7 +310,7 @@ class Pool:
         if set(by_id) != {row["signal_id"] for row in baseline}:
             raise ValueError(f"{run_id}: incomplete weekly editorial coverage.")
         return [
-            {**row, "baseline_decision": row["decision"], "editorial": by_id[row["signal_id"]]}
+            reviewed_links({**row, "baseline_decision": row["decision"], "editorial": by_id[row["signal_id"]]})
             for row in baseline
             if include_excluded or by_id[row["signal_id"]]["decision"] in {"INCLUDE", "WATCH"}
         ]
@@ -338,6 +391,22 @@ class Pool:
                 tuple(chunk),
             ):
                 found[row["signal_id"]] = row
+        return found
+
+    def record_red_decision(self, *, pack: str, signal_id: str, decision: str, impact: str, decided_by: str) -> dict[str, Any]:
+        if decision not in {"CONFIRMED", "NOT_CONFIRMED"}:
+            raise ValueError("A RED decision is CONFIRMED or NOT_CONFIRMED.")
+        if not impact.strip() or not decided_by.strip():
+            raise ValueError("A RED decision needs the impact and the name of the person deciding.")
+        row = {"pack": pack, "signal_id": signal_id, "decision": decision, "impact": impact.strip(), "decided_by": decided_by.strip(), "decided_at": utc_now()}
+        row["decision_id"] = self.insert("red_decisions", row)
+        return row
+
+    def red_decisions(self, pack: str) -> dict[str, dict[str, Any]]:
+        """The standing R&A decision on each RED candidate of a pack, keyed by signal id."""
+        found: dict[str, dict[str, Any]] = {}
+        for row in self.rows("SELECT * FROM red_decisions WHERE pack = ? ORDER BY decision_id", (pack,)):
+            found[row["signal_id"]] = row
         return found
 
     def management_requests(self, *, active_only: bool = False) -> list[dict[str, Any]]:

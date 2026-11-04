@@ -21,7 +21,7 @@ from grit.report.notices import DISCLAIMER
 NAVY = RGBColor(0x1F, 0x38, 0x64)
 GREY = RGBColor(0x55, 0x55, 0x55)
 LIGHT = RGBColor(0x77, 0x77, 0x77)
-BOX_FILL = {"WATCHPOINT": "FFF2CC", "ELEVATED": "FFF2CC", "STABLE": "E2EFDA", "RED": "F8CBAD"}
+BOX_FILL = {"WATCHPOINT": "FFF2CC", "ELEVATED": "FFF2CC", "STABLE": "E2EFDA", "NORMAL": "E2EFDA", "RED": "F8CBAD"}
 # Format v2 (spec 44): while a brief renders, every cited source gets a number, [S1], [S2], ..., and its link goes to the
 # source register at the end. None when a renderer is not inside render_docx.
 _REGISTER: dict[str, Any] | None = None
@@ -44,6 +44,13 @@ SECTION_TITLES = {
     "WATCHPOINTS": "Bottom line and watchpoints",
 }
 
+
+
+RED_LINES = {
+    "CANDIDATE": "RED candidate: awaiting R&A impact confirmation.",
+    "CONFIRMED": "RED impact confirmed by R&A.",
+    "NOT_CONFIRMED": "RED candidate: R&A did not confirm impact.",
+}
 
 def section_title(meta: Mapping[str, Any], key: str) -> str:
     return (meta.get("section_titles") or {}).get(key) or SECTION_TITLES[key]
@@ -215,6 +222,8 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
         run = line.add_run(f"STATUS: {v2['status']}")
         run.bold, run.font.size, run.font.color.rgb = True, Pt(12), NAVY
         detail = []
+        if (v2.get("status_basis") or {}).get("basis"):
+            detail.append(v2["status_basis"]["basis"])
         if v2["arrows"]:
             detail.append("Trend: " + "; ".join(v2["arrows"]) + ".")
         if v2["risk_window"]:
@@ -634,8 +643,8 @@ def _findings(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool)
         if item["risks"]:
             lines.append("Risk register: " + "; ".join(item["risks"]) + ".")
         lines.append(item["harm"])
-        if item["red"]:
-            lines.append("RED alert draft raised for a named sender.")
+        if item.get("red_status"):
+            lines.append(RED_LINES[item["red_status"]])
         run = detail.add_run(" ".join(lines))
         run.font.size = Pt(9)
     return True
@@ -748,9 +757,15 @@ def _watchpoints(document: Any, brief: Mapping[str, Any], title: str, *, dry: bo
         paragraph.add_run(f" ({row['status'].lower()}): {row['detail']} ")
         _runs(paragraph, row["update"], fallback="")
     for alert in brief.get("red") or []:
+        status = alert.get("status") or "CANDIDATE"
+        decision = alert.get("decision") or {}
         paragraph = document.add_paragraph(style="List Bullet")
-        paragraph.add_run("RED draft: ").bold = True
-        paragraph.add_run(f"{alert['title']} — rule {(alert.get('rule') or {}).get('rule_id')}. A named person must send or dismiss it.")
+        paragraph.add_run({"CONFIRMED": "RED confirmed: ", "NOT_CONFIRMED": "RED not confirmed: "}.get(status, "RED candidate: ")).bold = True
+        rule = f" — rule {(alert.get('rule') or {}).get('rule_id')}"
+        if status == "CANDIDATE":
+            paragraph.add_run(f"{alert['title']}{rule}. Awaiting R&A impact confirmation.")
+        else:
+            paragraph.add_run(f"{alert['title']}{rule}. {decision.get('decided_by')}, R&A: {decision.get('impact')}")
     document.add_paragraph(f"Escalation assessment: {brief['bottom_line']['escalation']}")
     return True
 
@@ -935,7 +950,8 @@ def _coverage(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool)
     if dry:
         return bool(v2["coverage"])
     _heading(document, title)
-    document.add_paragraph("Each cell is a finding, a nil from a search that ran, or not searched this week. A nil is never claimed without a search.")
+    document.add_paragraph("Each cell is a finding; a nil from a search aimed at that line of business; a nil from business-area-wide searches only; "
+                           "or not searched this week. A nil is never claimed without a search, and its label says how wide that search was.")
     widths = (3.0, *(2.82 for _ in v2["categories"]))
     table = _table(document, ("Line of business", *v2["categories"]), widths)
     for line in v2["coverage"]:
@@ -981,11 +997,14 @@ def _watch(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) ->
 def _quality(document: Any, brief: Mapping[str, Any], title: str) -> None:
     v2 = brief["v2"]
     _heading(document, title)
-    _heading(document, "Self-challenge gate", level=3)
+    _heading(document, "Completeness gate", level=3)
     widths = (7.0, 1.8, 8.3)
     table = _table(document, ("Question", "Answer", "Note"), widths)
     for row in v2["gate"]:
-        _row(table, [row["question"], row["answer"], row["note"]], widths)
+        _row(table, [row["question"] + (" (critical)" if row.get("critical") else ""), row["answer"], row["note"]], widths)
+    blocking = (v2.get("completeness") or {}).get("blocking") or []
+    if blocking:
+        document.add_paragraph(f"Not ready for release: {len(blocking)} critical completeness questions were answered No.")
     if v2["conflicts"]:
         _heading(document, "Conflicts between sources", level=3)
         widths = (4.0, 7.0, 6.1)

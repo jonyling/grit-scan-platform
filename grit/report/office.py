@@ -32,6 +32,7 @@ STATUS = {
     "WATCHPOINT": ("\u25cf  WATCHPOINT", RGBColor(0xA0, 0x5F, 0x00), AMBER_FILL),
     "ELEVATED": ("\u25cf  ELEVATED", RGBColor(0xA0, 0x5F, 0x00), AMBER_FILL),
     "STABLE": ("\u25cf  STABLE", MUTED, RGBColor(0xEE, 0xF1, 0xF6)),
+    "NORMAL": ("\u25cf  NORMAL", MUTED, RGBColor(0xEE, 0xF1, 0xF6)),
 }
 ASK = ("\U0001f4ac  Ask GRIT-Scan chat about this risk", "mitigation  \u00b7  watchpoints  \u00b7  response plans  \u00b7  what to escalate")
 
@@ -283,7 +284,7 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
             status, colour, fill = STATUS.get(bottom["label"], STATUS["WATCHPOINT"])
             _badge(summary, 10.13, 0.5, 2.7, 0.5, status, colour, fill, size=13)
             escalating = sum(1 for row in items if row["trend"] == "Escalating")
-            caption = "RED alert drafted this week" if bottom["label"] == "RED" else f"{escalating} item(s) escalating this week" if escalating else "no material change this week"
+            caption = "RED impact confirmed by R&A" if bottom["label"] == "RED" else f"{escalating} item(s) escalating this week" if escalating else "no material change this week"
             _words(summary, 10.13, 1.05, 2.7, 0.28, [(caption, 9, False, MUTED)]).text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
         _rule(summary, 1.42)
         _words(summary, 0.5, 1.5, 12.3, 0.32, [(f"\u25b2  NEW & ESCALATING \u2014 WHAT'S CHANGED, AND WHAT IT MEANS FOR {short.upper()}", 15, True, TRENDS["Escalating"][1])])
@@ -423,7 +424,7 @@ def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], 
         ("Shown", "Priority", "Tier", "Rung", "RED", "Title", "Outlet", "Published", "Outlets", "Conditions", "Named items", "Risk register", "Harm verdict", "Evidence", "Why", "Not shown because", "URL", "Signal id"),
         [
             (
-                "yes" if row["shown"] else "no", row["route"]["priority"], row.get("tier"), row.get("rung"), "RED" if row.get("red") else "", row["title"], row["publisher"], row["published_at"],
+                "yes" if row["shown"] else "no", row["route"]["priority"], row.get("tier"), row.get("rung"), {"CONFIRMED": "RED", "CANDIDATE": "Candidate", "NOT_CONFIRMED": "Not confirmed"}.get(row.get("red_status") or "", "Candidate" if row.get("red") else ""), row["title"], row["publisher"], row["published_at"],
                 row.get("corroboration"), ", ".join(row.get("condition_ids") or []), ", ".join(hit["item_name"] for hit in row.get("exposure") or [] if hit.get("strong")),
                 "; ".join(f"{hit['level']} {hit['risk_id']} {hit['name']}" for hit in (row.get("risk_cascade") or [])[:4]), row.get("harm_verdict") or "not established",
                 row.get("evidence_confidence"),

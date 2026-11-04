@@ -195,10 +195,23 @@ def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
     text = "\n".join([paragraph.text for paragraph in document.paragraphs] + [cell.text for table in document.tables for row in table.rows for cell in row.cells])
     assert "GRIT-Scan: Urban Solutions" in text
     for heading in ("Standing risk themes (URS annual risks)", "Management-requested topics", "Entity reader packs", "STE entities by line of business", "Named supplier, customer and competitor watch",
-                    "Escalating and elevated items", "Coverage matrix", "Self-challenge gate", "Source register"):
+                    "Escalating and elevated items", "Coverage matrix", "Completeness gate", "Source register"):
         assert heading in text, heading
     assert "CBTC resignalling of the North-South line delayed again" in text, "a P1 request match is listed under its request"
     assert "Bottom line for URS Taiwan weekly risk scan" in text, "the BA brief carries the entity pack's bottom line"
     assert "Rail signalling and CBTC project delivery" in text
     assert write_pack(pool, run.run_id, profiles["ksyong"], folder=tmp_path / "ksyong").get("skipped"), "the URS Taiwan head receives no business-area brief"
     assert write_pack(pool, run.run_id, profiles["gareth"], folder=tmp_path / "gareth")["package"]["package_id"] == f"PKG-{run.run_id}-gareth"
+
+
+def test_a_covered_theme_s_child_signals_join_the_business_area_pool(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    pool = Pool(tmp_path / "grit.sqlite")
+    _run(pool, "urs-tw")
+    run = _run(pool, "urs")
+    cited = {row["signal_id"] for row in reader_scan.child_sources(pool, run, "urs-tw", reviewed=False)}
+    assert cited, "the fixture gives the Taiwan pack signals a covered theme can cite"
+    added = reader_scan.cover_child_sources(pool, run)
+    sighted = {row["signal_id"] for row in pool.sightings(run.run_id) if row["lane"] == "COVERED_BY_CHILD"}
+    assert cited <= sighted and set(added) <= cited
+    assert reader_scan.cover_child_sources(pool, run) == [], "a second call adds nothing, so the evidence does not change"

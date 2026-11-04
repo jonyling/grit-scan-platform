@@ -155,6 +155,34 @@ CREATE TABLE IF NOT EXISTS sightings (
     PRIMARY KEY (signal_id, run_id, query_id)
 );
 
+-- Every planned search an engine answered in a run, including one that returned nothing. A coverage cell may claim a
+-- search only from these rows or a sighting.
+CREATE TABLE IF NOT EXISTS searches (
+    run_id        TEXT NOT NULL REFERENCES runs (run_id),
+    query_id      TEXT NOT NULL,
+    engine        TEXT NOT NULL,              -- BRAVE, CURRENTS
+    query         TEXT NOT NULL,
+    lane          TEXT,
+    target_id     TEXT,
+    canonical_lob TEXT,
+    results       INTEGER NOT NULL,
+    fetched_at    TEXT NOT NULL,
+    PRIMARY KEY (run_id, query_id, engine)
+);
+
+-- Later text for a page already in the pool, recorded only when the source states a later publication day: a search
+-- engine's snippet varies by query, which is not an update. The signal keeps its first text, so assessments and hashes do
+-- not drift; reasoning reads the latest revision seen by the run date first.
+CREATE TABLE IF NOT EXISTS signal_revisions (
+    signal_id     TEXT NOT NULL REFERENCES signals (signal_id),
+    content_hash  TEXT NOT NULL,
+    title         TEXT NOT NULL,
+    text          TEXT NOT NULL,
+    published_at  TEXT NOT NULL,
+    seen_at       TEXT NOT NULL,
+    PRIMARY KEY (signal_id, content_hash)
+);
+
 -- Embeddings. The same text and model give the same vector, so a vector is reused across runs.
 CREATE TABLE IF NOT EXISTS vectors (
     signal_id     TEXT NOT NULL REFERENCES signals (signal_id),
@@ -353,6 +381,23 @@ CREATE TABLE IF NOT EXISTS alerts (
     decided_by      TEXT,
     decided_at      TEXT
 );
+
+-- RED impact decisions. A rule raises a RED candidate; only a named R&A confirmer decides the impact.
+-- Append-only: the latest decision for a pack and signal stands.
+CREATE TABLE IF NOT EXISTS red_decisions (
+    decision_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    pack            TEXT NOT NULL,
+    signal_id       TEXT NOT NULL REFERENCES signals (signal_id),
+    decision        TEXT NOT NULL CHECK (decision IN ('CONFIRMED', 'NOT_CONFIRMED')),
+    impact          TEXT NOT NULL,
+    decided_by      TEXT NOT NULL,
+    decided_at      TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS red_decisions_by_signal ON red_decisions (pack, signal_id, decision_id);
+CREATE TRIGGER IF NOT EXISTS red_decisions_no_update BEFORE UPDATE ON red_decisions
+BEGIN SELECT RAISE(ABORT, 'red_decisions is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS red_decisions_no_delete BEFORE DELETE ON red_decisions
+BEGIN SELECT RAISE(ABORT, 'red_decisions is append-only'); END;
 
 -- AIRIS handoff: signals the BA head approved, packaged for import.
 CREATE TABLE IF NOT EXISTS airis_exports (

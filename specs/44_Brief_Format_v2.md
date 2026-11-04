@@ -32,7 +32,7 @@ The prose supplier, customer and competitor sections are replaced by the named w
 
 ## 2. Events and bands
 
-The week's kept signals are grouped by the nightly index's events (spec 42); `grit agents` runs the clustering first. An event is **material** when it is RED, tier 1, or tier 2 with a risk linkage and either two or more independent publishers or a direct or counterparty link.
+The week's kept signals are grouped by the nightly index's events (spec 42); `grit agents` runs the clustering first. A RED event needs a member signal whose impact the Risk & Assurance operator confirmed (spec 45). A RED candidate that awaits that decision counts as material but not RED; a candidate the operator rejected counts as neither. An event is **material** when it is RED or an undecided RED candidate, tier 1, or tier 2 with a risk linkage and either two or more independent publishers or a direct or counterparty link.
 
 | Band | Rule |
 |---|---|
@@ -62,10 +62,18 @@ A date is kept only when a source linked to the business area states it as a day
 
 ## 5. Coverage, jurisdictions and the quality gate
 
-- A coverage cell is a finding (up to two titles), "No item kept (searched)" when a query of that category returned pages this week, or "Not searched this week". A query that returned nothing is not taken as evidence of a search.
+- Every planned search that Brave or Currents answers is written to the `searches` ledger, including a search that returned no pages. A search that failed (any status other than 200) is not recorded, because it is not evidence of a nil. Runs from before the ledger fall back to their sightings, and `acquire` backfills the ledger from `searches.jsonl` when a run resumes. Countersearches by the reasoned Critic are not part of the ledger.
+- A coverage cell is one of these:
+  - A finding (up to two titles).
+  - "No item kept (searched)" when an answered search of that category was aimed at that line of business, or the row is the business-area-wide row.
+  - "No item kept (business-area-wide search only)" when searches of that category ran, but none was aimed at that line of business.
+  - "Not searched this week" when no search of that category was answered.
+- A search is aimed at a line of business when its plan row states one (`canonical_lob`), or when its target is an entity, customer, supplier or competitor row with a stated line of business.
 - A signal's line of business comes from its LOB link, a strongly named entity, customer or supplier with a stated LOB, or a competitor row; otherwise it is business-area wide. Its category comes from its rung, a named supplier, or the name of the risk it hits.
-- A jurisdiction is any country where the register holds an entity (country of incorporation or asset country). Its finding is the best kept signal that names the country in its title or place links.
-- The self-challenge gate answers seven questions by rule: macro checked, every LOB swept, competitors checked, export controls and supply chain checked, every nil searched, named suppliers and customers searched, sources in conflict.
+- A jurisdiction is any country where the register holds an entity (country of incorporation or asset country). Its finding is the best kept signal that names the country in its title or place links. A jurisdiction with no finding shows "No item found in the checked sources." only when an answered search targeted one of its entities or named the country or an alias. Otherwise it shows "No item found; no country-specific search ran this week."
+- The completeness gate answers eight questions by rule. Five are critical: macro and financial items checked, every line of business searched, competitors checked, export controls and the supply chain checked, and every jurisdiction searched. Three are not critical: every nil backed by a search of its own scope, named suppliers and customers searched, and sources in conflict.
+- A critical question answered "No" blocks release. The brief records the blocking questions and every other limitation under `method.weekly.completeness`, and a reasoned weekly report with a blocker is `INCOMPLETE` even when the Critic raises no issue. The rendered gate marks each critical question and states when the brief is not ready for release.
+- A risk's category comes from words in its name. "Economic slowdown" and "recession" count as financial and macro, so a macro risk named that way satisfies the financial check.
 - A conflict is two members of one event that give different counts for the same thing (killed, injured, flights, missiles and similar).
 
 ## 6. Source tiers

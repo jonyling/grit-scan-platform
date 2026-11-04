@@ -475,3 +475,30 @@ def test_approval_keeps_reviewed_shifts_a_refresh_could_not_redraft_and_never_ov
     third = scenarios.approve(pool, "ste", GROUP_DATE, reviewed_by="Wilson Yeo", client=client, model="stub", config_dir=tmp_path, log=lambda _m: None)
     assert third["version"] == 3 and sorted(item.name for item in (path.parent / "history").iterdir()) == ["STE-Scenarios_v1.json", "STE-Scenarios_v2.json"]
     assert json.loads((path.parent / "history" / "STE-Scenarios_v1.json").read_text())["version"] == 1, "history is never overwritten"
+
+
+def test_the_search_ledger_counts_empty_answers_and_skips_failed_searches(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    pool, run, specs = _scan(tmp_path)
+    reader_scan.acquire(pool, run, specs[:2], getter=_silent_brave, usage_path=tmp_path / "usage.json", sleep=lambda _s: None, log=lambda _m: None)
+    answered = {row["query_id"]: row for row in pool.answered_searches(run.run_id)}
+    assert set(answered) == {spec.query_id for spec in specs[:2]}, "a search answered with nothing still counts"
+    assert all(row["results"] == 0 for row in answered.values())
+
+    def broken(url: str, params: dict[str, str]) -> BraveResponse:
+        return BraveResponse(500, None, {})
+
+    reader_scan.acquire(pool, run, specs[2:4], getter=broken, usage_path=tmp_path / "usage.json", sleep=lambda _s: None, log=lambda _m: None)
+    assert {row["query_id"] for row in pool.answered_searches(run.run_id)} == set(answered), "a failed search is not evidence of a nil"
+
+
+def test_the_search_ledger_is_backfilled_from_the_search_log(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    pool, run, specs = _scan(tmp_path)
+    reader_scan.acquire(pool, run, specs[:2], getter=_silent_brave, usage_path=tmp_path / "usage.json", sleep=lambda _s: None, log=lambda _m: None)
+    with pool.transaction() as conn:
+        conn.execute("DELETE FROM searches WHERE run_id = ?", (run.run_id,))
+    assert pool.answered_searches(run.run_id) == []
+    found = reader_scan.acquire(pool, run, specs[:2], getter=_silent_brave, usage_path=tmp_path / "usage.json", sleep=lambda _s: None, log=lambda _m: None)
+    assert found["queries_sent"] == 0
+    assert {row["query_id"] for row in pool.answered_searches(run.run_id)} == {spec.query_id for spec in specs[:2]}

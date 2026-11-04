@@ -62,6 +62,17 @@ def _group(pool: Pool, rows: Sequence[Mapping[str, Any]]) -> dict[str, list[Mapp
     return grouped
 
 
+def red_status(row: Mapping[str, Any]) -> str | None:
+    """A rule raises a RED candidate. Only an R&A decision confirms or rejects its impact."""
+    if not row.get("red"):
+        return None
+    return str(row.get("red_status") or "CANDIDATE")
+
+
+def _live_red(row: Mapping[str, Any]) -> bool:
+    return red_status(row) in {"CANDIDATE", "CONFIRMED"}
+
+
 def _elevated(members: Sequence[Mapping[str, Any]]) -> bool:
     """Material: RED, tier 1, or tier 2 with a risk linkage and corroboration or a direct link."""
     from grit.core.priority import outlet_groups
@@ -69,7 +80,7 @@ def _elevated(members: Sequence[Mapping[str, Any]]) -> bool:
     if not members:
         return False
     tier = min((row.get("tier") or 9) for row in members)
-    if any(row.get("red") for row in members) or tier == 1:
+    if any(_live_red(row) for row in members) or tier == 1:
         return True
     linked = any(_strong_themes(row) for row in members)
     direct = any(row.get("rung") in {"DIRECT", "COUNTERPARTY"} for row in members)
@@ -99,8 +110,9 @@ def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]]
         band = UP if elevated and (new or rising & set(risks)) else SAME
         dates = sorted(str(row.get("published_at") or "")[:10] for row in members if row.get("published_at"))
         events.append({
-            "event_id": event_id, "band": band, "new": new, "elevated": band == UP or (elevated and (min((row.get("tier") or 9) for row in members) == 1 or any(row.get("red") for row in members))),
-            "tier": min((row.get("tier") or 9) for row in members), "red": any(row.get("red") for row in members),
+            "event_id": event_id, "band": band, "new": new, "elevated": band == UP or (elevated and (min((row.get("tier") or 9) for row in members) == 1 or any(_live_red(row) for row in members))),
+            "tier": min((row.get("tier") or 9) for row in members), "red": any(red_status(row) == "CONFIRMED" for row in members),
+            "red_candidate": any(red_status(row) == "CANDIDATE" for row in members),
             "lead": lead, "members": members, "signal_ids": [row["signal_id"] for row in members],
             "publishers": len(outlet_groups([str(row.get("publisher") or row.get("url") or "") for row in members])),
             "first_date": dates[0] if dates else None, "last_date": dates[-1] if dates else None,
@@ -114,13 +126,13 @@ def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]]
         lead = min(members, key=lambda row: (row.get("tier") or 9, str(row.get("published_at") or "")))
         risks = list(dict.fromkeys(item for row in members for item in _strong_themes(row)))
         events.append({
-            "event_id": event_id, "band": DOWN, "new": False, "elevated": False, "tier": lead.get("tier") or 9, "red": False, "lead": lead, "members": [],
+            "event_id": event_id, "band": DOWN, "new": False, "elevated": False, "tier": lead.get("tier") or 9, "red": False, "red_candidate": False, "lead": lead, "members": [],
             "signal_ids": [], "publishers": 0, "first_date": None, "last_date": None, "risks": risks, "risk_label": risk_labels(risks, names),
             "requests": [], "previous_lead": lead,
         })
     order = {UP: 0, SAME: 1, DOWN: 2}
     rungs = {"DIRECT": 0, "COUNTERPARTY": 1}
-    events.sort(key=lambda event: (order[event["band"]], not event["elevated"], not event["red"], event["tier"], rungs.get(str(event["lead"].get("rung")), 2),
+    events.sort(key=lambda event: (order[event["band"]], not event["elevated"], not event["red"], not event["red_candidate"], event["tier"], rungs.get(str(event["lead"].get("rung")), 2),
                                    -event["publishers"], -len(event["members"]), str(event["lead"].get("title"))))
     return events
 

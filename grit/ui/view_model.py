@@ -38,7 +38,8 @@ def kpis(routed: Sequence[Mapping[str, Any]], brief: Mapping[str, Any], packages
         "Kept by rule": brief["method"]["kept"],
         "In your view": len(shown_rows),
         "Tier 1–2": sum(1 for row in shown_rows if (row.get("tier") or 9) <= 2),
-        "RED drafts": sum(1 for row in routed if row.get("red")),
+        "RED candidates awaiting R&A": sum(1 for row in routed if row.get("red_status") == "CANDIDATE"),
+        "RED confirmed": sum(1 for row in routed if row.get("red_status") == "CONFIRMED"),
         "Pending review": sum(1 for row in packages if row["status"] == "PENDING_REVIEW"),
     }
 
@@ -68,7 +69,7 @@ def signal_rows(routed: Sequence[Mapping[str, Any]], decisions: Mapping[str, str
     """decisions is None unless the reader's profile turns on the signal buttons; then a "Your decision" column appears."""
     return [
         {
-            "Priority": row["route"]["priority"] or "", "Tier": row.get("tier"), "RED": "RED" if row.get("red") else "", "Title": row["title"],
+            "Priority": row["route"]["priority"] or "", "Tier": row.get("tier"), "RED": {"CONFIRMED": "RED", "CANDIDATE": "Candidate", "NOT_CONFIRMED": "Not confirmed"}.get(row.get("red_status") or "", ""), "Title": row["title"],
             "Outlet": row.get("publisher"), "Published": (row.get("published_at") or "")[:10], "Rung": row.get("rung") or "",
             "Conditions": ", ".join(row.get("condition_ids") or []), "Named items": ", ".join(hit["item_name"] for hit in row.get("exposure") or [] if hit.get("strong")),
             **({"Your decision": decisions.get(row["signal_id"], "")} if decisions is not None else {}),

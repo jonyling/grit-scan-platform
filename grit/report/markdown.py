@@ -67,7 +67,11 @@ def _v2(brief: Mapping[str, Any], number: int) -> tuple[list[str], int]:
 
 def _v2_tail(brief: Mapping[str, Any], number: int) -> list[str]:
     v2 = brief["v2"]
-    lines = [f"## {number}. Quality and completeness check", "", *_table(["Question", "Answer", "Note"], [[row["question"], row["answer"], row["note"]] for row in v2["gate"]]), ""]
+    rows = [[row["question"] + (" (critical)" if row.get("critical") else ""), row["answer"], row["note"]] for row in v2["gate"]]
+    lines = [f"## {number}. Quality and completeness check", "", *_table(["Question", "Answer", "Note"], rows), ""]
+    blocking = (v2.get("completeness") or {}).get("blocking") or []
+    if blocking:
+        lines += [f"Not ready for release: {len(blocking)} critical completeness questions were answered No.", ""]
     if v2["conflicts"]:
         lines += _table(["Item", "What the sources say", "Treatment"], [[row["item"], row["said"], row["treatment"]] for row in v2["conflicts"]]) + [""]
     return lines
@@ -85,7 +89,8 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
     v2 = brief.get("v2")
     number = 0
     if v2:
-        status = f"**STATUS: {v2['status']}.**" + (f" Trend: {'; '.join(v2['arrows'])}." if v2["arrows"] else "") + (f" Next dated items: {'; '.join(v2['risk_window'])}." if v2["risk_window"] else "")
+        basis = (v2.get("status_basis") or {}).get("basis")
+        status = f"**STATUS: {v2['status']}.**" + (f" {basis}" if basis else "") + (f" Trend: {'; '.join(v2['arrows'])}." if v2["arrows"] else "") + (f" Next dated items: {'; '.join(v2['risk_window'])}." if v2["risk_window"] else "")
         lines[lines.index(DISCLAIMER) + 2:lines.index(DISCLAIMER) + 2] = [status, ""]
         body, number = _v2(brief, 1)
         lines += body

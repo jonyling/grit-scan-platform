@@ -76,6 +76,9 @@ def citations(text: str | None, signals: Mapping[str, Mapping[str, Any]]) -> tup
                 "signal_id": signal_id, "outlet": signal.get("publisher") or "source", "date": fmt_date(signal.get("published_at")),
                 "when": fmt_when(signal.get("published_at")), "url": signal.get("url"), "title": signal.get("title"),
             }
+            stated = [fmt_date(day) for day in signal.get("event_dates") or [] if day != str(signal.get("published_at") or "")[:10]]
+            if stated and ref.get("when"):
+                ref["when"] = f"{ref['when']}; event dated {', '.join(stated)}"
             scope_label = {"HINDSIGHT": "hindsight", "EARLIER_CONTEXT": "earlier context"}.get(signal.get("time_scope"))
             if scope_label:
                 for key in ("date", "when"):
@@ -128,8 +131,13 @@ def routed_signals(pool: Pool, run_id: str, profile: Profile) -> list[dict[str, 
         feedback = pool.feedback(profile.profile_id)
         memory = build_memory(profile.profile_id, feedback, pool.latest_assessments(row["signal_id"] for row in feedback))
     requests = pool.management_requests(active_only=True)
+    run = pool.run(run_id) or {}
+    decisions = pool.red_decisions(str(run.get("pack") or "")) if any(row.get("red") for row in rows) else {}
     out = []
     for row in rows:
+        if row.get("red"):
+            decision = decisions.get(row["signal_id"])
+            row = {**row, "red_status": decision["decision"] if decision else "CANDIDATE", "red_decision": decision}
         route = aperture_routing(row, aperture=profile.aperture, packs=profile.packs, requests=requests)
         effect = profile_effect(row, profile, protected=bool(row.get("red")) or route.priority == "P1", memory=memory)
         selected = (row.get("editorial") or {}).get("decision", "INCLUDE") in {"INCLUDE", "WATCH"}
@@ -260,7 +268,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             "signal_id": row["signal_id"], "title": row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"],
             "priority": row["route"]["priority"], "tier": row.get("tier"), "rung": row.get("rung"), "why": row["route"]["matched"][:2] or [row.get("relevance_basis")],
             "risks": [f"{hit['level'].title()}: {hit['name']}" for hit in (row.get("risk_cascade") or [])[:3]],
-            "corroboration": row.get("corroboration"), "red": bool(row.get("red")), "harm": _harm_line(row), "preference": row["preference"]["reasons"],
+            "corroboration": row.get("corroboration"), "red": row.get("red_status") == "CONFIRMED", "red_status": row.get("red_status"), "harm": _harm_line(row), "preference": row["preference"]["reasons"],
             "card": _card_summary(card) if card else None,
         })
     others = [row for row in shown if row not in priority_rows][:25] if "OTHER_SIGNALS" in sections else []
@@ -300,7 +308,9 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             "update": render(update["note"]) if update else None,
         })
 
-    red = [{"signal_id": row["signal_id"], "title": row["title"], "url": row["url"], "rule": row.get("red_rule") or {}} for row in routed if row.get("red")]
+    red = red_items(routed)
+    confirmed = [item for item in red if item["status"] == "CONFIRMED"]
+    pending = [item for item in red if item["status"] == "CANDIDATE"]
 
     def source_ref(signal_id: str) -> dict[str, Any]:
         signal = signals[signal_id]
@@ -340,9 +350,9 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
 
     bottom = ((run.get("config") or {}).get("bottom_line") or {})
     escalating = [row for row in condition_rows if row["trend"] == "Escalating"]
-    label = "RED" if red else "ELEVATED" if escalating or v2["escalating"] or any(row["status"] != "CLOSED" for row in watch_rows) else "STABLE"
+    label = "RED" if confirmed else "ELEVATED" if pending or escalating or v2["escalating"] or any(row["status"] != "CLOSED" for row in watch_rows) else "STABLE"
     bottom_text = bottom.get("bottom_line") if bottom.get("status") == "VALIDATED" else fallback_bottom_line(condition_rows, checks, watch_rows, red, pack.label)
-    escalation = bottom.get("escalation") if bottom.get("status") == "VALIDATED" else ("RED drafts are waiting for a named sender." if red else "Nothing new this week independently warrants escalation before the next weekly cycle.")
+    escalation = bottom.get("escalation") if bottom.get("status") == "VALIDATED" else red_escalation(red)
 
     scenarios = None
     sections = list(brief_config.get("sections") or [])
@@ -428,6 +438,29 @@ def fallback_bottom_line(conditions: Sequence[Mapping[str, Any]], checks: Sequen
     open_items = [row["title"] for row in watchpoints if row["status"] != "CLOSED"]
     if open_items:
         parts.append(f"Watchpoints carried: {'; '.join(open_items)}.")
-    if red:
-        parts.append(f"{len(red)} RED alert draft(s) wait for a named sender.")
+    parts += [line for line in [red_summary(red)] if line]
     return " ".join(parts)
+
+
+def red_items(routed: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """The report's RED list. A candidate the reviewed selection excluded is not listed; the status basis counts it
+    (spec 45)."""
+    return [{"signal_id": row["signal_id"], "title": row["title"], "url": row["url"], "rule": row.get("red_rule") or {},
+             "status": row["red_status"], "decision": row.get("red_decision")} for row in routed
+            if row.get("red") and (row.get("editorial") or {}).get("decision") != "EXCLUDE"]
+
+
+def red_summary(red: Sequence[Mapping[str, Any]]) -> str:
+    """RED status follows the R&A decision, never the rule alone."""
+    confirmed = sum(1 for item in red if item.get("status") == "CONFIRMED")
+    pending = sum(1 for item in red if item.get("status", "CANDIDATE") == "CANDIDATE")
+    parts = []
+    if confirmed:
+        parts.append(f"R&A confirmed the RED impact of {confirmed} item(s).")
+    if pending:
+        parts.append(f"{pending} RED candidate(s) await R&A impact confirmation.")
+    return " ".join(parts)
+
+
+def red_escalation(red: Sequence[Mapping[str, Any]]) -> str:
+    return red_summary(red) or "Nothing new this week independently warrants escalation before the next weekly cycle."

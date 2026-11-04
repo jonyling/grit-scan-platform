@@ -205,10 +205,11 @@ def _shared(shift: Mapping[str, Any]) -> dict[int, frozenset[str]]:
 
 def window_rows(pool: Pool, run_id: str) -> list[dict[str, Any]]:
     """The pack's kept signals from this run and every run of the pack since the previous weekly or monthly run, one row
-    per signal with its best tier and the union of its themes and conditions."""
+    per signal with its best tier and the union of its themes and conditions. This run counts while it is still open:
+    a reasoned run writes its reports before it finishes."""
     run = pool.run(run_id)
     previous = pool.latest_run(run["pack"], before=run["run_date"], kind="READER_SCAN")
-    params: list[Any] = [run["pack"], run["run_date"]]
+    params: list[Any] = [run["pack"], run_id, run["run_date"]]
     after = ""
     if previous:
         after = "AND r.run_date > ?"
@@ -216,7 +217,7 @@ def window_rows(pool: Pool, run_id: str) -> list[dict[str, Any]]:
     rows = pool.rows(
         f"""SELECT a.signal_id, a.tier, a.themes_json, a.condition_ids_json, s.title, s.text, s.publisher, s.published_at, s.url
             FROM assessments a JOIN runs r ON r.run_id = a.run_id JOIN signals s ON s.signal_id = a.signal_id
-            WHERE r.pack = ? AND r.status = 'COMPLETE' AND a.decision = 'KEEP' AND r.run_date <= ? {after}""",
+            WHERE r.pack = ? AND (r.status = 'COMPLETE' OR r.run_id = ?) AND a.decision = 'KEEP' AND r.run_date <= ? {after}""",
         params,
     )
     merged: dict[str, dict[str, Any]] = {}
@@ -306,11 +307,23 @@ def judge_run(pool: Pool, run_id: str, pack: Any, *, client: Any, model: str, em
     return counts
 
 
+def editorial_exclusions(pool: Pool, run_id: str) -> set[str]:
+    """Signals the reviewed weekly selection excluded. They are not evidence for a signpost. Empty before review."""
+    if (((pool.run(run_id) or {}).get("config") or {}).get("weekly_mode")) != "reasoned":
+        return set()
+    try:
+        rows = pool.weekly_assessments(run_id, include_excluded=True)
+    except ValueError:
+        return set()
+    return {row["signal_id"] for row in rows if (row.get("editorial") or {}).get("decision") == "EXCLUDE"}
+
+
 def track(pool: Pool, run_id: str, register: Mapping[str, Any], *, shift_conditions: Mapping[str, Sequence[str]] | None = None) -> list[dict[str, Any]]:
     """One reading per shift: for each case, the signposts and counter-indicators seen with their signal ids, and the lean.
     Seen means a keyword match or a Signpost Judge match stored on the run."""
     judged = (((pool.run(run_id) or {}).get("config") or {}).get("signposts_seen") or {})
-    rows = window_rows(pool, run_id)
+    excluded = editorial_exclusions(pool, run_id)
+    rows = [row for row in window_rows(pool, run_id) if row["signal_id"] not in excluded]
     readings = []
     for shift in register.get("shifts") or []:
         conditions = set((shift_conditions or {}).get(shift["themeId"]) or [])
@@ -324,13 +337,13 @@ def track(pool: Pool, run_id: str, register: Mapping[str, Any], *, shift_conditi
             seen = []
             for number, item in enumerate(case["signposts"], start=1):
                 common, position = shared[position], position + 1
-                ids = sorted({*(signal_id for signal_id, text in texts.items() if matches_item(text, item.get("keywords") or [], common)), *confirmed.get(f"{case['case']}-S{number}", [])})
+                ids = sorted({*(signal_id for signal_id, text in texts.items() if matches_item(text, item.get("keywords") or [], common)), *confirmed.get(f"{case['case']}-S{number}", [])} - excluded)
                 if ids:
                     seen.append({"number": number, "text": item["text"], "signal_ids": ids})
             against = []
             for number, item in enumerate(case["counter_indicators"], start=1):
                 common, position = shared[position], position + 1
-                ids = sorted({*(signal_id for signal_id, text in texts.items() if matches_item(text, item.get("keywords") or [], common)), *confirmed.get(f"{case['case']}-C{number}", [])})
+                ids = sorted({*(signal_id for signal_id, text in texts.items() if matches_item(text, item.get("keywords") or [], common)), *confirmed.get(f"{case['case']}-C{number}", [])} - excluded)
                 if ids:
                     against.append({"number": number, "text": item["text"], "signal_ids": ids})
             fired = {item["number"] for item in seen}

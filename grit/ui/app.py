@@ -23,7 +23,7 @@ if str(_ROOT) not in sys.path:
 
 from grit.settings import load_local_env  # noqa: E402
 
-BOX = {"WATCHPOINT": "#FFF2CC", "STABLE": "#E2EFDA", "RED": "#F8CBAD"}
+BOX = {"WATCHPOINT": "#FFF2CC", "ELEVATED": "#FFF2CC", "STABLE": "#E2EFDA", "NORMAL": "#E2EFDA", "RED": "#F8CBAD"}
 
 
 def main() -> None:

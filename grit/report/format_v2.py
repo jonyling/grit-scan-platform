@@ -19,11 +19,13 @@ OPERATIONAL, FINANCIAL, SUPPLY, COMPETITOR, REGULATORY = CATEGORIES
 BA_WIDE = "Business-area wide"
 NOT_SEARCHED = "Not searched this week"
 NIL = "No item kept (searched)"
+NIL_WIDE = "No item kept (business-area-wide search only)"
 NO_FINDING = "No item found in the checked sources."
+NO_COUNTRY_SEARCH = "No item found; no country-specific search ran this week."
 MAX_PRIORITIES = 12
 MAX_CHANGES = 12
 _CATEGORY_WORDS = (
-    (FINANCIAL, ("financial", "forex", "foreign exchange", "exchange rate", "interest", "inflation", "credit", "funding", "revenue", "margin", "currency", "macro")),
+    (FINANCIAL, ("financial", "economic slowdown", "recession", "forex", "foreign exchange", "exchange rate", "interest", "inflation", "credit", "funding", "revenue", "margin", "currency", "macro")),
     (SUPPLY, ("supply", "supplier", "vendor", "oem", "single source", "single-source", "cost", "material", "procurement")),
     (REGULATORY, ("regulat", "compliance", "legal", "sanction", "export", "fraud", "brib", "corruption", "data protection", "personal data", "trade")),
     (COMPETITOR, ("competi", "technolog", "emerging", "artificial intelligence", " ai", "digital", "disrupt", "aftermarket")),
@@ -118,26 +120,46 @@ def category_of(row: Mapping[str, Any], names: Mapping[str, str]) -> str:
     return OPERATIONAL
 
 
-def _searched(pool: Any, run_id: str, names: Mapping[str, str]) -> dict[str, int]:
-    """Queries that returned pages this run, by category. A query that returned nothing is not evidence of a search."""
-    lanes = {"COMPETITOR": COMPETITOR, "SUPPLIER": SUPPLY}
+def _query_category(row: Mapping[str, Any], names: Mapping[str, str]) -> str:
+    lane = str(row.get("lane") or "")
+    if lane == "COMPETITOR":
+        return COMPETITOR
+    if lane == "SUPPLIER":
+        return SUPPLY
+    return category_of_name(names[row["target_id"]]) if row.get("target_id") in names else OPERATIONAL
+
+
+def _searched(pool: Any, run_id: str, names: Mapping[str, str], lookup: Mapping[str, str] | None = None) -> dict[str, Any]:
+    """Answered planned searches, by category and by line of business. An answered search that returned nothing still
+    counts; a search the engine did not answer does not. A line of business counts only for a query aimed at it."""
+    lookup = lookup or {}
     counts: dict[str, int] = defaultdict(int)
-    for row in pool.rows("SELECT DISTINCT query_id, lane, target_id FROM sightings WHERE run_id = ?", (run_id,)):
-        lane = str(row.get("lane") or "")
-        category = lanes.get(lane) or (category_of_name(names[row["target_id"]]) if row.get("target_id") in names else OPERATIONAL)
+    scoped: set[tuple[str, str]] = set()
+    queries = pool.answered_searches(run_id)
+    for row in queries:
+        category = _query_category(row, names)
         counts[category] += 1
-    return dict(counts)
+        lob = row.get("canonical_lob") or lookup.get(str(row.get("target_id") or ""))
+        if lob:
+            scoped.add((str(lob), category))
+    return {"counts": dict(counts), "scoped": scoped, "queries": queries}
 
 
-def _countries(pack: Any) -> dict[str, list[str]]:
+def _country_entities(pack: Any) -> dict[str, list[tuple[str, str]]]:
+    """Country -> (entity name, entity id) for every entity registered or holding assets there."""
     from grit.pipeline.reader_scan import graph_pack
 
-    found: dict[str, list[str]] = defaultdict(list)
+    found: dict[str, list[tuple[str, str]]] = defaultdict(list)
     for row in (graph_pack(pack).exposure or {}).get("entities") or []:
         for country in dict.fromkeys([row.get("countryOfIncorporation"), *(row.get("assetCountries") or [])]):
             if country:
-                found[str(country).strip()].append(str(row["entityName"]))
+                found[str(country).strip()].append((str(row["entityName"]), str(row.get("entityId") or "")))
     return dict(found)
+
+
+def _names_country(country: str, text: str) -> bool:
+    names = (country, *_COUNTRY_ALIASES.get(country.casefold(), ()))
+    return any(re.search(rf"(?<![\w]){re.escape(name)}(?![\w])", text, 0 if name.isupper() else re.IGNORECASE) for name in names)
 
 
 def _mentions(country: str, row: Mapping[str, Any]) -> bool:
@@ -145,9 +167,7 @@ def _mentions(country: str, row: Mapping[str, Any]) -> bool:
 
     if f"PLACE-{slugify(country)}" in set((row.get("link") or {}).get("place_ids") or []):
         return True
-    title = str(row.get("title") or "")
-    names = (country, *_COUNTRY_ALIASES.get(country.casefold(), ()))
-    return any(re.search(rf"(?<![\w]){re.escape(name)}(?![\w])", title, 0 if name.isupper() else re.IGNORECASE) for name in names)
+    return _names_country(country, str(row.get("title") or ""))
 
 
 def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping[str, Any]], conditions: Sequence[Mapping[str, Any]],
@@ -219,7 +239,8 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     # 5. Coverage matrix.
     lookup = _lob_lookup(pack)
     lobs = [*_lobs(pack), BA_WIDE]
-    searched = _searched(pool, run_id, names)
+    scope = _searched(pool, run_id, names, lookup)
+    searched, scoped = scope["counts"], scope["scoped"]
     cells: dict[tuple[str, str], list[Mapping[str, Any]]] = defaultdict(list)
     for row in sorted(shown, key=lambda item: (item.get("tier") or 9, -(item.get("corroboration") or 1))):
         lob = lob_of(row, lookup)
@@ -233,29 +254,36 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
                 line["cells"][category] = {"text": "; ".join(clean_title(item.get("title")) for item in found[:2]), "signal_ids": [item["signal_id"] for item in found[:2]],
                                            "more": max(0, len(found) - 2)}
             else:
-                line["cells"][category] = {"text": NIL if searched.get(category) else NOT_SEARCHED, "signal_ids": [], "more": 0}
+                specific = lob == BA_WIDE or (lob, category) in scoped
+                text = NOT_SEARCHED if not searched.get(category) else NIL if specific else NIL_WIDE
+                line["cells"][category] = {"text": text, "signal_ids": [], "more": 0}
         coverage.append(line)
 
-    # 6. Jurisdictions.
+    # 6. Jurisdictions. A nil needs a search that named the country or one of its registered entities.
     jurisdictions = []
     up_ids = {signal_id for event in events if event["band"] == UP for signal_id in event["signal_ids"]}
-    for country, entities in sorted(_countries(pack).items(), key=lambda pair: (-len(pair[1]), pair[0])):
+    for country, rows in sorted(_country_entities(pack).items(), key=lambda pair: (-len(pair[1]), pair[0])):
+        entities = [name for name, _ in rows]
+        entity_ids = {entity_id for _, entity_id in rows if entity_id}
         found = [row for row in shown if _mentions(country, row)]
         found.sort(key=lambda item: (item.get("tier") or 9, -(item.get("corroboration") or 1)))
+        country_searched = any(str(query.get("target_id") or "") in entity_ids or _names_country(country, str(query.get("query") or ""))
+                               for query in scope["queries"])
         jurisdictions.append({
             "country": country, "entities": entities[:6], "more_entities": max(0, len(entities) - 6),
-            "finding": clean_title(found[0].get("title")) if found else NO_FINDING, "signal_ids": [found[0]["signal_id"]] if found else [],
+            "finding": clean_title(found[0].get("title")) if found else NO_FINDING if country_searched else NO_COUNTRY_SEARCH,
+            "signal_ids": [found[0]["signal_id"]] if found else [], "searched": country_searched,
             "trend": UP if any(row["signal_id"] in up_ids for row in found) else SAME if found else "–",
         })
 
     # 7. Named supplier, customer and partner watch.
     watch = [{"name": item["name"], "type": kind, "text": item["text"], "status": item["status"]}
              for kind, items in named.items() for item in items if item.get("text")]
-    targets = {row["target_id"] for row in pool.rows("SELECT DISTINCT target_id FROM sightings WHERE run_id = ? AND lane IN ('SUPPLIER', 'CUSTOMER', 'COMPETITOR', 'ENTITY')", (run_id,))}
+    targets = {str(row.get("target_id")) for row in scope["queries"] if row.get("lane") in {"SUPPLIER", "CUSTOMER", "COMPETITOR", "ENTITY"}}
     total = sum(len(items) for items in named.values())
     not_searched = sum(1 for items in named.values() for item in items if item.get("item_id") not in targets and not item.get("text"))
 
-    # 8. Quality: the self-challenge gate and conflicts.
+    # 8. Quality: the completeness gate and conflicts.
     conflicts = []
     for event in events:
         said: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
@@ -266,28 +294,43 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
             if len(values) > 1:
                 text = "; ".join(f"{', '.join(sorted(outlets)[:2])}: {value} {word}" for value, outlets in sorted(values.items(), key=lambda pair: int(pair[0])))
                 conflicts.append({"item": label(event), "said": text, "treatment": "The sources differ. The brief shows each figure with its outlet; check the primary source before quoting one."})
-    lob_gaps = [line["lob"] for line in coverage if line["lob"] != BA_WIDE and all(cell["signal_ids"] == [] for cell in line["cells"].values())]
+    lines = [lob for lob in lobs if lob != BA_WIDE]
+    unswept = [lob for lob in lines if not any((lob, category) in scoped for category in CATEGORIES)
+               and not any(cell["signal_ids"] for line in coverage if line["lob"] == lob for cell in line["cells"].values())]
     unsearched = sum(1 for line in coverage for cell in line["cells"].values() if cell["text"] == NOT_SEARCHED)
+    wide_only = sum(1 for line in coverage for cell in line["cells"].values() if cell["text"] == NIL_WIDE)
+    unsearched_countries = [row["country"] for row in jurisdictions if row["finding"] == NO_COUNTRY_SEARCH]
     competitor_names = [item for item in named.get("Competitor", [])]
 
     def answer(ok: bool, partly: bool = False) -> str:
         return "Yes" if ok else "Partly" if partly else "No"
 
     gate = [
-        {"question": "Checked macro and financial items (rates, FX, inflation), not just operations?", "answer": answer(bool(searched.get(FINANCIAL))),
-         "note": f"{searched.get(FINANCIAL, 0)} financial queries returned pages." if searched.get(FINANCIAL) else "No financial query returned pages this week."},
-        {"question": "Swept every line of business?", "answer": answer(not lob_gaps, len(lob_gaps) < len(lobs) - 1),
-         "note": f"No item this week for: {', '.join(lob_gaps)}." if lob_gaps else "Every line of business has at least one item."},
-        {"question": "Checked competitors?", "answer": answer(bool(searched.get(COMPETITOR))),
-         "note": f"{searched.get(COMPETITOR, 0)} competitor queries returned pages; {sum(1 for item in competitor_names if item.get('text'))} named competitors had an item."},
+        {"question": "Checked macro and financial items (rates, FX, inflation), not just operations?", "answer": answer(bool(searched.get(FINANCIAL))), "critical": True,
+         "note": f"{searched.get(FINANCIAL, 0)} financial searches were answered." if searched.get(FINANCIAL) else "No financial search was answered this week."},
+        {"question": "Searched every line of business?", "answer": answer(not unswept, len(unswept) < len(lines)), "critical": True,
+         "note": f"No search aimed at, and no item for: {', '.join(unswept)}. Only business-area-wide searches cover them." if unswept
+         else "Every line of business had an aimed search or an item."},
+        {"question": "Checked competitors?", "answer": answer(bool(searched.get(COMPETITOR))), "critical": True,
+         "note": f"{searched.get(COMPETITOR, 0)} competitor searches were answered; {sum(1 for item in competitor_names if item.get('text'))} named competitors had an item."},
         {"question": "Checked export controls, sanctions and the supply chain?", "answer": answer(bool(searched.get(REGULATORY)) and bool(searched.get(SUPPLY)), bool(searched.get(REGULATORY) or searched.get(SUPPLY))),
-         "note": f"Regulatory queries {searched.get(REGULATORY, 0)}; supply and cost queries {searched.get(SUPPLY, 0)}."},
-        {"question": "For every nil, actually searched?", "answer": answer(unsearched == 0, True),
-         "note": f"{unsearched} coverage cells were not searched this week. They say so and are not claimed as nil." if unsearched else "Every nil cell was searched."},
-        {"question": "Checked the named suppliers and customers?", "answer": answer(not_searched == 0, total > not_searched),
+         "critical": True, "note": f"Regulatory searches {searched.get(REGULATORY, 0)}; supply and cost searches {searched.get(SUPPLY, 0)}."},
+        {"question": "Searched every jurisdiction with a registered entity?", "answer": answer(not unsearched_countries, len(unsearched_countries) < len(jurisdictions)),
+         "critical": True, "note": f"No country-specific search for: {', '.join(unsearched_countries[:12])}{' and more' if len(unsearched_countries) > 12 else ''}."
+         if unsearched_countries else "Every jurisdiction had a search naming it or one of its entities."},
+        {"question": "Is every nil backed by a search of its own scope?", "answer": answer(unsearched == 0 and wide_only == 0, unsearched == 0), "critical": False,
+         "note": f"{wide_only} cells rest on business-area-wide searches only and {unsearched} were not searched. Each cell says which." if wide_only or unsearched
+         else "Every nil cell had a search aimed at its line of business."},
+        {"question": "Checked the named suppliers and customers?", "answer": answer(not_searched == 0, total > not_searched), "critical": False,
          "note": f"{total - not_searched} of {total} named items were searched or reported this week; the rest rotate on the scan plan's cadence."},
-        {"question": "Do the sources conflict?", "answer": "Yes" if conflicts else "No", "note": f"{len(conflicts)} conflicts are listed below." if conflicts else "No conflicting figures found within an event."},
+        {"question": "Do the sources conflict?", "answer": "Yes" if conflicts else "No", "critical": False,
+         "note": f"{len(conflicts)} conflicts are listed below." if conflicts else "No conflicting figures found within an event."},
     ]
+    completeness = {
+        "blocking": [row["question"] for row in gate if row["critical"] and row["answer"] == "No"],
+        "limitations": [f"{row['question']} {row['answer']}: {row['note']}" for row in gate
+                        if row["question"] != "Do the sources conflict?" and row["answer"] != "Yes"],
+    }
 
     # Status, arrows and the risk window.
     red = any(event["red"] for event in events)
@@ -308,5 +351,6 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         "status": status, "arrows": arrows, "risk_window": window, "escalating": escalating_rows, "changes": changes,
         "look_ahead": [{**item, "date": item["date"].isoformat()} for item in look], "priorities": priorities, "coverage": coverage, "categories": list(CATEGORIES),
         "jurisdictions": jurisdictions, "watch": watch, "watch_note": {"total": total, "not_searched": not_searched}, "gate": gate, "conflicts": conflicts,
+        "completeness": completeness,
         "tiers": tiers, "short": short,
     }
