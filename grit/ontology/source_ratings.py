@@ -165,7 +165,16 @@ def main(argv: list[str] | None = None) -> int:
     unrated_cmd.add_argument("--limit", type=int, default=40)
     args = parser.parse_args(argv)
     if args.command == "unrated":
-        found = unrated_outlets(args.run)
+        from grit.pool import Pool
+
+        pool = Pool()
+        banded = (pool.one("SELECT COUNT(*) AS n FROM assessments WHERE run_id = ? AND outlets_json IS NOT NULL AND outlets_json != '[]'",
+                           (args.run,)) or {}).get("n")
+        if not banded:
+            print(f"{args.run} in {pool.path} has no source bands: the run is missing, or it was assessed before bands existed "
+                  "(3 November 2026). Run the weekly for that date in this database, or set GRIT_DB to the database that has it.")
+            return 1
+        found = unrated_outlets(args.run, pool)
         for domain, count in found[: args.limit]:
             print(f"{count:4}  {domain}")
         print(f"{len(found)} unrated outlets in {args.run}. Band one with: grit ratings set DOMAIN HIGH|MEDIUM|LOW --by NAME")
