@@ -80,6 +80,19 @@ def test_look_ahead_keeps_only_stated_future_dates_inside_the_window() -> None:
     assert [(item["date"], item["signal_ids"]) for item in found] == [(date(2026, 11, 3), ["A", "D"])], "one row per event and date; past and far dates are left out"
 
 
+def test_a_wire_dateline_dates_the_report_not_an_event() -> None:
+    run = date(2026, 11, 2)
+    assert dates_in("Riyadh [Saudi Arabia], November 3 (ANI): The US Embassy issued a security alert.", run) == []
+    assert dates_in("WASHINGTON, Nov 3 (Reuters) - The Fed meets on November 20.", run) == [date(2026, 11, 20)]
+    assert dates_in("The vote is on 9 November (Monday) - turnout is expected to be high.", run) == [date(2026, 11, 9)], "a weekday is not an agency"
+    rows = [{"signal_id": "A", "title": "Embassy alert", "tier": 2,
+             "text": "Riyadh [Saudi Arabia], November 3 (ANI): The US Embassy issued a security alert. WASHINGTON, Nov 3 (Reuters) - The Fed meets on November 20."}]
+    assert [(item["date"], item["event"]) for item in look_ahead(rows, run)] == [(date(2026, 11, 20), "The Fed meets on November 20.")]
+    placed = [{"signal_id": "B", "title": "Staff ordered out", "tier": 3,
+               "text": "RIYADH — The moratorium on strikes approaches its November 3 expiry, officials said."}]
+    assert look_ahead(placed, run)[0]["event"] == "The moratorium on strikes approaches its November 3 expiry, officials said."
+
+
 def test_source_tiers_titles_and_categories() -> None:
     assert source_tier("https://www.mas.gov.sg/news", None, None) == "T1"
     assert source_tier("https://www.reuters.com/x", "HIGH", None) == "T2"
@@ -88,6 +101,8 @@ def test_source_tiers_titles_and_categories() -> None:
     assert source_tier("https://finance.yahoo.com/x", None, None) == "T4"
     assert source_tier("https://example.org/notice", None, None, "OFFICIAL_GOVERNMENT") == "T1"
     assert clean_title("ST Engineering bags $5.6 billion | The Straits Times") == "ST Engineering bags $5.6 billion"
+    assert clean_title("Critical Node.js flaw exposes servers < IT·Gaming < 기사본문") == "Critical Node.js flaw exposes servers"
+    assert clean_title("World news » Asia » Typhoon Champi nears Taiwan") == "World news » Asia » Typhoon Champi nears Taiwan", "a leading breadcrumb stays"
     assert category_of_name("Financial volatility (inflation, interest rate)") == "Financial / macro"
     assert category_of_name("Violation of Trade Compliance") == "Regulatory / legal"
     assert category_of_name("Workplace health and safety") == "Operational"

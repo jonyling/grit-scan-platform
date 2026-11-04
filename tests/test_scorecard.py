@@ -24,4 +24,4 @@ def test_the_scorecard_measures_the_2_november_weaknesses():
     assert metrics["escalating_scores"] == [7] and metrics["escalating_below_8"] == 1
     assert metrics["truncated_status_text"] == 1 and metrics["passing_mentions_shown"] == 1
     assert metrics["trend_words_contradict_trend"] == ["Geopolitical impact to business operations"]
-    assert result["passed"] == 0 and not any(checks.values())
+    assert [check for check, ok in checks.items() if ok] == ["no phrase the corrections ledger retired"], "every other check fails"

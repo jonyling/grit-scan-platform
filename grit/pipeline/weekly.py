@@ -225,8 +225,11 @@ def selection_summary(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]
 
 
 def model_brief(brief: Mapping[str, Any]) -> dict[str, Any]:
-    """The report as the model sees it: the full selection audit is replaced by counts and baseline changes."""
+    """The report as the model sees it: the full selection audit is replaced by counts and baseline changes, and the
+    QA log, which records earlier objections and checks, by its size, so an old objection is not read as current text."""
     value = copy.deepcopy(dict(brief))
+    if isinstance(value.get("qa"), list):
+        value["qa"] = {"rows": len(value["qa"]), "note": "Audit history of earlier objections and checks, not report content."}
     weekly = (value.get("method") or {}).get("weekly")
     if isinstance(weekly, dict) and isinstance(weekly.get("selections"), list):
         rows = weekly["selections"]
@@ -1062,6 +1065,9 @@ class WeeklyCoordinator:
         target = f"REPORT:{profile.profile_id}"
         rewrites = 0
         self.progress(f"  Report {profile.profile_id}: Reporting is writing the narrative")
+        from grit.core.corrections import retired_in
+
+        ledger = brief.get("corrections") or []
         while True:
             payload = self.report_payload(profile.profile_id, brief, sources)
             editable = payload["editable_fields"]
@@ -1077,6 +1083,10 @@ class WeeklyCoordinator:
                 for edit in edits:
                     if edit.get("path") not in editable or not isinstance(edit.get("text"), str) or not edit["text"].strip():
                         raise ContractError("Reporting attempted an unknown narrative edit.")
+                    retired = retired_in(edit["text"], ledger)
+                    if retired:
+                        raise ContractError("; ".join(f"{edit['path']} uses \"{row['phrase']}\", which correction {row['id']} retired: "
+                                                      f"write the corrected fact instead ({row['corrected']})" for row in retired) + ".")
                     refs = source_ids(edit.get("source_ids"), sources)
                     marks = {ref.strip() for group in CITE.findall(edit["text"]) for ref in group.split(",")}
                     if set(refs) != marks or (sources and not refs):
@@ -1207,7 +1217,7 @@ def narrative_fields(brief: Mapping[str, Any]) -> dict[str, Any]:
                 fields[path] = value["plain"]
             else:
                 for key, item in value.items():
-                    if key not in {"method", "meta", "order_book", "red", "membership", "row", "qa", "scenarios"}:
+                    if key not in {"method", "meta", "order_book", "red", "membership", "row", "qa", "scenarios", "corrections"}:
                         visit(item, f"{path}.{key}" if path else key)
         elif isinstance(value, list):
             for index, item in enumerate(value):
@@ -1364,6 +1374,11 @@ def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | N
         coordinator = WeeklyCoordinator(store, client=client, model=model or failed["model"], call=call, fast=fast,
                                         workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
         coordinator.progress("Refreshing every report from the saved review; no search or signal review will run.")
+        # An objection to an earlier draft of a report no longer applies: every report is rebuilt and critiqued again.
+        for key, row in store.issues().items():
+            if str(row["issue"].get("target") or "").startswith("REPORT:"):
+                store._issue(failed["call_id"], key, "RESOLVED", {**row["issue"], "resolution": {
+                    "response": "Superseded: the refresh rebuilds every report, and each new report gets its own final critique.", "source_ids": []}})
         store.finish("STARTED")
         with pool.transaction() as conn:
             conn.execute("UPDATE runs SET status = 'STARTED', finished_at = NULL WHERE run_id = ?", (run.run_id,))
@@ -1444,13 +1459,17 @@ def run_memory(pool: Pool, *, package_id: str, version: int, client: Any, model:
 
 
 def memory_context(pool: Pool, run_id: str, profile_id: str | None = None) -> list[dict[str, Any]]:
+    """Admitted Memory corrections and reader preferences, then the open corrections in R&A's corrections ledger."""
+    from grit.core.corrections import as_admitted
+
     run = pool.run(run_id)
     records = pool.rows(
         """SELECT m.* FROM weekly_memory m JOIN weekly_memory_admissions a ON a.memory_id = m.memory_id
            JOIN packages p ON p.package_id = m.package_id AND p.version = m.package_version
            JOIN runs r ON r.run_id = p.run_id WHERE a.intent = 'ADMIT' AND r.pack = ?""", (run["pack"],))
-    return [row["proposal"] for row in records if row["proposal"]["kind"] == "CORRECTION" or (
+    admitted = [row["proposal"] for row in records if row["proposal"]["kind"] == "CORRECTION" or (
         profile_id is not None and row["proposal"].get("profile_id") == profile_id)]
+    return admitted + [as_admitted(row) for row in pool.corrections(run["pack"])]
 
 
 def admit_memory(pool: Pool, memory_id: int, reviewer: Any, intent: str) -> dict[str, Any]:

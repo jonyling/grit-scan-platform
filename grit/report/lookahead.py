@@ -1,6 +1,7 @@
 """Look-ahead for brief format v2 (spec 44): dated events in the next LOOK_AHEAD_DAYS, taken by rule from the week's kept
 sources. A date is kept only when a source states it, as a day and a month, such as "3 November" or "Nov 3". The row is
-the source's own sentence, so nothing is inferred and nothing is predicted.
+the source's own sentence, so nothing is inferred and nothing is predicted. A wire dateline, such as "Riyadh,
+November 3 (ANI):", dates the report, not an event, so its date is never read as one.
 """
 
 from __future__ import annotations
@@ -19,6 +20,12 @@ _MONTHS = {name: number for number, names in enumerate(
 _MONTH = r"(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sept?(?:ember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?"
 _DAY_FIRST = re.compile(rf"\b(\d{{1,2}})(?:st|nd|rd|th)?\s+(?:of\s+)?{_MONTH}(?:,?\s+(\d{{4}}))?\b")
 _MONTH_FIRST = re.compile(rf"\b{_MONTH}\s+(\d{{1,2}})(?:st|nd|rd|th)?\b(?:,?\s+(\d{{4}}))?")
+_WEEKDAYS = r"(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day"
+# A date followed by a news agency in brackets and a colon or dash: "November 3 (ANI):", "Nov 3 (Reuters) -".
+_DATELINE = re.compile(rf"(?:\b\d{{1,2}}\s+{_MONTH}|\b{_MONTH}\s+\d{{1,2}})(?:,?\s+\d{{4}})?\s*"
+                       rf"\((?!{_WEEKDAYS}\))[A-Z][\w.&' -]{{0,30}}\)\s*[:\-\u2013\u2014]")
+# A place dateline without a date: "RIYADH — ", "NEW DELHI – ".
+_PLACE = re.compile(r"^[A-Z][A-Z .,'\[\]-]{2,40}\s+[\u2013\u2014]\s+")
 _SENTENCES = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\"'])")
 _WORDS = re.compile(r"[a-z0-9]+")
 
@@ -36,7 +43,15 @@ def _date(day: str, month: str, year: str | None, run_date: date) -> date | None
     return found
 
 
+def without_dateline(sentence: str) -> str:
+    """The sentence after its wire dateline, if it opens with one; otherwise the sentence."""
+    match = _DATELINE.search(sentence)
+    sentence = sentence[match.end():].strip() if match and match.start() <= 60 else sentence
+    return _PLACE.sub("", sentence)
+
+
 def dates_in(sentence: str, run_date: date) -> list[date]:
+    sentence = _DATELINE.sub(" ", sentence)
     found = [_date(m.group(1), m.group(2), m.group(3), run_date) for m in _DAY_FIRST.finditer(sentence)]
     found += [_date(m.group(2), m.group(1), m.group(3), run_date) for m in _MONTH_FIRST.finditer(sentence)]
     return sorted({item for item in found if item})
@@ -70,7 +85,7 @@ def look_ahead(rows: Sequence[Mapping[str, Any]], run_date: date, *, days: int =
                 if same:
                     same["signal_ids"].append(row["signal_id"])
                     continue
-                found.append({"date": when, "event": sentence, "words": words, "event_id": event, "signal_ids": [row["signal_id"]], "tier": row.get("tier") or 9,
+                found.append({"date": when, "event": without_dateline(sentence), "words": words, "event_id": event, "signal_ids": [row["signal_id"]], "tier": row.get("tier") or 9,
                               "relevance": relevance(row) if relevance else ""})
     found.sort(key=lambda item: (item["date"], item["tier"], -len(item["signal_ids"])))
     return [{key: value for key, value in item.items() if key not in {"words", "event_id"}} for item in found[:MAX_ROWS]]

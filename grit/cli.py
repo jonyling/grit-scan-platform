@@ -451,6 +451,38 @@ def cmd_red(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_corrections(args: argparse.Namespace) -> int:
+    """The corrections ledger (URS methodology, section 22). Reports show the open corrections in their quality check."""
+    pool = _pool()
+    if args.action == "list":
+        rows = pool.corrections(args.pack, include_closed=args.all)
+        if not rows:
+            print(f"No {'' if args.all else 'open '}correction for {args.pack}.")
+        for row in rows:
+            state = f"CLOSED by {row['closed_by']} {row['closed_at'][:10]}: {row['close_reason']}" if row["closed_at"] else "OPEN"
+            print(f"{row['correction_id']}  {state}  recorded by {row['recorded_by']} {row['recorded_at'][:10]}")
+            print(f"    Earlier: {row['earlier']}\n    Why: {row['why']}\n    Corrected: {row['corrected']}\n    Source: {row['source']}"
+                  + (f"\n    Update: {row['update_old']}" if row.get("update_old") else "") + (f"\n    Retired phrase: {row['phrase']}" if row.get("phrase") else ""))
+        return 0
+    needed = [("--by", args.by)] + ([("--earlier", args.earlier), ("--why", args.why), ("--corrected", args.corrected), ("--source", args.source)]
+                                   if args.action == "add" else [("--id", args.id), ("--reason", args.reason)])
+    missing = [flag for flag, value in needed if not (value or "").strip()]
+    if missing:
+        raise SystemExit(f"corrections {args.action} needs {', '.join(missing)}.")
+    try:
+        if args.action == "add":
+            row = pool.record_correction(pack=args.pack, earlier=args.earlier, why=args.why, corrected=args.corrected, source=args.source,
+                                         recorded_by=args.by, update_old=args.update_old, phrase=args.phrase)
+            print(f"Recorded {row['correction_id']} for {args.pack}. Every later {args.pack} report carries it until it is closed. "
+                  "To reissue a finished run's reports with it, run `grit resume-report --refresh` for that date.")
+        else:
+            pool.close_correction(pack=args.pack, correction_id=args.id.strip(), closed_by=args.by, reason=args.reason)
+            print(f"Closed {args.id.strip()}. Later {args.pack} reports no longer carry it.")
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    return 0
+
+
 def cmd_requests(args: argparse.Namespace) -> int:
     from grit.pool import utc_now
 
@@ -670,6 +702,21 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--impact", help="For confirm or reject: the impact on the business, or why there is none.")
     sub.add_argument("--trigger", help="For confirm: the RED trigger that happened, from `grit red triggers`.")
     sub.set_defaults(handler=cmd_red)
+
+    sub = commands.add_parser("corrections", help="List, add or close entries in a pack's corrections ledger. Every later report carries the open entries.")
+    sub.add_argument("action", choices=("list", "add", "close"))
+    sub.add_argument("--pack", required=True)
+    sub.add_argument("--all", action="store_true", help="For list: include closed corrections.")
+    sub.add_argument("--earlier", help="For add: the earlier statement.")
+    sub.add_argument("--why", help="For add: why it was wrong or incomplete.")
+    sub.add_argument("--corrected", help="For add: the corrected fact.")
+    sub.add_argument("--source", help="For add: where the corrected fact comes from.")
+    sub.add_argument("--update-old", help="For add: earlier reports or decks that need updating.")
+    sub.add_argument("--phrase", help="For add: exact wording no later report may use, such as S$600m.")
+    sub.add_argument("--id", help="For close: the correction ID, such as COR-urs-001.")
+    sub.add_argument("--reason", help="For close: why it no longer needs carrying forward.")
+    sub.add_argument("--by", help="For add or close: your name.")
+    sub.set_defaults(handler=cmd_corrections)
 
     sub = commands.add_parser("feedback", help="Record a reader's approve, reject, or watch decision on a signal. It counts only when the reader's profile turns on signal buttons.")
     sub.add_argument("--profile", required=True)

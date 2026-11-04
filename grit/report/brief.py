@@ -13,6 +13,7 @@ from datetime import date, datetime, timedelta
 from typing import Any, Mapping, Sequence
 
 from grit.core.canonical import canonical_hash
+from grit.core.corrections import ledger_view
 from grit.core.routing import aperture_routing
 from grit.ontology.pack import load_ontology_pack
 from grit.pool import Pool
@@ -321,6 +322,10 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
 
     qa_rows = []
     for row in qa:
+        # A final Critic's objection to a report draft (REPORT:<profile>) concerns text a later draft replaced, often
+        # another reader's. It stays in the run's QA log and weekly issues, not in this report.
+        if str(row["item"]).startswith("REPORT:"):
+            continue
         correction = render(row["correction"])
         if not correction["sources"]:
             correction["sources"] = [source_ref(signal_id) for signal_id in row.get("source_ids") or [] if signal_id in signals]
@@ -386,6 +391,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         "projects": groups, "suppliers": suppliers, "customers": customers, "hazards": hazards, "entities": entities, "competitors": competitors,
         "management_requests": request_rows, "entity_packs": entity_packs,
         "conditions": condition_rows, "scenarios": scenarios, "findings": findings, "other_signals": other_signals, "qa": qa_rows, "watchpoints": watch_rows, "red": red, "red_triggers": red_trigger_labels(),
+        "corrections": [ledger_view(row) for row in pool.corrections(pack_name)],
         "method": {
             "queries": queries.get("queries") or 0, "queries_label": "queries returned pages", "signals": counts.get("signals") or 0, "kept": counts.get("kept") or 0, "shown_to_reader": len(shown),
             "hidden_by_routing": sum(1 for row in routed if not row["route"]["include"]), "profile": profile.in_force,

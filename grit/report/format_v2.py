@@ -35,12 +35,13 @@ _COUNTRY_ALIASES = {
     "south korea": ("Korea",), "united arab emirates": ("UAE",), "uae": ("United Arab Emirates",), "abu dhabi": ("UAE",), "dubai": ("UAE",),
     "united kingdom": ("UK", "Britain"), "people's republic of china": ("China",), "hong kong": ("Hong Kong",), "taiwan": ("Taiwan",),
 }
-_SUFFIX = re.compile(r"\s+(?:[|\u2013\u2014-]\s+[^|\u2013\u2014-]{2,60})$")
+# An outlet or breadcrumb suffix: " | The Straits Times", " - Reuters", " < IT·Gaming < 기사본문".
+_SUFFIX = re.compile(r"\s+(?:[|\u2013\u2014<-]\s+[^|\u2013\u2014<-]{2,60})$")
 _CONFLICT = re.compile(r"(\d[\d,]*)\s+(?:people\s+|persons\s+)?(killed|dead|deaths|died|injured|wounded|missing|cancelled|flights|missiles|drones)\b", re.I)
 
 
 def clean_title(title: str | None) -> str:
-    """A headline without its outlet suffix, such as ' | The Straits Times'."""
+    """A headline without its outlet or breadcrumb suffix, such as ' | The Straits Times'."""
     text = " ".join(str(title or "").split())
     for _ in range(2):
         text = _SUFFIX.sub("", text)
@@ -208,7 +209,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         changes.append({
             "item": label(event), "risk": event["risk_label"],
             "before": f"{clean_title(before.get('title'))} ({str(before.get('published_at') or '')[:10]})" if before else "Not in the last report.",
-            "now": f"{clean_title(event['lead'].get('title'))} ({event['last_date']})" if event["members"] else "No report this week.",
+            "now": f"{clean_title(event['lead'].get('title'))} ({event['last_date'] or 'date not stated'})" if event["members"] else "No report this week.",
             # No report this week is not easing (URS methodology, section 15), so it carries no arrow.
             "direction": f"{UP} New" if event["band"] == UP and event["new"] else f"{UP} Worse" if event["band"] == UP else "No new report",
             "signal_ids": [event["lead"]["signal_id"]] if event["members"] else [],

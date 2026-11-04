@@ -188,15 +188,36 @@ def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
     assert first in targets(slides[1]) and all(targets(slide) == {1} for slide in slides[first:]), "summary links to the appendix, and each appendix slide links back"
     assert not any(REASONING in text for text in texts)
 
+    pool.record_correction(pack="urs", earlier="Taiwan opportunity loss S$600m", why="Item 5 final v2 revised the figure", corrected="S$645m opportunity loss",
+                           source="Item 5 final v2", recorded_by="Jony Ling", phrase="S$600m")
+    pool.add_qa(run.run_id, item="REPORT:gareth", correction="An objection to an earlier draft of another report.", origin="WEEKLY_CRITIC")
     wilson = write_pack(pool, run.run_id, profiles["wilson"], folder=tmp_path / "wilson")
+    markdown = Path(wilson["files"]["md"]).read_text(encoding="utf-8")
+    headings = [line.split(". ", 1)[1] for line in markdown.splitlines() if line.startswith("## ")]
+    order = ["Exposure snapshot", "What changed since the last report", "Look-ahead: the next 30 days", "Escalating and elevated items", "Coverage matrix",
+             "Jurisdiction coverage", "Recommended action posture", "Quality and completeness check", "STE entities by line of business", "QA and correction log"]
+    present = [title for title in order if title in headings]
+    assert [title for title in headings if title in present] == present, "the URS methodology's order, then the appendix"
+    assert {"Look-ahead: the next 30 days", "Recommended action posture", "QA and correction log"} <= set(present)
+    assert "## Appendix B. QA and correction log" in markdown, "audit material goes to the appendix"
+    posture = 1 + headings.index("Recommended action posture")
+    assert f"The principal ask and when to raise to RED are in section {posture}, Recommended action posture." in markdown
+    assert "**Principal ask.**" in markdown and "**When to raise to RED.** The status is" in markdown
+    assert "| COR-urs-001 | Taiwan opportunity loss S$600m |" in markdown, "the quality check carries the open corrections"
+    assert "earlier draft of another report" not in markdown, "a report's QA log leaves out objections to report drafts"
     document = Document(wilson["files"]["docx"])
     key_table = next(table for table in document.tables if table.rows[0].cells[0].text == "News/Developments")
     assert "Proposed Response/Management Consideration" not in [cell.text for cell in key_table.rows[0].cells], "no response column without RESPONSE_OPTIONS"
     text = "\n".join([paragraph.text for paragraph in document.paragraphs] + [cell.text for table in document.tables for row in table.rows for cell in row.cells])
     assert "GRIT-Scan: Urban Solutions" in text
     for heading in ("Standing risk themes (URS annual risks)", "Management-requested topics", "Entity reader packs", "STE entities by line of business", "Named supplier, customer and competitor watch",
-                    "Escalating and elevated items", "Coverage matrix", "Completeness gate", "Source register"):
+                    "Escalating and elevated items", "Coverage matrix", "Completeness gate", "Source register", "Recommended action posture", "Corrections ledger"):
         assert heading in text, heading
+    word_headings = [paragraph.text for paragraph in document.paragraphs if paragraph.style.name == "Heading 1"]
+    register = next(index for index, title in enumerate(word_headings) if title.endswith("Source register"))
+    assert all(title.startswith("Appendix") for title in word_headings[register + 1:]) and word_headings[-1] == "Appendix B. QA and correction log"
+    assert "are in section" in document.tables[0].rows[0].cells[0].text, "the bottom line points to the action posture"
+    assert "COR-urs-001" in text
     assert "CBTC resignalling of the North-South line delayed again" in text, "a P1 request match is listed under its request"
     assert "Bottom line for URS Taiwan weekly risk scan" in text, "the BA brief carries the entity pack's bottom line"
     assert "Rail signalling and CBTC project delivery" in text

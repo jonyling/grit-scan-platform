@@ -356,3 +356,10 @@ Memory proposals are stored after a named human package decision. A separate
 named admission is required before subsequent reasoning uses a correction or
 reader preference. Only that reader can admit their preference. No admission
 changes raw evidence, controlled scores, or an earlier approved artifact.
+
+R&A can also record a correction directly in the pack's corrections ledger
+(`grit corrections`, spec 44). Every role receives the open ledger entries
+with the admitted Memory corrections, and Reporting and the final Critic see
+them in the report. A Reporting edit that uses a phrase the ledger retires
+breaks the contract and gets the normal repair attempt. A final Critic treats
+a repeated earlier statement as a material unsupported issue.

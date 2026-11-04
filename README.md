@@ -559,12 +559,29 @@ A new rating applies from the next `grit assess`, `grit agents` or `grit weekly`
 
 **Measure a report.** `grit scorecard` scores each report of a run against the
 URS methodology: source bands, escalating rows below significance 8, text cut
-mid-sentence, passing mentions, trend words that contradict the trends, and
-contradiction search.
+mid-sentence, passing mentions, trend words that contradict the trends,
+contradiction search, and phrases the corrections ledger retired.
 
 ```bash
 .venv/bin/python -m grit scorecard --pack urs --date 2026-11-02
 ```
+
+**Carry corrections forward.** When an earlier report stated something wrong
+or incomplete, record the correction once. Every later report of the pack
+lists it in its quality check, and every agent receives it, until you close it
+(URS methodology, section 22). `--phrase` is optional: it retires exact
+wording, such as `S$600m`, that no later report may use.
+
+```bash
+.venv/bin/python -m grit corrections add --pack urs --earlier "Taiwan opportunity loss S\$600m" \
+  --why "Item 5 final v2 revised the figure" --corrected "S\$645m opportunity loss" \
+  --source "Item 5 final v2" --update-old "Taiwan scans before 29 Oct" --phrase "S\$600m" --by "Jony Ling"
+.venv/bin/python -m grit corrections list --pack urs
+.venv/bin/python -m grit corrections close --pack urs --id COR-urs-001 --by "Jony Ling" --reason "Every deck now shows S\$645m."
+```
+
+To show a new correction in a finished run's reports, run
+`grit resume-report --refresh` for that date.
 
 **Supply internal exposure.** Each week, prepare an exposure snapshot with
 M365 Copilot as described in

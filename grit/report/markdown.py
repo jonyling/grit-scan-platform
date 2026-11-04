@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from grit.report.docx_brief import V2_NOTE, V2_REPLACES, OPTIONS_NOTE, SCENARIO_HEADERS, SCENARIO_NOTE, SECTION_TITLES, scenario_cells, implication_text, key_risk_headers, priority_trend, radar_cells, radar_headers, response_lines, section_title
+from grit.report.docx_brief import (
+    APPENDIX_LETTERS, CORRECTIONS_HEADERS, CORRECTIONS_NOTE, FOLLOW_UPS_LABEL, FOLLOW_UPS_NOTE, NO_CORRECTIONS, OPTIONS_NOTE, POSTURE_TITLE,
+    SCENARIO_HEADERS, SCENARIO_NOTE, SECTION_TITLES, V2_APPENDIX, V2_NOTE, V2_REPLACES, correction_cells, follow_ups, implication_text,
+    key_risk_headers, posture_lines, priority_trend, radar_cells, radar_headers, red_line, response_lines, scenario_cells, section_title, v2_title,
+)
 from grit.report.notices import DISCLAIMER
 from grit.pipeline.indicators import indicator_line
 from grit.report.repetition import dedupe_markdown
@@ -58,33 +62,43 @@ def _exposure(snapshot: Mapping[str, Any] | None) -> list[str]:
     return lines
 
 
-def _v2(brief: Mapping[str, Any], number: int) -> tuple[list[str], int]:
-    """Format v2 sections (spec 44), in the order of Wilson's report."""
+def _v2(brief: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
+    """Format v2 sections (spec 44) that open the report, in the URS methodology's order (section 15), as Wilson's report does."""
     v2, short = brief["v2"], brief["v2"]["short"]
     sections: list[tuple[str, list[str]]] = [("Exposure snapshot", _exposure(v2.get("exposure")))]
-    rows = [[n, f"{row['band']} **{row['item']}**" + (f" [{row['risk']}]" if row["risk"] else ""), _md(row["summary"], "Withheld: the draft failed its checks. See the QA log."),
-             _md(row["implications"], "Not drafted."), f"{(row.get('response') or {}).get('action') or 'Not drafted.'} Owner: {(row.get('response') or {}).get('owner') or 'to assign'}.", _refs(row["sources"])]
-            for n, row in enumerate(v2["escalating"], start=1)]
-    sections.append(("Escalating and elevated items", [*_table(["#", "Item and risk", "Summary", f"Implications for {short}", "Suggested response", "Sources"], rows), "", f"*{V2_NOTE}*"]
-                     if rows else ["No event met the escalation rule this week."]))
     if v2["changes"]:
         sections.append(("What changed since the last report", _table(["Item", "Last report", "This report", "Direction"],
                                                                        [[row["item"] + (f" [{row['risk']}]" if row["risk"] else ""), row["before"], row["now"], row["direction"]] for row in v2["changes"]])))
     look = _table(["Date", "Event, as the source states it", f"Relevance to {short}", "Sources"], [[row["date"], row["event"], row["relevance"], _refs(row["sources"])] for row in v2["look_ahead"]]) \
         if v2["look_ahead"] else ["No source linked to the business area states a dated event in the next 30 days."]
     sections.append(("Look-ahead: the next 30 days", look))
+    rows = [[n, f"{row['band']} **{row['item']}**" + (f" [{row['risk']}]" if row["risk"] else ""), _md(row["summary"], "Withheld: the draft failed its checks. See the QA log."),
+             _md(row["implications"], "Not drafted."), f"{(row.get('response') or {}).get('action') or 'Not drafted.'} Owner: {(row.get('response') or {}).get('owner') or 'to assign'}.", _refs(row["sources"])]
+            for n, row in enumerate(v2["escalating"], start=1)]
+    sections.append(("Escalating and elevated items", [*_table(["#", "Item and risk", "Summary", f"Implications for {short}", "Suggested response", "Sources"], rows), "", f"*{V2_NOTE}*"]
+                     if rows else ["No event met the escalation rule this week."]))
     if v2["priorities"]:
         sections.append(("Prioritisation", _table(["#", "Item", "Trend", "Risk linkage", "Owner or forum"], [[n, row["item"], row["trend"], row["risk"], row["owner"]] for n, row in enumerate(v2["priorities"], start=1)])))
     sections.append(("Coverage matrix", _table(["Line of business", *v2["categories"]], [[line["lob"], *(line["cells"][category]["text"] for category in v2["categories"])] for line in v2["coverage"]])))
     sections.append(("Jurisdiction coverage", _table(["Jurisdiction", "Entities", "In-window finding", "Trend"],
                                                       [[row["country"], "; ".join(row["entities"]), row["finding"], row["trend"]] for row in v2["jurisdictions"]])))
+    return sections
+
+
+def _v2_closing(brief: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
+    """The named watch and the recommended action posture, which close a format v2 report before its quality check."""
+    v2 = brief["v2"]
+    sections: list[tuple[str, list[str]]] = []
     if v2["watch"]:
         sections.append(("Named supplier, customer and competitor watch", _table(["Name", "Type", "This week"], [[row["name"], row["type"], _md(row["text"])] for row in v2["watch"]])))
-    lines: list[str] = []
-    for title, body in sections:
-        lines += [f"## {number}. {title}", "", *body, ""]
-        number += 1
-    return lines, number
+    posture = [f"**{label.strip()}** {text}" for label, text in posture_lines(brief)]
+    posture = [line for item in posture for line in (item, "")]
+    posture += [f"- **{label.strip()}** {text}" for label, text in (red_line(alert, brief.get("red_triggers") or {}) for alert in brief.get("red") or [])]
+    owners = follow_ups(brief)
+    if owners:
+        posture += ["", f"**{FOLLOW_UPS_LABEL.strip()}** {FOLLOW_UPS_NOTE}", "", *(f"- **{owner}**: {'; '.join(refs)}." for owner, refs in owners)]
+    sections.append((POSTURE_TITLE, posture))
+    return sections
 
 
 def _v2_tail(brief: Mapping[str, Any], number: int) -> list[str]:
@@ -96,6 +110,9 @@ def _v2_tail(brief: Mapping[str, Any], number: int) -> list[str]:
         lines += [f"Not ready for release: {len(blocking)} critical completeness questions were answered No.", ""]
     if v2["conflicts"]:
         lines += _table(["Item", "What the sources say", "Treatment"], [[row["item"], row["said"], row["treatment"]] for row in v2["conflicts"]]) + [""]
+    corrections = brief.get("corrections") or []
+    lines += ["### Corrections ledger", ""]
+    lines += [f"*{CORRECTIONS_NOTE}*", "", *_table(list(CORRECTIONS_HEADERS), [correction_cells(row) for row in corrections]), ""] if corrections else [NO_CORRECTIONS, ""]
     return lines
 
 
@@ -109,13 +126,13 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
         f"> **{bottom['label']} — Bottom line.** {bottom['text']} {bottom.get('escalation') or ''}", "",
     ]
     v2 = brief.get("v2")
-    number = 0
+    sections: list[tuple[str, str, list[str]]] = []  # (key, title, body)
+    appendix: list[tuple[str, str, list[str]]] = []
     if v2:
         basis = (v2.get("status_basis") or {}).get("basis")
         status = f"**STATUS: {v2['status']}.**" + (f" {basis}" if basis else "") + (f" Trend: {'; '.join(v2['arrows'])}." if v2["arrows"] else "") + (f" Next dated items: {'; '.join(v2['risk_window'])}." if v2["risk_window"] else "")
         lines[lines.index(DISCLAIMER) + 2:lines.index(DISCLAIMER) + 2] = [status, ""]
-        body, number = _v2(brief, 1)
-        lines += body
+        sections += [(title, title, body) for title, body in _v2(brief)]
     for key in meta["sections"]:
         if key == "BOTTOM_LINE" or key not in SECTION_TITLES or (v2 and key in V2_REPLACES):
             continue
@@ -215,11 +232,22 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
             body += [f"- **{row['item']}**: {row['prior'] or ''} → {_md(row['correction'])}" for row in brief.get("qa") or []] or ["- No supported issue this week."]
         elif key == "WATCHPOINTS":
             body += [f"- **{row['title']}** ({row['status'].lower()}): {row['detail']} {_md(row['update'], '')}" for row in brief.get("watchpoints") or [] if row["status"] != "CLOSED"]
-            body.append(f"\nRecommended action posture: {bottom.get('escalation') or ''}")
+            if not v2:
+                body.append(f"\nRecommended action posture: {bottom.get('escalation') or ''}")
         if body:
-            lines += [f"## {number}. {section_title(meta, key)}", "", *body, ""]
-            number += 1
+            (appendix if v2 and key in V2_APPENDIX else sections).append((key, v2_title(key, meta) if v2 else section_title(meta, key), body))
+    number = 1 if v2 else 0
+    if v2:
+        sections += [(title, title, body) for title, body in _v2_closing(brief)]
+        posture = next(number + index for index, (key, *_rest) in enumerate(sections) if key == POSTURE_TITLE)
+        box = next(index for index, line in enumerate(lines) if line.startswith(f"> **{bottom['label']} — Bottom line.**"))
+        lines[box] = f"> **{bottom['label']} — Bottom line.** {bottom['text']} The principal ask and when to raise to RED are in section {posture}, {POSTURE_TITLE}."
+    for key, title, body in sections:
+        lines += [f"## {number}. {title}", "", *body, ""]
+        number += 1
     if v2:
         lines += _v2_tail(brief, number)
+    for letter, (key, title, body) in zip(APPENDIX_LETTERS, appendix):
+        lines += [f"## Appendix {letter}. {title}", "", *body, ""]
     lines += [DISCLAIMER, "", f"*Content hash {brief['content_hash'][:16]}. Run {meta['run_id']}.*"]
     return dedupe_markdown("\n".join(lines) + "\n")

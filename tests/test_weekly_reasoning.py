@@ -946,6 +946,33 @@ def test_reporting_repairs_receive_previous_output_and_all_errors(weekly):
     assert pool.one("SELECT COUNT(*) AS n FROM execution_log WHERE actor = 'Reporting' AND status = 'REJECTED'")["n"] == 2
 
 
+def test_the_model_sees_the_qa_log_as_a_count_not_as_report_text():
+    from grit.pipeline.weekly import model_brief
+    brief = {"qa": [{"item": "REPORT:x", "correction": "Old objection."}] * 3, "bottom_line": {"text": "T", "escalation": "E"}}
+    assert model_brief(brief)["qa"]["rows"] == 3 and "Old objection." not in str(model_brief(brief))
+    assert len(brief["qa"]) == 3, "the report itself keeps its QA log"
+
+
+def test_reporting_may_not_write_a_phrase_the_corrections_ledger_retired(weekly):
+    from grit.agents.weekly import PROMPTS
+    pool, store, coordinator, ids, original = weekly
+    coordinator.reconcile_pool(search=None, reassess=lambda: None)
+    ledger = [{"id": "COR-test-001", "earlier": "Alpha has 28 airports", "why": "Miscounted", "corrected": "Alpha has 27 airports",
+               "source": "Survey", "update_old": None, "phrase": "28 airports", "recorded_by": "Jony Ling", "recorded_on": "2026-11-04"}]
+    attempts = []
+    def retired(*args, system, payload, **kwargs):
+        if system != PROMPTS["Reporting"]:
+            return original(*args, system=system, payload=payload, **kwargs)
+        attempts.append(payload)
+        return {"edits": [{"path": path, "text": f"Alpha has 28 Airports [{ids[0]}].", "source_ids": [ids[0]]}
+                          for path in ("bottom_line.text", "bottom_line.escalation")]}
+    coordinator.call = retired
+    with pytest.raises(ContractError, match="correction COR-test-001 retired"):
+        coordinator.report(_profile(), {**_draft(ids[0]), "corrections": ledger}, [])
+    assert attempts[0]["report"]["corrections"] == ledger, "Reporting sees the ledger"
+    assert "Alpha has 27 airports" in attempts[1]["contract_feedback"]
+
+
 def test_reporting_repair_input_obeys_model_size_limit(weekly, monkeypatch):
     from grit.pipeline import weekly as module
     pool, store, coordinator, _, _ = weekly
@@ -1559,6 +1586,35 @@ def test_a_report_refresh_rebuilds_reports_from_the_finished_review_after_an_r_a
     assert pool.one("SELECT COUNT(*) AS n FROM weekly_selections")["n"] == before, "no signal review ran"
     latest = pool.one("SELECT brief_json FROM weekly_reports WHERE run_id = 'R' ORDER BY rowid DESC LIMIT 1")
     assert latest["brief"]["v2"]["status"] == "RED"
+
+
+def test_a_report_refresh_supersedes_objections_to_the_old_drafts_but_keeps_pool_issues(weekly, monkeypatch):
+    from types import SimpleNamespace
+    from grit.agents.weekly import PROMPTS
+    from grit.pipeline.weekly import _finish_weekly_reports, resume_weekly_reporting
+    pool, store, coordinator, ids, original = weekly
+    coordinator.reconcile_pool(search=None, reassess=lambda: None)
+    coordinator.supervise(["DRAFT_REPORT"], {"stage": "pool reconciled", "issues": store.issues()})
+    profile = _profile()
+    profile.brief_for = lambda pack: {"formats": ["docx"]}
+    monkeypatch.setattr("grit.report.brief.build_brief", lambda *args: {**_draft(ids[0]), "v2": {"status": "STABLE", "gate": []}})
+    monkeypatch.setattr("grit.report.brief.routed_signals", lambda *args: [])
+    run = SimpleNamespace(run_id="R", pack="test")
+    assert _finish_weekly_reports(pool, run, [profile], coordinator)["status"] == "READY"
+    call_id = pool.one("SELECT MAX(call_id) AS id FROM weekly_calls WHERE run_id = 'R'")["id"]
+    store._issue(call_id, "OLD-DRAFT", "OPEN", {"issue_id": "OLD-DRAFT", "target": "REPORT:reader", "kind": "NARRATIVE", "material": False,
+                                                "problem": "The old look-ahead quoted a wire dateline.", "source_ids": []})
+    store._issue(call_id, "POOL", "OPEN", {"issue_id": "POOL", "target": ids[0], "kind": "COVERAGE", "material": False,
+                                           "problem": "Page verification did not run.", "source_ids": [ids[0]]})
+    seen = []
+    def report_only(*args, system, payload, **kwargs):
+        if system == PROMPTS["Critic"]:
+            seen.append(set(payload["open_issues"]))
+        return original(*args, system=system, payload=payload, **kwargs)
+    assert resume_weekly_reporting(pool, run, client=None, model=None, profiles=[profile], call=report_only, refresh=True)["status"] == "READY"
+    assert seen and all("OLD-DRAFT" not in issues and "POOL" in issues for issues in seen), "the final Critic sees only live objections"
+    resolved = pool.one("SELECT issue_json FROM weekly_issues WHERE issue_id = 'OLD-DRAFT' ORDER BY revision_id DESC LIMIT 1")["issue"]
+    assert resolved["resolution"]["response"].startswith("Superseded")
 
 
 def test_reports_are_decided_after_every_final_critic_so_order_does_not_matter(weekly, monkeypatch):

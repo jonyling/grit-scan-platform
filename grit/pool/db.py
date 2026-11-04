@@ -416,6 +416,41 @@ class Pool:
             found[row["signal_id"]] = row
         return found
 
+    def record_correction(self, *, pack: str, earlier: str, why: str, corrected: str, source: str, recorded_by: str,
+                          update_old: str | None = None, phrase: str | None = None) -> dict[str, Any]:
+        """Add a correction to a pack's corrections ledger (URS methodology, section 22)."""
+        values = {"earlier": earlier, "why": why, "corrected": corrected, "source": source, "recorded_by": recorded_by}
+        missing = [key for key, value in values.items() if not (value or "").strip()]
+        if missing:
+            raise ValueError("A correction needs " + ", ".join(missing) + ".")
+        count = (self.one("SELECT COUNT(*) AS n FROM corrections WHERE pack = ? AND action = 'RECORDED'", (pack,)) or {}).get("n") or 0
+        row = {"pack": pack, "correction_id": f"COR-{pack}-{count + 1:03d}", "action": "RECORDED",
+               **{key: value.strip() for key, value in values.items()},
+               "update_old": (update_old or "").strip() or None, "phrase": (phrase or "").strip() or None, "recorded_at": utc_now()}
+        row["entry_id"] = self.insert("corrections", row)
+        return row
+
+    def close_correction(self, *, pack: str, correction_id: str, closed_by: str, reason: str) -> dict[str, Any]:
+        """Stop carrying a correction forward. The correction itself stays in the ledger."""
+        if not closed_by.strip() or not reason.strip():
+            raise ValueError("Closing a correction needs your name and the reason.")
+        if not any(row["correction_id"] == correction_id for row in self.corrections(pack)):
+            raise ValueError(f"{correction_id} is not an open correction of {pack}.")
+        row = {"pack": pack, "correction_id": correction_id, "action": "CLOSED", "recorded_by": closed_by.strip(),
+               "recorded_at": utc_now(), "note": reason.strip()}
+        row["entry_id"] = self.insert("corrections", row)
+        return row
+
+    def corrections(self, pack: str, *, include_closed: bool = False) -> list[dict[str, Any]]:
+        """A pack's corrections, oldest first. Each closed one carries closed_by, closed_at and close_reason."""
+        found: dict[str, dict[str, Any]] = {}
+        for row in self.rows("SELECT * FROM corrections WHERE pack = ? ORDER BY entry_id", (pack,)):
+            if row["action"] == "RECORDED":
+                found[row["correction_id"]] = {**row, "closed_by": None, "closed_at": None, "close_reason": None}
+            elif row["correction_id"] in found:
+                found[row["correction_id"]].update(closed_by=row["recorded_by"], closed_at=row["recorded_at"], close_reason=row["note"])
+        return [row for row in found.values() if include_closed or not row["closed_at"]]
+
     def management_requests(self, *, active_only: bool = False) -> list[dict[str, Any]]:
         where = "WHERE status = 'ACTIVE'" if active_only else ""
         return self.rows(f"SELECT * FROM management_requests {where} ORDER BY request_date, request_id")

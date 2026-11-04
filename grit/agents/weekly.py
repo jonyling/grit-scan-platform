@@ -342,6 +342,8 @@ Judge staleness by the event, not the publication. Text labelled "Extracted sour
 text" is newer than "Text first stored"; prefer it and say when they differ.
 internal_exposure, when present, is approved internal evidence of the business's own site, staff, contract, travel or
 asset exposure. Only it can make exposure CONFIRMED or NOT_EXPOSED; public reporting alone is at most POSSIBLE.
+A CORRECTION in admitted_corrections, reader_memory or report.corrections was corrected by a named person: never repeat
+its earlier statement as fact, use the corrected fact, and never write a phrase it retires.
 """
 
 PROMPTS = {
@@ -409,6 +411,7 @@ Challenge a risk_ids link the evidence does not support, or a missing one; corre
 than raise an issue, using only IDs from authority.standing_items.
 Challenge an EXCLUDE that rests on unconfirmed impact: exposure decides relevance. Prefer the best-sourced report of an
 event, with the other reports of it cited in source_ids.
+A report that repeats an earlier statement its corrections ledger (report.corrections) corrected is a material UNSUPPORTED issue.
 Missing internal evidence is material only when a text states CONFIRMED exposure or impact, or presents POSSIBLE
 exposure as established. POSSIBLE exposure that is labelled as such is the required wording without internal evidence:
 raise INTERNAL_EVIDENCE with "material": false so the missing internal check is listed, not blocked.

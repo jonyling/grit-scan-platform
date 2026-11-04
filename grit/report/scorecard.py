@@ -24,8 +24,21 @@ def _score(selection: Mapping[str, Any]) -> int | None:
     return sum(int(item) for item in value.values()) if isinstance(value, Mapping) else None
 
 
-def scorecard(brief: Mapping[str, Any]) -> dict[str, Any]:
-    """Metrics for one report. Targets follow the methodology and the 4 November 2026 review of the 2 November URS report."""
+def _narrative(brief: Mapping[str, Any]) -> str:
+    """The report's own words: its narrative fields and the standing items' developments, not the sources' titles."""
+    from grit.pipeline.weekly import narrative_fields
+
+    bottom = {"text": "", "escalation": "", **(brief.get("bottom_line") or {})}
+    texts = [_plain(value) for value in narrative_fields({**brief, "bottom_line": bottom}).values()]
+    texts += [_plain(row.get("development")) for row in brief.get("conditions") or []]
+    return "\n".join(texts)
+
+
+def scorecard(brief: Mapping[str, Any], corrections: Any = None) -> dict[str, Any]:
+    """Metrics for one report. Targets follow the methodology and the 4 November 2026 review of the 2 November URS report.
+    corrections: the pack's open corrections, as the brief shows them; default, the ones the brief was built with."""
+    from grit.core.corrections import retired_in
+
     v2 = brief.get("v2") or {}
     tiers = v2.get("tiers") or {}
     cited = [key for key in brief.get("evidence_ids") or [] if key in tiers]
@@ -47,6 +60,8 @@ def scorecard(brief: Mapping[str, Any]) -> dict[str, Any]:
     narrative = " ".join(_plain((brief.get("bottom_line") or {}).get(key)) for key in ("text", "escalation"))
     trend_mismatch = sorted(name for name in steady if name and _says_escalating(narrative, name))
     requests = [row for row in brief.get("management_requests") or [] if row.get("status") == "ACTIVE"]
+    ledger = brief.get("corrections") or [] if corrections is None else corrections
+    retired = sorted({str(row["phrase"]) for row in retired_in(_narrative(brief), ledger)})
     metrics = {
         "status": v2.get("status"),
         "cited_sources": len(cited),
@@ -65,6 +80,8 @@ def scorecard(brief: Mapping[str, Any]) -> dict[str, Any]:
         "trend_words_contradict_trend": trend_mismatch,
         "requests_unanswered": sum(1 for row in requests if not row.get("signals")),
         "contradiction_search": contradiction,
+        "open_corrections": len(ledger),
+        "retired_phrases_used": retired,
     }
     checks = {
         "escalating rows have significance 8 or more": weak_escalation == 0,
@@ -73,6 +90,7 @@ def scorecard(brief: Mapping[str, Any]) -> dict[str, Any]:
         "no passing mention in the watch list": not passing,
         "the narrative's trend words match the trends": not trend_mismatch,
         "top findings were contradiction-searched": contradiction in (None, "Yes"),
+        "no phrase the corrections ledger retired": not retired,
     }
     return {"metrics": metrics, "checks": checks, "passed": sum(checks.values()), "of": len(checks)}
 
@@ -102,7 +120,10 @@ def main(argv: list[str] | None = None) -> int:
     if not latest:
         print(f"No weekly report for {run_id} in this database.")
         return 1
-    results = {profile: {"report_status": row["status"], **scorecard(row["brief"])} for profile, row in latest.items()}
+    from grit.core.corrections import ledger_view
+
+    ledger = [ledger_view(row) for row in pool.corrections(args.pack)]
+    results = {profile: {"report_status": row["status"], **scorecard(row["brief"], ledger)} for profile, row in latest.items()}
     if args.json:
         print(json.dumps(results, indent=2, default=str))
         return 0

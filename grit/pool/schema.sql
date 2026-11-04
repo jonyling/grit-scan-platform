@@ -402,6 +402,29 @@ BEGIN SELECT RAISE(ABORT, 'red_decisions is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS red_decisions_no_delete BEFORE DELETE ON red_decisions
 BEGIN SELECT RAISE(ABORT, 'red_decisions is append-only'); END;
 
+-- The corrections ledger (URS methodology, section 22): material corrections that R&A carries forward into every later
+-- report of a pack, so a wrong figure does not quietly return. A correction is closed by a later CLOSED row, never edited.
+CREATE TABLE IF NOT EXISTS corrections (
+    entry_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    pack            TEXT NOT NULL,
+    correction_id   TEXT NOT NULL,              -- COR-<pack>-NNN, shared by a correction and the row that closes it
+    action          TEXT NOT NULL CHECK (action IN ('RECORDED', 'CLOSED')),
+    earlier         TEXT,                       -- the earlier statement
+    why             TEXT,                       -- why it was wrong or incomplete
+    corrected       TEXT,                       -- the corrected fact
+    source          TEXT,                       -- where the corrected fact comes from
+    update_old      TEXT,                       -- earlier reports or decks that need updating, or none
+    phrase          TEXT,                       -- optional exact wording no later report may use, such as S$600m
+    recorded_by     TEXT NOT NULL,
+    recorded_at     TEXT NOT NULL,
+    note            TEXT                        -- for CLOSED: why it no longer needs carrying forward
+);
+CREATE INDEX IF NOT EXISTS corrections_by_pack ON corrections (pack, correction_id, entry_id);
+CREATE TRIGGER IF NOT EXISTS corrections_no_update BEFORE UPDATE ON corrections
+BEGIN SELECT RAISE(ABORT, 'corrections is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS corrections_no_delete BEFORE DELETE ON corrections
+BEGIN SELECT RAISE(ABORT, 'corrections is append-only'); END;
+
 -- AIRIS handoff: signals the BA head approved, packaged for import.
 CREATE TABLE IF NOT EXISTS airis_exports (
     export_id       TEXT PRIMARY KEY,

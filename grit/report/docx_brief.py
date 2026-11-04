@@ -57,6 +57,86 @@ def section_title(meta: Mapping[str, Any], key: str) -> str:
     return (meta.get("section_titles") or {}).get(key) or SECTION_TITLES[key]
 NOTHING = "No new item found this week in the checked sources."
 
+# Format v2 report layout (URS methodology, sections 15, 22 and 24) -------------------------------------------------------
+# The scan is wide and the report narrow: audit material goes to an appendix after the source register.
+V2_APPENDIX = frozenset({"QA_LOG", "ENTITIES", "OTHER_SIGNALS"})
+APPENDIX_LETTERS = "ABCDEFGH"
+POSTURE_TITLE = "Recommended action posture"
+NO_ASK = "Nothing new this week independently warrants escalation before the next weekly cycle."
+FOLLOW_UPS_LABEL = "Follow-ups by owner, without escalation. "
+FOLLOW_UPS_NOTE = "Each named row carries its suggested response."
+CORRECTIONS_HEADERS = ("ID", "Earlier statement", "Why it was wrong or incomplete", "Corrected fact", "Source", "Earlier reports to update")
+CORRECTIONS_NOTE = ("Material corrections carried forward from earlier reports (URS methodology, section 22). R&A records them, and "
+                    "closes them when no longer needed, with `grit corrections`.")
+NO_CORRECTIONS = "The corrections ledger has no open correction for this business area."
+
+
+def v2_title(key: str, meta: Mapping[str, Any]) -> str:
+    """A reader section's title in a format v2 report, where the bottom line is at the top, not with the watchpoints."""
+    return "Watchpoints" if key == "WATCHPOINTS" else section_title(meta, key)
+
+
+def section_plan(brief: Mapping[str, Any], renders: Any) -> tuple[list[tuple[str, str, Any]], list[tuple[str, str, Any]]]:
+    """The body sections and the appendix sections that render, in reading order, as (key, title, renderer).
+    renders(key, title, renderer) says whether a section has content."""
+    meta, v2 = brief["meta"], brief.get("v2")
+    plan: list[tuple[str, str, Any]] = []
+    appendix: list[tuple[str, str, Any]] = []
+    if v2:
+        plan += [(title, title, renderer) for title, renderer in V2_SECTIONS]
+    for key in meta["sections"]:
+        if key == "BOTTOM_LINE" or (v2 and key in V2_REPLACES):
+            continue
+        renderer = _v2_watchpoints if v2 and key == "WATCHPOINTS" else _SECTIONS.get(key)
+        if renderer is None:
+            continue
+        (appendix if v2 and key in V2_APPENDIX else plan).append((key, v2_title(key, meta) if v2 else section_title(meta, key), renderer))
+    if v2:
+        plan += [(title, title, renderer) for title, renderer in V2_CLOSING]
+    keep = lambda rows: [row for row in rows if renders(*row)]  # noqa: E731
+    return keep(plan), keep(appendix)
+
+
+def posture_pointer(plan: Sequence[tuple[str, str, Any]], first: int) -> str:
+    number = next((first + index for index, (key, *_rest) in enumerate(plan) if key == POSTURE_TITLE), None)
+    return f"The principal ask and when to raise to RED are in section {number}, {POSTURE_TITLE}." if number else ""
+
+
+def posture_lines(brief: Mapping[str, Any]) -> list[tuple[str, str]]:
+    """The action posture's principal ask and RED rule, as (label, text)."""
+    lines = [("Principal ask. ", brief["bottom_line"].get("escalation") or NO_ASK)]
+    triggers = [label[:1].lower() + label[1:] for label in (brief.get("red_triggers") or {}).values()]
+    if triggers:
+        lines.append(("When to raise to RED. ", f"The status is {brief['v2']['status']}. It becomes RED only when R&A confirms that one of these "
+                                                 f"has happened to the business: {'; '.join(triggers)}."))
+    return lines
+
+
+def follow_ups(brief: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
+    """Owners, each with the rows that suggest them a response: escalating items first, then standing items with an option."""
+    from grit.report.format_v2 import short_text
+
+    owners: dict[str, list[str]] = {}
+
+    def add(owner: Any, ref: str) -> None:
+        name = " ".join(str(owner or "").split())
+        if name and name.casefold() not in {"to assign", "unassigned"} and ref not in owners.setdefault(name, []):
+            owners[name].append(ref)
+
+    for number, row in enumerate((brief.get("v2") or {}).get("escalating") or [], start=1):
+        response = row.get("response") or {}
+        if response.get("action"):
+            add(response.get("owner"), f"escalating item {number}, {short_text(row['item'], 80)}")
+    label = brief["meta"].get("standing_label") or "condition"
+    for row in brief.get("conditions") or []:
+        for option in row.get("options") or []:
+            add(option.get("owner"), f"{label} {row['number']}, {row['name']}")
+    return list(owners.items())
+
+
+def correction_cells(row: Mapping[str, Any]) -> list[str]:
+    return [row["id"], row["earlier"], row["why"], row["corrected"], row["source"], row.get("update_old") or "None stated"]
+
 
 def _shade(cell: Any, fill: str) -> None:
     shading = OxmlElement("w:shd")
@@ -233,6 +313,8 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
             run = line.add_run("  " + " ".join(detail))
             run.font.size = Pt(9.5)
 
+    plan, appendix = section_plan(brief, lambda key, title, renderer: renderer(document, brief, title, dry=True))
+    number = 1 if v2 else 0
     bottom = brief["bottom_line"]
     box = document.add_table(rows=1, cols=1)
     box.style = "Table Grid"
@@ -243,28 +325,16 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
     run.bold, run.font.color.rgb = True, NAVY
     body = cell.add_paragraph()
     body.add_run(bottom["text"] or "")
-    if bottom.get("escalation"):
+    if v2:
+        body.add_run(" " + posture_pointer(plan, number))
+    elif bottom.get("escalation"):
         body.add_run(" " + bottom["escalation"])
     note = cell.add_paragraph()
     run = note.add_run(f"Drafted by the {bottom['drafted_by']}.")
     run.italic, run.font.size, run.font.color.rgb = True, Pt(8), LIGHT
 
-    number = 1 if v2 else 0
-    if v2:
-        for title, renderer in V2_SECTIONS:
-            if renderer(document, brief, f"{number}. {title}", dry=True):
-                renderer(document, brief, f"{number}. {title}", dry=False)
-                number += 1
-    for key in meta["sections"]:
-        if key == "BOTTOM_LINE" or (v2 and key in V2_REPLACES):
-            continue
-        renderer = _SECTIONS.get(key)
-        if renderer is None:
-            continue
-        title = f"{number}. {section_title(meta, key)}"
-        if not renderer(document, brief, title, dry=True):
-            continue
-        renderer(document, brief, title, dry=False)
+    for key, title, renderer in plan:
+        renderer(document, brief, f"{number}. {title}", dry=False)
         number += 1
     if v2:
         _quality(document, brief, f"{number}. Quality and completeness check")
@@ -272,6 +342,8 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
     _method(document, brief)
     if v2:
         _source_register(document, brief, f"{number}. Source register")
+    for letter, (key, title, renderer) in zip(APPENDIX_LETTERS, appendix):
+        renderer(document, brief, f"Appendix {letter}. {title}", dry=False)
     _REGISTER = None
     _apply_first_use(document)
     _footers(document)
@@ -744,31 +816,39 @@ def _scenarios(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool
     return True
 
 
+def red_line(alert: Mapping[str, Any], triggers: Mapping[str, str]) -> tuple[str, str]:
+    """A RED candidate and the R&A decision on it, as (label, text)."""
+    status = alert.get("status") or "CANDIDATE"
+    decision = alert.get("decision") or {}
+    label = {"CONFIRMED": "RED confirmed: ", "NOT_CONFIRMED": "RED not confirmed: "}.get(status, "RED candidate: ")
+    rule = f" — rule {(alert.get('rule') or {}).get('rule_id')}"
+    if status == "CANDIDATE":
+        return label, f"{alert['title']}{rule}. Awaiting R&A impact confirmation."
+    trigger = triggers.get(str(decision.get("trigger_id")))
+    return label, f"{alert['title']}{rule}. {decision.get('decided_by')}, R&A: {decision.get('impact')}" + (f" Trigger: {trigger}." if trigger else "")
+
+
+def _watchpoint_bullets(document: Any, rows: Sequence[Mapping[str, Any]]) -> None:
+    if rows:
+        document.add_paragraph("Concrete watchpoints carried into next cycle:")
+    for row in rows:
+        paragraph = document.add_paragraph(style="List Bullet")
+        paragraph.add_run(f"{row['title']}").bold = True
+        paragraph.add_run(f" ({row['status'].lower()}): {row['detail']} ")
+        _runs(paragraph, row["update"], fallback="")
+
+
 def _watchpoints(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
     if dry:
         return True
     _heading(document, title)
     document.add_paragraph(brief["bottom_line"]["text"] or "")
-    open_rows = [row for row in brief["watchpoints"] if row["status"] != "CLOSED"]
-    if open_rows:
-        document.add_paragraph("Concrete watchpoints carried into next cycle:")
-    for row in open_rows:
-        paragraph = document.add_paragraph(style="List Bullet")
-        paragraph.add_run(f"{row['title']}").bold = True
-        paragraph.add_run(f" ({row['status'].lower()}): {row['detail']} ")
-        _runs(paragraph, row["update"], fallback="")
+    _watchpoint_bullets(document, [row for row in brief["watchpoints"] if row["status"] != "CLOSED"])
     for alert in brief.get("red") or []:
-        status = alert.get("status") or "CANDIDATE"
-        decision = alert.get("decision") or {}
+        label, text = red_line(alert, brief.get("red_triggers") or {})
         paragraph = document.add_paragraph(style="List Bullet")
-        paragraph.add_run({"CONFIRMED": "RED confirmed: ", "NOT_CONFIRMED": "RED not confirmed: "}.get(status, "RED candidate: ")).bold = True
-        rule = f" — rule {(alert.get('rule') or {}).get('rule_id')}"
-        if status == "CANDIDATE":
-            paragraph.add_run(f"{alert['title']}{rule}. Awaiting R&A impact confirmation.")
-        else:
-            trigger = (brief.get("red_triggers") or {}).get(str(decision.get("trigger_id")))
-            paragraph.add_run(f"{alert['title']}{rule}. {decision.get('decided_by')}, R&A: {decision.get('impact')}"
-                              + (f" Trigger: {trigger}." if trigger else ""))
+        paragraph.add_run(label).bold = True
+        paragraph.add_run(text)
     if brief.get("red") and brief.get("red_triggers"):
         note = document.add_paragraph()
         run = note.add_run("A rule match is a RED candidate, not RED. RED needs R&A to confirm that one of these happened to the business: "
@@ -1028,6 +1108,56 @@ def _watch(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) ->
     return True
 
 
+def _v2_watchpoints(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    """Open watchpoints only. A format v2 report opens with its bottom line and keeps RED in the action posture."""
+    rows = [row for row in brief["watchpoints"] if row["status"] != "CLOSED"]
+    if dry:
+        return bool(rows)
+    _heading(document, title)
+    _watchpoint_bullets(document, rows)
+    return True
+
+
+def _posture(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    """The recommended action posture (URS methodology, section 15): one principal ask, when the status becomes RED,
+    and the follow-ups by owner."""
+    if dry:
+        return True
+    _heading(document, title)
+    for label, text in posture_lines(brief):
+        paragraph = document.add_paragraph()
+        paragraph.add_run(label).bold = True
+        paragraph.add_run(text)
+    for alert in brief.get("red") or []:
+        label, text = red_line(alert, brief.get("red_triggers") or {})
+        paragraph = document.add_paragraph(style="List Bullet")
+        paragraph.add_run(label).bold = True
+        paragraph.add_run(text)
+    owners = follow_ups(brief)
+    if owners:
+        paragraph = document.add_paragraph()
+        paragraph.add_run(FOLLOW_UPS_LABEL).bold = True
+        paragraph.add_run(FOLLOW_UPS_NOTE)
+        for owner, refs in owners:
+            paragraph = document.add_paragraph(style="List Bullet")
+            paragraph.add_run(f"{owner}: ").bold = True
+            paragraph.add_run("; ".join(refs) + ".")
+    return True
+
+
+def _corrections(document: Any, brief: Mapping[str, Any]) -> None:
+    _heading(document, "Corrections ledger", level=3)
+    rows = brief.get("corrections") or []
+    if not rows:
+        document.add_paragraph(NO_CORRECTIONS)
+        return
+    _note(document, CORRECTIONS_NOTE)
+    widths = (1.6, 3.4, 3.4, 3.4, 2.7, 2.6)
+    table = _table(document, CORRECTIONS_HEADERS, widths)
+    for row in rows:
+        _row(table, correction_cells(row), widths)
+
+
 def _quality(document: Any, brief: Mapping[str, Any], title: str) -> None:
     v2 = brief["v2"]
     _heading(document, title)
@@ -1045,6 +1175,7 @@ def _quality(document: Any, brief: Mapping[str, Any], title: str) -> None:
         table = _table(document, ("Item", "What the sources say", "Treatment"), widths)
         for row in v2["conflicts"]:
             _row(table, [row["item"], row["said"], row["treatment"]], widths)
+    _corrections(document, brief)
 
 
 def _source_register(document: Any, brief: Mapping[str, Any], title: str) -> None:
@@ -1065,13 +1196,18 @@ def _source_register(document: Any, brief: Mapping[str, Any], title: str) -> Non
 
 # The named watch table replaces these prose sections in a format v2 brief.
 V2_REPLACES = frozenset({"SUPPLIERS", "CUSTOMERS", "COMPETITORS"})
+# A format v2 report follows the URS methodology's order (section 15), as Wilson's report does: these sections, then the
+# reader's own sections, then V2_CLOSING, the quality check and the source register. Audit material goes to an appendix.
 V2_SECTIONS = (
     ("Exposure snapshot", _exposure),
-    ("Escalating and elevated items", _escalating),
     ("What changed since the last report", _changes),
     ("Look-ahead: the next 30 days", _look_ahead),
+    ("Escalating and elevated items", _escalating),
     ("Prioritisation", _priorities),
     ("Coverage matrix", _coverage),
     ("Jurisdiction coverage", _jurisdictions),
+)
+V2_CLOSING = (
     ("Named supplier, customer and competitor watch", _watch),
+    (POSTURE_TITLE, _posture),
 )

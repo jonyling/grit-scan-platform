@@ -11,24 +11,38 @@ citations retain their real source dates and display the exception.
 
 ## 1. What changes
 
-The weekly brief follows the order of Wilson's report *URS GRIT Scan, BA-wide, 22–29 October 2026 (v2)*. It is event-led: the week's news is grouped into events, each mapped back to the register risks it touches. The risk-theme table stays as the risk view.
+The weekly brief follows the order of the URS methodology (section 15) and of Wilson's report *URS GRIT Scan, BA-wide, 22–29 October 2026 (v2)*. It is event-led: the week's news is grouped into events, each mapped back to the register risks it touches. The risk-theme table stays as the risk view.
 
 | Order | Section | Source |
 |---|---|---|
 | Header | `STATUS: STABLE`, `ELEVATED` or `RED`, a ▲ = ▼ arrow per event, and the next dated items | `grit/report/format_v2.py` |
-| Box | Bottom line | Reporter (unchanged) |
-| 1 | Escalating and elevated items: item and risk, summary, implications, suggested response with owner, sources | `grit/pipeline/events.py`, EventAssessor |
+| Box | Bottom line, ending with the number of the action posture section | Reporter |
+| 1 | Exposure snapshot: the approved internal snapshot, or a statement that there was none | `grit/pipeline/exposure_snapshot.py` |
 | 2 | What changed since the last report | Rule |
 | 3 | Look-ahead: the next 30 days, and the leading indicators | `grit/report/lookahead.py` |
-| 4 | Prioritisation: item, trend, risk linkage, owner or forum | Rule |
-| 5 | Coverage matrix: line of business × Operational, Financial / macro, Supply / cost, Competitor / tech, Regulatory / legal | Rule |
-| 6 | Jurisdiction coverage: each country with registered entities or assets | Rule |
-| 7 | Named supplier, customer and competitor watch | Reporter's item entries |
-| 8 onwards | The profile's sections: risk themes, scenarios, management requests, entity packs, entities, priority findings, QA log, watchpoints | Unchanged |
-| Last but one | Quality and completeness check: the self-challenge gate and conflicts between sources | Rule |
-| Appendix | Source register: every cited source as `[S#]`, with outlet, title, date, tier and link | Word renderer |
+| 4 | Escalating and elevated items: item and risk, summary, implications, suggested response with owner, sources | `grit/pipeline/events.py`, EventAssessor |
+| 5 | Prioritisation: item, trend, risk linkage, owner or forum | Rule |
+| 6 | Coverage matrix: line of business × Operational, Financial / macro, Supply / cost, Competitor / tech, Regulatory / legal | Rule |
+| 7 | Jurisdiction coverage: each country with registered entities or assets | Rule |
+| 8 onwards | The profile's sections: risk themes, scenarios, management requests, entity packs, priority findings, open watchpoints | Unchanged |
+| Then | Named supplier, customer and competitor watch | Reporter's item entries |
+| Then | Recommended action posture: the principal ask, when the status becomes RED, each RED candidate with the R&A decision, and the follow-ups by owner | Reporter's ask; rule |
+| Then | Quality and completeness check: the self-challenge gate, conflicts between sources, and the corrections ledger | Rule; R&A's ledger |
+| Then | Source register: every cited source as `[S#]`, with outlet, title, date, tier and link | Word renderer |
+| Appendix | Audit material from the profile: entities by line of business, other signals, and the QA and correction log | Unchanged |
 
-The prose supplier, customer and competitor sections are replaced by the named watch table. The slide deck adds one table slide of escalating and elevated items after the summary slides. The Markdown preview carries the same tables.
+The prose supplier, customer and competitor sections are replaced by the named watch table. The slide deck adds one table slide of escalating and elevated items after the summary slides. The Markdown preview carries the same tables, without the source register.
+
+The scan is wide and the report narrow (URS methodology, section 24), so audit material goes to the appendix. The action
+posture follows the methodology's "one major ask, followed by limited follow-ups": the principal ask is the Reporter's
+validated escalation text, and the follow-ups list each owner with the escalating items and standing items whose rows suggest
+them a response. A watchpoints section appears only when a watchpoint is open.
+
+The corrections ledger (URS methodology, section 22) holds material corrections that R&A records with `grit corrections add`:
+the earlier statement, why it was wrong or incomplete, the corrected fact, its source, and the earlier reports to update.
+Every later report of the pack carries the open corrections until R&A closes them, and every agent receives them with the
+admitted Memory corrections. A correction can retire an exact phrase, such as "S$600m": a Reporting edit that uses it fails
+its contract and is repaired, and `grit scorecard` flags a report whose narrative uses it.
 
 ## 2. Events and bands
 
@@ -74,6 +88,8 @@ The Assessor's prompt (`reader-assessor-6`) also asks for dates, actors, places 
 ## 4. Look-ahead
 
 A date is kept only when a source linked to the business area states it as a day and a month within the next 30 days. The row is the source's own sentence. Two sentences on the same date are one row when they share most words or come from the same event. Nothing is forecast.
+
+A wire dateline, such as "Riyadh, November 3 (ANI):" or "WASHINGTON, Nov 3 (Reuters) -", dates the report, not an event. Its date is never read as an event date, here or in the event dates the agents receive, and the row drops the dateline from the sentence.
 
 ## 5. Coverage, jurisdictions and the quality gate
 
