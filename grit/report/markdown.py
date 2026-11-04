@@ -36,10 +36,32 @@ def _table(headers: Any, rows: Any) -> list[str]:
     return ["| " + " | ".join(headers) + " |", "|" + "---|" * len(headers), *("| " + " | ".join(_cell(value) for value in row) + " |" for row in rows)]
 
 
+EXPOSURE_TABLES = (
+    ("sites", "Sites", ("Entity", "City", "Country", "Staff", "Safety last confirmed"), ("entity", "city", "country", "headcount", "safetyConfirmed")),
+    ("travel", "Travel", ("Destination", "Country", "Travellers", "Until", "Safety last confirmed"), ("destination", "country", "travellers", "until", "safetyConfirmed")),
+    ("projects", "Projects", ("Project", "Entity", "Where", "Value", "Next milestone"), ("name", "entity", "city", "value", "nextMilestone")),
+    ("financial", "Financial exposure", ("Item", "Entity", "Amount"), ("item", "entity", "amount")),
+    ("alerts", "Internal alerts", ("Date", "Location", "Summary"), ("date", "location", "summary")),
+)
+
+
+def _exposure(snapshot: Mapping[str, Any] | None) -> list[str]:
+    """The approved exposure snapshot (URS methodology, section 15.2), or a statement that there was none."""
+    if not snapshot:
+        return ["No approved internal exposure snapshot this week. Staff, site and project exposure rests on public sources only."]
+    lines = [f"Approved internal data as of {snapshot.get('asOf')}, approved by {snapshot.get('approvedBy')}. "
+             f"Sources: {'; '.join(snapshot.get('sources') or []) or 'not stated'}.", ""]
+    for key, title, headers, fields in EXPOSURE_TABLES:
+        if snapshot.get(key):
+            lines += [f"**{title}**", "", *_table(list(headers), [[row.get(field) if row.get(field) not in (None, "") else "Not recorded"
+                                                                      for field in fields] for row in snapshot[key]]), ""]
+    return lines
+
+
 def _v2(brief: Mapping[str, Any], number: int) -> tuple[list[str], int]:
     """Format v2 sections (spec 44), in the order of Wilson's report."""
     v2, short = brief["v2"], brief["v2"]["short"]
-    sections: list[tuple[str, list[str]]] = []
+    sections: list[tuple[str, list[str]]] = [("Exposure snapshot", _exposure(v2.get("exposure")))]
     rows = [[n, f"{row['band']} **{row['item']}**" + (f" [{row['risk']}]" if row["risk"] else ""), _md(row["summary"], "Withheld: the draft failed its checks. See the QA log."),
              _md(row["implications"], "Not drafted."), f"{(row.get('response') or {}).get('action') or 'Not drafted.'} Owner: {(row.get('response') or {}).get('owner') or 'to assign'}.", _refs(row["sources"])]
             for n, row in enumerate(v2["escalating"], start=1)]
@@ -108,7 +130,7 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
                 body += [f"- {item['name']}: {_md(item['text'])}" for item in group["items"]]
         elif key == "MANAGEMENT_REQUESTS":
             for row in [item for item in brief.get("management_requests") or [] if item["status"] == "ACTIVE"]:
-                body.append(f"- **{row['title']}** ({row['source'] or row['requested_by']}): " + ("; ".join(f"[{item['title']}]({item['url']}) ({item['outlet']}, {item['date'] or 'n.d.'})" for item in row["signals"]) or "no signal matched this week."))
+                body.append(f"- **{row['title']}** ({row['source'] or row['requested_by']}): " + ("; ".join(f"[{item['title']}]({item['url']}) ({item['outlet']}, {item['date'] or 'n.d.'}{', ' + item['via'] if item.get('via') else ''})" for item in row["signals"]) or "no signal matched this week."))
         elif key == "ENTITY_PACKS":
             for row in brief.get("entity_packs") or []:
                 body.append(f"- **{row['label']}**: {row['bottom_line'] or 'no validated bottom line on this date.'}" + (f" Moved: {'; '.join(row['moved'])}." if row.get("moved") else ""))
@@ -193,7 +215,7 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
             body += [f"- **{row['item']}**: {row['prior'] or ''} → {_md(row['correction'])}" for row in brief.get("qa") or []] or ["- No supported issue this week."]
         elif key == "WATCHPOINTS":
             body += [f"- **{row['title']}** ({row['status'].lower()}): {row['detail']} {_md(row['update'], '')}" for row in brief.get("watchpoints") or [] if row["status"] != "CLOSED"]
-            body.append(f"\nEscalation assessment: {bottom.get('escalation') or ''}")
+            body.append(f"\nRecommended action posture: {bottom.get('escalation') or ''}")
         if body:
             lines += [f"## {number}. {section_title(meta, key)}", "", *body, ""]
             number += 1

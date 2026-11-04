@@ -11,7 +11,8 @@ from grit.core.red_events import RED_EVENTS, merge_red_patterns, sync_red_patter
 
 BY_ID = {rule["ruleId"]: rule for rule in RED_EVENTS}
 
-# rule id, record, expect red. Corroboration is two outlets unless the case says otherwise.
+# rule id, record, expect red. Corroboration is two outlets unless the case says otherwise. The pack has entities in Taiwan,
+# Israel and Saudi Arabia, so a rule that needs a jurisdiction needs one of those named.
 CASES = [
     ("RED-PANDEMIC", {"title": "WHO declares a pandemic", "text": "The agency declared a pandemic today."}, True),
     ("RED-PANDEMIC", {"title": "WHO declares a pandemic that could spread", "text": ""}, False),
@@ -33,7 +34,11 @@ CASES = [
     ("RED-MIDEAST-EVACUATION", {"title": "Staff ordered to evacuate from Israel", "text": "The order followed missile strikes."}, True),
     ("RED-MIDEAST-EVACUATION", {"title": "Staff ordered to evacuate from Singapore", "text": ""}, False),
     ("RED-MIDEAST-EVACUATION", {"title": "Israel could order an evacuation", "text": ""}, False),
-    ("RED-AI-QUANTUM-CYBER", {"title": "Hackers used ransomware against a quantum laboratory", "text": ""}, True),
+    ("RED-AI-QUANTUM-CYBER", {"title": "Hackers used ransomware against a quantum laboratory", "text": "", "rung": "COUNTERPARTY"}, True),
+    ("RED-AI-QUANTUM-CYBER", {"title": "Hackers used ransomware against a quantum laboratory", "text": ""}, False),
+    ("RED-MIDEAST-EVACUATION", {"title": "Staff ordered to evacuate from Lebanon", "text": "The order followed strikes."}, False),
+    ("RED-MIDEAST-EVACUATION", {"title": "US orders staff out of Saudi Arabia; families evacuated", "text": ""}, True),
+    ("RED-EARTHQUAKE-8", {"title": "USGS: magnitude 8.1 earthquake, Chile", "text": ""}, False),
     ("RED-AI-QUANTUM-CYBER", {"title": "Researchers say AI could face a cyber attack", "text": ""}, False),
     ("RED-SANCTIONS-LINKED", {"title": "US hits the supplier with sanctions", "text": "Sanctions imposed overnight.", "rung": "DIRECT"}, True),
     ("RED-SANCTIONS-LINKED", {"title": "US adds firm to Entity List", "text": "", "rung": "COUNTERPARTY"}, False),
@@ -58,7 +63,8 @@ CASES = [
 
 @pytest.mark.parametrize(("rule_id", "record", "expect"), CASES, ids=[f"{number}-{case[0]}-{'red' if case[2] else 'not'}" for number, case in enumerate(CASES)])
 def test_each_red_event(rule_id: str, record: dict, expect: bool) -> None:
-    result = red_check(record, pack="urs-tw", patterns={"patterns": [BY_ID[rule_id]]}, corroboration=2, high_rated_source=False)
+    result = red_check(record, pack="urs-tw", patterns={"patterns": [BY_ID[rule_id]]}, corroboration=2, high_rated_source=False,
+                       jurisdictions=("Taiwan", "Israel", "Saudi Arabia"))
     assert result.red is expect
     if expect:
         assert result.rule_id == rule_id
@@ -96,5 +102,6 @@ def test_sync_appends_missing_ids_and_does_not_replace_an_existing_rule(tmp_path
     assert pandemic["label"] == "kept" and pandemic["phrases"] == ["custom phrase"]
     assert document["harmVerdicts"] == ["HIGH"]
     assert "RED-PANDEMIC" not in added
-    assert set(added) == {rule["ruleId"] for rule in RED_EVENTS if rule["ruleId"] != "RED-PANDEMIC"}
+    assert set(added) == {rule["ruleId"] for rule in RED_EVENTS if rule["ruleId"] != "RED-PANDEMIC"} | {"triggers"}
+    assert len(document["triggers"]) == 10, "the methodology's RED triggers are added once, then left for R&A to edit"
     assert sync_red_patterns(path) == []

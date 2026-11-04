@@ -80,7 +80,9 @@ The Proposer is a seventh agent role. It proposes options for management to cons
 
 ### When it runs
 
-It runs for a Key Risk whose assessment is validated and that either is escalating or cites a material source. A material source has a `DIRECT`, `PERIMETER`, or `COUNTERPARTY` rung, a P1 or P2 priority, or briefing tier 1 or 2. A business area has at most six Proposer calls a week.
+It runs for a Key Risk whose assessment is validated and cites at least one source this week, so every key risk with a development gets response options. A business area has at most six Proposer calls a week. The report's action posture adds one principal ask (spec 45).
+
+Until 4 November 2026 it ran only for a Key Risk that was escalating or cited a material source (a `DIRECT`, `PERIMETER`, or `COUNTERPARTY` rung, a P1 or P2 priority, or briefing tier 1 or 2). On the 2 November URS week that left four of six key risks without options.
 
 ### Input
 

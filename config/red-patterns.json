@@ -1,7 +1,7 @@
 {
   "registerId": "GRIT-RED-PATTERNS",
   "status": "DRAFT_FOR_REVIEW",
-  "note": "Tiny patterns for urgent events. A hit drafts an email for a named person to send or dismiss. Nothing is sent automatically. A pattern must hit the title or the lead, and the event must be corroborated by a second outlet or carried by a HIGH-rated registered source. A pattern in a sentence that forecasts, assesses, or rehearses the event (the rule's excludeInSentence words) does not count: 'invasion of Taiwan unlikely before 2028' is not an invasion.",
+  "note": "Tiny patterns for urgent events. A hit is a RED candidate: a prompt for R&A to check, not RED. RED is confirmed only by a named R&A confirmer who names the trigger in 'triggers' that happened to the business (URS methodology, section 14). Tiny patterns for urgent events. A hit drafts an email for a named person to send or dismiss. Nothing is sent automatically. A pattern must hit the title or the lead, and the event must be corroborated by a second outlet or carried by a HIGH-rated registered source. A pattern in a sentence that forecasts, assesses, or rehearses the event (the rule's excludeInSentence words) does not count: 'invasion of Taiwan unlikely before 2028' is not an invasion.",
   "patterns": [
     {
       "ruleId": "RED-TW-CONFLICT",
@@ -216,7 +216,8 @@
         "warns",
         "warning"
       ],
-      "regex": "(?<![\\d.])(?:magnitude[\\s-]*(?:8(?:\\.\\d+)?|9(?:\\.\\d+)?)|(?:8(?:\\.\\d+)?|9(?:\\.\\d+)?)[\\s-]*magnitude)[\\s-]*(?:earthquake|quake)\\b"
+      "regex": "(?<![\\d.])(?:magnitude[\\s-]*(?:8(?:\\.\\d+)?|9(?:\\.\\d+)?)|(?:8(?:\\.\\d+)?|9(?:\\.\\d+)?)[\\s-]*magnitude)[\\s-]*(?:earthquake|quake)\\b",
+      "requiresJurisdiction": true
     },
     {
       "ruleId": "RED-FINANCIAL-MELTDOWN",
@@ -417,7 +418,8 @@
         "warns",
         "warning"
       ],
-      "regex": "(?:(?:evacuat(?:e|es|ed|ion|ing)|ordered to leave)).{0,80}(?:(?:Middle East|Israel|Israeli|Iran|Iranian|Lebanon|Lebanese|Gaza|Yemeni|Yemen|Saudi|UAE|United Arab Emirates|Qatar|Qatari|Iraq|Iraqi|Syria|Syrian|Hormuz|Red Sea))|(?:(?:Middle East|Israel|Israeli|Iran|Iranian|Lebanon|Lebanese|Gaza|Yemeni|Yemen|Saudi|UAE|United Arab Emirates|Qatar|Qatari|Iraq|Iraqi|Syria|Syrian|Hormuz|Red Sea)).{0,80}(?:(?:evacuat(?:e|es|ed|ion|ing)|ordered to leave))"
+      "regex": "(?:(?:evacuat(?:e|es|ed|ion|ing)|ordered to leave)).{0,80}(?:(?:Middle East|Israel|Israeli|Iran|Iranian|Lebanon|Lebanese|Gaza|Yemeni|Yemen|Saudi|UAE|United Arab Emirates|Qatar|Qatari|Iraq|Iraqi|Syria|Syrian|Hormuz|Red Sea))|(?:(?:Middle East|Israel|Israeli|Iran|Iranian|Lebanon|Lebanese|Gaza|Yemeni|Yemen|Saudi|UAE|United Arab Emirates|Qatar|Qatari|Iraq|Iraqi|Syria|Syrian|Hormuz|Red Sea)).{0,80}(?:(?:evacuat(?:e|es|ed|ion|ing)|ordered to leave))",
+      "requiresJurisdiction": true
     },
     {
       "ruleId": "RED-AI-QUANTUM-CYBER",
@@ -450,7 +452,11 @@
         "warns",
         "warning"
       ],
-      "regex": "(?:(?:artificial intelligence|\\bAI\\b|quantum)).{0,80}(?:(?:cyber ?attacks?|ransomware|data breach(?:es)?))|(?:(?:cyber ?attacks?|ransomware|data breach(?:es)?)).{0,80}(?:(?:artificial intelligence|\\bAI\\b|quantum))"
+      "regex": "(?:(?:artificial intelligence|\\bAI\\b|quantum)).{0,80}(?:(?:cyber ?attacks?|ransomware|data breach(?:es)?))|(?:(?:cyber ?attacks?|ransomware|data breach(?:es)?)).{0,80}(?:(?:artificial intelligence|\\bAI\\b|quantum))",
+      "requiresRung": [
+        "DIRECT",
+        "COUNTERPARTY"
+      ]
     },
     {
       "ruleId": "RED-SANCTIONS-LINKED",
@@ -841,5 +847,47 @@
   ],
   "harmVerdicts": [
     "HIGH_NEGATIVE_IMPACT"
+  ],
+  "triggers": [
+    {
+      "triggerId": "STAFF_HARMED",
+      "label": "An employee or contractor injured, killed or unaccounted for"
+    },
+    {
+      "triggerId": "STAFF_STRANDED",
+      "label": "Staff stranded or unable to leave"
+    },
+    {
+      "triggerId": "ASSET_DAMAGED",
+      "label": "An office, site, asset or shipment damaged or hit"
+    },
+    {
+      "triggerId": "PROJECT_SUSPENDED",
+      "label": "A project formally suspended"
+    },
+    {
+      "triggerId": "MILESTONE_DISRUPTED",
+      "label": "A material project milestone disrupted"
+    },
+    {
+      "triggerId": "FORCE_MAJEURE",
+      "label": "A customer force-majeure notice"
+    },
+    {
+      "triggerId": "SUPPLIER_FAILURE",
+      "label": "A material supplier failure"
+    },
+    {
+      "triggerId": "CASH_PAYMENT",
+      "label": "A material cash or payment issue"
+    },
+    {
+      "triggerId": "CYBER_INCIDENT",
+      "label": "A severe cyber incident affecting the business"
+    },
+    {
+      "triggerId": "AUTHORITY_RESTRICTION",
+      "label": "Authorities close a project geography or restrict delivery directly"
+    }
   ]
 }

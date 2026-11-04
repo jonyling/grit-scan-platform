@@ -1,7 +1,7 @@
 {
   "registerId": "URS-SCAN-PLAN",
   "status": "DRAFT_FOR_REVIEW",
-  "note": "The Urban Solutions business-area scan. Standing items are the 14 STE themes from workbook sheet 7. Theme queries are hand-authored and anchored to URS sectors (rail, road and tolling, utilities, security, healthcare robotics), because a bare theme word such as 'competition' returns news about everything. Named items (entities, customers, suppliers, competitors) come from the typed graph, so names bind with the link ladder and the reviewed aliases. Management requests come from workbook sheet 10: a numbered request, and a focus item whose status says 'Management priority' or 'Core control focus', start ACTIVE; a focus item marked 'Research draft' starts PROPOSED until a reviewer activates it. Only an ACTIVE request runs its queries and assigns P1. Edit this file to change the scan; no code change is needed. A request keyword 'A + B' needs every part in the title or lead, so 'Qatar + work visa' does not match tourist-visa stories.",
+  "note": "The Urban Solutions business-area scan. Standing items are the 14 STE themes from workbook sheet 7. Theme queries are hand-authored and anchored to URS sectors (rail, road and tolling, utilities, security, healthcare robotics), because a bare theme word such as 'competition' returns news about everything. Named items (entities, customers, suppliers, competitors) come from the typed graph, so names bind with the link ladder and the reviewed aliases. Management requests come from workbook sheet 10: a numbered request, and a focus item whose status says 'Management priority' or 'Core control focus', start ACTIVE; a focus item marked 'Research draft' starts PROPOSED until a reviewer activates it. Only an ACTIVE request runs its queries and assigns P1. Edit this file to change the scan; no code change is needed. A request keyword 'A + B' needs every part in the title or lead, so 'Qatar + work visa' does not match tourist-visa stories. Official and primary sources come first (URS methodology, sections 6 to 9): central banks and yields, export-control notices, embassy and travel-advisory alerts for URS jurisdictions, and hazard warnings.",
   "standingSet": "themes",
   "windowDays": 8,
   "audience": "Head, Urban Solutions (Gareth); R&A Business Partner, Urban Solutions (Hwaimay); Group Head, Risk & Assurance (Wilson)",
@@ -17,14 +17,19 @@
       "themeId": "URS-KEY-02",
       "queries": [
         "Singapore dollar outlook MAS",
-        "infrastructure contractors inflation costs Asia"
+        "infrastructure contractors inflation costs Asia",
+        "Federal Reserve FOMC interest rate decision",
+        "US Treasury yields outlook",
+        "USD TWD Taiwan dollar exchange rate",
+        "MAS monetary policy statement Singapore dollar"
       ]
     },
     {
       "themeId": "URS-KEY-03",
       "queries": [
         "metro rail project cost overrun",
-        "rail project delay liquidated damages"
+        "rail project delay liquidated damages",
+        "Brent crude Strait of Hormuz shipping insurance freight"
       ]
     },
     {
@@ -39,7 +44,9 @@
       "themeId": "URS-KEY-05",
       "queries": [
         "export controls Chinese rail suppliers",
-        "geopolitical risk infrastructure contractors Asia"
+        "geopolitical risk infrastructure contractors Asia",
+        "MOFCOM export control announcement",
+        "China export controls rare earths gallium germanium"
       ]
     },
     {
@@ -58,7 +65,9 @@
       "themeId": "URS-TIER_2-02",
       "queries": [
         "earthquake flood rail service disruption Asia",
-        "supply chain disruption electronics components"
+        "supply chain disruption electronics components",
+        "Singapore haze PSI NEA",
+        "typhoon warning Taiwan Hong Kong"
       ]
     },
     {
@@ -86,7 +95,11 @@
       "themeId": "URS-EMERGING-01",
       "queries": [
         "Middle East conflict staff evacuation companies",
-        "Red Sea shipping disruption Asia"
+        "Red Sea shipping disruption Asia",
+        "State Department travel advisory Saudi Arabia Qatar UAE Israel",
+        "US embassy security alert Saudi Arabia",
+        "embassy security alert Qatar UAE Israel",
+        "Houthi missile drone attack Saudi Arabia"
       ]
     },
     {

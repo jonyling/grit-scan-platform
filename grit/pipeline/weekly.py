@@ -28,8 +28,9 @@ RoleCall = Callable[..., dict[str, Any]]
 FULL_TEXT_CHARS = 4000
 INDEX_TEXT_CHARS = 240
 RELATED_LIMIT = 30
+INTERNAL_LIMIT = 20
 MAX_PAYLOAD_CHARS = 2_000_000
-INDEX_FIELDS = ("signal_id", "title", "publisher", "published_at", "event_dates", "time_scope", "decision", "drop_reason",
+INDEX_FIELDS = ("signal_id", "title", "publisher", "source_band", "published_at", "event_dates", "time_scope", "decision", "drop_reason",
                 "tier", "condition_ids", "red", "assessment_missing", "internal_exposure", "hindsight_checks")
 EVENT_LEAD_CHARS, EVENT_DATES_MAX = 600, 3
 # The included findings that must each have a recorded contradiction search before release.
@@ -56,6 +57,46 @@ def stable_batches(keys: Sequence[str], target: int, limit: int) -> list[list[st
     if current:
         batches.append(current)
     return batches
+
+
+SAME_EVENT_DAYS, SAME_EVENT_TERMS, SAME_EVENT_MAX = 7, 2, 6
+
+
+def event_terms(row: Mapping[str, Any]) -> frozenset[str]:
+    """Distinctive headline words (grit.core.headlines)."""
+    from grit.core.headlines import distinctive_terms
+
+    return distinctive_terms(str(row.get("title") or ""))
+
+
+def band_rank(row: Mapping[str, Any]) -> int:
+    from grit.core.source_bands import BANDS
+
+    band = str(row.get("source_band") or "UNRATED")
+    return BANDS.index(band) if band in BANDS else len(BANDS)
+
+
+def same_event(key: str, sources: Mapping[str, Mapping[str, Any]], terms_of: Mapping[str, frozenset[str]] | None = None) -> list[str]:
+    """Other candidates whose headlines share at least two distinctive words with this one, published within a week.
+    terms_of: precomputed event_terms per candidate, so a batch does not recompute them."""
+    terms_of = terms_of if terms_of is not None else {other: event_terms(candidate) for other, candidate in sources.items()}
+    row = sources[key]
+    terms = terms_of.get(key) or frozenset()
+    if len(terms) < SAME_EVENT_TERMS:
+        return []
+    day = str(row.get("published_at") or "")[:10]
+    found = []
+    for other, candidate in sources.items():
+        if other == key or len(terms & (terms_of.get(other) or frozenset())) < SAME_EVENT_TERMS:
+            continue
+        when = str(candidate.get("published_at") or "")[:10]
+        try:
+            if day and when and abs((date.fromisoformat(day) - date.fromisoformat(when)).days) > SAME_EVENT_DAYS:
+                continue
+        except ValueError:
+            pass
+        found.append(other)
+    return sorted(found, key=lambda other: (band_rank(sources[other]), other))[:SAME_EVENT_MAX]
 
 
 def full_view(row: Mapping[str, Any], limit: int = FULL_TEXT_CHARS) -> dict[str, Any]:
@@ -364,18 +405,30 @@ class WeeklyCoordinator:
         return sorted(key for key, row in sources.items()
                       if (latest[key]["decision"] in {"INCLUDE", "WATCH"} if key in latest else row.get("decision") == "KEEP"))
 
+    @property
+    def register(self) -> frozenset[str]:
+        """The standing-item IDs a selection may link to: the pack's register, as given to every role."""
+        context = ((self.pool.run(self.run_id) or {}).get("config") or {}).get("weekly_context") or {}
+        return frozenset(str(item.get("id")) for item in context.get("standing_items") or [] if isinstance(item, Mapping) and item.get("id"))
+
     def related(self, batch: Sequence[str], sources: Mapping[str, Mapping[str, Any]],
                 included: Sequence[str] | None = None) -> dict[str, Any]:
-        """Index entries for linked duplicates and included items sharing a register condition with the batch."""
+        """Index entries for linked duplicates, other reports of the same event (best band first), and included items
+        sharing a register condition with the batch. Same-event reports let a selection cite its corroboration."""
         members = set(batch)
         linked = {(sources[key].get("link") or {}).get("duplicate_of") for key in batch} - {None}
         linked |= {key for key, row in sources.items() if (row.get("link") or {}).get("duplicate_of") in members}
+        terms_of = {key: event_terms(row) for key, row in sources.items()}
+        same = sorted({key for member in batch for key in same_event(member, sources, terms_of) if key not in members},
+                      key=lambda key: (band_rank(sources[key]), key))
         conditions = {item for key in batch for item in (sources[key].get("condition_ids") or [])}
         sharing = [key for key in (self.included_ids(sources) if included is None else included)
                    if key not in members and conditions & set(sources[key].get("condition_ids") or [])]
         sharing.sort(key=lambda key: (sources[key].get("tier") or 9, key))
-        chosen = [key for key in sorted(linked) if key in sources and key not in members] + sharing
-        return {key: index_view(sources[key]) for key in dict.fromkeys(chosen[:RELATED_LIMIT])}
+        # Approved internal records (the exposure snapshot) go to every batch, so a selection can cite confirmed exposure.
+        internal = sorted(key for key, row in sources.items() if row.get("internal_exposure") and key not in members)[:INTERNAL_LIMIT]
+        chosen = internal + [key for key in sorted(linked) if key in sources and key not in members] + same + sharing
+        return {key: index_view(sources[key]) for key in dict.fromkeys(chosen[:RELATED_LIMIT + len(internal)])}
 
     def batch_issues(self, batch: Sequence[str], sources: Mapping[str, Any]) -> dict[str, Any]:
         members = set(batch)
@@ -699,7 +752,12 @@ class WeeklyCoordinator:
         elevated += [row for row in awaiting if row not in elevated]
         candidates = sorted(row["signal_id"] for row in rows if row["red_candidate"])
         if red:
-            status, basis, ids = "RED", f"The Risk & Assurance operator confirmed the impact of {len(red)} findings.", red
+            from grit.core.red_events import red_triggers
+
+            labels = red_triggers()
+            named = sorted({labels.get(str((decisions.get(row["signal_id"]) or {}).get("trigger_id")), "") for row in red} - {""})
+            status, basis, ids = "RED", (f"The Risk & Assurance operator confirmed the impact of {len(red)} findings"
+                                         + (f" ({'; '.join(named)})." if named else ".")), red
         elif elevated:
             status, basis, ids = "ELEVATED", (f"{len(elevated)} included findings combine identifiable exposure, credible evidence and "
                                               "near-term timing, or a credible immediate threat; no impact is confirmed."), elevated
@@ -843,13 +901,13 @@ class WeeklyCoordinator:
             related = self.related(batch_keys, sources)
             selections, assessment_id = self.invoke("Assessment", f"pool-{round_number}-{offset}", {
                 "candidates": batch, "sources": related, "open_issues": self.batch_issues(batch_keys, sources), "admitted_corrections": memory_context(self.pool, self.run_id),
-            }, lambda raw: check_selections(raw, sources, set(batch)))
+            }, lambda raw: check_selections(raw, sources, set(batch), register=self.register))
             self.store.select(assessment_id, selections["selections"])
             critique, critic_id = self.invoke("Critic", f"pool-{round_number}-{offset}", {
                 "candidates": batch, "sources": related, "assessment": selections,
                 "open_issues": self.batch_issues(batch_keys, sources), "admitted_corrections": memory_context(self.pool, self.run_id),
             }, lambda raw: (check_critique(raw, set(batch), sources, set(self.store.issues())),
-                            check_selections(raw, sources, set(batch))))
+                            check_selections(raw, sources, set(batch), register=self.register)))
             self.store.select(critic_id, critique["selections"])
             self.store.record_critique(critic_id, critique)
 
@@ -881,7 +939,7 @@ class WeeklyCoordinator:
                 raw["resolutions"] = [item for item in raw.get("resolutions", []) if item.get("issue_id") not in outside]
                 raw["ignored_resolutions"] = outside
             if selections:
-                check_selections(raw, sources, members, chain=chain)
+                check_selections(raw, sources, members, chain=chain, register=self.register)
         return validate
 
     def screen(self, round_number: int, keys: Sequence[str], sources: Mapping[str, Any]) -> set[str]:
@@ -917,7 +975,7 @@ class WeeklyCoordinator:
                    "admitted_corrections": corrections} for batch in batches]
         assessments = self.invoke_many([
             ("Assessment", f"pool-{round_number}-{batch[0]}", payload,
-             (lambda members: lambda raw: check_selections(raw, sources, members))(set(batch)), None)
+             (lambda members: lambda raw: check_selections(raw, sources, members, register=self.register))(set(batch)), None)
             for batch, payload in zip(batches, inputs)], f"Assessor full review of {len(keys)} signals")
         for selections, call_id in assessments:
             self.store.select(call_id, selections["selections"])

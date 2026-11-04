@@ -127,8 +127,9 @@ the Critic call exposure confirmed or ruled out; a claim without it is recorded
 as possible exposure. The admitting profile must be a reviewer or BA head.
 
 Keyword matching proposes each signal's risk links. In a reasoned run,
-Assessment and the Critic may remove a link that the fact does not support, but
-never add one. The report shows the reviewed links, and the cascade to business
+Assessment and the Critic may remove a link that the fact does not support, and
+may add one the keywords missed, but only from the pack's register of standing
+items. The report shows the reviewed links, and the cascade to business
 area and Group risks follows them (spec 45).
 
 A weekly report's status is `RED` only after the Risk & Assurance operator
@@ -146,7 +147,8 @@ commas. The command refuses anyone else.
 
 ```bash
 .venv/bin/python -m grit red list --pack urs --run 2026-11-02-urs
-.venv/bin/python -m grit red confirm --pack urs --signal SIGNAL_ID --by "Jony Ling" --impact "IMPACT"
+.venv/bin/python -m grit red triggers --pack urs
+.venv/bin/python -m grit red confirm --pack urs --signal SIGNAL_ID --by "Jony Ling" --impact "IMPACT" --trigger TRIGGER
 .venv/bin/python -m grit red reject --pack urs --signal SIGNAL_ID --by "Jony Ling" --impact "REASON"
 ```
 
@@ -154,6 +156,15 @@ Replace the placeholders:
 
 - `SIGNAL_ID`: an ID from the first column of `grit red list`, such as
   `SIG-bdf6ea260c06752b`.
+- `TRIGGER`: the RED trigger that happened to the business, from
+  `grit red triggers`, such as `STAFF_HARMED` or `PROJECT_SUSPENDED`. A rule
+  match is only a candidate; RED needs one of these triggers.
+
+Some patterns raise a candidate only with a link to the business. An AI or
+quantum cyber attack must involve an STE entity, customer or supplier. A
+Middle East evacuation or a magnitude 8 earthquake must name a country where
+the pack has entities. An official (T1) or HIGH-rated (T2) outlet counts as
+corroboration.
 - `IMPACT`: the confirmed effect on the business, for example "Riyadh office
   closed for two days."
 - `REASON`: why the impact is not confirmed, for example "No STE site or staff
@@ -367,7 +378,7 @@ Run these commands from the repository root. `DATE` is the run date, `YYYY-MM-DD
    .venv/bin/python -m grit weekly --date DATE
    ```
 
-   To run the stages one at a time, use `grit scan`, `grit agents`, and `grit report` with the same `--date`. `grit assess` reruns the deterministic assessment with no network call. A query already answered in a run is not sent again, so an interrupted scan resumes.
+   To run the stages one at a time, use `grit scan`, `grit agents`, and `grit report` with the same `--date`. `grit assess` reruns the deterministic assessment with no network call. A query already answered in a run is not sent again, so an interrupted scan resumes. The run folder's `searches.jsonl` keeps every answer, so a database that lacks a logged query's pages, such as a copy made before the search, gets them from the log without a new search.
 
 3. Open the packs. Each reader's files are in `output/runs/DATE-PACK/PROFILE/vN/`: a Word brief, a PowerPoint executive summary in the format of `docs/reference/GRIT-Scan_Executive_Summary.pptx`, an Excel signal list, a Markdown copy, and the brief model as JSON. RED drafts are in `output/runs/DATE-PACK/alerts/`.
 
@@ -526,8 +537,8 @@ The proposal and a review file, with each change's quote and a diff, go to `secr
 | `config/urs/` | The Urban Solutions pack, built from the workbook: 41 entities, customers, suppliers, 201 competitors, the LOB hierarchy and keyword library, 14 STE themes, 130 sources, and management focus. `URS-Scan-Plan.json` holds the weekly theme queries, the sheet 10 management requests with their P1 keywords, the name rotation, and the brief's section titles. `URS-Relationships.json` holds BA-approved answers to the graph's gaps. |
 | `config/urs-tw/` | The Taiwan reader pack: ten standing conditions, named projects, customers, suppliers and sites, 26 rated sources, the scan plan (`URS-TW-Scan-Plan.json`), and order-book anchors (`URS-TW-Order-Book.json`). |
 | `config/risk/` | The Group risk universe (101 risks and their keywords), and `Risk-Cascade.json`, which orders entity, BA, and Group registers by weight and crosswalks BA themes to Group codes. Every crosswalk row is proposed until R&A approves it. |
-| `config/red-patterns.json` | The small RED patterns. |
-| `config/source-ratings.json` | Shared outlet credibility ratings (HIGH, MEDIUM or LOW) for every pack, owned by R&A. Seeded on 30 October 2026 with the 60 outlets already rated in the URS Taiwan and Group registers, all PROPOSED. |
+| `config/red-patterns.json` | The small RED patterns, which raise RED candidates, and the RED triggers that R&A confirms against (URS methodology, section 14). |
+| `config/source-ratings.json` | Shared outlet credibility ratings (HIGH, MEDIUM or LOW) for every pack, and the contested-outlet list, owned by R&A. Seeded on 30 October 2026 with the 60 outlets already rated in the URS Taiwan and Group registers, all PROPOSED. |
 | `config/profiles/` | Reader profiles. |
 
 **Rate sources.** Each rating is PROPOSED until a named person confirms it. These commands list the ratings, set or change one outlet's rating (confirmed by you), and confirm proposed ratings:
@@ -536,9 +547,38 @@ The proposal and a review file, with each change's quote and a diff, go to `secr
 .venv/bin/python -m grit ratings list
 .venv/bin/python -m grit ratings set reuters.com HIGH --by "Wilson Yeo" --name Reuters
 .venv/bin/python -m grit ratings confirm --by "Wilson Yeo"
+.venv/bin/python -m grit ratings contest naturalnews.com --by "Wilson Yeo" --reason "Publishes unverified claims."
+.venv/bin/python -m grit ratings unrated --run 2026-11-02-urs
 ```
 
+`grit ratings unrated` lists a run's outlets with no band, most-used first, so
+R&A can band the outlets that matter most. CNA, CNBC, the Financial Times and
+AFP, which the URS methodology names as Tier 2, are listed as PROPOSED HIGH.
+
 A new rating applies from the next `grit assess`, `grit agents` or `grit weekly`.
+
+**Measure a report.** `grit scorecard` scores each report of a run against the
+URS methodology: source bands, escalating rows below significance 8, text cut
+mid-sentence, passing mentions, trend words that contradict the trends, and
+contradiction search.
+
+```bash
+.venv/bin/python -m grit scorecard --pack urs --date 2026-11-02
+```
+
+**Supply internal exposure.** Each week, prepare an exposure snapshot with
+M365 Copilot as described in
+[Prepare the weekly exposure snapshot](docs/templates/exposure-snapshot-prompt.md),
+and pass it to `grit weekly` with `--internal-evidence` and
+`--evidence-approved-by`. Without one, each report says that exposure rests on
+public sources only.
+Every source gets a band by rule: T1 official, T2 rated HIGH, T3 rated MEDIUM
+or LOW, `UNRATED` (verify), T4 aggregator, or `CONTESTED`. A contested outlet
+is never the sole support for a fact, and a finding resting only on unrated
+or T4 sources is watched, not included. Each report's quality check names
+the cited outlets that still need a band. Four contested outlets from the
+2 November URS run are listed as PROPOSED; confirm or remove them with
+`grit ratings confirm` or `grit ratings uncontest`.
 
 To add a reader pack for another business area or entity, follow [Add a business area](docs/add-a-business-area.md). It is a data change, not a code change.
 

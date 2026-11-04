@@ -36,6 +36,7 @@ SERVICE = ["power outage", "power blackout", "water supply cut", "water outage",
 
 def _event(
     rule_id: str, label: str, *, phrases: tuple[str, ...] = (), regex: str | None = None, rungs: tuple[str, ...] | list[str] = (), taiwan: bool = False,
+    jurisdiction: bool = False,
 ) -> dict[str, Any]:
     rule: dict[str, Any] = {"ruleId": rule_id, "label": label, "packs": list(PACKS), "excludeInSentence": list(EXCLUDE)}
     if phrases:
@@ -46,6 +47,8 @@ def _event(
         rule["requiresRung"] = list(rungs)
     if taiwan:
         rule["requiresTaiwan"] = True
+    if jurisdiction:
+        rule["requiresJurisdiction"] = True
     return rule
 
 
@@ -55,13 +58,13 @@ RED_EVENTS: tuple[dict[str, Any], ...] = (
         "RED-CHINA-ATTACKS-TAIWAN", "China attacks Taiwan", taiwan=True,
         phrases=("China attacks Taiwan", "Chinese attack on Taiwan", "China invades Taiwan", "invasion of Taiwan", "missile strike on Taiwan", "missile attack on Taiwan", "blockade of Taiwan", "blockades Taiwan", "amphibious assault on Taiwan"),
     ),
-    _event("RED-EARTHQUAKE-8", "Earthquake of magnitude 8.0 or greater", regex=EARTHQUAKE_8),
+    _event("RED-EARTHQUAKE-8", "Earthquake of magnitude 8.0 or greater", regex=EARTHQUAKE_8, jurisdiction=True),
     _event("RED-FINANCIAL-MELTDOWN", "Financial meltdown", phrases=("financial meltdown", "financial crisis", "banking crisis", "stock market crash", "global markets crash")),
     _event("RED-CORRUPTION", "Major corruption case", rungs=LINKED, phrases=("charged with corruption", "corruption charges", "convicted of corruption", "convicted of bribery", "bribery charges")),
     _event("RED-EHS-DEATH", "Death of STE staff", rungs=STE_SITE, phrases=("employee was killed", "employee died", "worker was killed", "workers were killed", "staff member died", "workplace death")),
     _event("RED-WORKPLACE-ACCIDENT", "Workplace accident", rungs=LINKED, phrases=("workplace accident", "industrial accident", "workplace fatality", "factory explosion", "plant explosion")),
-    _event("RED-MIDEAST-EVACUATION", "Middle East evacuation", regex=MIDEAST_EVAC),
-    _event("RED-AI-QUANTUM-CYBER", "AI or quantum cyber attack", regex=AI_QUANTUM_CYBER),
+    _event("RED-MIDEAST-EVACUATION", "Middle East evacuation", regex=MIDEAST_EVAC, jurisdiction=True),
+    _event("RED-AI-QUANTUM-CYBER", "AI or quantum cyber attack", regex=AI_QUANTUM_CYBER, rungs=LINKED),
     _event("RED-SANCTIONS-LINKED", "Sanctions on a linked entity", rungs=LINKED, phrases=("sanctions imposed", "hit with sanctions", "subject to sanctions", "placed under sanctions", "new sanctions against")),
     _event("RED-BANKRUPTCY", "Bankruptcy of a customer, supplier or project", rungs=LINKED, phrases=("files for bankruptcy", "filed for bankruptcy", "files for insolvency", "declared bankrupt", "declares bankruptcy")),
     _event("RED-TRADE-BARRIER", "Trade barrier or tariff", rungs=LINKED, phrases=("tariffs imposed", "tariff hike", "trade barrier", "export ban imposed", "import ban imposed")),
@@ -72,6 +75,33 @@ RED_EVENTS: tuple[dict[str, Any], ...] = (
     _event("RED-LEGAL-DISPUTE", "Legal dispute affecting an STE entity", rungs=STE_SITE, phrases=("files a lawsuit", "filed a lawsuit", "legal dispute", "sued for", "arbitration against")),
     _event("RED-RIOT", "Major riot where an STE entity or project is", rungs=STE_SITE, phrases=("riots erupted", "riot erupted", "violent riots", "major riot")),
 )
+
+
+# RED triggers (URS methodology, section 14): what must have happened to the business for R&A to confirm RED. A pattern hit
+# above is only a RED candidate, a prompt to check; R&A confirms RED by naming the trigger that happened.
+RED_TRIGGERS: tuple[dict[str, str], ...] = (
+    {"triggerId": "STAFF_HARMED", "label": "An employee or contractor injured, killed or unaccounted for"},
+    {"triggerId": "STAFF_STRANDED", "label": "Staff stranded or unable to leave"},
+    {"triggerId": "ASSET_DAMAGED", "label": "An office, site, asset or shipment damaged or hit"},
+    {"triggerId": "PROJECT_SUSPENDED", "label": "A project formally suspended"},
+    {"triggerId": "MILESTONE_DISRUPTED", "label": "A material project milestone disrupted"},
+    {"triggerId": "FORCE_MAJEURE", "label": "A customer force-majeure notice"},
+    {"triggerId": "SUPPLIER_FAILURE", "label": "A material supplier failure"},
+    {"triggerId": "CASH_PAYMENT", "label": "A material cash or payment issue"},
+    {"triggerId": "CYBER_INCIDENT", "label": "A severe cyber incident affecting the business"},
+    {"triggerId": "AUTHORITY_RESTRICTION", "label": "Authorities close a project geography or restrict delivery directly"},
+)
+
+
+def red_triggers(document: Mapping[str, Any] | None = None) -> dict[str, str]:
+    """Trigger id -> label, from config/red-patterns.json when it lists triggers, else the methodology's list."""
+    if document is None:
+        from grit.settings import CONFIG_DIR
+
+        path = CONFIG_DIR / "red-patterns.json"
+        document = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    rows = [row for row in document.get("triggers") or [] if isinstance(row, Mapping) and row.get("triggerId")] or list(RED_TRIGGERS)
+    return {str(row["triggerId"]): str(row.get("label") or row["triggerId"]) for row in rows}
 
 
 def merge_red_patterns(patterns: Mapping[str, Any]) -> dict[str, Any]:
@@ -101,6 +131,9 @@ def sync_red_patterns(path: Path) -> list[str]:
             continue
         document["patterns"].append(dict(rule))
         added.append(rule["ruleId"])
+    if not document.get("triggers"):
+        document["triggers"] = [dict(row) for row in RED_TRIGGERS]
+        added.append("triggers")
     if added or not path.is_file():
         path.write_text(json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return added

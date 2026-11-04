@@ -60,11 +60,24 @@ taken from the URS methodology. The maximum is 14:
 | `evidence` | 0–3 | Unverified, single weak source, credible media, or official or internal and corroborated. |
 | `change` | 0–2 | No change from the previous scan, noteworthy change, or sharp deterioration. |
 
-The contract caps a score that the evidence cannot support and records the
+The contract replaces scores that the evidence cannot support and records the
 original as `significance_capped`. Exposure 3 needs `exposure_status`
-`CONFIRMED`. Evidence is capped by source confidence: low 1, medium 2, and
-high 3 only when two or more outlets carry it. Approved internal evidence
-allows 3. Scores of 11–14 are top priority, 8–10 significant, 5–7 secondary,
+`CONFIRMED`. Evidence is set by rule from the bands of the cited sources'
+outlets (spec 44, section 6; methodology 13D): 3 for approved internal
+evidence, or an official source corroborated by another independent outlet;
+2 for a T1 or T2 source, or two independent outlets; 1 for a single weak
+source; 0 when only T4 or contested outlets carry it. A run assessed before
+bands existed falls back to the cap by source confidence.
+
+An `INCLUDE` whose cited sources are only unrated, T4 or contested, without
+two independent unrated outlets, is recorded as `WATCH` with `source_check`
+"verify" (methodology section 11). Each batch also receives other reports of
+the same event, best band first, matched by shared headline words within a
+week, so a selection can cite its corroboration. Each candidate shows its
+`source_band` and outlets, and every call carries `authority.jurisdictions`,
+the countries where the business has entities. Exposure decides relevance: a
+credible event in one of them is identifiable exposure, and no role may
+exclude a candidate because its impact is unconfirmed. Scores of 11–14 are top priority, 8–10 significant, 5–7 secondary,
 and below 5 low. `immediate_threat` marks a credible immediate threat to the
 business's people, sites, projects, customers, cash or continuity; it is top
 priority at any score. Top findings for contradiction search are ranked by
@@ -101,18 +114,44 @@ stage.
 
 ### Reviewed risk links
 
-A candidate's `condition_ids` are keyword matches. For each INCLUDE or WATCH,
-Assessment returns `risk_ids`: the standing items that the fact and
-transmission support, or `[]` when none does. The Critic corrects an
-unsupported link in its own selection. A role may remove a link but never add
-one. A link that keyword matching did not propose may be raised only as a
-non-material issue for the Risk & Assurance operator. An unknown ID is dropped
-and listed in `risk_ids_dropped`. The reviewed
-selection then sets the row's `condition_ids` and keeps only the risk-cascade
-entries that trace to them, at entity, business-area and Group level. A
-removed theme no longer counts as a strong match. The
-keyword links stay in `keyword_condition_ids`. Without `risk_ids`, the
-deterministic links stand.
+A candidate's `condition_ids` are keyword matches to the register. For each
+INCLUDE or WATCH, Assessment returns `risk_ids`: the standing items that the
+fact and transmission support, or `[]` when none does. Every included or
+watched item should map to the register (URS methodology, section 3). A role
+may remove a keyword link, and may add a standing item that keyword matching
+missed, but only from the register given in `authority.standing_items`. An
+added link is listed in `risk_ids_added`, and the Critic corrects an
+unsupported or missing link in its own selection. An ID outside the register
+is dropped and listed in `risk_ids_dropped`. The reviewed selection then sets
+the row's `condition_ids`, and keeps only the risk-cascade entries that trace
+to a kept link, at entity, business-area and Group level. A removed theme no
+longer counts as a strong match. The keyword links stay in
+`keyword_condition_ids`. Without `risk_ids`, the deterministic links stand.
+
+Until 4 November 2026 a role could not add a link. On the 2 November URS
+week this deadlocked the run: the Critic asked for Emerging Risk 1 on Saudi
+reports that had no keyword match, and no role could add it.
+
+### Exposure snapshot
+
+Each week R&A can supply an approved exposure snapshot: sites with headcount
+and the last safety confirmation, traveller counts, projects, financial
+exposures, and internal GRIT or ISOS alerts with distances to sites
+(`grit/pipeline/exposure_snapshot.py`). It records counts, never names. Passed
+to `grit weekly` with `--internal-evidence` and `--evidence-approved-by`, it
+becomes approved internal records, the only basis on which a role may call
+exposure confirmed. A site within 10 km of an alert is confirmed exposure;
+further away it is possible exposure. The records go to every review batch,
+the snapshot is shown in the report's first section, and the quality check
+says whether one was supplied. `docs/templates/` holds an example and the
+M365 Copilot prompt that prepares it.
+
+### Action posture
+
+`bottom_line.escalation` is the recommended action posture (URS methodology,
+section 15): one principal ask, saying who should do what by when, then the
+development that would raise the status. Reports label it "Recommended action
+posture".
 
 ## Budgets and release
 

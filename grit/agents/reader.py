@@ -416,9 +416,13 @@ def critique(client: Any, model: str, *, drafts: Sequence[Mapping[str, Any]], pr
     return accepted, rejected, log
 
 
-def report_items(client: Any, model: str, *, items: Sequence[Mapping[str, Any]], sources: Mapping[str, Mapping[str, Any]]) -> tuple[dict[str, dict[str, Any]], CallLog]:
-    """items: [{item_id, item_type, name, source_ids}]. Returns item_id -> {status, summary, source_ids, violations}."""
+def report_items(client: Any, model: str, *, items: Sequence[Mapping[str, Any]], sources: Mapping[str, Mapping[str, Any]],
+                 business: Mapping[str, Any] | None = None) -> tuple[dict[str, dict[str, Any]], CallLog]:
+    """items: [{item_id, item_type, name, source_ids}]. business: the pack's name and lines of business, so news about an
+    item's unrelated businesses is not reported. Returns item_id -> {status, summary, source_ids, violations}."""
     payload = {"items": [dict(item) for item in items], "sources": {key: sources[key] for key in sorted({s for item in items for s in item["source_ids"]}, key=lambda k: int(k[1:]))}}
+    if business:
+        payload["business"] = dict(business)
     log = CallLog("Reporter", REPORTER_VERSION, model, "reader-items", canonical_hash(payload))
     results: dict[str, dict[str, Any]] = {}
     if not items:

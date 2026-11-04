@@ -278,3 +278,22 @@ def test_each_version_can_be_returned_for_rework(tmp_path: Path, monkeypatch) ->
             result = review_package(pool, package_id=package["package_id"], version=version, reviewer=wilson, intent="REQUEST_REWORK")
             assert result["status"] == "RETURNED_FOR_REWORK", "a later version's rework must not collide with an earlier one"
     assert review_package(pool, package_id=package["package_id"], version=3, reviewer=wilson, intent="APPROVE")["status"] == "APPROVED"
+
+
+def test_a_fresh_database_gets_the_pages_of_searches_already_in_the_run_log(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    pool, run, specs = _scan(tmp_path)
+    options = {"usage_path": tmp_path / "usage.json", "sleep": lambda _s: None, "log": lambda _m: None}
+    reader_scan.acquire(pool, run, specs, getter=_getter, **options)
+    sighted = pool.one("SELECT COUNT(*) AS n FROM sightings WHERE run_id = ?", (run.run_id,))["n"]
+    assert sighted
+    copy = Pool(tmp_path / "copy.sqlite")
+    reader_scan.new_run(copy, RUN_DATE, "urs-tw")
+
+    def no_network(url, params):
+        raise AssertionError("a logged search is not sent again")
+
+    replayed = reader_scan.acquire(copy, run, specs, getter=no_network, **options)
+    logged = [json.loads(line) for line in (run.folder / "searches.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert replayed["queries_sent"] == 0 and replayed["replayed"] == sum(1 for entry in logged if entry.get("results"))
+    assert copy.one("SELECT COUNT(*) AS n FROM sightings WHERE run_id = ?", (run.run_id,))["n"] == sighted

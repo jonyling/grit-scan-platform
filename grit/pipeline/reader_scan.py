@@ -24,6 +24,7 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from grit.acquisition.brave_plan import without_navigation
 from grit.core.confidence import evidence_confidence, trend_label
+from grit.core.source_bands import source_band
 from grit.core.doc_type import classify
 from grit.core.reader_filter import KEEP, ReaderFilterConfig, filter_reader
 from grit.core.red_alert import red_check
@@ -247,9 +248,10 @@ def acquire(
     found = {"queries_sent": 0, "results": 0, "signals_new": 0, "skipped_answered": len(specs) - len([s for s in specs if s.query_id not in answered])}
     returned: dict[str, int] = {}
 
-    def on_search(entry: dict[str, Any]) -> None:
-        with (run.folder / "searches.jsonl").open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    def on_search(entry: dict[str, Any], *, replay: bool = False) -> None:
+        if not replay:
+            with (run.folder / "searches.jsonl").open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
         record(entry)
         candidates, hits = candidates_from_searches([entry], fetched_at=entry["fetched_at"])
         spec = by_id[entry["query_id"]]
@@ -264,9 +266,18 @@ def acquire(
             found["signals_new"] += 0 if before else 1
             for hit in hits.get(candidate.url, []):
                 pool.add_sighting(signal_id, run.run_id, query_id=spec.query_id, query=spec.query, lane=spec.lane, target_id=target_of(spec), rank=hit.get("rank"))
-        found["queries_sent"] += 1
+        found["replayed" if replay else "queries_sent"] = found.get("replayed" if replay else "queries_sent", 0) + 1
         found["results"] += len(entry.get("results") or [])
-        log(f"  {spec.lane:10} {len(entry.get('results') or []):>3} results  {spec.query}" + ("  (Currents)" if engine == "CURRENTS" else ""))
+        log(f"  {spec.lane:10} {len(entry.get('results') or []):>3} results  {spec.query}" + ("  (Currents)" if engine == "CURRENTS" else "")
+            + ("  (from the search log)" if replay else ""))
+
+    # The search log is the run's record of what each engine returned. A logged query whose pages this database lacks, such
+    # as a copy made before the search, has its logged results added again rather than being treated as answered with nothing.
+    sighted = {row["query_id"] for row in pool.rows("SELECT DISTINCT query_id FROM sightings WHERE run_id = ?", (run.run_id,))}
+    for entry in logged:
+        if entry.get("query_id") in by_id and entry["query_id"] not in sighted and entry.get("results") and entry.get("fetched_at"):
+            on_search(dict(entry), replay=True)
+            sighted.add(entry["query_id"])
 
     stopped = None
     if todo:
@@ -444,6 +455,7 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
     conditions = {condition["id"]: condition for condition in reader.baseline.get("conditions") or []}
     registers = [reader.source_register, business.source_register]
     window = scan_window(reader)
+    places = list(jurisdictions(reader))
     if ((pool.run(run.run_id) or {}).get("config") or {}).get("weekly_mode") == "reasoned":
         pool.update_run_config(run.run_id, window_days=window)
 
@@ -514,10 +526,17 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
             risks = cascade.hits(record["title"], record["text"], [theme.theme_id for theme in link.themes if theme.strong])
             own_level = [{"themeId": hit.risk_id, "themeName": hit.name, "tier": hit.tier} for hit in risks if hit.level == reader.level]
             condition = conditions.get(condition_ids[0]) if condition_ids else None
-            high_rated = any(item.get("credibilityRating") == "HIGH" for item in credibility)
+            # An official (T1) or HIGH-rated (T2) outlet is a high-rated source for corroboration.
+            high_rated = any(item.get("credibilityRating") == "HIGH" or source_band(item["url"], item.get("credibilityRating"), item.get("outlet"),
+                                                                                     source_class=item.get("sourceClass")) in {"T1", "T2"} for item in credibility)
             verdict = harm_verdict(harm)
-            red_result = red_check({**record, "rung": decision["rung"], "harm_verdict": verdict}, pack=run.pack, patterns=patterns, corroboration=decision["corroboration"], high_rated_source=high_rated)
+            red_result = red_check({**record, "rung": decision["rung"], "harm_verdict": verdict}, pack=run.pack, patterns=patterns, corroboration=decision["corroboration"], high_rated_source=high_rated, jurisdictions=places)
             red += int(red_result.red)
+            # Each outlet carries its band by rule (grit.core.source_bands); evidence and fact support are judged on them.
+            outlet_bands = [{"outlet": item.get("outlet") or item.get("publisher"), "url": item["url"],
+                             "band": source_band(item["url"], item.get("credibilityRating"), item.get("outlet"), source_class=item.get("sourceClass"))}
+                            for item in credibility]
+            row |= {"outlets_json": outlet_bands, "source_band": outlet_bands[0]["band"]}
             row |= {
                 "risk_cascade_json": [hit.as_record() for hit in risks], "harm_json": harm, "harm_verdict": verdict, "opportunity_cost": opportunity_status(harm),
                 "trend": "NO_MATERIAL_CHANGE", "risk_level": classify_wild_scan_risk_level(own_level),
@@ -781,6 +800,18 @@ def business_area_context(pack: OntologyPack) -> dict[str, Any]:
     return context
 
 
+def jurisdictions(pack: OntologyPack) -> dict[str, list[str]]:
+    """Each country where the pack's entities sit, with those entities' names. A credible event there is identifiable
+    exposure (URS methodology, sections 2 and 12), whether or not an entity is named."""
+    graph = pack_graph(pack)
+    found: dict[str, list[str]] = {}
+    for place in graph.of_class("Place"):
+        names = sorted(graph.nodes[key].name for key in graph.entities_in_place(place.id) if key in graph.nodes)
+        if names:
+            found[place.name] = names
+    return dict(sorted(found.items()))
+
+
 def owner_roles(pack: OntologyPack) -> list[str]:
     """The LOB and grouping heads from the hand-authored LOB hierarchy, then the Group functions."""
     hierarchy = graph_pack(pack).lob_hierarchy or {}
@@ -862,7 +893,8 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
         else:
             pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=str(issue.get("problem")), correction="Raised by the Critic. The redraft failed its checks, so the earlier draft stands.", source_ids=[str(source_signal)] if source_signal else [], origin="CRITIC")
 
-    # Proposer: options for a key risk whose validated assessment is escalating or cites a material source (spec 36).
+    # Proposer: options for each key risk whose validated assessment cites a development this week (spec 36). The report
+    # also carries one principal ask in its action posture (URS methodology, section 15).
     options: dict[str, list[dict[str, Any]]] = {}
     if area is not None:
         owners = owner_roles(pack)
@@ -873,8 +905,8 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
                 continue
             table, back = tables[key]
             cited = [ref for ref in draft.get("source_ids") or [] if ref in table]
-            if draft.get("movement") != "ESCALATING" and not any(is_material(by_signal[back[ref]]) for ref in cited if back.get(ref) in by_signal):
-                log(f"  Proposer {key:16} SKIPPED      no escalation and no material source")
+            if not cited:
+                log(f"  Proposer {key:16} SKIPPED      no development this week")
                 continue
             # A Group condition has no register of key controls: its transmission text is not a control, so it is not offered as one.
             theme = {**item, "transmission": None} if group else item
@@ -1026,6 +1058,8 @@ def _item_checks(pool: Pool, run: ReaderRun, pack: OntologyPack, rows: Sequence[
     with pool.transaction() as conn:
         conn.execute("DELETE FROM exposure_checks WHERE run_id = ?", (run.run_id,))  # derived per run; the item list can change
     pending = [(item_type, item_id, name) for item_type, item_id, name in item_rows if strong_by_item.get(item_id)]
+    context = business_area_context(pack)
+    item_business = {"name": context["name"], "lines_of_business": context["lines_of_business"]}
     results: dict[str, dict[str, Any]] = {}
     backs: dict[str, dict[str, str]] = {}
     for start in range(0, len(pending), ITEM_BATCH):
@@ -1041,7 +1075,7 @@ def _item_checks(pool: Pool, run: ReaderRun, pack: OntologyPack, rows: Sequence[
                 ids.append(index[row["signal_id"]])
             requests.append({"item_id": item_id, "item_type": item_type, "name": name, "source_ids": ids})
         table, back = agents.source_table(sources)
-        batch, call = agents.report_items(client, model, items=requests, sources=table)
+        batch, call = agents.report_items(client, model, items=requests, sources=table, business=item_business)
         write_log(call)
         results.update(batch)
         backs.update({item_id: back for item_id in batch})

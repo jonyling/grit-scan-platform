@@ -1,0 +1,32 @@
+{
+  "_comment": "EXAMPLE ONLY. Every value below is invented to show the format. Save the real snapshot under secrets/internal/<pack>/<date>.json, which Git ignores. Record counts, never people's names.",
+  "pack": "urs",
+  "asOf": "2026-11-02",
+  "preparedBy": "R&A Business Partner, Urban Solutions",
+  "sources": [
+    "GRIT impact assessment for the alert, entities and assets lists",
+    "Travel tracker",
+    "Item 5, Concentration Risk of Rail Projects in Taiwan"
+  ],
+  "sites": [
+    {"entity": "ST Engineering Saudi Limited", "city": "Riyadh", "country": "Saudi Arabia", "headcount": 12,
+     "safetyConfirmed": "2026-10-28", "reference": "GRIT entities list, 28 Oct"}
+  ],
+  "travel": [
+    {"destination": "Doha", "country": "Qatar", "travellers": 2, "until": "2026-11-06",
+     "safetyConfirmed": "2026-10-30", "reference": "Travel tracker, 30 Oct"}
+  ],
+  "projects": [
+    {"name": "Example metro line signalling", "entity": "ST Engineering Urban Solutions Ltd. - Taiwan Branch", "city": "Taoyuan",
+     "country": "Taiwan", "value": "S$100m", "nextMilestone": "Trial running, December 2026", "reference": "Project register, Oct"}
+  ],
+  "financial": [
+    {"item": "Taiwan rail concentration, opportunity loss", "entity": "URS Taiwan", "amount": "S$100m",
+     "reference": "Item 5, final version"}
+  ],
+  "alerts": [
+    {"date": "2026-10-27", "location": "Riyadh", "country": "Saudi Arabia",
+     "summary": "Missile debris fell in the city; no damage to our offices reported.",
+     "nearest": [{"entity": "ST Engineering Saudi Limited", "distanceKm": 3}], "reference": "GRIT alert email, 27 Oct"}
+  ]
+}

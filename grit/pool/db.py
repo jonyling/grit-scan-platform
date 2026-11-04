@@ -24,6 +24,8 @@ MIGRATIONS = {
     "watchpoint_updates": {"cycles_before": "INTEGER NOT NULL DEFAULT 0"},
     "management_requests": {"pack": "TEXT", "queries_json": "TEXT NOT NULL DEFAULT '[]'", "source": "TEXT"},
     "condition_assessments": {"implication": "TEXT", "options_json": "TEXT NOT NULL DEFAULT '[]'", "opportunity": "TEXT", "counter_indicator": "TEXT"},
+    "assessments": {"source_band": "TEXT", "outlets_json": "TEXT NOT NULL DEFAULT '[]'"},
+    "red_decisions": {"trigger_id": "TEXT"},
 }
 _JSON_SUFFIX = "_json"
 
@@ -31,15 +33,17 @@ _JSON_SUFFIX = "_json"
 def reviewed_links(row: dict[str, Any]) -> dict[str, Any]:
     """Apply the reviewed risk_ids. A link the agents removed leaves condition_ids, together with the cascade entries
     and strong theme that trace only to it. Every other entry stands, so a pack whose conditions are not themes keeps
-    its cascade. Without risk_ids the deterministic links stand. The keyword links stay in keyword_condition_ids."""
+    its cascade. A link the agents added from the register joins condition_ids. Without risk_ids the deterministic links
+    stand. The keyword links stay in keyword_condition_ids."""
     kept = (row.get("editorial") or {}).get("risk_ids")
     if not isinstance(kept, list):
         return row
     keep = {str(item) for item in kept}
     links = [str(item) for item in row.get("condition_ids") or []]
     removed = {item for item in links if item not in keep}
+    added = [str(item) for item in kept if str(item) not in links]
     if not removed:
-        return {**row, "keyword_condition_ids": links}
+        return {**row, "keyword_condition_ids": links, "condition_ids": [*links, *added]}
 
     def traces(hit: Mapping[str, Any], ids: set[str]) -> bool:
         risk_id, matched = str(hit.get("risk_id") or ""), str(hit.get("matched") or "")
@@ -48,7 +52,7 @@ def reviewed_links(row: dict[str, Any]) -> dict[str, Any]:
     themes = [{**item, "strong": False, "reviewed_out": True}
               if isinstance(item, Mapping) and item.get("strong") and str(item.get("theme_id")) in removed else item
               for item in row.get("themes") or []]
-    return {**row, "keyword_condition_ids": links, "condition_ids": [item for item in links if item in keep],
+    return {**row, "keyword_condition_ids": links, "condition_ids": [*(item for item in links if item in keep), *added],
             "risk_cascade": [hit for hit in row.get("risk_cascade") or [] if traces(hit, keep) or not traces(hit, removed)],
             "themes": themes}
 
@@ -393,12 +397,15 @@ class Pool:
                 found[row["signal_id"]] = row
         return found
 
-    def record_red_decision(self, *, pack: str, signal_id: str, decision: str, impact: str, decided_by: str) -> dict[str, Any]:
+    def record_red_decision(self, *, pack: str, signal_id: str, decision: str, impact: str, decided_by: str,
+                            trigger_id: str | None = None) -> dict[str, Any]:
+        """trigger_id: the RED trigger that happened (URS methodology, section 14). The CLI requires it to confirm."""
         if decision not in {"CONFIRMED", "NOT_CONFIRMED"}:
             raise ValueError("A RED decision is CONFIRMED or NOT_CONFIRMED.")
         if not impact.strip() or not decided_by.strip():
             raise ValueError("A RED decision needs the impact and the name of the person deciding.")
-        row = {"pack": pack, "signal_id": signal_id, "decision": decision, "impact": impact.strip(), "decided_by": decided_by.strip(), "decided_at": utc_now()}
+        row = {"pack": pack, "signal_id": signal_id, "decision": decision, "impact": impact.strip(), "decided_by": decided_by.strip(),
+               "decided_at": utc_now(), "trigger_id": trigger_id}
         row["decision_id"] = self.insert("red_decisions", row)
         return row
 

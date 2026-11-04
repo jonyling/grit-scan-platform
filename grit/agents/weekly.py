@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any, Literal, Mapping, NotRequired, TypedDict
+from typing import Any, Collection, Literal, Mapping, NotRequired, TypedDict
 
 from grit.agents.checks import normalise
+from grit.core.source_bands import evidence_level, supports_fact
 
 VERSION = "weekly-reasoning-2"
 CONTROLLED = frozenset({
@@ -130,6 +131,22 @@ def evidence_cap(row: Mapping[str, Any], sources: Mapping[str, Any]) -> int:
     return cap or 1
 
 
+def cited_outlets(row: Mapping[str, Any], sources: Mapping[str, Any]) -> list[dict[str, Any]] | None:
+    """The outlets behind a selection's cited sources, each with its band. None when no cited source carries bands, as in
+    a run assessed before bands existed."""
+    found: list[dict[str, Any]] = []
+    banded = False
+    for ref in row.get("source_ids") or []:
+        source = sources.get(ref) or {}
+        if source.get("internal_exposure"):
+            found.append({"outlet": f"internal:{ref}", "band": "T1", "internal": True})
+            banded = True
+        elif source.get("outlets"):
+            found += [dict(item) for item in source["outlets"] if isinstance(item, Mapping)]
+            banded = True
+    return found if banded else None
+
+
 def check_significance(row: Any, sources: Mapping[str, Any]) -> None:
     """Scores outside the evidence are capped and flagged rather than failing the batch: exposure 3 needs CONFIRMED
     exposure; evidence is capped by source confidence."""
@@ -145,7 +162,9 @@ def check_significance(row: Any, sources: Mapping[str, Any]) -> None:
     capped = dict(score)
     if row.get("exposure_status") != "CONFIRMED":
         capped["exposure"] = min(capped["exposure"], 2)
-    capped["evidence"] = min(capped["evidence"], evidence_cap(row, sources))
+    outlets = cited_outlets(row, sources)
+    # Evidence is a rule on the cited sources' bands (methodology 13D), not a model number.
+    capped["evidence"] = evidence_level(outlets) if outlets is not None else min(capped["evidence"], evidence_cap(row, sources))
     if capped != dict(score):
         row["significance_capped"] = dict(score)
     row["significance"] = capped
@@ -164,7 +183,8 @@ def check_impact_status(row: Any, sources: Mapping[str, Any]) -> None:
         row["impact_status_downgraded"] = status
 
 
-def check_selections(raw: Any, sources: Mapping[str, Any], expected: set[str], *, chain: bool = True) -> Mapping[str, Any]:
+def check_selections(raw: Any, sources: Mapping[str, Any], expected: set[str], *, chain: bool = True,
+                     register: Collection[str] | None = None) -> Mapping[str, Any]:
     """chain: an INCLUDE or WATCH must state the reasoning chain. The compact drop screen is exempt; anything it does not
     EXCLUDE goes to full review, where the chain is required."""
     raw = object_response(raw)
@@ -197,24 +217,44 @@ def check_selections(raw: Any, sources: Mapping[str, Any], expected: set[str], *
                                     "(fact, exposure, transmission and impact; write 'not established' when unknown).")
         check_exposure_status(row, sources)
         check_impact_status(row, sources)
-        check_risk_ids(row, sources)
+        check_risk_ids(row, sources, register)
         if chain and row["decision"] in {"INCLUDE", "WATCH"}:
             check_significance(row, sources)
+        check_fact_support(row, sources, chain)
     return raw
 
 
-def check_risk_ids(row: Any, sources: Mapping[str, Any]) -> None:
-    """risk_ids keeps the candidate's keyword-matched standing items that its evidence supports. A role may remove a
-    link but never add one; an unknown ID is dropped and flagged rather than failing the batch."""
+def check_fact_support(row: Any, sources: Mapping[str, Any], chain: bool) -> None:
+    """An included fact needs a T1 to T3 source, internal evidence, or two independent unrated outlets (methodology 11).
+    Otherwise the finding is watched, labelled for verification, rather than failing the batch."""
+    if not chain or row.get("decision") != "INCLUDE" or not isinstance(row, dict):
+        return
+    outlets = cited_outlets(row, sources)
+    if outlets is not None and not supports_fact(outlets):
+        row["decision"], row["decision_downgraded"] = "WATCH", "INCLUDE"
+        row["source_check"] = "Unrated, T4 or contested sources only: verify before relying on it."
+
+
+def check_risk_ids(row: Any, sources: Mapping[str, Any], register: Collection[str] | None = None) -> None:
+    """risk_ids are the standing items the evidence supports (URS methodology, section 3: every item maps to the register).
+    A role keeps or removes the candidate's keyword-matched items, and may add another item from the register, which is
+    recorded in risk_ids_added for the Critic to challenge. An ID outside the register is dropped and flagged rather than
+    failing the batch. Without a register only keyword-matched items can be kept."""
     if "risk_ids" not in row:
         return
     value = row["risk_ids"]
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         raise ContractError("risk_ids must be a list of standing-item IDs.")
-    allowed = [str(item) for item in (sources.get(row.get("signal_id")) or {}).get("condition_ids") or []]
+    keyword = [str(item) for item in (sources.get(row.get("signal_id")) or {}).get("condition_ids") or []]
+    allowed = set(keyword) | set(register or ())
     kept = [item for item in dict.fromkeys(value) if item in allowed]
-    if isinstance(row, dict) and kept != value:
+    if not isinstance(row, dict):
+        return
+    if kept != value:
         row["risk_ids"], row["risk_ids_dropped"] = kept, [item for item in value if item not in allowed]
+    added = [item for item in kept if item not in keyword]
+    if added:
+        row["risk_ids_added"] = added
 
 
 def check_exposure_status(row: Any, sources: Mapping[str, Any]) -> None:
@@ -323,14 +363,16 @@ Return {"selections":[{"signal_id":"...", "decision":"INCLUDE|EXCLUDE|WATCH|DEFE
 "exposure_status":"CONFIRMED|POSSIBLE|NOT_ESTABLISHED|NOT_EXPOSED",
 "transmission":"...", "impact":"not established or sourced impact", "impact_status":"CONFIRMED|PLAUSIBLE|NOT_ESTABLISHED",
 "significance":{"exposure":0, "consequence":0, "immediacy":0, "evidence":0, "change":0}, "immediate_threat":false, "uncertainty":"...",
-"risk_ids":["the candidate's condition_ids that its evidence supports"]}]}.
-For INCLUDE and WATCH, condition_ids are keyword matches. In risk_ids keep only those the fact and transmission
-support; [] when none does. Never add an ID that is not in condition_ids.
+"risk_ids":["the standing items the evidence supports"]}]}.
+For INCLUDE and WATCH, condition_ids are keyword matches to the register (authority.standing_items). In risk_ids keep
+those the fact and transmission support, and add another standing item only when the transmission to it is clear;
+every included or watched item should map to the register. Use only IDs from authority.standing_items.
 For INCLUDE and WATCH, score significance (hidden; it orders priorities and sets the report status):
 exposure 0 no credible link, 1 indirect, 2 identifiable exposure, 3 people, project or entity directly exposed (needs CONFIRMED);
 consequence (the methodology's severity) 0 routine, 1 limited, 2 material disruption possible, 3 major safety or business impact possible;
 immediacy 0 long term, 1 months, 2 weeks, 3 now or the next few days (judge by event_dates);
-evidence 0 unverified social or aggregator, 1 single weak source, 2 credible media, 3 official or internal and corroborated;
+evidence 0 unverified social or aggregator, 1 single weak source, 2 credible media, 3 official or internal and corroborated
+(evidence is then set by rule from the bands of the sources you cite);
 change 0 no change from the previous scan, 1 noteworthy change, 2 sharp deterioration or new trigger.
 immediate_threat is true only for a credible immediate threat to the business's people, office, active project,
 material customer, cash or continuity. impact_status CONFIRMED means the business has been affected (staff injured,
@@ -338,6 +380,14 @@ project suspended, shipment delayed); it needs approved internal evidence. A dra
 For INCLUDE and WATCH, fact, exposure, transmission and impact are required: the sourced event, who or what of
 this business is exposed, how the event would reach the business, and the sourced or conditional impact. Write
 "not established" for a link you cannot support; do not leave it out.
+Each candidate shows its source_band and outlets: T1 official or primary, T2 rated HIGH, T3 rated MEDIUM or LOW, UNRATED
+not yet banded (verify), T4 aggregator or tracker, CONTESTED (never the sole support for a fact). When several supplied
+candidates report the same event, INCLUDE the best-sourced one, cite the others in its source_ids, and WATCH or EXCLUDE
+the rest as the same event. An INCLUDE that rests only on UNRATED, T4 or CONTESTED sources is recorded as WATCH.
+Exposure decides relevance: a credible security, conflict, hazard, regulatory or market event in a jurisdiction where
+the business has entities (authority.jurisdictions), staff, projects, customers or suppliers is identifiable exposure
+(exposure 2); name the entities in the exposure field. Never EXCLUDE
+a candidate because its impact is not confirmed; confirmed impact decides RED, not inclusion.
 DEFER only when a specific check you cannot run now would decide between INCLUDE and EXCLUDE; name it in uncertainty.
 A candidate with no credible link to this business is EXCLUDE, not DEFER. An unresolved DEFER blocks every report.
 You control editorial inclusion, not scores. Older ongoing findings and labeled hindsight can be included.
@@ -355,9 +405,10 @@ Return {"reviewed_ids":["every target"], "issues":[{"issue_id":"stable ID",
 Challenge each link of every INCLUDE or WATCH chain: is the fact sourced, is the exposure this business's own, does
 the transmission follow, is the impact stated or only inferred? Raise an issue on the weakest link, not on wording.
 Challenge significance scores that overstate exposure, consequence or immediacy, and any CONFIRMED impact.
-Challenge a risk_ids link the evidence does not support; correct it in your selection rather than leave it open.
-No role can add a standing item that keyword matching did not propose. If you think one is missing, raise it as a
-non-material issue for the Risk & Assurance operator, never a material one.
+Challenge a risk_ids link the evidence does not support, or a missing one; correct risk_ids in your selection rather
+than raise an issue, using only IDs from authority.standing_items.
+Challenge an EXCLUDE that rests on unconfirmed impact: exposure decides relevance. Prefer the best-sourced report of an
+event, with the other reports of it cited in source_ids.
 Missing internal evidence is material only when a text states CONFIRMED exposure or impact, or presents POSSIBLE
 exposure as established. POSSIBLE exposure that is labelled as such is the required wording without internal evidence:
 raise INTERNAL_EVIDENCE with "material": false so the missing internal check is listed, not blocked.
@@ -369,11 +420,16 @@ Return {"reviewed_ids":["every candidate"], "issues":[], "resolved_issue_ids":[]
 "selections":[{"signal_id":"...", "decision":"EXCLUDE|DEFER|WATCH|INCLUDE", "reason":"one short sentence", "source_ids":["..."]}]}.
 EXCLUDE confirms the drop. Any other decision sends the signal to full-text assessment and critique, so use
 DEFER when the drop may be wrong but the excerpt is not enough to decide. Account for every candidate.
+A credible security, conflict, hazard or regulatory event in a jurisdiction where the business has entities
+(authority.jurisdictions), staff or projects is relevant: send it to full review unless it is stale or a duplicate.
+Unconfirmed impact never confirms a drop.
 Raise an issue only for a material problem you can show from the supplied records, using the Critic issue contract.""",
     "Reporting": COMMON + """Synthesize the existing report without changing its layout or controlled fields.
 Return {"edits":[{"path":"one supplied editable field path", "text":"concise prose [SIGNAL-ID]",
 "source_ids":["SIGNAL-ID"]}]}.
 Include one edit each for bottom_line.text and bottom_line.escalation; edit other fields only when needed.
+bottom_line.escalation is the recommended action posture (URS methodology, section 15): one principal ask, saying who
+should do what by when, then the specific development that would raise the status. Keep it to two or three sentences.
 Cite each sentence separately, with the supplied signal-ID citation before its final punctuation.
 Call exposure confirmed only when a cited selection has exposure_status CONFIRMED; otherwise write possible exposure.
 The report status (v2.status) is set by policy from the reviewed selections; state it and its basis, and never call
@@ -381,6 +437,7 @@ the business's position RED unless the status is RED. Only the Risk & Assurance 
 candidate or an assessed CONFIRMED impact without that decision awaits R&A confirmation and is not RED.
 Use a number only when it appears in the cited source text; otherwise omit it. The previous output, if supplied
 for repair, is a draft, not evidence. Do not convert an unsearched scope into nil impact.
+Use the standing risks' trends as given: call a risk escalating or easing only when its trend is Escalating or Easing.
 Explain event -> business exposure -> conditional implication -> response. Remove repetition, not evidence.""",
     "Memory": COMMON + """The named human has decided on the exact package.
 Return {"proposals":[{"kind":"CORRECTION|READER_PREFERENCE", "text":"...",

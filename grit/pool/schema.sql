@@ -217,6 +217,8 @@ CREATE TABLE IF NOT EXISTS assessments (
     relevance_basis     TEXT,
     evidence_confidence TEXT,
     corroboration       INTEGER,
+    source_band         TEXT,                       -- the signal's own outlet: T1, T2, T3, UNRATED, T4 or CONTESTED (grit.core.source_bands)
+    outlets_json        TEXT NOT NULL DEFAULT '[]', -- every outlet that carried it, each with its band
     red_rule_json       TEXT NOT NULL DEFAULT '{}',
     red                 INTEGER NOT NULL DEFAULT 0,
     assessed_at         TEXT NOT NULL,
@@ -391,7 +393,8 @@ CREATE TABLE IF NOT EXISTS red_decisions (
     decision        TEXT NOT NULL CHECK (decision IN ('CONFIRMED', 'NOT_CONFIRMED')),
     impact          TEXT NOT NULL,
     decided_by      TEXT NOT NULL,
-    decided_at      TEXT NOT NULL
+    decided_at      TEXT NOT NULL,
+    trigger_id      TEXT                        -- the RED trigger that happened (config/red-patterns.json triggers)
 );
 CREATE INDEX IF NOT EXISTS red_decisions_by_signal ON red_decisions (pack, signal_id, decision_id);
 CREATE TRIGGER IF NOT EXISTS red_decisions_no_update BEFORE UPDATE ON red_decisions

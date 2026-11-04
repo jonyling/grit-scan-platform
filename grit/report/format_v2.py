@@ -52,18 +52,20 @@ def category_of_name(name: str) -> str:
     return next((category for category, words in _CATEGORY_WORDS if any(word in folded for word in words)), OPERATIONAL)
 
 
-def source_tier(url: str | None, rating: str | None, publisher: str | None) -> str:
-    """T1 official or primary; T2 a HIGH-rated outlet; T3 a MEDIUM or LOW-rated outlet; T4 an aggregator or an unrated outlet."""
-    from urllib.parse import urlparse
+def short_text(text: str, limit: int = 120) -> str:
+    """The first sentence when it fits, else the text cut at a word boundary and marked with an ellipsis."""
+    text = " ".join(str(text or "").split())
+    sentence = re.split(r"(?<=[.!?])\s+(?=[A-Z])", text, maxsplit=1)[0]
+    if len(sentence) <= limit:
+        return sentence
+    return text[:limit].rsplit(" ", 1)[0].rstrip(",;:—-") + "…"
 
-    from grit.core.publisher_family import AGGREGATORS, registrable
 
-    host = (urlparse(str(url or "")).hostname or str(publisher or "")).lower().removeprefix("www.")
-    if re.search(r"(?:^|\.)(?:gov|mil|int)(?:\.[a-z]{2})?$|(?:^|\.)gov\.[a-z]{2,3}$|\.gc\.ca$|europa\.eu$|\.go\.[a-z]{2}$", host):
-        return "T1"
-    if registrable(host) in AGGREGATORS:
-        return "T4"
-    return {"HIGH": "T2", "MEDIUM": "T3", "LOW": "T3"}.get(str(rating or ""), "T4")
+def source_tier(url: str | None, rating: str | None, publisher: str | None, source_class: str | None = None) -> str:
+    """The source band by rule (grit.core.source_bands): T1, T2, T3, UNRATED, T4 or CONTESTED."""
+    from grit.core.source_bands import source_band
+
+    return source_band(url, rating, publisher, source_class=source_class)
 
 
 def _lobs(pack: Any) -> list[str]:
@@ -207,7 +209,8 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
             "item": label(event), "risk": event["risk_label"],
             "before": f"{clean_title(before.get('title'))} ({str(before.get('published_at') or '')[:10]})" if before else "Not in the last report.",
             "now": f"{clean_title(event['lead'].get('title'))} ({event['last_date']})" if event["members"] else "No report this week.",
-            "direction": f"{UP} New" if event["band"] == UP and event["new"] else f"{UP} Worse" if event["band"] == UP else f"{DOWN} No new report",
+            # No report this week is not easing (URS methodology, section 15), so it carries no arrow.
+            "direction": f"{UP} New" if event["band"] == UP and event["new"] else f"{UP} Worse" if event["band"] == UP else "No new report",
             "signal_ids": [event["lead"]["signal_id"]] if event["members"] else [],
         })
     for row in conditions:
@@ -277,8 +280,10 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         })
 
     # 7. Named supplier, customer and partner watch.
+    # A passing mention says nothing about the item, so it stays in the exposure checks and out of the report.
     watch = [{"name": item["name"], "type": kind, "text": item["text"], "status": item["status"]}
-             for kind, items in named.items() for item in items if item.get("text")]
+             for kind, items in named.items() for item in items if item.get("text") and item.get("status") != "NOTHING_FOUND"]
+    passing = sum(1 for items in named.values() for item in items if item.get("text") and item.get("status") == "NOTHING_FOUND")
     targets = {str(row.get("target_id")) for row in scope["queries"] if row.get("lane") in {"SUPPLIER", "CUSTOMER", "COMPETITOR", "ENTITY"}}
     total = sum(len(items) for items in named.values())
     not_searched = sum(1 for items in named.values() for item in items if item.get("item_id") not in targets and not item.get("text"))
@@ -335,8 +340,9 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     # Status, arrows and the risk window.
     red = any(event["red"] for event in events)
     status = "RED" if red else "ELEVATED" if elevated or rising else "STABLE"
-    arrows = [f"{label(event)} {event['band']}" for event in [*[item for item in events if item["band"] == UP][:4], *[item for item in events if item["band"] == DOWN][:2]]]
-    window = [f"{item['date'].day} {item['date'].strftime('%b')}: {item['event'][:90].rsplit(' ', 1)[0]}" for item in look[:2]]
+    # The status line names what moved: ▲ events, and standing risks whose trend eased. An event without a report this week has not eased.
+    arrows = [f"{label(event)} {UP}" for event in events if event["band"] == UP][:4] + [f"{row['name']} {DOWN}" for row in conditions if row["trend"] == "Easing"][:2]
+    window = [f"{item['date'].day} {item['date'].strftime('%b')}: {short_text(item['event'])}" for item in look[:2]]
 
     # Source tiers for every signal the brief may cite.
     tiers = {}
@@ -346,11 +352,36 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
             found = credibility_lookup(str(row.get("url") or ""), register)
             if best is None or found.get("credibilityRating") in {"HIGH", "MEDIUM", "LOW"}:
                 best = found
-        tiers[row["signal_id"]] = source_tier(row.get("url"), (best or {}).get("credibilityRating"), row.get("publisher"))
+        tiers[row["signal_id"]] = source_tier(row.get("url"), (best or {}).get("credibilityRating"), row.get("publisher"), (best or {}).get("sourceClass"))
+    # Outlets R&A has not banded, so a reader knows which reports need verification and R&A knows what to band next.
+    from collections import Counter
+
+    from grit.core.source_bands import host_of
+
+    shown = [row for row in routed if row.get("shown")]
+    counts = Counter(host_of(row.get("url"), row.get("publisher")) for row in shown if tiers.get(row["signal_id"]) == "UNRATED")
+    unrated = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    listed = ", ".join(domain for domain, _ in unrated[:10]) + ("" if len(unrated) <= 10 else ", and others")
+    banding = {"question": "Are the cited outlets banded by R&A?", "critical": False,
+               "answer": "Yes" if not unrated else "No" if sum(counts.values()) == len(shown) else "Partly",
+               "note": "Every cited outlet has an R&A band." if not unrated else
+                       f"{len(unrated)} cited outlets have no R&A band yet, so their reports need verification: {listed}."}
+    gate.append(banding)
+    if unrated:
+        completeness["limitations"].append(f"{banding['question']} {banding['answer']}: {banding['note']}")
+    # Internal intelligence first (URS methodology, section 4): say whether an approved exposure snapshot was supplied.
+    exposure = (run.get("config") or {}).get("exposure_snapshot")
+    supplied = {"question": "Was approved internal exposure data supplied?", "critical": False, "answer": "Yes" if exposure else "No",
+                "note": (f"Exposure snapshot as of {exposure.get('asOf')}, approved by {exposure.get('approvedBy')}." if exposure else
+                         "No approved exposure snapshot this week, so staff, site and project exposure rests on public sources only.")}
+    gate.append(supplied)
+    if not exposure:
+        completeness["limitations"].append(f"{supplied['question']} {supplied['answer']}: {supplied['note']}")
     return {
         "status": status, "arrows": arrows, "risk_window": window, "escalating": escalating_rows, "changes": changes,
         "look_ahead": [{**item, "date": item["date"].isoformat()} for item in look], "priorities": priorities, "coverage": coverage, "categories": list(CATEGORIES),
-        "jurisdictions": jurisdictions, "watch": watch, "watch_note": {"total": total, "not_searched": not_searched}, "gate": gate, "conflicts": conflicts,
+        "jurisdictions": jurisdictions, "watch": watch, "watch_note": {"total": total, "not_searched": not_searched, "passing": passing}, "gate": gate, "conflicts": conflicts,
         "completeness": completeness,
-        "tiers": tiers, "short": short,
+        "tiers": tiers, "short": short, "unrated_outlets": [{"domain": domain, "signals": count} for domain, count in unrated],
+        "exposure": exposure,
     }

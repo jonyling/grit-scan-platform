@@ -40,7 +40,22 @@ The week's kept signals are grouped by the nightly index's events (spec 42); `gr
 | = | Any other event with a report this week |
 | ▼ | A material event of the previous report with no report this week |
 
-An **elevated** event is a ▲ event, or a continuing material event that is tier 1 or RED. The escalating-items table shows up to 8 elevated events. Risk linkage uses the register's numbering: `URS-KEY-05` is "Key Risk 5", `URS-TIER_2-07` is "Tier-2 Risk 7".
+An **elevated** event is a ▲ event, or a continuing material event that is tier 1 or RED. The escalating-items table shows up to 8 elevated events.
+
+In a reasoned run the reviewed selection decides instead (URS methodology, section 13). An event is material and elevated when a
+member has a significance score of 8 or more, an immediate threat, or RED impact confirmed by R&A. Events are ordered by score
+within each band, and the best-sourced report leads. A selection that cites another candidate as the same event joins the two,
+but only when the two headlines share a distinctive word. Within a week, each elevated event joins the highest-scored story
+it matches directly: two or more shared distinctive headline words (`grit.core.headlines`, where "Saudi Arabia" counts as
+one word), or the same jurisdiction where the business has entities together with a shared risk. A page whose headline is
+too poor to compare is read by its opening. Matches never chain, the best-sourced matching report leads, and the story
+keeps its three most common risks.
+"No report this week" is not easing: the changes table says "No new report" without an arrow, and the status line names only ▲
+events and standing risks whose trend eased. Status-line text ends at a sentence, or at a word with an ellipsis.
+
+A management request that this pack's signals do not answer is matched against the kept signals of the child packs it covers
+for the same date, such as URS Taiwan; each match names the pack it came from. The named-item watch leaves out items with only
+a passing mention, and the item Reporter reports only news that touches the item's role for the business area. Risk linkage uses the register's numbering: `URS-KEY-05` is "Key Risk 5", `URS-TIER_2-07` is "Tier-2 Risk 7".
 
 ## 3. The EventAssessor
 
@@ -80,10 +95,16 @@ A date is kept only when a source linked to the business area states it as a day
 
 | Tier | Rule |
 |---|---|
-| T1 | Official or primary: a government, military or international-body domain |
+| T1 | Official or primary: a government, military or international-body domain, or a register source of that class |
 | T2 | An outlet rated HIGH in the pack's register or the shared ratings |
 | T3 | An outlet rated MEDIUM or LOW |
-| T4 | An aggregator, or an unrated outlet |
+| UNRATED | An outlet R&A has not banded yet; its reports need verification |
+| T4 | An aggregator, tracker or prediction market |
+| CONTESTED | An outlet on R&A's contested list; never the sole support for a fact |
+
+`grit.core.source_bands` holds these rules for the pipeline and every renderer.
+The quality check adds a row naming the cited outlets that have no R&A band,
+so R&A knows what to band next.
 
 ## 7. Scenarios for every business area
 

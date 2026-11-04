@@ -283,13 +283,16 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         for row in shown:
             if row["route"].get("request_id"):
                 matched[row["route"]["request_id"]].append(row)
-        for request in pool.management_requests():
-            if request.get("pack") not in (None, pack_name) or request["status"] not in {"ACTIVE", "PROPOSED"}:
-                continue
-            hits = matched.get(request["request_id"], [])[:5]
+        requests = [request for request in pool.management_requests()
+                    if request.get("pack") in (None, pack_name) and request["status"] in {"ACTIVE", "PROPOSED"}]
+        # A request this pack's signals did not answer may be answered by a child pack it covers, such as URS Taiwan.
+        from_child = child_request_hits(pool, run_date, pack, [request for request in requests if not matched.get(request["request_id"])])
+        for request in requests:
+            hits = (matched.get(request["request_id"]) or from_child.get(request["request_id"]) or [])[:5]
             request_rows.append({
                 "request_id": request["request_id"], "title": request["title"], "status": request["status"], "requested_by": request["requested_by"], "source": request.get("source"),
-                "signals": [{"signal_id": row["signal_id"], "title": row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"]} for row in hits],
+                "signals": [{"signal_id": row["signal_id"], "title": row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"],
+                             **({"via": row["via"]} if row.get("via") else {})} for row in hits],
             })
         request_rows.sort(key=lambda row: (row["status"] != "ACTIVE", not row["signals"], row["request_id"]))
     request_ids = {item["signal_id"] for row in request_rows for item in row["signals"]}
@@ -382,7 +385,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         "order_book": pack.order_book,
         "projects": groups, "suppliers": suppliers, "customers": customers, "hazards": hazards, "entities": entities, "competitors": competitors,
         "management_requests": request_rows, "entity_packs": entity_packs,
-        "conditions": condition_rows, "scenarios": scenarios, "findings": findings, "other_signals": other_signals, "qa": qa_rows, "watchpoints": watch_rows, "red": red,
+        "conditions": condition_rows, "scenarios": scenarios, "findings": findings, "other_signals": other_signals, "qa": qa_rows, "watchpoints": watch_rows, "red": red, "red_triggers": red_trigger_labels(),
         "method": {
             "queries": queries.get("queries") or 0, "queries_label": "queries returned pages", "signals": counts.get("signals") or 0, "kept": counts.get("kept") or 0, "shown_to_reader": len(shown),
             "hidden_by_routing": sum(1 for row in routed if not row["route"]["include"]), "profile": profile.in_force,
@@ -440,6 +443,38 @@ def fallback_bottom_line(conditions: Sequence[Mapping[str, Any]], checks: Sequen
         parts.append(f"Watchpoints carried: {'; '.join(open_items)}.")
     parts += [line for line in [red_summary(red)] if line]
     return " ".join(parts)
+
+
+def child_request_hits(pool: Pool, run_date: date, pack: Any, requests: Sequence[Mapping[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    """Kept signals of the pack's child runs for the same date that answer a request, by the same keyword rule as routing.
+    Each carries the child pack's label in "via"."""
+    from grit.core.routing import match_request
+    from grit.pipeline.reader_scan import _load_pack, run_id_for
+
+    found: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    active = [request for request in requests if request.get("status") == "ACTIVE"]
+    for child in (getattr(pack, "children", None) or []) if active else []:
+        child_run = run_id_for(run_date, child)
+        if not pool.run(child_run):
+            continue
+        label = _load_pack(child).label
+        for row in pool.weekly_assessments(child_run):
+            hit = match_request({**row, "pack": pack.pack}, active, [pack.pack])
+            if hit:
+                found[hit[0]].append({**row, "via": f"{label} pack"})
+    # A keyword alone is loose ("Typhoon" also hits a weather guide), so reports sharing more of the request's own words lead.
+    words = {request["request_id"]: set(re.findall(r"[a-z]{5,}", str(request.get("title") or "").casefold())) for request in active}
+    for request_id, rows in found.items():
+        rows.sort(key=lambda row: (-len(words[request_id] & set(re.findall(r"[a-z]{5,}", str(row.get("title") or "").casefold()))),
+                                   row.get("tier") or 9, str(row.get("signal_id"))))
+    return found
+
+
+def red_trigger_labels() -> dict[str, str]:
+    """The RED triggers R&A confirms against (URS methodology, section 14), id -> label."""
+    from grit.core.red_events import red_triggers
+
+    return red_triggers()
 
 
 def red_items(routed: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:

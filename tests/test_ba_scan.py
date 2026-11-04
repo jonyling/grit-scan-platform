@@ -215,3 +215,8 @@ def test_a_covered_theme_s_child_signals_join_the_business_area_pool(tmp_path: P
     sighted = {row["signal_id"] for row in pool.sightings(run.run_id) if row["lane"] == "COVERED_BY_CHILD"}
     assert cited <= sighted and set(added) <= cited
     assert reader_scan.cover_child_sources(pool, run) == [], "a second call adds nothing, so the evidence does not change"
+
+
+def test_jurisdictions_list_where_the_business_area_has_entities() -> None:
+    found = reader_scan.jurisdictions(reader_scan._load_pack("urs"))
+    assert "TransCore ITS, LLC Saudi Branch" in found["Saudi Arabia"] and "Taiwan" in found

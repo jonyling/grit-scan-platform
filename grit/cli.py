@@ -142,9 +142,22 @@ def _admit_supplied_evidence(pool: Any, run: Any, args: argparse.Namespace) -> N
     if not getattr(args, "evidence_approved_by", None) or ((pool.run(run.run_id) or {}).get("config") or {}).get("weekly_mode") != "reasoned":
         raise SystemExit("--internal-evidence needs --reasoned and --evidence-approved-by PROFILE.")
     from pathlib import Path
+    from grit.pipeline.exposure_snapshot import is_snapshot, snapshot_records, snapshot_summary
     from grit.pipeline.weekly import add_internal_evidence
-    records = json.loads(Path(args.internal_evidence).read_text(encoding="utf-8"))
-    add_internal_evidence(pool, run.run_id, records, _profiles([args.evidence_approved_by])[0])
+    document = json.loads(Path(args.internal_evidence).read_text(encoding="utf-8"))
+    approver = _profiles([args.evidence_approved_by])[0]
+    if is_snapshot(document):
+        # A weekly exposure snapshot: approved records for the agents, and the whole snapshot for the report.
+        try:
+            records = snapshot_records(document)
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from None
+        add_internal_evidence(pool, run.run_id, records, approver)
+        summary = {**snapshot_summary(document), "approvedBy": approver.profile_id}
+        context = dict(((pool.run(run.run_id) or {}).get("config") or {}).get("weekly_context") or {})
+        pool.update_run_config(run.run_id, exposure_snapshot=summary, weekly_context={**context, "exposure_snapshot": summary})
+        return
+    add_internal_evidence(pool, run.run_id, document, approver)
 
 
 def scan_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
@@ -194,6 +207,7 @@ def agents_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
         ontology = reader_scan._load_pack(pack)
         pool.update_run_config(run.run_id, weekly_context={
             "business": reader_scan.business_area_context(ontology),
+            "jurisdictions": reader_scan.jurisdictions(ontology),
             "standing_items": reader_scan.standing_items(ontology),
             "owner_roles": reader_scan.owner_roles(ontology),
         })
@@ -408,9 +422,21 @@ def cmd_red(args: argparse.Namespace) -> int:
                 f"rule {(row.get('red_rule') or {}).get('rule_id')}" if row else "", "assessed impact" if signal_id in assessed else ""] if part)
             print(f"{signal_id}  {state:52}  {basis:28}  {row.get('title') or assessed.get(signal_id)}")
         return 0
-    missing = [flag for flag, value in (("--signal", args.signal), ("--by", args.by), ("--impact", args.impact)) if not (value or "").strip()]
+    from grit.core.red_events import red_triggers
+
+    triggers = red_triggers()
+    if args.action == "triggers":
+        for trigger_id, label in triggers.items():
+            print(f"{trigger_id:22}  {label}")
+        return 0
+    needed = [("--signal", args.signal), ("--by", args.by), ("--impact", args.impact)]
+    if args.action == "confirm":
+        needed.append(("--trigger", args.trigger))
+    missing = [flag for flag, value in needed if not (value or "").strip()]
     if missing:
-        raise SystemExit(f"red {args.action} needs {', '.join(missing)}.")
+        raise SystemExit(f"red {args.action} needs {', '.join(missing)}." + (" See `grit red triggers --pack PACK`." if "--trigger" in missing else ""))
+    if args.trigger and args.trigger.strip().upper() not in triggers:
+        raise SystemExit(f"{args.trigger} is not a RED trigger. Use one of: {', '.join(triggers)}.")
     allowed = red_confirmers()
     if not allowed:
         raise SystemExit(f"Set {RED_CONFIRMERS_ENV} in .env to the names of the Risk & Assurance operators who confirm RED impact.")
@@ -419,9 +445,9 @@ def cmd_red(args: argparse.Namespace) -> int:
     if pool.signal(args.signal) is None:
         raise SystemExit(f"No signal {args.signal} in the pool. Use a signal ID from `grit red list --pack {args.pack}`.")
     row = pool.record_red_decision(pack=args.pack, signal_id=args.signal, decision="CONFIRMED" if args.action == "confirm" else "NOT_CONFIRMED",
-                                   impact=args.impact, decided_by=args.by)
+                                   impact=args.impact, decided_by=args.by, trigger_id=args.trigger.strip().upper() if args.trigger else None)
     print(f"Recorded {row['decision']} for {args.signal} ({args.pack}) by {row['decided_by']}. "
-          "Rerun the weekly command for the run to re-issue its reports with this decision.")
+          "To reissue the run's reports with this decision, run `grit resume-report --refresh` for that date.")
     return 0
 
 
@@ -539,7 +565,8 @@ def _takes_argv(target: Callable[..., Any]) -> bool:
 def _delegates() -> dict[str, tuple[str, Callable[[], Callable[..., Any]], str]]:
     return {
         "pack-build": ("Rebuild a business-area pack's registers from its workbook.", lambda: __import__("grit.ontology.build_pack", fromlist=["_main"])._main, "grit pack-build"),
-        "ratings": ("List, seed, set or confirm the shared source credibility ratings.", lambda: __import__("grit.ontology.source_ratings", fromlist=["main"]).main, "grit ratings"),
+        "ratings": ("List, seed, set or confirm the shared source credibility ratings, and the contested-outlet list.", lambda: __import__("grit.ontology.source_ratings", fromlist=["main"]).main, "grit ratings"),
+        "scorecard": ("Score each weekly report of a run against the URS methodology.", lambda: __import__("grit.report.scorecard", fromlist=["main"]).main, "grit scorecard"),
         "pack-show": ("Print what a reader pack contains.", lambda: __import__("grit.ontology.pack", fromlist=["_main"])._main, "grit pack-show"),
         "library-ingest": ("Read the reports in secrets/reports/ into the library and embed their passages.", lambda: __import__("grit.library.sots", fromlist=["_ingest_main"])._ingest_main, "grit library-ingest"),
         "sots": ("Draft State of the Situation documents from the report library, for sign-off.", lambda: __import__("grit.library.sots", fromlist=["_main"])._main, "grit sots"),
@@ -635,12 +662,13 @@ def build_parser() -> argparse.ArgumentParser:
     sub.set_defaults(handler=cmd_memory_admit)
 
     sub = commands.add_parser("red", help="List RED candidates, or record the R&A decision that confirms or rejects a RED impact.")
-    sub.add_argument("action", choices=("list", "confirm", "reject"))
+    sub.add_argument("action", choices=("list", "triggers", "confirm", "reject"))
     sub.add_argument("--pack", required=True)
     sub.add_argument("--run", help="For list: one run, which also lists findings the agents assessed as confirmed impact.")
     sub.add_argument("--signal", help="For confirm or reject: the signal id.")
     sub.add_argument("--by", help="For confirm or reject: your name, as listed in GRIT_RED_CONFIRMERS.")
     sub.add_argument("--impact", help="For confirm or reject: the impact on the business, or why there is none.")
+    sub.add_argument("--trigger", help="For confirm: the RED trigger that happened, from `grit red triggers`.")
     sub.set_defaults(handler=cmd_red)
 
     sub = commands.add_parser("feedback", help="Record a reader's approve, reject, or watch decision on a signal. It counts only when the reader's profile turns on signal buttons.")

@@ -26,6 +26,7 @@ def _empty() -> dict[str, Any]:
         "owner": "Group Risk & Assurance",
         "rule": "HIGH, MEDIUM or LOW per outlet domain. A pack's own register rating wins. A rating is PROPOSED until a named person confirms it.",
         "ratings": [],
+        "contested": [],
     }
 
 
@@ -35,6 +36,7 @@ def load(path: Path = PATH) -> dict[str, Any]:
 
 def save(document: dict[str, Any], path: Path = PATH) -> None:
     document["ratings"] = sorted(document.get("ratings") or [], key=lambda row: row["domain"])
+    document["contested"] = sorted(document.get("contested") or [], key=lambda row: row["domain"])
     path.write_text(json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
@@ -82,19 +84,60 @@ def set_rating(document: dict[str, Any], domain: str, rating: str, *, by: str, n
     entry.update(rating=rating, status="CONFIRMED", confirmedBy=by, confirmedOn=(today or date.today()).isoformat())
     if name:
         entry["sourceName"] = name
+    # A rating decision replaces a contested listing for the same outlet.
+    document["contested"] = [row for row in document.get("contested") or [] if row["domain"] != domain]
     return entry
+
+
+def contest(document: dict[str, Any], domain: str, *, by: str, reason: str, today: date | None = None) -> dict[str, Any]:
+    """List an outlet as contested, confirmed by the named person: a labelled signal, never the sole support for a fact.
+    Any rating for the outlet is removed."""
+    if not reason.strip():
+        raise ValueError("A contested listing needs a reason.")
+    domain = _domain(domain)
+    document["ratings"] = [row for row in document.get("ratings") or [] if row["domain"] != domain]
+    rows = document.setdefault("contested", [])
+    entry = next((row for row in rows if row["domain"] == domain), None)
+    if entry is None:
+        entry = {"domain": domain}
+        rows.append(entry)
+    entry.update(reason=reason.strip(), status="CONFIRMED", confirmedBy=by, confirmedOn=(today or date.today()).isoformat())
+    return entry
+
+
+def uncontest(document: dict[str, Any], domain: str) -> bool:
+    domain = _domain(domain)
+    before = len(document.get("contested") or [])
+    document["contested"] = [row for row in document.get("contested") or [] if row["domain"] != domain]
+    return len(document["contested"]) < before
 
 
 def confirm(document: dict[str, Any], *, by: str, domains: list[str] | None = None, today: date | None = None) -> int:
     """Confirm the named domains, or every PROPOSED rating when none is named."""
     wanted = {_domain(domain) for domain in domains or []}
     count = 0
-    for entry in document.get("ratings") or []:
+    for entry in [*(document.get("ratings") or []), *(document.get("contested") or [])]:
         if entry.get("status") == "CONFIRMED" or (wanted and entry["domain"] not in wanted):
             continue
         entry.update(status="CONFIRMED", confirmedBy=by, confirmedOn=(today or date.today()).isoformat())
         count += 1
     return count
+
+
+def unrated_outlets(run_id: str, pool: Any = None) -> list[tuple[str, int]]:
+    """Outlets with no R&A band among a run's assessed signals, with how many signals each carried, most first."""
+    from collections import Counter
+
+    from grit.core.source_bands import host_of
+    from grit.pool import Pool
+
+    pool = pool or Pool()
+    counts: Counter[str] = Counter()
+    for row in pool.rows("SELECT outlets_json FROM assessments WHERE run_id = ?", (run_id,)):
+        for outlet in row.get("outlets") or []:
+            if outlet.get("band") == "UNRATED":
+                counts[host_of(outlet.get("url"), outlet.get("outlet"))] += 1
+    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -108,16 +151,32 @@ def main(argv: list[str] | None = None) -> int:
     set_cmd.add_argument("rating", choices=[*RATINGS, *(rating.lower() for rating in RATINGS)])
     set_cmd.add_argument("--by", required=True, help="Your name.")
     set_cmd.add_argument("--name", help="The outlet's name, such as Reuters.")
-    confirm_cmd = sub.add_parser("confirm", help="Confirm PROPOSED ratings: the named domains, or all of them.")
+    confirm_cmd = sub.add_parser("confirm", help="Confirm PROPOSED ratings and contested listings: the named domains, or all of them.")
     confirm_cmd.add_argument("domains", nargs="*")
     confirm_cmd.add_argument("--by", required=True, help="Your name.")
+    contest_cmd = sub.add_parser("contest", help="List an outlet as contested: never the sole support for a fact.")
+    contest_cmd.add_argument("domain")
+    contest_cmd.add_argument("--by", required=True, help="Your name.")
+    contest_cmd.add_argument("--reason", required=True, help="Why the outlet is contested.")
+    uncontest_cmd = sub.add_parser("uncontest", help="Remove an outlet from the contested list.")
+    uncontest_cmd.add_argument("domain")
+    unrated_cmd = sub.add_parser("unrated", help="List a run's outlets with no R&A band, most-used first, for banding.")
+    unrated_cmd.add_argument("--run", required=True, help="The run, such as 2026-11-02-urs.")
+    unrated_cmd.add_argument("--limit", type=int, default=40)
     args = parser.parse_args(argv)
+    if args.command == "unrated":
+        found = unrated_outlets(args.run)
+        for domain, count in found[: args.limit]:
+            print(f"{count:4}  {domain}")
+        print(f"{len(found)} unrated outlets in {args.run}. Band one with: grit ratings set DOMAIN HIGH|MEDIUM|LOW --by NAME")
+        return 0
 
     if args.command == "seed":
         if PATH.is_file() and not args.force:
             print(f"{PATH} exists. Use --force to replace it.")
             return 1
         document = seed()
+        document["contested"] = load().get("contested") or []
         save(document)
         print(f"Wrote {len(document['ratings'])} PROPOSED ratings to {PATH}.")
         return 0
@@ -125,7 +184,19 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "list":
         for entry in sorted(document.get("ratings") or [], key=lambda row: (-_ORDER[row["rating"]], row["domain"])):
             print(f"{entry['rating']:7} {entry.get('status', 'PROPOSED'):10} {entry['domain']:32} {entry.get('sourceName') or ''}")
-        print(f"{len(document.get('ratings') or [])} ratings.")
+        for entry in document.get("contested") or []:
+            print(f"{'CONTESTED':9} {entry.get('status', 'PROPOSED'):10} {entry['domain']:32} {entry.get('reason') or ''}")
+        print(f"{len(document.get('ratings') or [])} ratings, {len(document.get('contested') or [])} contested.")
+        return 0
+    if args.command == "contest":
+        entry = contest(document, args.domain, by=args.by, reason=args.reason)
+        save(document)
+        print(f"{entry['domain']}: contested, confirmed by {args.by}.")
+        return 0
+    if args.command == "uncontest":
+        removed = uncontest(document, args.domain)
+        save(document)
+        print(f"{args.domain}: {'removed from' if removed else 'not on'} the contested list.")
         return 0
     if args.command == "set":
         entry = set_rating(document, args.domain, args.rating, by=args.by, name=args.name)

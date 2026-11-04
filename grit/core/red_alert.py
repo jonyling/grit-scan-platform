@@ -46,6 +46,22 @@ def _speculative(sentence: str, words: Sequence[str]) -> str | None:
     return None
 
 
+# Common short forms of the register's country names, so "Saudi forces" counts as Saudi Arabia.
+COUNTRY_ALIASES = {
+    "Saudi Arabia": ("Saudi",), "USA": ("United States", "U.S.", "US"), "Abu Dhabi": ("UAE", "United Arab Emirates"),
+    "Dubai": ("UAE", "United Arab Emirates"), "Hong Kong": ("HK",),
+}
+
+
+def names_jurisdiction(text: str, jurisdictions: Sequence[str]) -> str | None:
+    """The first jurisdiction where the pack has entities that the text names, or None."""
+    for country in jurisdictions:
+        for name in (country, *COUNTRY_ALIASES.get(country, ())):
+            if re.search(rf"(?<![\w]){re.escape(name)}(?![\w])", text):
+                return country
+    return None
+
+
 def red_check(
     record: Mapping[str, Any],
     *,
@@ -53,7 +69,10 @@ def red_check(
     patterns: Mapping[str, Any],
     corroboration: int,
     high_rated_source: bool,
+    jurisdictions: Sequence[str] = (),
 ) -> RedResult:
+    """jurisdictions: the countries where the pack has entities. A rule with requiresJurisdiction needs one of them named in
+    the title or lead, so an event elsewhere is not a RED candidate for this business."""
     title = str(record.get("title") or "")
     lead = f"{title}\n{str(record.get('text') or '')[:LEAD_CHARS]}"
     whole = f"{title}\n{record.get('text') or ''}"
@@ -67,6 +86,8 @@ def red_check(
         if rule.get("requiresRung") and record.get("rung") not in rule["requiresRung"]:
             continue
         if rule.get("requiresTaiwan") and not TAIWAN.search(whole):
+            continue
+        if rule.get("requiresJurisdiction") and not names_jurisdiction(lead, jurisdictions):
             continue
         hit: str | None = None
         guarded: str | None = None

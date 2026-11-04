@@ -1611,3 +1611,16 @@ def test_a_report_refresh_also_recovers_a_report_stage_that_stopped(weekly, monk
     result = resume_weekly_reporting(pool, SimpleNamespace(run_id="R", pack="test"), client=None, model=None,
                                      profiles=[profile], call=original, refresh=True)
     assert result["status"] == "READY"
+
+
+def test_a_role_may_add_a_link_from_the_register_and_the_report_follows():
+    from grit.agents.weekly import check_risk_ids
+    from grit.pool.db import reviewed_links
+
+    sources = {"A": {"condition_ids": ["URS-KEY-03"]}}
+    row = {"signal_id": "A", "risk_ids": ["URS-KEY-03", "URS-EMERGING-01", "MADE-UP-9"]}
+    check_risk_ids(row, sources, register={"URS-KEY-03", "URS-EMERGING-01", "URS-KEY-04"})
+    assert row["risk_ids"] == ["URS-KEY-03", "URS-EMERGING-01"] and row["risk_ids_added"] == ["URS-EMERGING-01"]
+    assert row["risk_ids_dropped"] == ["MADE-UP-9"]
+    reviewed = reviewed_links({"condition_ids": ["URS-KEY-03"], "risk_cascade": [], "editorial": {"risk_ids": row["risk_ids"]}})
+    assert reviewed["condition_ids"] == ["URS-KEY-03", "URS-EMERGING-01"] and reviewed["keyword_condition_ids"] == ["URS-KEY-03"]

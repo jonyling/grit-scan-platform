@@ -15,6 +15,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
+from grit.core.source_bands import LEGEND as SOURCE_LEGEND
 from grit.report.brief import text_only
 from grit.report.notices import DISCLAIMER
 
@@ -558,7 +559,7 @@ def _requests(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool)
             line = document.add_paragraph()
             line.paragraph_format.left_indent = Cm(1.0)
             _source_link(line, item["title"], item, size=10)
-            line.add_run(f" ({item['outlet']}, {item['date'] or 'date not stated'})").font.size = Pt(10)
+            line.add_run(f" ({item['outlet']}, {item['date'] or 'date not stated'}{', ' + item['via'] if item.get('via') else ''})").font.size = Pt(10)
     proposed = [row["title"] for row in rows if row["status"] == "PROPOSED"]
     if proposed:
         note = document.add_paragraph()
@@ -765,8 +766,15 @@ def _watchpoints(document: Any, brief: Mapping[str, Any], title: str, *, dry: bo
         if status == "CANDIDATE":
             paragraph.add_run(f"{alert['title']}{rule}. Awaiting R&A impact confirmation.")
         else:
-            paragraph.add_run(f"{alert['title']}{rule}. {decision.get('decided_by')}, R&A: {decision.get('impact')}")
-    document.add_paragraph(f"Escalation assessment: {brief['bottom_line']['escalation']}")
+            trigger = (brief.get("red_triggers") or {}).get(str(decision.get("trigger_id")))
+            paragraph.add_run(f"{alert['title']}{rule}. {decision.get('decided_by')}, R&A: {decision.get('impact')}"
+                              + (f" Trigger: {trigger}." if trigger else ""))
+    if brief.get("red") and brief.get("red_triggers"):
+        note = document.add_paragraph()
+        run = note.add_run("A rule match is a RED candidate, not RED. RED needs R&A to confirm that one of these happened to the business: "
+                           + "; ".join(brief["red_triggers"].values()) + ".")
+        run.font.size = Pt(9)
+    document.add_paragraph(f"Recommended action posture: {brief['bottom_line']['escalation']}")
     return True
 
 
@@ -864,13 +872,39 @@ def _note(document: Any, text: str) -> None:
     run.italic, run.font.size, run.font.color.rgb = True, Pt(8), LIGHT
 
 
+def _exposure(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    """The approved exposure snapshot (URS methodology, section 15.2), or a statement that there was none."""
+    from grit.report.markdown import EXPOSURE_TABLES
+
+    if dry:
+        return True
+    _heading(document, title)
+    snapshot = brief["v2"].get("exposure")
+    if not snapshot:
+        document.add_paragraph("No approved internal exposure snapshot this week. Staff, site and project exposure rests on public sources only.")
+        return True
+    document.add_paragraph(f"Approved internal data as of {snapshot.get('asOf')}, approved by {snapshot.get('approvedBy')}. "
+                           f"Sources: {'; '.join(snapshot.get('sources') or []) or 'not stated'}.")
+    for key, label, headers, fields in EXPOSURE_TABLES:
+        if not snapshot.get(key):
+            continue
+        document.add_paragraph().add_run(label).bold = True
+        widths = tuple(round(16.0 / len(headers), 1) for _ in headers)
+        table = _table(document, headers, widths)
+        for row in snapshot[key]:
+            cells = table.add_row().cells
+            for cell, field in zip(cells, fields):
+                _text_cell(cell, str(row.get(field) if row.get(field) not in (None, "") else "Not recorded"))
+    return True
+
+
 def _escalating(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
     rows = brief["v2"]["escalating"]
     if dry:
         return True
     _heading(document, title)
     if not rows:
-        document.add_paragraph("No event met the escalation rule this week: none was RED, tier 1, or a corroborated tier 2 event linked to a risk.")
+        document.add_paragraph("No event met the escalation rule this week (spec 44, section 2).")
         return True
     short = brief["v2"]["short"]
     widths = (0.7, 3.0, 4.6, 4.0, 3.4, 1.4)
@@ -1018,7 +1052,7 @@ def _source_register(document: Any, brief: Mapping[str, Any], title: str) -> Non
     if not refs:
         return
     _heading(document, title)
-    _note(document, "T1 official or primary; T2 an outlet rated HIGH; T3 an outlet rated MEDIUM or LOW; T4 an aggregator or an unrated outlet.")
+    _note(document, SOURCE_LEGEND)
     tiers = _REGISTER["tiers"]
     for key, number in _REGISTER["numbers"].items():
         ref = refs[key]
@@ -1032,6 +1066,7 @@ def _source_register(document: Any, brief: Mapping[str, Any], title: str) -> Non
 # The named watch table replaces these prose sections in a format v2 brief.
 V2_REPLACES = frozenset({"SUPPLIERS", "CUSTOMERS", "COMPETITORS"})
 V2_SECTIONS = (
+    ("Exposure snapshot", _exposure),
     ("Escalating and elevated items", _escalating),
     ("What changed since the last report", _changes),
     ("Look-ahead: the next 30 days", _look_ahead),

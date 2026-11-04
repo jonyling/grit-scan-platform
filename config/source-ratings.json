@@ -1,7 +1,7 @@
 {
   "registerId": "STE-SOURCE-RATINGS",
   "owner": "Group Risk & Assurance",
-  "rule": "HIGH, MEDIUM or LOW per outlet domain. A pack's own register rating wins. A rating is PROPOSED until a named person confirms it.",
+  "rule": "HIGH, MEDIUM or LOW per outlet domain. A pack's own register rating wins. A rating is PROPOSED until a named person confirms it. An outlet on the contested list is a labelled signal, never the sole support for a fact.",
   "ratings": [
     {
       "domain": "aac.moj.gov.tw",
@@ -20,6 +20,13 @@
       "basis": "urs-tw: HIGH.",
       "confirmedBy": "Jony Ling",
       "confirmedOn": "2026-10-30"
+    },
+    {
+      "domain": "afp.com",
+      "sourceName": "AFP",
+      "rating": "HIGH",
+      "status": "PROPOSED",
+      "basis": "The URS methodology (section 11) names it Tier 2. Proposed 4 Nov 2026; R&A to confirm."
     },
     {
       "domain": "aisi.gov.uk",
@@ -94,6 +101,13 @@
       "confirmedOn": "2026-10-30"
     },
     {
+      "domain": "channelnewsasia.com",
+      "sourceName": "CNA",
+      "rating": "HIGH",
+      "status": "PROPOSED",
+      "basis": "The URS methodology (section 11) names it Tier 2. Proposed 4 Nov 2026; R&A to confirm."
+    },
+    {
       "domain": "chinadaily.com.cn",
       "sourceName": "China Daily",
       "rating": "HIGH",
@@ -110,6 +124,13 @@
       "basis": "urs-tw: HIGH; STE-SOURCES: HIGH.",
       "confirmedBy": "Jony Ling",
       "confirmedOn": "2026-10-30"
+    },
+    {
+      "domain": "cnbc.com",
+      "sourceName": "CNBC",
+      "rating": "HIGH",
+      "status": "PROPOSED",
+      "basis": "The URS methodology (section 11) names it Tier 2. Proposed 4 Nov 2026; R&A to confirm."
     },
     {
       "domain": "csis.org",
@@ -542,6 +563,32 @@
       "basis": "STE-SOURCES: HIGH.",
       "confirmedBy": "Jony Ling",
       "confirmedOn": "2026-10-30"
+    }
+  ],
+  "contested": [
+    {
+      "domain": "naturalnews.com",
+      "reason": "Publishes unverified health and political claims.",
+      "status": "PROPOSED",
+      "basis": "Proposed in the 4 Nov 2026 review of the 2 Nov URS report; R&A to confirm or remove."
+    },
+    {
+      "domain": "news-pravda.com",
+      "reason": "Republishes state media and anonymous channels without attribution.",
+      "status": "PROPOSED",
+      "basis": "Proposed in the 4 Nov 2026 review of the 2 Nov URS report; R&A to confirm or remove."
+    },
+    {
+      "domain": "resistthemainstream.com",
+      "reason": "Partisan aggregation; headlines overstate the events reported.",
+      "status": "PROPOSED",
+      "basis": "Proposed in the 4 Nov 2026 review of the 2 Nov URS report; R&A to confirm or remove."
+    },
+    {
+      "domain": "trendingpoliticsnews.com",
+      "reason": "Partisan aggregation; headlines overstate the events reported.",
+      "status": "PROPOSED",
+      "basis": "Proposed in the 4 Nov 2026 review of the 2 Nov URS report; R&A to confirm or remove."
     }
   ]
 }

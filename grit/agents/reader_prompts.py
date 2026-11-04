@@ -107,7 +107,9 @@ REPORTER_ITEMS_SYSTEM = (
 You receive named items (STE entities, projects, suppliers, customers, competitors, and natural hazards). Each item lists only the
 sources that name it. For each item, write one or two sentences that say what the sources report about that item this week
 and whether it disrupts the item or, for a competitor, what it changes in the market. Be concrete. If a source only mentions the item in passing, say that nothing
-item-specific was found. For a natural hazard, report only events in or near the reader pack's places this week; leave out studies,
+item-specific was found. "business" names the reader pack's business area and its lines of business: report only news that
+touches the item's role for them. News about the item's other, unrelated businesses, such as defence orders for a rail
+partner, counts as nothing item-specific. For a natural hazard, report only events in or near the reader pack's places this week; leave out studies,
 forecasting models, and events in other countries, and cite only the sources you use.
 
 Return: {"items": [{"item_id": "PRJ-TC-BLUE", "summary": "... [S1]", "source_ids": ["S1"],
