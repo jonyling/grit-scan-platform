@@ -13,6 +13,33 @@
       "confirmedOn": "2026-10-30"
     },
     {
+      "domain": "abc.net.au",
+      "sourceName": "abc.net.au",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
+    },
+    {
+      "domain": "abcnews.com",
+      "sourceName": "abcnews.com",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
+    },
+    {
+      "domain": "ad-hoc-news.de",
+      "sourceName": "ad-hoc-news.de",
+      "basis": "Set by hand.",
+      "rating": "MEDIUM",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
+    },
+    {
       "domain": "aei.org",
       "sourceName": "American Enterprise Institute (AEI)",
       "rating": "HIGH",
@@ -36,6 +63,15 @@
       "basis": "STE-SOURCES: HIGH.",
       "confirmedBy": "Jony Ling",
       "confirmedOn": "2026-10-30"
+    },
+    {
+      "domain": "aljazeera.com",
+      "sourceName": "aljazeera.com",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
     },
     {
       "domain": "anthropic.com",
@@ -63,6 +99,15 @@
       "basis": "STE-SOURCES: MEDIUM.",
       "confirmedBy": "Jony Ling",
       "confirmedOn": "2026-10-30"
+    },
+    {
+      "domain": "bbc.com",
+      "sourceName": "BBC",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
     },
     {
       "domain": "bis.doc.gov",
@@ -99,6 +144,15 @@
       "basis": "STE-SOURCES: MEDIUM.",
       "confirmedBy": "Jony Ling",
       "confirmedOn": "2026-10-30"
+    },
+    {
+      "domain": "businesstimes.com.sg",
+      "sourceName": "businesstimes.com.sg",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
     },
     {
       "domain": "channelnewsasia.com",
@@ -178,6 +232,15 @@
       "confirmedOn": "2026-10-30"
     },
     {
+      "domain": "economictimes.indiatimes.com",
+      "sourceName": "economictimes.indiatimes.com",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
+    },
+    {
       "domain": "epoch.ai",
       "sourceName": "Epoch AI",
       "rating": "MEDIUM",
@@ -203,6 +266,15 @@
       "basis": "urs-tw: HIGH.",
       "confirmedBy": "Jony Ling",
       "confirmedOn": "2026-10-30"
+    },
+    {
+      "domain": "frontiersin.org",
+      "sourceName": "frontiersin.org",
+      "basis": "Set by hand.",
+      "rating": "MEDIUM",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
     },
     {
       "domain": "ft.com",
@@ -232,6 +304,15 @@
       "confirmedOn": "2026-10-30"
     },
     {
+      "domain": "globenewswire.com",
+      "sourceName": "globenewswire.com",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
+    },
+    {
       "domain": "gov.uk",
       "sourceName": "UK Government",
       "rating": "HIGH",
@@ -239,6 +320,24 @@
       "basis": "STE-SOURCES: HIGH.",
       "confirmedBy": "Jony Ling",
       "confirmedOn": "2026-10-30"
+    },
+    {
+      "domain": "gulfnews.com",
+      "sourceName": "gulfnews.com",
+      "basis": "Set by hand.",
+      "rating": "MEDIUM",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
+    },
+    {
+      "domain": "hindustantimes.com",
+      "sourceName": "hindustantimes.com",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
     },
     {
       "domain": "ibm.com",
@@ -358,6 +457,15 @@
       "confirmedOn": "2026-10-30"
     },
     {
+      "domain": "newindianexpress.com",
+      "sourceName": "newindianexpress.com",
+      "basis": "Set by hand.",
+      "rating": "MEDIUM",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
+    },
+    {
       "domain": "nist.gov",
       "sourceName": "NIST",
       "rating": "HIGH",
@@ -475,6 +583,24 @@
       "confirmedOn": "2026-10-30"
     },
     {
+      "domain": "theedgesingapore.com",
+      "sourceName": "theedgesingapore.com",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
+    },
+    {
+      "domain": "theguardian.com",
+      "sourceName": "theguardian.com",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
+    },
+    {
       "domain": "themoscowtimes.com",
       "sourceName": "The Moscow Times",
       "rating": "MEDIUM",
@@ -482,6 +608,15 @@
       "basis": "urs-tw: MEDIUM.",
       "confirmedBy": "Jony Ling",
       "confirmedOn": "2026-10-30"
+    },
+    {
+      "domain": "thepeninsulaqatar.com",
+      "sourceName": "thepeninsulaqatar.com",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
     },
     {
       "domain": "thequantuminsider.com",
@@ -502,6 +637,24 @@
       "confirmedOn": "2026-10-30"
     },
     {
+      "domain": "timesofindia.indiatimes.com",
+      "sourceName": "timesofindia.indiatimes.com",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
+    },
+    {
+      "domain": "timesofisrael.com",
+      "sourceName": "timesofisrael.com",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
+    },
+    {
       "domain": "tomshardware.com",
       "sourceName": "Tom's Hardware",
       "rating": "MEDIUM",
@@ -518,6 +671,15 @@
       "basis": "STE-SOURCES: HIGH.",
       "confirmedBy": "Jony Ling",
       "confirmedOn": "2026-10-30"
+    },
+    {
+      "domain": "travelandtourworld.com",
+      "sourceName": "travelandtourworld.com",
+      "basis": "Set by hand.",
+      "rating": "LOW",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
     },
     {
       "domain": "trendforce.com",
@@ -563,6 +725,15 @@
       "basis": "STE-SOURCES: HIGH.",
       "confirmedBy": "Jony Ling",
       "confirmedOn": "2026-10-30"
+    },
+    {
+      "domain": "zaobao.com.sg",
+      "sourceName": "zaobao.com.sg",
+      "basis": "Set by hand.",
+      "rating": "HIGH",
+      "status": "CONFIRMED",
+      "confirmedBy": "Jony Ling",
+      "confirmedOn": "2026-11-04"
     }
   ],
   "contested": [
