@@ -285,7 +285,10 @@ contract records `POSSIBLE` or `NOT_ESTABLISHED` and flags the downgrade.
 Reporting calls exposure confirmed only for a `CONFIRMED` selection.
 
 A request above 2,000,000 characters fails before any model call and leaves
-the analysis incomplete. A response that breaks its contract gets two repair
+the analysis incomplete. A Critic issue that is not material and lacks valid
+evidence (a verbatim source quote, the challenged evidence, or the missing
+evidence) is withheld and kept in the call output, because it blocks nothing; a
+material one breaks the contract. A response that breaks its contract gets two repair
 attempts, or up to three for Reporting. Each repair receives the rejected
 output and accumulated validation errors. A selection that does not cover its
 batch names the missing, unexpected, and repeated signal IDs. The attempts are logged, and a

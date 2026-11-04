@@ -185,19 +185,26 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     names = risk_names(pack)
     shown = [row for row in routed if row["shown"]]
     rising = [row["condition_id"] for row in conditions if row["trend"] == "Escalating"]
-    events = event_register(pool, run_id, rows=shown, names=names, escalating=rising)
-    drafted = ((pool.run(run_id) or {}).get("config") or {}).get("event_rows") or {}
+    config = (pool.run(run_id) or {}).get("config") or {}
+    drafted = config.get("event_rows") or {}
+    events = event_register(pool, run_id, rows=shown, names=names, escalating=rising, merges=config.get("event_merges") or {})
     short = str((pack.manifest or {}).get("shortLabel") or pack.label)
     event_of = {signal_id: event["event_id"] for event in events for signal_id in event["signal_ids"]}
 
     def label(event: Mapping[str, Any]) -> str:
         return (drafted.get(event["event_id"]) or {}).get("item") or clean_title(event["lead"].get("title"))
 
-    # 1. Escalating and elevated items.
-    elevated = [event for event in events if event["elevated"]][:8]
+    # 1. Escalating and elevated items. In a run that records the events the EventAssessor withheld, only the events it
+    # drafted or withheld are rows, so a slot that story merging frees is not filled by an event nobody drafted.
+    recorded = "event_rows_withheld" in config
+    assessed = set(drafted) | set(config.get("event_rows_withheld") or [])
+    elevated = [event for event in events if event["elevated"] and (not recorded or event["event_id"] in assessed)][:8]
     escalating_rows = [{
         "event_id": event["event_id"], "band": event["band"], "item": label(event), "risk": event["risk_label"], "tier": event["tier"],
         "row": drafted.get(event["event_id"]), "lead": event["lead"]["signal_id"], "signal_ids": event["signal_ids"][:6], "publishers": event["publishers"],
+        # The event's best-banded reports (T1 to T3) beyond its lead, listed with the drafted row's own sources.
+        "support_ids": [row["signal_id"] for row in event.get("reports") or event["members"] if row["signal_id"] != event["lead"]["signal_id"]
+                        and str(row.get("source_band") or "") in {"T1", "T2", "T3"}][:2],
     } for event in elevated]
 
     # 2. What changed since the last report.

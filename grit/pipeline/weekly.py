@@ -1340,13 +1340,16 @@ def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | N
         raise ValueError("Weekly evidence changed after the saved review; report recovery cannot skip reassessment.")
     failed = pool.one("SELECT * FROM weekly_calls WHERE run_id = ? AND version = ? ORDER BY call_id DESC LIMIT 1",
                       (run.run_id, state["version"]))
+    final_critic_failed = bool(failed) and failed["role"] == "Critic" and failed["status"] == "FAILED" and failed["task"].startswith("final-")
     if refresh:
         finished = bool(failed) and failed["role"] == "Critic" and failed["status"] == "VALIDATED" and failed["task"].startswith("final-")
-        stopped = bool(failed) and failed["role"] == "Reporting" and failed["status"] == "FAILED" and failed["task"].startswith("report-")
+        stopped = final_critic_failed or (bool(failed) and failed["role"] == "Reporting" and failed["status"] == "FAILED" and failed["task"].startswith("report-"))
         if not (finished or stopped):
-            raise ValueError("Report refresh requires a review whose report stage finished or stopped on a Reporting call.")
+            raise ValueError("Report refresh requires a review whose report stage finished, or stopped on a Reporting or final Critic call.")
     elif not failed or failed["role"] != "Reporting" or failed["status"] != "FAILED" or not failed["task"].startswith("report-"):
-        raise ValueError("Report recovery requires the latest weekly call to be a failed Reporting call.")
+        raise ValueError("Report recovery requires the latest weekly call to be a failed Reporting call."
+                         + (" The report stage stopped on a final Critic call: rebuild the reports with `grit resume-report --refresh`."
+                            if final_critic_failed else ""))
     supervisors = pool.rows(
         "SELECT * FROM weekly_calls WHERE run_id = ? AND version = ? AND role = 'Supervisor' AND status = 'VALIDATED' AND call_id < ? ORDER BY call_id DESC",
         (run.run_id, state["version"], failed["call_id"]))

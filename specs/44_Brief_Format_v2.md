@@ -63,7 +63,19 @@ but only when the two headlines share a distinctive word. Within a week, each el
 it matches directly: two or more shared distinctive headline words (`grit.core.headlines`, where "Saudi Arabia" counts as
 one word), or the same jurisdiction where the business has entities together with a shared risk. A page whose headline is
 too poor to compare is read by its opening. Matches never chain, the best-sourced matching report leads, and the story
-keeps its three most common risks.
+keeps its three most common risks. Words common in headlines, including "critical", "security" and "vulnerability", do
+not count.
+
+A vague headline, such as "US Orders Evacuations As Major Ally Is Attacked", does not name its story, but the
+EventAssessor's item label does. After the rows are drafted, a drafted event whose label shares two or more distinctive
+words with the label of a higher-ranked drafted event, within a week, joins that event's row. The run records these
+merges (`event_merges`) and the report applies them, so the drafting stage and the report agree. The run also records the
+events the EventAssessor withheld, and only drafted or withheld events are rows, so a slot that merging frees stays empty.
+
+An event's reports include the other reports of it that a member's selection cites, such as duplicates the review set
+aside, when the two headlines share a distinctive word. A cited report leads only when its band is better than every
+member's, and the row lists up to two T1 to T3 reports beside the drafted row's own sources. The score, band and risks
+come from the members alone.
 "No report this week" is not easing: the changes table says "No new report" without an arrow, and the status line names only ▲
 events and standing risks whose trend eased. Status-line text ends at a sentence, or at a word with an ellipsis.
 

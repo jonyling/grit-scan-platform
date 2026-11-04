@@ -338,7 +338,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
     v2 = format_v2.build(pool, run, pack, routed, condition_rows, {"Supplier": suppliers, "Customer": customers, "Competitor": competitors},
                          [pack.source_register, graph_pack(pack).source_register])
     v2_ids = {signal_id for table in ("escalating", "changes", "priorities") for row in v2[table] for signal_id in row.get("signal_ids") or []}
-    v2_ids |= {signal_id for row in v2["escalating"] for signal_id in (row.get("row") or {}).get("source_ids") or []}
+    v2_ids |= {signal_id for row in v2["escalating"] for signal_id in [*((row.get("row") or {}).get("source_ids") or []), *(row.get("support_ids") or [])]}
     v2_ids |= {signal_id for row in v2["look_ahead"] for signal_id in row["signal_ids"]}
     v2_ids |= {signal_id for line in v2["coverage"] for cell in line["cells"].values() for signal_id in cell["signal_ids"]}
     v2_ids |= {signal_id for row in v2["jurisdictions"] for signal_id in row["signal_ids"]}
@@ -348,7 +348,9 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         row["summary"] = render(drafted["summary"]) if drafted else None
         row["implications"] = render(drafted["implications"]) if drafted else None
         row["response"] = (drafted or {}).get("response")
-        row["sources"] = [source_ref(signal_id) for signal_id in ((drafted or {}).get("source_ids") or row["signal_ids"][:3]) if signal_id in signals]
+        cited = list((drafted or {}).get("source_ids") or row["signal_ids"][:3])
+        cited += [signal_id for signal_id in row.get("support_ids") or [] if signal_id not in cited]
+        row["sources"] = [source_ref(signal_id) for signal_id in cited if signal_id in signals]
     for table in ("changes", "priorities", "look_ahead", "jurisdictions"):
         for row in v2[table]:
             row["sources"] = [source_ref(signal_id) for signal_id in row.get("signal_ids") or [] if signal_id in signals]

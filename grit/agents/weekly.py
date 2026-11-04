@@ -298,6 +298,8 @@ def check_critique(raw: Any, expected: set[str], sources: Mapping[str, Any], ope
         if isinstance(resolution, dict):
             resolution["source_ids"] = refs
     ids: set[str] = set()
+    kept: list[Any] = []
+    withheld: list[dict[str, Any]] = []
     for issue in issues:
         if not isinstance(issue, Mapping):
             raise ContractError("Each issue must be an object.")
@@ -314,18 +316,30 @@ def check_critique(raw: Any, expected: set[str], sources: Mapping[str, Any], ope
         refs = source_ids(issue.get("source_ids"), sources)
         if isinstance(issue, dict):
             issue["source_ids"] = refs
+        problem = None
         if issue["kind"] in {"UNSUPPORTED", "COVERAGE", "INTERNAL_EVIDENCE", "NARRATIVE"}:
             if not refs and not issue.get("missing_evidence"):
-                raise ContractError("Identify the missing evidence or cited claim.")
+                problem = "Identify the missing evidence or cited claim."
         elif issue["kind"] == "FALSE_POSITIVE" and not issue.get("quote"):
             # Irrelevance is an editorial judgment; it names the evidence but need not quote it.
             if not refs:
-                raise ContractError("A false-positive objection must identify the challenged evidence.")
+                problem = "A false-positive objection must identify the challenged evidence."
         else:
             quote = issue.get("quote")
             text = " ".join(f"{sources[ref].get('title') or ''} {sources[ref].get('text') or ''}" for ref in refs)
             if not isinstance(quote, str) or len(quote.strip()) < 20 or normalise(quote) not in normalise(text):
-                raise ContractError("A factual correction needs a verbatim source quote.")
+                problem = "A factual correction needs a verbatim source quote."
+        if problem and issue["material"]:
+            raise ContractError(problem)
+        if problem:
+            # A non-material issue blocks nothing, so one without valid evidence is withheld, kept for audit, and the
+            # rest of the critique stands.
+            withheld.append({**issue, "withheld_because": problem})
+            continue
+        kept.append(issue)
+    if withheld and isinstance(raw, dict):
+        raw["issues"] = kept
+        raw["withheld_issues"] = withheld
     return raw
 
 

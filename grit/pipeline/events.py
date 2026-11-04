@@ -135,14 +135,45 @@ def _elevated(members: Sequence[Mapping[str, Any]]) -> bool:
     return tier == 2 and linked and (publishers >= 2 or direct)
 
 
+def _cited_reports(pool: Pool, run_id: str, rows: Sequence[Mapping[str, Any]]) -> dict[str, list[Mapping[str, Any]]]:
+    """Reports that a reviewed selection cites as the same event but that are not in rows, such as the duplicates the review
+    set aside, keyed by the citing signal. A citation counts only when the two headlines share a distinctive word."""
+    from grit.core.headlines import distinctive_terms
+
+    present = {row["signal_id"] for row in rows}
+    def cited(row: Mapping[str, Any]) -> list[str]:
+        editorial = row.get("editorial") if isinstance(row.get("editorial"), Mapping) else {}
+        return [str(item) for item in editorial.get("source_ids") or [] if str(item) not in present]
+    wanted = {item for row in rows for item in cited(row)}
+    if not wanted:
+        return {}
+    try:
+        reports = {row["signal_id"]: row for row in pool.weekly_assessments(run_id, include_excluded=True) if row["signal_id"] in wanted}
+    except ValueError:
+        return {}
+    found: dict[str, list[Mapping[str, Any]]] = {}
+    for row in rows:
+        own = distinctive_terms(str(row.get("title") or ""))
+        for item in cited(row):
+            other = reports.get(item)
+            if other is not None and own & distinctive_terms(str(other.get("title") or "")):
+                found.setdefault(row["signal_id"], []).append(other)
+    return found
+
+
 def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]] | None = None, names: Mapping[str, str] | None = None,
-                   escalating: Sequence[str] = ()) -> list[dict[str, Any]]:
+                   escalating: Sequence[str] = (), merges: Mapping[str, str] | None = None) -> list[dict[str, Any]]:
     """The run's events, ▲ first, then =, then ▼. rows: the brief's routed rows (kept signals with their route), so a matched
-    management request travels with its event. names: risk id -> name. escalating: the risk ids whose trend is Escalating."""
+    management request travels with its event. names: risk id -> name. escalating: the risk ids whose trend is Escalating.
+    merges: event id -> the event whose row it joins, as label_merges recorded them when the rows were drafted.
+
+    An event's reports are its members and the other reports of it that a member's selection cites, best band first. A
+    cited report can lead and is listed, but the score, band, risks and story merging come from the members alone."""
     from grit.core.priority import outlet_groups
 
     run = pool.run(run_id)
     rows = list(rows if rows is not None else pool.weekly_assessments(run_id))
+    cited = _cited_reports(pool, run_id, rows) if (run.get("config") or {}).get("weekly_mode") == "reasoned" else {}
     previous = pool.latest_run(run["pack"], before=run["run_date"], kind="READER_SCAN")
     before = _group(pool, pool.weekly_assessments(previous["run_id"])) if previous else {}
     names = dict(names or {})
@@ -150,8 +181,12 @@ def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]]
     events = []
     for event_id, members in _group(pool, rows).items():
         members = sorted(members, key=lambda row: str(row.get("published_at") or ""), reverse=True)
+        own = {row["signal_id"] for row in members}
+        extra = list({row["signal_id"]: row for member in members for row in cited.get(member["signal_id"], []) if row["signal_id"] not in own}.values())
         # The best-sourced report leads (T1 first), then the briefing tier.
-        lead = min(members, key=lambda row: (_band_rank(row), row.get("tier") or 9, -(row.get("corroboration") or 1), str(row.get("published_at") or "")))
+        newest = sorted([*members, *extra], key=lambda row: str(row.get("published_at") or ""), reverse=True)
+        reports = sorted(newest, key=lambda row: (_band_rank(row), row.get("tier") or 9))
+        lead = _lead(members, extra)
         risks = list(dict.fromkeys(item for row in members for item in _strong_themes(row)))
         new = event_id not in before
         scores = [score for score in (significance_total(row) for row in members) if score is not None]
@@ -163,8 +198,8 @@ def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]]
             "elevated": band == UP or (elevated and (bool(scores) or min((row.get("tier") or 9) for row in members) == 1 or any(_live_red(row) for row in members))),
             "tier": min((row.get("tier") or 9) for row in members), "red": any(red_status(row) == "CONFIRMED" for row in members),
             "red_candidate": any(red_status(row) == "CANDIDATE" for row in members),
-            "lead": lead, "members": members, "signal_ids": [row["signal_id"] for row in members],
-            "publishers": len(outlet_groups([str(row.get("publisher") or row.get("url") or "") for row in members])),
+            "lead": lead, "members": members, "reports": reports, "signal_ids": [row["signal_id"] for row in reports], "cited": [row["signal_id"] for row in extra],
+            "publishers": len(outlet_groups([str(row.get("publisher") or row.get("url") or "") for row in reports])),
             "first_date": dates[0] if dates else None, "last_date": dates[-1] if dates else None,
             "risks": risks, "risk_label": risk_labels(risks, names),
             "requests": list(dict.fromkeys(str((row.get("route") or {}).get("request_id")) for row in members if (row.get("route") or {}).get("request_id"))),
@@ -176,11 +211,12 @@ def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]]
         lead = min(members, key=lambda row: (row.get("tier") or 9, str(row.get("published_at") or "")))
         risks = list(dict.fromkeys(item for row in members for item in _strong_themes(row)))
         events.append({
-            "event_id": event_id, "band": DOWN, "new": False, "score": None, "elevated": False, "tier": lead.get("tier") or 9, "red": False, "red_candidate": False, "lead": lead, "members": [],
+            "event_id": event_id, "band": DOWN, "new": False, "score": None, "elevated": False, "tier": lead.get("tier") or 9, "red": False, "red_candidate": False, "lead": lead, "members": [], "reports": [],
             "signal_ids": [], "publishers": 0, "first_date": None, "last_date": None, "risks": risks, "risk_label": risk_labels(risks, names),
             "requests": [], "previous_lead": lead,
         })
     events = _merge_stories(events, names, _places(run.get("pack")))
+    events = apply_merges(events, merges or {}, names)
     order = {UP: 0, SAME: 1, DOWN: 2}
     rungs = {"DIRECT": 0, "COUNTERPARTY": 1}
     events.sort(key=lambda event: (order[event["band"]], not event["elevated"], not event["red"], -(event["score"] if event["score"] is not None else -1),
@@ -207,14 +243,73 @@ def _places(pack: str | None) -> dict[str, re.Pattern[str]]:
             for country in countries}
 
 
-def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], places: Mapping[str, re.Pattern[str]] | None = None) -> list[dict[str, Any]]:
-    """In a reasoned run, elevated events are one story (methodology: cluster the same incident once) when, within a week,
-    their reports share two or more distinctive headline words, or name the same jurisdiction where the business has
-    entities and share a risk. The merged event keeps the best-sourced lead, the top score and its most common risks."""
+def _lead(members: Sequence[Mapping[str, Any]], cited: Sequence[Mapping[str, Any]]) -> Mapping[str, Any]:
+    """The best-sourced member (T1 first), then the briefing tier. A cited report leads only with a strictly better band."""
+    def rank(row: Mapping[str, Any]) -> tuple[Any, ...]:
+        return (_band_rank(row), row.get("tier") or 9, -(row.get("corroboration") or 1), str(row.get("published_at") or ""))
+
+    lead = min(members, key=rank)
+    better = [row for row in cited if _band_rank(row) < _band_rank(lead)]
+    return min(better, key=rank) if better else lead
+
+
+def _near(first: Mapping[str, Any], second: Mapping[str, Any]) -> bool:
+    """The two events' reports fall within STORY_DAYS of each other."""
     from datetime import date
 
+    try:
+        start = max(date.fromisoformat(str(first["first_date"])), date.fromisoformat(str(second["first_date"])))
+        end = min(date.fromisoformat(str(first["last_date"])), date.fromisoformat(str(second["last_date"])))
+    except (TypeError, ValueError):
+        return True
+    return (start - end).days <= STORY_DAYS
+
+
+def _combine(parts: Sequence[dict[str, Any]], names: Mapping[str, str], words: frozenset[str]) -> dict[str, Any]:
+    """One story from its events, the first being the seed. words: the story's own headline words."""
     from grit.core.headlines import distinctive_terms
     from grit.core.priority import outlet_groups
+
+    best = parts[0]
+    members = [row for event in parts for row in event["members"]]
+    reports = sorted({row["signal_id"]: row for event in parts for row in event.get("reports") or event["members"]}.values(),
+                     key=lambda row: (_band_rank(row), row.get("tier") or 9))
+    own = {row["signal_id"] for row in members}
+    matching = [row for row in members if row is best["lead"] or distinctive_terms(str(row.get("title") or "")) & words] or [best["lead"]]
+    dates = sorted(str(event[key]) for event in parts for key in ("first_date", "last_date") if event.get(key))
+    risks = _common_risks(parts)
+    return {
+        **best, "members": members, "reports": reports, "signal_ids": [row["signal_id"] for row in reports],
+        # The best-sourced member that matches the story's own headline words leads, or a cited report with a better band.
+        "lead": _lead(matching, [row for row in reports if row["signal_id"] not in own]),
+        "band": UP if any(event["band"] == UP for event in parts) else best["band"], "new": any(event["new"] for event in parts),
+        "red": any(event["red"] for event in parts), "red_candidate": any(event["red_candidate"] for event in parts),
+        "tier": min(event["tier"] for event in parts), "risks": risks, "risk_label": risk_labels(risks, names),
+        "publishers": len(outlet_groups([str(row.get("publisher") or row.get("url") or "") for row in reports])),
+        "first_date": dates[0] if dates else None, "last_date": dates[-1] if dates else None,
+        "requests": list(dict.fromkeys(item for event in parts for item in event["requests"])),
+        "merged_events": [event_id for event in parts for event_id in event.get("merged_events") or [event["event_id"]]],
+        "cited": [item for event in parts for item in event.get("cited") or []],
+    }
+
+
+def _replace(events: list[dict[str, Any]], groups: Mapping[str, Sequence[dict[str, Any]]], names: Mapping[str, str],
+             words: Mapping[str, frozenset[str]]) -> list[dict[str, Any]]:
+    merged: dict[str, dict[str, Any] | None] = {}
+    for seed_id, parts in groups.items():
+        if len(parts) < 2:
+            continue
+        merged[seed_id] = _combine(parts, names, words.get(seed_id, frozenset()))
+        for event in parts[1:]:
+            merged[event["event_id"]] = None
+    return [merged.get(event["event_id"], event) for event in events if merged.get(event["event_id"], event) is not None]
+
+
+def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], places: Mapping[str, re.Pattern[str]] | None = None) -> list[dict[str, Any]]:
+    """In a reasoned run, elevated events are one story (methodology: cluster the same incident once) when, within a week,
+    their members' reports share two or more distinctive headline words, or name the same jurisdiction where the business
+    has entities and share a risk. The merged event keeps the best-sourced lead, the top score and its most common risks."""
+    from grit.core.headlines import distinctive_terms
 
     merging = [event for event in events if event["elevated"] and event["members"] and event.get("score") is not None]
     if len(merging) < 2:
@@ -229,20 +324,11 @@ def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], place
 
     leads = {event["event_id"]: " ".join(place_text(row) for row in event["members"]) for event in merging}
     named = {key: {country for country, pattern in (places or {}).items() if pattern.search(text)} for key, text in leads.items()}
-
-    def near(first: Mapping[str, Any], second: Mapping[str, Any]) -> bool:
-        try:
-            start = max(date.fromisoformat(str(first["first_date"])), date.fromisoformat(str(second["first_date"])))
-            end = min(date.fromisoformat(str(first["last_date"])), date.fromisoformat(str(second["last_date"])))
-        except (TypeError, ValueError):
-            return True
-        return (start - end).days <= STORY_DAYS
-
     # Each event joins the highest-scored story whose own reports it matches, never through a chain of weak matches.
     seeds: list[dict[str, Any]] = []
     groups: dict[str, list[dict[str, Any]]] = {}
     for event in sorted(merging, key=lambda item: (-(item["score"] or 0), item["event_id"])):
-        home = next((seed for seed in seeds if near(seed, event) and (
+        home = next((seed for seed in seeds if _near(seed, event) and (
             len(terms[seed["event_id"]] & terms[event["event_id"]]) >= STORY_TERMS
             or (named[seed["event_id"]] & named[event["event_id"]] and set(seed["risks"]) & set(event["risks"])))), None)
         if home is None:
@@ -250,32 +336,42 @@ def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], place
             groups[event["event_id"]] = [event]
         else:
             groups[home["event_id"]].append(event)
-    merged = {}
-    for seed_id, parts in groups.items():
-        if len(parts) == 1:
+    return _replace(events, groups, names, terms)
+
+
+def label_merges(events: Sequence[Mapping[str, Any]], rows: Mapping[str, Mapping[str, Any]]) -> dict[str, str]:
+    """After the EventAssessor drafts the rows: a drafted event whose item label shares two or more distinctive words with
+    the label of a higher-ranked drafted event, within a week, joins that event's row, because a vague headline such as
+    "US Orders Evacuations As Major Ally Is Attacked" does not name its story but its label does. events: in report order.
+    rows: event id -> drafted row. Returns event id -> the event it joins; no chains."""
+    from grit.core.headlines import distinctive_terms
+
+    seeds: list[tuple[Mapping[str, Any], frozenset[str]]] = []
+    joins: dict[str, str] = {}
+    for event in events:
+        row = rows.get(event["event_id"])
+        if not row or not row.get("item"):
             continue
-        best = parts[0]
-        members = [row for event in parts for row in event["members"]]
-        dates = sorted(str(event[key]) for event in parts for key in ("first_date", "last_date") if event.get(key))
-        merged[best["event_id"]] = {
-            **best, "members": members, "signal_ids": [row["signal_id"] for row in members],
-            # The best-sourced report that matches the story's own headline words leads; otherwise the seed's lead stands.
-            "lead": min((row for row in members if row is best["lead"] or distinctive_terms(str(row.get("title") or "")) & terms[seed_id]),
-                        key=lambda row: (_band_rank(row), row.get("tier") or 9)),
-            "band": UP if any(event["band"] == UP for event in parts) else best["band"], "new": any(event["new"] for event in parts),
-            "red": any(event["red"] for event in parts), "red_candidate": any(event["red_candidate"] for event in parts),
-            "tier": min(event["tier"] for event in parts), "risks": _common_risks(parts),
-            "publishers": len(outlet_groups([str(row.get("publisher") or row.get("url") or "") for row in members])),
-            "first_date": dates[0] if dates else None, "last_date": dates[-1] if dates else None,
-            "requests": list(dict.fromkeys(item for event in parts for item in event["requests"])),
-            "merged_events": [event["event_id"] for event in parts],
-        }
-        merged[best["event_id"]]["risk_label"] = risk_labels(merged[best["event_id"]]["risks"], names)
-        for event in parts:
-            if event["event_id"] != best["event_id"]:
-                merged[event["event_id"]] = None
-    return [merged.get(event["event_id"], event) if event["event_id"] in merged else event for event in events
-            if merged.get(event["event_id"], event) is not None]
+        words = distinctive_terms(str(row["item"]))
+        home = next((seed for seed, seed_words in seeds if len(seed_words & words) >= STORY_TERMS and _near(seed, event)), None)
+        if home is None:
+            seeds.append((event, words))
+        else:
+            joins[event["event_id"]] = home["event_id"]
+    return joins
+
+
+def apply_merges(events: list[dict[str, Any]], merges: Mapping[str, str], names: Mapping[str, str]) -> list[dict[str, Any]]:
+    """Recorded label merges (label_merges), applied where both events are present and elevated."""
+    from grit.core.headlines import distinctive_terms
+
+    present = {event["event_id"]: event for event in events if event["elevated"] and event["members"]}
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for event_id, seed_id in merges.items():
+        if event_id in present and seed_id in present and event_id != seed_id:
+            groups.setdefault(seed_id, [present[seed_id]]).append(present[event_id])
+    words = {seed_id: distinctive_terms(" ".join(str(row.get("title") or "") for row in present[seed_id]["members"])) for seed_id in groups}
+    return _replace(events, groups, names, words)
 
 
 def _common_risks(parts: Sequence[Mapping[str, Any]]) -> list[str]:
@@ -317,7 +413,7 @@ def draft_rows(pool: Pool, run: Any, *, client: Any, model: str, log: Callable[[
     saved: dict[str, Any] = {}
     counts = {"VALIDATED": 0, "WITHHELD": 0}
     for event in events:
-        table, back = agents.source_table(event["members"][:MAX_SOURCES])
+        table, back = agents.source_table((event.get("reports") or event["members"])[:MAX_SOURCES])
         risks = [{"label": risk_labels([item], names), "name": names.get(item, item), "drivers": (themes.get(item) or {}).get("sheetDetail")} for item in event["risks"][:4]]
         result, call = agents.draft_event_row(client, model, event_id=event["event_id"], business_area=area, owners=owners, risks=risks,
                                               requests=[titles.get(item, item) for item in event["requests"]], sources=table)
@@ -333,5 +429,9 @@ def draft_rows(pool: Pool, run: Any, *, client: Any, model: str, log: Callable[[
             pool.add_qa(run.run_id, item=f"Event: {event['lead'].get('title')}", prior=None,
                         correction="Escalating-items row withheld: the draft failed its checks twice. " + "; ".join(result["violations"][:2]), origin="CHECK")
         log(f"  EventAssessor {event['event_id'][:20]:20} {result['status']}")
-    pool.update_run_config(run.run_id, event_rows=saved)
+    withheld = [event["event_id"] for event in events if event["event_id"] not in saved]
+    merges = label_merges(events, saved)
+    if merges:
+        log(f"  Story merging by item label: {len(merges)} row(s) join another event's row.")
+    pool.update_run_config(run.run_id, event_rows=saved, event_rows_withheld=withheld, event_merges=merges)
     return {"events": len(events), **counts}

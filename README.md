@@ -104,7 +104,9 @@ the original model. Open material issues still block readiness.
 To rebuild every report from a finished review, for example after an R&A RED
 decision or a report-stage fix, add `--refresh`. The evidence must be unchanged
 since the review. No search or signal review runs; Reporting and the final
-Critic run again for each report.
+Critic run again for each report. A refresh also recovers a report stage that
+stopped on a final Critic call. Objections to the old report drafts are
+resolved as superseded, because each new report gets its own final critique.
 
 Rendering can overwrite report files in the run's usual output folder. Copy
 existing files first if you need to keep them. To render the resulting reports

@@ -11,6 +11,7 @@ import re
 GENERIC = frozenset("""about after again against alert alerts amid among announces annual another around before between
 billion breaking could during first following highlights latest major million month months monthly other report reports
 since their there these third today under update updates weekly where which while world would years quarter group
+critical security vulnerability vulnerabilities
 january february march april june july august september october november december""".split())
 PLACES = (("saudi arabian", "saudi"), ("saudi arabia", "saudi"), ("united arab emirates", "uae"), ("united states", " "),
           ("hong kong", "hongkong"), ("south korea", "korea"), ("north korea", "northkorea"), ("new zealand", "newzealand"))

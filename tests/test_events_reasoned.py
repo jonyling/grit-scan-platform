@@ -79,3 +79,51 @@ def test_reports_naming_the_same_jurisdiction_and_risk_are_one_story():
     assert sorted(sorted(item["signal_ids"]) for item in merged) == [["a", "b"], ["c"], ["d"]]
     saudi = next(item for item in merged if len(item["signal_ids"]) == 2)
     assert saudi["risks"][0] == "URS-EMERGING-01" and len(saudi["risks"]) <= 3
+
+
+def _event(key, title, score, *, band="UNRATED", day="2026-11-01"):
+    from grit.pipeline.events import UP
+
+    row = {"signal_id": key, "title": title, "source_band": band, "tier": 3, "publisher": key}
+    return {"event_id": f"EVT-{key}", "band": UP, "new": True, "score": score, "elevated": True, "tier": 3, "red": False,
+            "red_candidate": False, "lead": row, "members": [row], "reports": [row], "signal_ids": [key], "publishers": 1,
+            "first_date": day, "last_date": day, "risks": ["R1"], "risk_label": "", "requests": []}
+
+
+def test_a_story_whose_headlines_differ_joins_by_its_drafted_labels_and_stays_joined_in_the_report():
+    from grit.pipeline.events import apply_merges, label_merges
+
+    events = [_event("a", "US Orders Evacuations As Major Ally Is Attacked", 13),
+              _event("b", "Deadly security risks drive new warnings for 13 countries", 10, day="2026-10-31"),
+              _event("c", "Critical GitLab vulnerabilities added to KEV", 10),
+              _event("d", "Critical Node.js vulnerability exposes servers", 9),
+              _event("e", "Embassy alert on Houthi strikes in Saudi Arabia", 8, day="2026-10-10")]
+    rows = {"EVT-a": {"item": "Houthi strikes on Saudi airports trigger US staff departures"},
+            "EVT-b": {"item": "Middle East travel advisories follow deadly Riyadh airport strikes"},
+            "EVT-c": {"item": "Critical GitLab vulnerabilities added to KEV"},
+            "EVT-d": {"item": "Critical Node.js vulnerability exposes servers"},
+            "EVT-e": {"item": "Houthi strikes on Saudi airports"}}
+    merges = label_merges(events, rows)
+    assert merges == {"EVT-b": "EVT-a"}, "shared label words join a story; boilerplate such as 'critical vulnerability' and a gap of weeks do not"
+    stories = apply_merges(events, merges, {})
+    assert [sorted(item["signal_ids"]) for item in stories] == [["a", "b"], ["c"], ["d"], ["e"]]
+    assert apply_merges(events, {"EVT-b": "EVT-missing"}, {}) == events, "a recorded merge whose event is absent changes nothing"
+
+
+def test_a_report_the_selection_cites_can_lead_only_with_a_better_band(tmp_path: Path, monkeypatch):
+    from grit.pipeline import events as module
+
+    pool = Pool(tmp_path / "grit.sqlite")
+    pool.start_run("R", run_date="2026-11-02", pack="urs", kind="READER_SCAN", config={"weekly_mode": "reasoned"})
+    fed = {**_row("SIG-y", 11, cites=("SIG-c", "SIG-x"), band="T4", title="Rate decision live: interest rates held steady"),
+           "published_at": "2026-10-29"}
+    cnbc = {**_row("SIG-c", None, band="T2", title="Fed interest rate decision: Fed holds rates steady"), "published_at": "2026-10-29"}
+    other = {**_row("SIG-x", None, band="T1", title="Treasury issues sanctions on shipping network"), "published_at": "2026-10-29"}
+    cnbc["editorial"]["decision"] = other["editorial"]["decision"] = "EXCLUDE"
+    monkeypatch.setattr(Pool, "weekly_assessments", lambda self, run_id, include_excluded=False: [fed, cnbc, other] if include_excluded else [fed])
+    monkeypatch.setattr(module, "_places", lambda pack: {})
+    [event] = [item for item in module.event_register(pool, "R") if item["members"]]
+    assert event["lead"]["signal_id"] == "SIG-c" and [row["signal_id"] for row in event["members"]] == ["SIG-y"]
+    assert event["signal_ids"] == ["SIG-c", "SIG-y"] and event["cited"] == ["SIG-c"], "a cited report about another event stays out"
+    assert event["score"] == 11, "the score comes from the members"
+    assert module._lead([fed], [{**cnbc, "source_band": "T4"}])["signal_id"] == "SIG-y", "an equal band keeps the member"

@@ -776,6 +776,19 @@ def test_empty_selection_evidence_defaults_to_the_candidate_record():
         check_selections({"selections": [{"signal_id": "A", "decision": "EXCLUDE", "reason": "x", "source_ids": ["Z"]}]}, {"A": {}}, {"A"})
 
 
+def test_a_non_material_issue_without_valid_evidence_is_withheld_not_a_failed_call():
+    sources = {"A": {"title": "Alpha airport", "text": "The airport is open for commercial operations."}}
+    good = {"issue_id": "G", "kind": "INTERNAL_EVIDENCE", "target": "A", "problem": "Exposure is unconfirmed.", "material": False,
+            "source_ids": [], "missing_evidence": "Approved staff locations."}
+    bad = {"issue_id": "B", "kind": "CONTRADICTION", "target": "A", "problem": "The report contradicts itself.", "material": False,
+           "source_ids": ["A"], "quote": "A sentence quoted from the report, not the source"}
+    raw = check_critique({"reviewed_ids": ["A"], "issues": [good, bad], "resolved_issue_ids": []}, {"A"}, sources, set())
+    assert [issue["issue_id"] for issue in raw["issues"]] == ["G"]
+    assert raw["withheld_issues"][0]["issue_id"] == "B" and "verbatim source quote" in raw["withheld_issues"][0]["withheld_because"]
+    with pytest.raises(ContractError, match="verbatim source quote"):
+        check_critique({"reviewed_ids": ["A"], "issues": [{**bad, "material": True}], "resolved_issue_ids": []}, {"A"}, sources, set())
+
+
 def test_factual_quote_can_come_from_the_headline():
     sources = {"A": {"title": "NCS Opens AI Mission Centre in Singapore", "text": "Body text only."}}
     issue = {"issue_id": "W", "kind": "WRONG_ATTRIBUTION", "target": "A", "problem": "Wrong entity", "material": True,
@@ -1667,6 +1680,30 @@ def test_a_report_refresh_also_recovers_a_report_stage_that_stopped(weekly, monk
     result = resume_weekly_reporting(pool, SimpleNamespace(run_id="R", pack="test"), client=None, model=None,
                                      profiles=[profile], call=original, refresh=True)
     assert result["status"] == "READY"
+
+
+def test_a_report_refresh_recovers_a_report_stage_that_stopped_on_the_final_critic(weekly, monkeypatch):
+    from types import SimpleNamespace
+    from grit.agents.weekly import PROMPTS
+    from grit.pipeline.weekly import resume_weekly_reporting
+    pool, store, coordinator, ids, original = weekly
+    coordinator.reconcile_pool(search=None, reassess=lambda: None)
+    coordinator.supervise(["DRAFT_REPORT"], {"stage": "pool reconciled", "issues": store.issues()})
+    profile = _profile()
+    profile.brief_for = lambda pack: {"formats": ["docx"]}
+    monkeypatch.setattr("grit.report.brief.build_brief", lambda *args: _draft(ids[0]))
+    monkeypatch.setattr("grit.report.brief.routed_signals", lambda *args: [])
+    def broken_critic(*args, system, payload, **kwargs):
+        if system == PROMPTS["Critic"] and "targets" in payload:
+            return {"reviewed_ids": [], "issues": [], "resolved_issue_ids": []}
+        return original(*args, system=system, payload=payload, **kwargs)
+    coordinator.call = broken_critic
+    with pytest.raises(ContractError, match="coverage"):
+        coordinator.report(profile, _draft(ids[0]), [])
+    run = SimpleNamespace(run_id="R", pack="test")
+    with pytest.raises(ValueError, match="resume-report --refresh"):
+        resume_weekly_reporting(pool, run, client=None, model=None, profiles=[profile], call=original)
+    assert resume_weekly_reporting(pool, run, client=None, model=None, profiles=[profile], call=original, refresh=True)["status"] == "READY"
 
 
 def test_a_role_may_add_a_link_from_the_register_and_the_report_follows():
