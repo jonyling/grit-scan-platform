@@ -1717,3 +1717,27 @@ def test_a_role_may_add_a_link_from_the_register_and_the_report_follows():
     assert row["risk_ids_dropped"] == ["MADE-UP-9"]
     reviewed = reviewed_links({"condition_ids": ["URS-KEY-03"], "risk_cascade": [], "editorial": {"risk_ids": row["risk_ids"]}})
     assert reviewed["condition_ids"] == ["URS-KEY-03", "URS-EMERGING-01"] and reviewed["keyword_condition_ids"] == ["URS-KEY-03"]
+
+
+def test_a_scenario_signpost_from_an_earlier_run_does_not_block_readiness(weekly, monkeypatch):
+    from types import SimpleNamespace
+    from grit.pipeline.weekly import _finish_weekly_reports
+    pool, store, coordinator, ids, original = weekly
+    coordinator.reconcile_pool(search=None, reassess=lambda: None)
+    coordinator.supervise(["DRAFT_REPORT"], {"stage": "pool reconciled", "issues": store.issues()})
+    earlier = pool.add_signal(url="https://example.com/sweco", title="Sweco beats profit estimates", text="Record margin.",
+                              publisher="example.com", published_at="2026-10-29T00:00:00Z", lane="BRAVE", content_hash="sweco")
+    profile = _profile()
+    profile.brief_for = lambda pack: {"formats": ["docx"]}
+    def draft(*args):
+        seen = [{"number": 1, "signal_ids": [earlier]}]
+        return {**_draft(ids[0]), "membership": [ids[0], earlier], "evidence_ids": [ids[0], earlier],
+                "scenarios": {"shifts": [{"cases": [{"signposts_seen": seen, "counter_indicators_seen": []}]}]}}
+    monkeypatch.setattr("grit.report.brief.build_brief", draft)
+    monkeypatch.setattr("grit.report.brief.routed_signals", lambda *args: [])
+    result = _finish_weekly_reports(pool, SimpleNamespace(run_id="R", pack="test"), [profile], coordinator)
+    assert result["status"] == "READY", result
+    pool.upsert("assessments", {"signal_id": earlier, "run_id": "R", "pack": "test", "decision": "KEEP", "tier": 3, "red": 0,
+                                "assessed_at": "2026-11-02"}, ["signal_id", "run_id", "pack"])
+    from grit.pipeline.weekly import scenario_history
+    assert scenario_history(pool, "R", draft()) == set(), "a signal of this run is not history: the review must cover it"

@@ -360,6 +360,10 @@ named admission is required before subsequent reasoning uses a correction or
 reader preference. Only that reader can admit their preference. No admission
 changes raw evidence, controlled scores, or an earlier approved artifact.
 
+A report is not ready when it cites a signal this run's review did not cover. The exception is a scenario signpost
+seen in an earlier run of the pack within the scenario window: it was kept in that run, the outlook shows it by rule
+with its own date, and the narrative does not cite it.
+
 R&A can also record a correction directly in the pack's corrections ledger
 (`grit corrections`, spec 44). Every role receives the open ledger entries
 with the admitted Memory corrections, and Reporting and the final Critic see

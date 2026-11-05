@@ -224,6 +224,20 @@ def selection_summary(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]
     return [{**{key: row.get(key) for key in SELECTION_FIELDS}, "editorial": row["editorial"]} for row in rows]
 
 
+def scenario_history(pool: Pool, run_id: str, brief: Mapping[str, Any]) -> set[str]:
+    """Signals the scenario outlook shows as signposts seen earlier in its window, from an earlier run of the pack. They
+    were kept in that run, are shown by rule with their own dates, and are not cited by the narrative, so this run's review
+    need not cover them."""
+    shown = {signal_id for shift in (brief.get("scenarios") or {}).get("shifts") or [] for case in shift.get("cases") or []
+             for item in [*(case.get("signposts_seen") or []), *(case.get("counter_indicators_seen") or [])]
+             for signal_id in item.get("signal_ids") or []}
+    if not shown:
+        return set()
+    marks = ",".join("?" * len(shown))
+    here = {row["signal_id"] for row in pool.rows(f"SELECT signal_id FROM assessments WHERE run_id = ? AND signal_id IN ({marks})", (run_id, *shown))}
+    return shown - here
+
+
 def model_brief(brief: Mapping[str, Any]) -> dict[str, Any]:
     """The report as the model sees it: the full selection audit is replaced by counts and baseline changes, and the
     QA log, which records earlier objections and checks, by its size, so an old objection is not read as current text."""
@@ -1143,7 +1157,7 @@ class WeeklyCoordinator:
         """Readiness from the issues as they stand now. Any open material issue blocks every report, so reports are
         decided after all of them are critiqued: a later final Critic can resolve an objection to an earlier report."""
         sources = self.sources
-        unreviewed = sorted(set(brief["evidence_ids"]) - set(sources))
+        unreviewed = sorted(set(brief["evidence_ids"]) - set(sources) - scenario_history(self.pool, self.run_id, brief))
         # Every reason is stated, so an INCOMPLETE report always says what keeps it from READY.
         blocked_by = [
             *(f"Completeness: {item}" for item in brief["method"]["weekly"]["completeness"]["blocking"]),
