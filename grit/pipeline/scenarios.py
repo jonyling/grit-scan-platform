@@ -401,7 +401,7 @@ def outlook(pool: Pool, run_id: str, pack: Any, *, config_dir: Path | None = Non
     try:
         from grit.ontology.risk_cascade import load_risk_cascade
 
-        risk_links = load_risk_cascade(root).links()
+        risk_links = load_risk_cascade(root, pack).links()
     except (OSError, KeyError, json.JSONDecodeError):
         risk_links = []
     return {

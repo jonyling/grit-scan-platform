@@ -199,3 +199,14 @@ def test_a_broken_register_file_is_named_in_the_error(tmp_path: Path) -> None:
     (tmp_path / "x" / "X-Scan-Plan.json").write_text('{"themes": [{"a": 1} {"b": 2}]}', encoding="utf-8")
     with pytest.raises(ValueError, match=r"X-Scan-Plan\.json is not valid JSON: Expecting ',' delimiter at line 1, column \d+"):
         load_ontology_pack(tmp_path, "x")
+
+
+def test_a_dsc_report_shows_no_urban_solutions_risk_links() -> None:
+    from grit.ontology.risk_cascade import load_risk_cascade
+    from grit.pipeline.reader_scan import _load_pack
+    from grit.settings import CONFIG_DIR
+
+    links = load_risk_cascade(CONFIG_DIR, _load_pack("dsc")).links()
+    assert not any(item["id"].startswith("URS-") for row in links for item in row["ba"]), "another business area's crosswalk is left out"
+    urs = load_risk_cascade(CONFIG_DIR, _load_pack("urs")).links()
+    assert urs and all(item["id"].startswith("URS-") for row in urs for item in row["ba"])

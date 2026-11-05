@@ -1875,3 +1875,14 @@ def test_a_missing_contradiction_search_is_disclosed_once_the_allowance_is_spent
     brief = {"v2": {"gate": [], "completeness": {}}}
     coordinator.disclose_contradiction(brief, coordinator.sources)
     assert "allowance was spent" in brief["v2"]["gate"][0]["note"]
+
+
+def test_an_unsupported_objection_is_settled_once_the_candidate_is_excluded(weekly):
+    pool, store, coordinator, ids, original = weekly
+    coordinator.reconcile_pool(search=None, reassess=lambda: None)
+    call_id = pool.one("SELECT MAX(call_id) AS id FROM weekly_calls WHERE run_id = 'R' AND role = 'Critic'")["id"]
+    excluded = next(row["signal_id"] for row in pool.weekly_assessments("R", include_excluded=True) if row["editorial"]["decision"] == "EXCLUDE")
+    store._issue(call_id, "BIO", "OPEN", {"issue_id": "BIO", "kind": "UNSUPPORTED", "target": excluded, "material": True,
+                                          "problem": "The stored text is only a journalist bio.", "source_ids": [excluded]})
+    coordinator.settle_false_positives()
+    assert "BIO" not in store.issues()

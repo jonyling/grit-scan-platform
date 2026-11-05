@@ -452,7 +452,8 @@ Call exposure confirmed only when a cited selection has exposure_status CONFIRME
 The report status (v2.status) is set by policy from the reviewed selections; state it and its basis, and never call
 the business's position RED unless the status is RED. Only the Risk & Assurance operator confirms a RED impact; a RED
 candidate or an assessed CONFIRMED impact without that decision awaits R&A confirmation and is not RED.
-Use a number only when it appears in the cited source text; otherwise omit it. The previous output, if supplied
+Use a number only when it appears in the cited source text; otherwise omit it. Write each number with its unit (%, $,
+bps, units); if the source gives a number without its unit, leave the number out rather than guess the unit. The previous output, if supplied
 for repair, is a draft, not evidence. Do not convert an unsearched scope into nil impact.
 Use the standing risks' trends as given: call a risk escalating or easing only when its trend is Escalating or Easing.
 Explain event -> business exposure -> conditional implication -> response. Remove repetition, not evidence.""",

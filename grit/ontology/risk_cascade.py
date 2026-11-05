@@ -96,10 +96,14 @@ class RiskCascade:
     def links(self) -> list[dict[str, Any]]:
         """Each Group risk, the BA themes that crosswalk up to it, and any LOB the register names under that theme.
 
-        A crosswalk row stays proposed. A LOB cell stays empty when neither the row nor the theme names one.
+        A crosswalk row stays proposed. A LOB cell stays empty when neither the row nor the theme names one. Only rows whose
+        themes are in the loaded registers count, so with a reader pack another business area's rows are left out.
         """
         grouped: dict[str, dict[str, Any]] = {}
         for row in self.crosswalk_rows:
+            # A row whose themes are not in the loaded registers belongs to another business area's crosswalk.
+            if not (row.get("baThemeId") in self.ba_names or row.get("entityThemeId") in self.entity_names):
+                continue
             for code in row.get("groupRiskCodes") or []:
                 slot = grouped.setdefault(code, {
                     "group_risk": code, "name": self.group_names.get(code, code), "ba": [], "lob": [], "status": "PROPOSED",

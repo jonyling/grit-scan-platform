@@ -860,8 +860,8 @@ class WeeklyCoordinator:
                     **issues[issue_id]["issue"], "resolution": {"response": f"Decided: {row['selection'].get('decision')}."}})
 
     def settle_false_positives(self) -> None:
-        """A FALSE_POSITIVE objection is settled once the candidate's current selection excludes it, often by the same
-        Critic call that raised it. An objection to a risk link is settled once the selection no longer carries any risk
+        """A FALSE_POSITIVE or UNSUPPORTED objection is settled once the candidate's current selection excludes it, often
+        by the same Critic call that raised it. An objection to a risk link is settled once the selection no longer carries any risk
         link the objection names."""
         selections = {row["signal_id"]: row["editorial"] for row in self.pool.weekly_assessments(self.run_id, include_excluded=True)}
         for issue_id, row in self.store.issues().items():
@@ -870,8 +870,8 @@ class WeeklyCoordinator:
             if editorial is None:
                 continue
             named = set(RISK_ID.findall(str(issue.get("problem") or "")))
-            if issue.get("kind") == "FALSE_POSITIVE" and editorial["decision"] == "EXCLUDE":
-                response = "The candidate is excluded, as the objection asked."
+            if issue.get("kind") in {"FALSE_POSITIVE", "UNSUPPORTED"} and editorial["decision"] == "EXCLUDE":
+                response = "The candidate is excluded, so the challenged claim is not reported."
             elif issue.get("kind") == "UNSUPPORTED" and named and not named & set(editorial.get("risk_ids") or []):
                 response = "The selection no longer carries the challenged risk link."
             else:
