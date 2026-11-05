@@ -1,0 +1,50 @@
+{
+  "registerId": "GRIT-ADVERSE-SCAN-PLAN",
+  "status": "RECORDED_ON_INSTRUCTION",
+  "recordedBy": "Jony Ling",
+  "recordedOn": "2026-11-05",
+  "note": "The weekly Brave News queries for the adverse news scan (spec 46). Each query is sent once a run, for exactly the reporting period. The limit covers these queries and the corroboration searches together. Lanes: GROUP, SUBSIDIARY, CUSTOMER, REGULATOR, COMPETITOR. A REGULATOR or COMPETITOR query makes its pages Section B candidates even when no registered name links them.",
+  "queryLimit": 40,
+  "queries": [
+    {"id": "ADV-Q-GRP-01", "lane": "GROUP", "query": "\"ST Engineering\""},
+    {"id": "ADV-Q-GRP-02", "lane": "GROUP", "query": "\"ST Engineering\" investigation"},
+    {"id": "ADV-Q-GRP-03", "lane": "GROUP", "query": "\"ST Engineering\" lawsuit"},
+    {"id": "ADV-Q-GRP-04", "lane": "GROUP", "query": "\"ST Engineering\" contract delay"},
+    {"id": "ADV-Q-GRP-05", "lane": "GROUP", "query": "\"ST Engineering\" cancelled"},
+    {"id": "ADV-Q-GRP-06", "lane": "GROUP", "query": "\"ST Engineering\" cyber attack"},
+    {"id": "ADV-Q-GRP-07", "lane": "GROUP", "query": "\"ST Engineering\" accident"},
+    {"id": "ADV-Q-GRP-08", "lane": "GROUP", "query": "\"ST Engineering\" sanctions"},
+    {"id": "ADV-Q-GRP-09", "lane": "GROUP", "query": "\"ST Engineering\" corruption"},
+    {"id": "ADV-Q-GRP-10", "lane": "GROUP", "query": "\"ST Engineering\" profit"},
+
+    {"id": "ADV-Q-SUB-01", "lane": "SUBSIDIARY", "query": "\"VT Halter Marine\""},
+    {"id": "ADV-Q-SUB-02", "lane": "SUBSIDIARY", "query": "\"Polar Security Cutter\""},
+    {"id": "ADV-Q-SUB-03", "lane": "SUBSIDIARY", "query": "\"ST Engineering Marine\""},
+    {"id": "ADV-Q-SUB-04", "lane": "SUBSIDIARY", "query": "\"ST Engineering Land Systems\""},
+    {"id": "ADV-Q-SUB-05", "lane": "SUBSIDIARY", "query": "\"ST Engineering iDirect\""},
+    {"id": "ADV-Q-SUB-06", "lane": "SUBSIDIARY", "query": "\"Elbe Flugzeugwerke\""},
+    {"id": "ADV-Q-SUB-07", "lane": "SUBSIDIARY", "query": "\"TransCore\""},
+    {"id": "ADV-Q-SUB-08", "lane": "SUBSIDIARY", "query": "\"ST Engineering Aerospace\""},
+
+    {"id": "ADV-Q-CUS-01", "lane": "CUSTOMER", "query": "MINDEF contract"},
+    {"id": "ADV-Q-CUS-02", "lane": "CUSTOMER", "query": "DSTA Singapore"},
+    {"id": "ADV-Q-CUS-03", "lane": "CUSTOMER", "query": "Singapore defence budget"},
+
+    {"id": "ADV-Q-REG-01", "lane": "REGULATOR", "query": "site:justice.gov FCPA"},
+    {"id": "ADV-Q-REG-02", "lane": "REGULATOR", "query": "CPIB charged corruption Singapore company"},
+    {"id": "ADV-Q-REG-03", "lane": "REGULATOR", "query": "PDPC data breach financial penalty"},
+    {"id": "ADV-Q-REG-04", "lane": "REGULATOR", "query": "BIS export enforcement penalty aerospace"},
+    {"id": "ADV-Q-REG-05", "lane": "REGULATOR", "query": "site:sfo.gov.uk bribery"},
+    {"id": "ADV-Q-REG-06", "lane": "REGULATOR", "query": "OFAC settlement defense"},
+    {"id": "ADV-Q-REG-07", "lane": "REGULATOR", "query": "defense contractor debarred"},
+    {"id": "ADV-Q-REG-08", "lane": "REGULATOR", "query": "FAA repair station civil penalty"},
+
+    {"id": "ADV-Q-PEER-01", "lane": "COMPETITOR", "query": "\"Hanwha Aerospace\""},
+    {"id": "ADV-Q-PEER-02", "lane": "COMPETITOR", "query": "Rheinmetall investigation"},
+    {"id": "ADV-Q-PEER-03", "lane": "COMPETITOR", "query": "\"Elbit Systems\" cyber"},
+    {"id": "ADV-Q-PEER-04", "lane": "COMPETITOR", "query": "Thales bribery"},
+    {"id": "ADV-Q-PEER-05", "lane": "COMPETITOR", "query": "\"BAE Systems\" investigation"},
+    {"id": "ADV-Q-PEER-06", "lane": "COMPETITOR", "query": "Austal shipbuilding"},
+    {"id": "ADV-Q-PEER-07", "lane": "COMPETITOR", "query": "\"SIA Engineering\""}
+  ]
+}

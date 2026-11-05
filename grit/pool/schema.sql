@@ -528,3 +528,34 @@ CREATE TABLE IF NOT EXISTS source_sweeps (
     status          TEXT NOT NULL,            -- OK, EMPTY, FAILED
     PRIMARY KEY (feed_id, day)
 );
+
+-- The weekly adverse news and lessons learnt scan (spec 46). One row per scan; the next scan's period starts at the end of
+-- the latest READY scan.
+CREATE TABLE IF NOT EXISTS adverse_scans (
+    scan_id         TEXT PRIMARY KEY,         -- e.g. 2026-11-09-adverse, also the run id of its searches
+    run_date        TEXT NOT NULL,
+    window_start    TEXT NOT NULL,
+    window_end      TEXT NOT NULL,
+    status          TEXT NOT NULL,            -- STARTED, READY, INCOMPLETE
+    blockers_json   TEXT NOT NULL DEFAULT '[]',
+    report_path     TEXT,
+    created_at      TEXT NOT NULL,
+    finished_at     TEXT
+);
+
+-- Every item a scan included or withheld, so a later scan can remove duplicates and recognise material updates.
+CREATE TABLE IF NOT EXISTS adverse_items (
+    scan_id         TEXT NOT NULL REFERENCES adverse_scans (scan_id),
+    item_id         TEXT NOT NULL,            -- A-1, B-2, C-1 for included items; W-n for withheld ones
+    section         TEXT,                     -- A, B, C
+    status          TEXT NOT NULL,            -- INCLUDED, WITHHELD, REPEAT
+    entity_ids_json TEXT NOT NULL DEFAULT '[]',
+    signal_ids_json TEXT NOT NULL DEFAULT '[]',
+    event_ids_json  TEXT NOT NULL DEFAULT '[]',
+    headline        TEXT NOT NULL DEFAULT '',
+    severity        TEXT,
+    reason          TEXT,
+    item_json       TEXT NOT NULL DEFAULT '{}',
+    created_at      TEXT NOT NULL,
+    PRIMARY KEY (scan_id, item_id)
+);

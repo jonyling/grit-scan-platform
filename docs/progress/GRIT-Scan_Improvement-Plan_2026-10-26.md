@@ -58,7 +58,7 @@ Every agent working on this repository must follow these rules:
 | 24 | Map Group risks down to BA and LOB, and BA risks up to Group. | E | Done. Each Group risk lists the business-area themes that crosswalk up to it, and any LOB the register names. A blank LOB cell stays blank. The crosswalk stays proposed. |
 | 25 | Recommend actions down to specific signals, scenarios (Best, Medium, Worst) and predictions. | D | Done. A finding or a triggered scenario response shows an action only when that action already exists, marked "Suggestion for the business area to consider." |
 | 26 | Base profiles on each BA's business partner, not the office holders. Business partners filter signals to office holders. | F | Blocked. Profiles are in `config/`. |
-| 27 | Add Wilson's Group-level daily adverse news agent, and make its output deterministic. | F | Blocked. Needs Wilson's prompt. |
+| 27 | Add Wilson's Group-level daily adverse news agent, and make its output deterministic. | F | Done as a weekly scan, 5 Nov 2026: `grit adverse` ([spec 46](../../specs/46_Adverse_News_and_Lessons_Learnt_Scan.md)). |
 | 28 | Support four feedback routes: the UI's package review, management requests, Co-Pilot chat, and Jony through VS Code chat with uploaded documents. | F | Not started |
 | 29 | Allow 2 or 3 summary slides when the period has many critical signals. | D | Done. One summary slide for up to two critical items, two slides for three or four, and three slides for five or more. |
 | 30 | Fix Co-Pilot chat history that seems shared between profiles. | A | Done, commit `7140799` |
@@ -126,7 +126,7 @@ Commit `24a4dc8`.
 
 - **Point 1 (done for URS and DS&C, 29 Oct).** Rebuild with `grit pack-build --pack PACK` whenever a workbook changes. Commercial Aerospace (`ca`) has a proposed scan plan (`config/ca/CA-Scan-Plan.json`, about 94 Brave queries a run) for its R&A business partner to review. It is not in the `grit scheduled` timetable, so it runs only with `grit weekly --pack ca`.
 - **Point 26.** Re-base profiles on BA business partners. Needs `config/` access or Jony's edits.
-- **Point 27.** Add Wilson's daily adverse news agent as a lane whose output passes the same deterministic checks. Needs Wilson's prompt.
+- **Point 27 (done, 5 Nov).** Wilson's prompt arrived as `docs/Adverse_News_Lessons_Learnt_Scan_Prompt.docx`. It runs weekly as `grit adverse`, whose agents' proposals pass deterministic checks (spec 46).
 - **Point 28.** Record all four feedback routes in one feedback table, with the route, the person and the date.
 
 ### Batch G: model
@@ -141,7 +141,6 @@ Commit `24a4dc8`.
 | Sphera licence and API access | Point 5 | R&A |
 | Free NASA FIRMS key in `.env` | Point 14 | Jony |
 | Business-partner profile edits | Point 26 | Jony |
-| Wilson's daily adverse news prompt | Point 27 | Wilson |
 | Entity information from six BAs | Point 2 | Wilson or higher authority |
 
 ## Credit projection

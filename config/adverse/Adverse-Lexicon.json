@@ -1,0 +1,27 @@
+{
+  "registerId": "GRIT-ADVERSE-LEXICON",
+  "status": "RECORDED_ON_INSTRUCTION",
+  "recordedBy": "Jony Ling",
+  "recordedOn": "2026-11-05",
+  "note": "Screening terms for the adverse news scan (spec 46). A hit in a page's title or first 400 characters makes it a candidate. It is never a verdict: the Screener and Assessor decide, and rules check them. A term ending in * matches any word that starts with it. Matching ignores case.",
+  "categories": [
+    {"id": "FINANCIAL", "label": "Financial impact or distress", "sectionA": "A1", "sectionB": "Financial Distress",
+     "terms": ["insolven*", "bankrupt*", "receivership", "chapter 11", "creditor protection", "default*", "profit warning", "net loss", "losses widen*", "loss widen*", "write-down*", "writedown*", "impairment*", "downgrade*", "going concern", "liquidity", "cash crunch", "unpaid", "payment delay*", "funding cut*", "funding withdraw*", "budget cut*", "margin pressure", "profit fall*", "profit falls", "profit drop*", "profit plunge*", "layoff*", "job cuts"]},
+    {"id": "PROJECT", "label": "Project delivery failure", "sectionA": "A2", "sectionB": "Project Failures",
+     "terms": ["delay*", "behind schedule", "cancel*", "terminat*", "suspend*", "suspension", "postpone*", "cost overrun*", "overrun*", "dispute*", "stop-work", "halt*", "scrapped", "pulls out", "pulled out", "missed deadline*", "milestone slip*"]},
+    {"id": "REGULATORY", "label": "Regulatory and compliance", "sectionA": "A3", "sectionB": "Compliance Failures",
+     "terms": ["sanction*", "export control*", "entity list", "embargo*", "fined", "fines", "penalt*", "settles", "settlement with", "investigat*", "probe*", "raid*", "subpoena*", "debar*", "blacklist*", "consent order", "indict*", "charged", "lawsuit*", "sued", "sues", "class action", "arbitration", "violat*", "data protection", "gdpr", "pdpc", "licence revoked", "license revoked"]},
+    {"id": "CYBER", "label": "Cyber and security", "sectionA": "A4", "sectionB": "Cyber Incidents",
+     "terms": ["ransomware", "cyber attack*", "cyberattack*", "cyber-attack*", "hack*", "data breach*", "breach*", "data leak*", "leaked", "leak", "espionage", "spying", "spy", "zero-day", "malware", "intrusion", "compromised", "classified information"]},
+    {"id": "SAFETY", "label": "Safety", "sectionA": "A5", "sectionB": "Safety Failures",
+     "terms": ["killed", "kills", "dead", "death*", "died", "fatal*", "injur*", "crash*", "accident*", "explosion*", "blast", "caught fire", "blaze", "collision", "emergency landing", "derail*", "capsiz*", "sank", "sinking", "safety lapse*", "safety breach*"]},
+    {"id": "INTEGRITY", "label": "Fraud, corruption and reputation", "sectionA": "A6", "sectionB": "Fraud and Corruption",
+     "terms": ["brib*", "corrupt*", "fraud*", "kickback*", "embezzl*", "misconduct", "whistleblow*", "conflict of interest", "false claims", "accounting irregular*", "scandal*", "criticised", "criticized", "backlash", "money laundering", "price-fixing", "collusion", "bid rigging", "bid-rigging", "cartel"]},
+    {"id": "QUALITY", "label": "Product and quality failure", "sectionA": "A2", "sectionB": "Product and Quality Failures",
+     "terms": ["recall*", "defect*", "quality issue*", "quality problem*", "faulty", "malfunction*", "airworthiness directive", "grounded", "grounding", "counterfeit", "substandard", "non-conform*"]},
+    {"id": "STRATEGIC", "label": "Strategic and geopolitical", "sectionA": "A7", "sectionB": null,
+     "terms": ["defence budget", "defense budget", "spending cut*", "procurement review", "procurement freeze", "export restriction*", "export ban", "tariff*", "trade war", "market access", "nationalisation", "nationalization", "expropriat*"]},
+    {"id": "EMERGING", "label": "Change that may become a risk (Section C only)", "sectionA": null, "sectionB": null,
+     "terms": ["tighten*", "restrict*", "new rules", "draft rules", "proposed rule*", "escalat*", "tension*", "blockade", "warns", "warning", "threat*", "review of", "crackdown", "ban on", "bans", "curbs", "shortage*", "disrupt*"]}
+  ]
+}

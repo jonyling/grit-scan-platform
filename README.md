@@ -311,10 +311,11 @@ One weekly run for a reader pack has these stages. Each stage reads and writes t
 | `grit/profiles/` | Reader profiles, reader notes, emphasis, the Profiler, and the fit report (specs 39 and 41). |
 | `grit/report/` | The brief model and its Word, PowerPoint, Excel, and Markdown renderers, RED drafts, the AIRIS export, and the business-area digest. |
 | `grit/workflow/` | The Supervisor, the theme register, and reader packages through review. |
+| `grit/adverse/` | The weekly adverse news and lessons learnt scan: registers, the screen, agents, rules, and the email (spec 46). |
 | `grit/dataverse/` | The Dataverse gateway and the pool-to-`grit_signals` sync. |
 | `grit/ui/` | The Streamlit dashboard and the Co-Pilot drawer. |
 | `grit/cli.py` | The command line: `python -m grit`. |
-| `config/` | Registers: the `urs/` and `urs-tw/` packs with their `pack.json` manifests, `profiles/`, `risk/`, `red-patterns.json`, and `registry_aliases.json`. |
+| `config/` | Registers: the `urs/` and `urs-tw/` packs with their `pack.json` manifests, `profiles/`, `risk/`, `adverse/` (the adverse news scan's watchlist, lexicon and scan plan), `red-patterns.json`, and `registry_aliases.json`. |
 | `specs/` | Governing specifications. |
 | `docs/` | The guide to adding a business area, design notes and drafts (`design/`), and the description and reference briefs (`reference/`). |
 | `tests/` | Contract tests. |
@@ -417,6 +418,34 @@ This crontab line runs the due scans at 06:30 each Monday, after the 05:30 daily
 ```
 
 To change a cadence, edit `SCHEDULE` in `grit/schedule.py`.
+
+After the due scans, `grit scheduled` also runs the adverse news scan every Monday. Add `--no-adverse` to leave it out.
+
+## Run the adverse news scan
+
+The Adverse News & Lessons Learnt Scan is Wilson's weekly early-warning report on ST Engineering, its subsidiaries, key customers, suppliers and competitors ([spec 46](specs/46_Adverse_News_and_Lessons_Learnt_Scan.md)). It follows Wilson's prompt in [Adverse_News_Lessons_Learnt_Scan_Prompt.docx](docs/Adverse_News_Lessons_Learnt_Scan_Prompt.docx): an Immediate Escalation Summary, Section A (adverse news relevant to STE), Section B (competitor and industry lessons learnt), Section C (emerging risk signals), a Management Attention Summary and the Final Validation. The output is an email to Wilson that you review and send yourself. Nothing is sent.
+
+The scan reads every pool page in the reporting period, from the weekly and daily lanes, and adds its own targeted searches from `config/adverse/Adverse-Scan-Plan.json`. It binds pages through the Group pack's graph plus `config/adverse/Adverse-Watchlist.json`, which adds the Defence, Marine, Land Systems, Satcom and US businesses that no business-area register holds. A Screener, an Assessor and a Critic propose. Rules in `grit/adverse/checks.py` check every fact against a verbatim quote from a page that was opened, and decide the exposure label, the rating cap, the EXCO escalation and the summaries.
+
+> **Warning:** A run sends up to 40 Brave queries (`--limit-queries`). With the Monday business-area scans, a month exceeds the free Brave credit of about 1,000 queries. Raise `BRAVE_MONTHLY_LIMIT` to match your Brave plan, or run with `--no-search` to use the pool only.
+
+1. Print the reporting period, the planned queries and the candidate counts. This sends nothing and calls no model.
+
+   ```bash
+   .venv/bin/python -m grit adverse --date DATE --dry-run
+   ```
+
+2. Run the scan. It prints the email at the end.
+
+   ```bash
+   .venv/bin/python -m grit adverse --date DATE
+   ```
+
+3. Open `output/adverse/DATE/review.md` and check the withheld items, the rule decisions and the Critic's objections.
+
+4. Copy `output/adverse/DATE/email.txt` into a new email, or open `email.eml` in Outlook as a draft, and send it to Wilson.
+
+The reporting period runs from the end of the previous `READY` scan to `DATE`; the first scan covers seven days. If a model call fails, the scan is `INCOMPLETE`, the email is written as `email-DRAFT-INCOMPLETE.txt`, and the next scan's period still starts from the last `READY` scan.
 
 ## Run the daily lane
 

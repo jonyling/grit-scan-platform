@@ -12,6 +12,9 @@ The schedule keeps Brave within its free credit of about 1,000 queries a month:
 With the 16-query source sweep, the heaviest month (five Mondays) comes to about 978 queries. On other days nothing is
 scanned with Brave; the daily lane still runs. Packs due on the same day run in one process, entity
 packs first, so they never write the pool at the same time.
+
+Every Monday, after those scans, the adverse news scan (spec 46) runs and spends up to 40 more Brave queries, about 160 to
+200 a month. That takes the total above the free credit; raise BRAVE_MONTHLY_LIMIT to match the plan, or pass --no-adverse.
 """
 
 from __future__ import annotations
@@ -34,15 +37,25 @@ def due_packs(day: date, schedule: dict[str, str] | None = None) -> list[str]:
     return due
 
 
+def adverse_due(day: date) -> bool:
+    """The adverse news scan (spec 46) runs every Monday, after the weekly scans due that day, so it reads their pages."""
+    return day.weekday() == 0
+
+
 def main(argv: list[str] | None = None) -> int:
     from grit.cli import main as grit_main
 
     parser = argparse.ArgumentParser(prog="grit scheduled", description="Run the weekly scans due today under the Brave-saving schedule.")
     parser.add_argument("--date", type=date.fromisoformat, default=date.today())
     parser.add_argument("--dry-run", action="store_true", help="Print the packs due and stop.")
+    parser.add_argument("--no-adverse", action="store_true", help="Leave out the Monday adverse news scan.")
     args = parser.parse_args(argv)
     due = due_packs(args.date)
-    print(f"{args.date} ({args.date.strftime('%A')}): " + (f"due {', '.join(due)}." if due else "no scan due."))
-    if not due or args.dry_run:
+    adverse = adverse_due(args.date) and not args.no_adverse
+    print(f"{args.date} ({args.date.strftime('%A')}): " + (f"due {', '.join(due)}." if due else "no scan due.") + (" Adverse news scan due." if adverse else ""))
+    if args.dry_run:
         return 0
-    return grit_main(["weekly", "--pack", *due, "--date", args.date.isoformat()])
+    status = grit_main(["weekly", "--pack", *due, "--date", args.date.isoformat()]) if due else 0
+    if adverse:
+        status = grit_main(["adverse", "--date", args.date.isoformat(), "--quiet"]) or status
+    return status
