@@ -303,10 +303,11 @@ class WeeklyStore:
 
     def reserve(self, kind: str) -> bool:
         """kind "contradiction": a contradiction search for a top finding that has none may go up to TOP_FINDINGS past an
-        enabled search limit, because review can change the top findings after the budget is spent and every top finding
-        needs one before release (URS methodology, section 18)."""
+        enabled search limit for each evidence version, because review can change the top findings after the budget is
+        spent and every top finding needs one before release (URS methodology, section 18). The search count carries
+        across versions, so a later version would otherwise inherit an allowance an earlier one spent."""
         column, ceiling = {"search": ("searches_used", "search_limit"), "revision": ("revisions_used", "2"),
-                           "contradiction": ("searches_used", f"search_limit + {TOP_FINDINGS}")}.get(kind, (None, None))
+                           "contradiction": ("searches_used", f"search_limit + {TOP_FINDINGS} * version")}.get(kind, (None, None))
         if column is None:
             raise ValueError(kind)
         if kind == "contradiction" and int(self.state.get("search_limit") or 0) <= 0:
@@ -314,6 +315,12 @@ class WeeklyStore:
         with self.pool.transaction() as conn:
             result = conn.execute(f"UPDATE weekly_runs SET {column} = {column} + 1, updated_at = ? WHERE run_id = ? AND {column} < {ceiling}", (utc_now(), self.run_id))
         return result.rowcount == 1
+
+    def can_search_to_contradict(self) -> bool:
+        """The run could still pay for a contradiction search: an enabled limit with its per-version allowance left."""
+        state = self.state
+        limit = int(state.get("search_limit") or 0)
+        return limit > 0 and int(state.get("searches_used") or 0) < limit + TOP_FINDINGS * int(state.get("version") or 1)
 
     def select(self, call_id: int, selections: Sequence[Mapping[str, Any]]) -> None:
         call = self.pool.one("SELECT * FROM weekly_calls WHERE call_id = ?", (call_id,))
@@ -756,7 +763,28 @@ class WeeklyCoordinator:
         chosen = [key for key in included if (latest.get(key) or {}).get("decision", "INCLUDE") == "INCLUDE"]
         chosen.sort(key=lambda key: (-significance_score(latest.get(key) or {}), not sources[key].get("red"),
                                      sources[key].get("tier") or 9, -(sources[key].get("corroboration") or 1), key))
-        return chosen[:TOP_FINDINGS]
+        # Top findings are distinct stories: a second report of a story already chosen adds no new claim to challenge.
+        top: list[str] = []
+        for key in chosen:
+            if len(top) >= TOP_FINDINGS:
+                break
+            if not any(self.same_story(key, other, sources) for other in top):
+                top.append(key)
+        return top
+
+    def same_story(self, first: str, second: str, sources: Mapping[str, Mapping[str, Any]]) -> bool:
+        """Two reports of one story: the same event cluster, or headlines that share STORY_TERMS distinctive words."""
+        from grit.core.headlines import distinctive_terms
+        from grit.pipeline.events import STORY_TERMS
+
+        if first == second:
+            return True
+        events = {row["signal_id"]: row["event_id"] for row in self.pool.rows(
+            "SELECT signal_id, event_id FROM event_members WHERE signal_id IN (?, ?)", (first, second))}
+        if len(events) == 2 and events[first] == events[second]:
+            return True
+        words = [distinctive_terms(str((sources.get(key) or {}).get("title") or "")) for key in (first, second)]
+        return len(words[0] & words[1]) >= STORY_TERMS
 
     def status_policy(self) -> dict[str, Any]:
         """The report status from the reviewed selections (URS methodology section 14), separate from headline severity.
@@ -833,13 +861,22 @@ class WeeklyCoordinator:
 
     def settle_false_positives(self) -> None:
         """A FALSE_POSITIVE objection is settled once the candidate's current selection excludes it, often by the same
-        Critic call that raised it."""
-        excluded = {row["signal_id"] for row in self.pool.weekly_assessments(self.run_id, include_excluded=True)
-                    if row["editorial"]["decision"] == "EXCLUDE"}
+        Critic call that raised it. An objection to a risk link is settled once the selection no longer carries any risk
+        link the objection names."""
+        selections = {row["signal_id"]: row["editorial"] for row in self.pool.weekly_assessments(self.run_id, include_excluded=True)}
         for issue_id, row in self.store.issues().items():
-            if row["issue"].get("kind") == "FALSE_POSITIVE" and str(row["issue"].get("target")) in excluded:
-                self.store._issue(row["call_id"], issue_id, "RESOLVED", {**row["issue"], "resolution": {
-                    "response": "The candidate is excluded, as the objection asked.", "source_ids": []}})
+            issue, target = row["issue"], str(row["issue"].get("target"))
+            editorial = selections.get(target)
+            if editorial is None:
+                continue
+            named = set(RISK_ID.findall(str(issue.get("problem") or "")))
+            if issue.get("kind") == "FALSE_POSITIVE" and editorial["decision"] == "EXCLUDE":
+                response = "The candidate is excluded, as the objection asked."
+            elif issue.get("kind") == "UNSUPPORTED" and named and not named & set(editorial.get("risk_ids") or []):
+                response = "The selection no longer carries the challenged risk link."
+            else:
+                continue
+            self.store._issue(row["call_id"], issue_id, "RESOLVED", {**issue, "resolution": {"response": response, "source_ids": []}})
 
     def requalify_unrun_page_checks(self) -> None:
         """A page check the budget could not run was material before 5 November 2026; it is now a disclosed limitation."""
@@ -872,19 +909,26 @@ class WeeklyCoordinator:
     def require_contradiction(self, call_id: int, top: Sequence[str]) -> None:
         """Each top finding needs a completed contradiction search. Without one, an issue stays open: material when the
         run had a search budget, a disclosed limitation when the operator set the budget to zero."""
-        done, issues = self.contradicted(), self.store.issues()
+        searched, issues = self.contradicted(), self.store.issues()
+        sources = self.sources
+        # A contradiction search on any report of a story covers the story.
+        done = searched | {key for key in top if any(self.same_story(key, other, sources) for other in searched if other in sources)}
         enabled = int(self.store.state["search_limit"]) > 0
+        # Material only while the run could still pay for the search, as for page checks and other searches: once the
+        # allowance is spent, review can keep reshuffling near-tied findings, and the gap is disclosed instead.
+        affordable = self.store.can_search_to_contradict()
+        problem = ("No completed search tried to contradict this top finding." if affordable
+                   else "The search allowance was spent before a search could try to contradict this top finding." if enabled
+                   else "Countersearch is disabled for this run, so no search tried to contradict this top finding.")
         for key in top:
             issue_id = f"CONTRA-{key}"
             if key in done:
                 if issue_id in issues:
                     self.store._issue(call_id, issue_id, "RESOLVED", {**issues[issue_id]["issue"], "resolution": {"response": "A contradiction search completed."}})
-            elif issue_id not in issues:
+            elif issue_id not in issues or bool(issues[issue_id]["issue"].get("material")) != affordable:
                 self.store._issue(call_id, issue_id, "OPEN", {
-                    "issue_id": issue_id, "target": "RESEARCH", "kind": "COVERAGE", "material": enabled, "source_ids": [key],
-                    "problem": "No completed search tried to contradict this top finding." if enabled
-                               else "Countersearch is disabled for this run, so no search tried to contradict this top finding.",
-                    "missing_evidence": "Contradiction search"})
+                    "issue_id": issue_id, "target": "RESEARCH", "kind": "COVERAGE", "material": affordable, "source_ids": [key],
+                    "problem": problem, "missing_evidence": "Contradiction search"})
         for issue_id, row in issues.items():
             if issue_id.startswith("CONTRA-") and issue_id.removeprefix("CONTRA-") not in top and issue_id.removeprefix("CONTRA-") not in done:
                 self.store._issue(call_id, issue_id, "RESOLVED", {**row["issue"], "resolution": {"response": "No longer a top finding."}})
@@ -933,12 +977,15 @@ class WeeklyCoordinator:
         if not isinstance(gate, list):
             return
         top = self.top_findings(sources, self.included_ids(sources))
-        checked = [key for key in top if key in self.contradicted()]
+        searched = self.contradicted()
+        checked = [key for key in top if key in searched or any(self.same_story(key, other, sources) for other in searched if other in sources)]
         answer = "Yes" if len(checked) == len(top) else "No" if not checked else "Partial"
         note = (f"{len(checked)} of {len(top)} top findings were searched for denials, corrections or reversals."
                 if top else "No finding was included, so none needed a contradiction search.")
         if int(self.store.state["search_limit"]) <= 0 and len(checked) < len(top):
             note += " Countersearch was disabled for this run."
+        elif len(checked) < len(top) and not self.store.can_search_to_contradict():
+            note += " The search allowance was spent before the rest could be searched."
         gate.append({"question": "Were the top findings challenged by a contradiction search?", "answer": answer if top else "Yes",
                      "note": note, "critical": False})
         completeness = brief["v2"].get("completeness")
@@ -1373,6 +1420,63 @@ def _finish_weekly_reports(pool: Pool, run: Any, profiles: Sequence[Any], coordi
     return {"status": coordinator.store.state["status"], "reports": results, "budget": coordinator.store.state}
 
 
+RECOVERY_PASSES = 3
+# A register risk or condition ID, such as STE-GC-08 or URS-TIER_2-07.
+RISK_ID = re.compile(r"\b[A-Z]{2,5}-(?:[A-Z_0-9]+-)?\d{2}\b")
+
+
+def resume_weekly_research(pool: Pool, run: Any, *, client: Any, model: str | None, profiles: Sequence[Any],
+                           search: Callable[[str], Mapping[str, Any]], reassess: Callable[[], Any], call: RoleCall = call_json,
+                           progress: Callable[[str], Any] | None = None) -> dict[str, Any]:
+    """Finish an analysis that stopped INCOMPLETE only on research issues, such as a top finding without a contradiction
+    search: up to RECOVERY_PASSES research passes, each reviewing only the new evidence, then every report again. The drafted sections are
+    kept, so the section agents do not run again."""
+    state = pool.one("SELECT * FROM weekly_runs WHERE run_id = ?", (run.run_id,))
+    saved_run = pool.run(run.run_id)
+    if not state or not saved_run or (saved_run.get("config") or {}).get("weekly_mode") != "reasoned":
+        raise ValueError(f"No reasoned weekly analysis exists for {run.run_id} in this database.")
+    if state["status"] != "INCOMPLETE":
+        raise ValueError("Research recovery requires an incomplete weekly analysis.")
+    if state["evidence_hash"] != analysis_hash(pool, run.run_id):
+        raise ValueError("Weekly evidence changed after the saved review; run the weekly again instead.")
+    last = pool.one("SELECT * FROM weekly_calls WHERE run_id = ? AND version = ? ORDER BY call_id DESC LIMIT 1", (run.run_id, state["version"]))
+    if not last or last["role"] != "Critic" or last["status"] != "VALIDATED" or not last["task"].startswith("final-"):
+        raise ValueError("Research recovery requires a review whose report stage finished.")
+    store = WeeklyStore(pool, run.run_id, search_limit=state["search_limit"], refresh=False)
+    config = saved_run.get("config") or {}
+    fast = config.get("weekly_review") == "fast"
+    coordinator = WeeklyCoordinator(store, client=client, model=model or last["model"], call=call, fast=fast,
+                                    workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
+    # Rule-settled objections first, so only live issues decide whether research alone can finish the analysis.
+    coordinator.settle_false_positives()
+    coordinator.requalify_unrun_page_checks()
+    material = {key: row for key, row in store.issues().items() if row["issue"].get("material")}
+    other = sorted(key for key, row in material.items() if row["issue"].get("target") != "RESEARCH" and not str(row["issue"].get("target") or "").startswith("REPORT:"))
+    if not any(row["issue"].get("target") == "RESEARCH" for row in material.values()) or other:
+        raise ValueError("Research recovery is for an analysis blocked only by research issues"
+                         + (f"; these other material issues are open: {', '.join(other)}." if other else "; none is open."))
+    coordinator.progress("Completing the missing research; only new evidence is reviewed and the drafted sections are kept.")
+    store.finish("STARTED")
+    with pool.transaction() as conn:
+        conn.execute("UPDATE runs SET status = 'STARTED', finished_at = NULL WHERE run_id = ?", (run.run_id,))
+    # Reviewing new evidence can move another finding into the top set, which then needs its own search.
+    for attempt in range(1, RECOVERY_PASSES + 1):
+        before = coordinator.digests() if fast else {}
+        if coordinator.research(f"research-recovery-{attempt}", search, reassess):
+            coordinator.review(int(store.state["revisions_used"]) + 2 + attempt, coordinator.changed(before) if fast else None)
+        coordinator.require_decisions()
+        coordinator.check_contradiction()
+        if not any(row["issue"].get("material") and row["issue"].get("target") == "RESEARCH" for row in store.issues().values()):
+            break
+    # The report stage resolves objections to the old drafts, as a refresh does: every report is critiqued again.
+    for key, row in store.issues().items():
+        if str(row["issue"].get("target") or "").startswith("REPORT:"):
+            store._issue(last["call_id"], key, "RESOLVED", {**row["issue"], "resolution": {
+                "response": "Superseded: the recovery rebuilds every report, and each new report gets its own final critique.", "source_ids": []}})
+    coordinator.supervise(["DRAFT_REPORT"], {"stage": "pool reconciled", "issues": store.issues()})
+    return _finish_weekly_reports(pool, run, profiles, coordinator)
+
+
 def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | None,
                             profiles: Sequence[Any], call: RoleCall = call_json,
                             progress: Callable[[str], Any] | None = None, refresh: bool = False) -> dict[str, Any]:
@@ -1430,6 +1534,7 @@ def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | N
         # Rule-based issue settlement that the review stage now applies, so a refresh uses the current rules.
         coordinator.settle_false_positives()
         coordinator.requalify_unrun_page_checks()
+        coordinator.check_contradiction()
         # An objection to an earlier draft of a report no longer applies: every report is rebuilt and critiqued again.
         for key, row in store.issues().items():
             if str(row["issue"].get("target") or "").startswith("REPORT:"):

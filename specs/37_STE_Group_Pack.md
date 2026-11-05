@@ -24,7 +24,7 @@ The Group pack (`ste`) gives the CEO and the Chairman the geopolitical and techn
 | Register | Content |
 |---|---|
 | `pack.json` | Level `GROUP`. Its children are the business-area packs whose registers make up the footprint. |
-| `STE-Global-Baseline.json` | The 12 standing conditions: name, domain, how each reaches STE, its watch indicators, and its `currentAssessment`. The assessment is empty and the status is `DRAFT_PENDING_SIGN_OFF` until Wilson signs off the baseline draft. |
+| `STE-Global-Baseline.json` | The 13 standing conditions: name, domain, how each reaches STE, its watch indicators, and its `currentAssessment`. The assessment is empty and the status is `DRAFT_PENDING_SIGN_OFF` until Wilson signs off the baseline draft. |
 | `STE-Group-Themes.json` | Wilson's eight strategic shifts, as `KEY` themes with keywords. A condition's development is tagged with the shifts it touches. |
 | `STE-Scan-Plan.json` | Queries, keywords, and proposed business-area relevance for each condition. A 31-day window. |
 | `STE-Source-Register.json` | Wilson's tier 1 to 7 sources, rated. Primary and official sources are `HIGH`. |
@@ -38,7 +38,7 @@ A Group pack builds one graph from its children's graphs. The footprint is every
 
 - it has no stronger link;
 - it names a footprint country in the title or lead;
-- it strongly hits one of the 12 standing conditions.
+- it strongly hits one of the 13 standing conditions.
 
 Example: "Saudi–Houthi war reaches Riyadh" is on the footprint rung when Saudi Arabia is in the footprint and the signal hits the Middle East security condition. A country alone is still not a link. The rung applies only to Group packs, so the business-area briefs keep their strict link.
 

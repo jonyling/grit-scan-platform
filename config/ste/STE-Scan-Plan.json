@@ -5,7 +5,7 @@
   "windowDays": 31,
   "audience": "Vincent S. Chong (CEO) and MK Teo (Chairman), ST Engineering, released by Wilson Yeo (Group Head, Risk & Assurance)",
   "sectionTitles": {
-    "CONDITIONS": "Group Strategic Radar: the 12 standing conditions",
+    "CONDITIONS": "Group Strategic Radar: the 13 standing conditions",
     "PRIORITY_FINDINGS": "Signals to read in full"
   },
   "conditions": [
@@ -256,6 +256,28 @@
       "businessAreas": [
         "dsc",
         "urs"
+      ],
+      "businessAreaStatus": "PROPOSED"
+    },
+    {
+      "conditionId": "STE-GC-13",
+      "queries": [
+        "Federal Reserve FOMC interest rate decision",
+        "MAS monetary policy statement Singapore dollar",
+        "US Treasury yields outlook",
+        "Asia inflation interest rates outlook"
+      ],
+      "keywords": [
+        "Federal Reserve",
+        "interest rate",
+        "Singapore dollar",
+        "Treasury yields",
+        "inflation rate",
+        "monetary policy"
+      ],
+      "businessAreas": [
+        "urs",
+        "dsc"
       ],
       "businessAreaStatus": "PROPOSED"
     }

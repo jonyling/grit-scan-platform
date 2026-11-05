@@ -283,6 +283,29 @@
         "Breaking Defense",
         "Company announcements"
       ]
+    },
+    {
+      "id": "STE-GC-13",
+      "name": "Interest rates, FX and inflation",
+      "domain": "Markets",
+      "currentAssessment": null,
+      "transmission": "Higher rates or a stronger Singapore dollar could raise STE's financing costs, reduce the Singapore-dollar value of US-dollar and other foreign revenue, squeeze fixed-price contract margins when inflation outruns escalation clauses, and tighten customers' budgets.",
+      "watchIndicators": [
+        "Federal Reserve and MAS policy decisions",
+        "SGD/USD and other STE currency moves",
+        "US Treasury yields and credit spreads",
+        "Inflation and input-cost data in STE markets",
+        "Brent crude and energy prices"
+      ],
+      "steThemes": [
+        "Middle East defence and infrastructure spending"
+      ],
+      "referenceSources": [
+        "Federal Reserve",
+        "Monetary Authority of Singapore",
+        "IMF World Economic Outlook",
+        "Reuters"
+      ]
     }
   ]
 }

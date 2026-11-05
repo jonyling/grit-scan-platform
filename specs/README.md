@@ -18,7 +18,7 @@ Specs 13–33 state the rules. Spec 34 states the rebuild order. Spec 35 describ
 | [34](34_GRIT_Scan_Rebuild_Specification.md) | The rebuild order and invariants. Section 5 is a gap list; spec 35 records what later work closed. |
 | [35](35_GRIT_Scan_POC_Architecture.md) | The proof of concept as built: six roles, the signal pool, and the interfaces. |
 | [36](36_Key_Risks_Implications_and_Proposer.md) | Key risk focus, the implication for the business area, and the Proposer's response options. |
-| [37](37_STE_Group_Pack.md) | The STE Group pack: 12 standing conditions, the footprint rung, baseline drafting, scenarios, the monthly radar, and the Currents fallback. |
+| [37](37_STE_Group_Pack.md) | The STE Group pack: 13 standing conditions, the footprint rung, baseline drafting, scenarios, the monthly radar, and the Currents fallback. |
 | [38](38_Report_Library_and_State_of_the_Situation.md) | The thought-leadership report library, and the State of the Situation documents that ground forecasts and options. |
 | [39](39_Reader_Notes_and_Profiles.md) | Reader notes, the `profile.md` distilled from them, emphasis, and the AIRIS rule by package. |
 | [40](40_Copilot_Core.md) | The Co-Pilot: scope, hybrid search, tools, the checked answer, privacy, and the dashboard drawer. |

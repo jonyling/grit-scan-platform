@@ -1278,6 +1278,9 @@ def test_a_top_finding_gets_its_contradiction_search_after_the_budget_is_spent(w
     for _ in range(TOP_FINDINGS - 1):
         assert store.reserve("contradiction")
     assert not store.reserve("contradiction"), "the allowance is at most TOP_FINDINGS searches"
+    with pool.transaction() as conn:
+        conn.execute("UPDATE weekly_runs SET version = version + 1 WHERE run_id = 'R'")
+    assert store.reserve("contradiction"), "a new evidence version gets its own allowance"
 
 
 def test_a_disabled_search_budget_gets_no_contradiction_allowance(weekly):
@@ -1801,3 +1804,74 @@ def test_a_false_positive_objection_is_settled_once_the_candidate_is_excluded(we
                                             "problem": "Unrelated to the business.", "source_ids": [target]})
     coordinator.check_contradiction()
     assert "FP-OUT" not in store.issues() and "FP-IN" in store.issues(), "only an excluded candidate's objection is settled"
+
+
+@pytest.mark.parametrize("weekly", [2], indirect=True)
+def test_research_recovery_completes_a_missing_contradiction_search_and_rebuilds_the_reports(weekly, monkeypatch):
+    from types import SimpleNamespace
+    from grit.agents.weekly import PROMPTS
+    from grit.pipeline.weekly import _finish_weekly_reports, resume_weekly_research
+    pool, store, coordinator, ids, original = weekly
+    coordinator.reconcile_pool(search=None, reassess=lambda: None)
+    coordinator.supervise(["DRAFT_REPORT"], {"stage": "pool reconciled", "issues": store.issues()})
+    profile = _profile()
+    profile.brief_for = lambda pack: {"formats": ["docx"]}
+    monkeypatch.setattr("grit.report.brief.build_brief", lambda *args: _draft(ids[0]))
+    monkeypatch.setattr("grit.report.brief.routed_signals", lambda *args: [])
+    run = SimpleNamespace(run_id="R", pack="test")
+    assert _finish_weekly_reports(pool, run, [profile], coordinator)["status"] == "INCOMPLETE"
+    assert f"CONTRA-{ids[0]}" in store.issues()
+    roles = []
+    def researched(*args, system, payload, **kwargs):
+        roles.append(next(role for role, prompt in PROMPTS.items() if prompt == system))
+        if system == PROMPTS["Researcher"]:
+            return {"queries": [{"query": "Alpha airport closed denied", "reason": "Disprove", "signal_ids": [ids[0]], "purpose": "CONTRADICT"}],
+                    "missing_checks": []}
+        return original(*args, system=system, payload=payload, **kwargs)
+    searched = []
+    result = resume_weekly_research(pool, run, client=None, model="stub", profiles=[profile], call=researched,
+                                    search=lambda q: searched.append(q) or {"status": "SUCCEEDED", "candidates": []}, reassess=lambda: None)
+    assert result["status"] == "READY" and searched == ["Alpha airport closed denied"]
+    assert "Assessment" not in roles, "no new evidence, so no signal is reviewed again"
+    with pytest.raises(ValueError, match="incomplete"):
+        resume_weekly_research(pool, run, client=None, model="stub", profiles=[profile], call=researched,
+                               search=lambda q: {"status": "SUCCEEDED", "candidates": []}, reassess=lambda: None)
+
+
+def test_top_findings_are_distinct_stories_and_one_search_covers_a_story(weekly):
+    pool, store, coordinator, ids, original = weekly
+    sources = {"A": {"title": "US warns of Houthi threats to Saudi airports"}, "B": {"title": "Houthis claim attacks on Saudi airports"},
+               "C": {"title": "PHP2Shell exploitation of network firewalls"}}
+    assert coordinator.same_story("A", "B", sources) and not coordinator.same_story("A", "C", sources)
+
+
+def test_an_objection_to_a_risk_link_the_selection_dropped_is_settled(weekly):
+    pool, store, coordinator, ids, original = weekly
+    coordinator.reconcile_pool(search=None, reassess=lambda: None)
+    call_id = pool.one("SELECT MAX(call_id) AS id FROM weekly_calls WHERE run_id = 'R' AND role = 'Critic'")["id"]
+    kept = next(row for row in pool.weekly_assessments("R"))
+    linked = (kept["editorial"].get("risk_ids") or [None])[0]
+    store._issue(call_id, "LINK-GONE", "OPEN", {"issue_id": "LINK-GONE", "kind": "UNSUPPORTED", "target": kept["signal_id"], "material": True,
+                                                "problem": "Not about AI capability (STE-GC-08).", "source_ids": []})
+    if linked:
+        store._issue(call_id, "LINK-KEPT", "OPEN", {"issue_id": "LINK-KEPT", "kind": "UNSUPPORTED", "target": kept["signal_id"], "material": True,
+                                                    "problem": f"Not supported ({linked}).", "source_ids": []})
+    coordinator.settle_false_positives()
+    assert "LINK-GONE" not in store.issues()
+    assert not linked or "LINK-KEPT" in store.issues(), "a link the selection still carries stays challenged"
+
+
+@pytest.mark.parametrize("weekly", [1], indirect=True)
+def test_a_missing_contradiction_search_is_disclosed_once_the_allowance_is_spent(weekly):
+    pool, store, coordinator, ids, original = weekly
+    coordinator.assess_and_critique(0)
+    coordinator.research("first", None, lambda: None)
+    assert store.issues()[f"CONTRA-{ids[0]}"]["issue"]["material"], "blocking while a search is still affordable"
+    while store.reserve("search") or store.reserve("contradiction"):
+        pass
+    coordinator.check_contradiction()
+    issue = store.issues()[f"CONTRA-{ids[0]}"]["issue"]
+    assert not issue["material"] and "allowance was spent" in issue["problem"]
+    brief = {"v2": {"gate": [], "completeness": {}}}
+    coordinator.disclose_contradiction(brief, coordinator.sources)
+    assert "allowance was spent" in brief["v2"]["gate"][0]["note"]

@@ -121,6 +121,10 @@ TOPICS = [
           "How STE's main competitors are positioning through acquisitions, partnerships and market entry.",
           ("STE-GC-12",), (), (), ("competition", "competitor"), "GAP",
           ("Competitors' annual reports and investor-day materials",)),
+    Topic("SOTS-MACRO", "Interest rates, FX and inflation",
+          "How interest rates, the Singapore dollar and inflation are moving, and what that means for STE's financing costs, foreign revenue and contract margins.",
+          ("STE-GC-13",), ("IMF-REO-MCD-2025-05", "WEF-GRR-2026"), (), ("financial", "interest", "inflation", "forex", "exchange rate", "currency"), "GAP",
+          ("IMF World Economic Outlook", "MAS Macroeconomic Review", "Federal Reserve FOMC statements")),
 ]
 
 PILOT = ("SOTS-MIDEAST", "SOTS-UKRAINE", "SOTS-SEMIS", "SOTS-QUANTUM")

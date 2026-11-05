@@ -105,7 +105,16 @@ To rebuild every report from a finished review, for example after an R&A RED
 decision or a report-stage fix, add `--refresh`. The evidence must be unchanged
 since the review. No search or signal review runs; Reporting and the final
 Critic run again for each report. A refresh also recovers a report stage that
-stopped on a final Critic call. Objections to the old report drafts are
+stopped on a final Critic call.
+
+If an analysis finished `INCOMPLETE` only because a top finding has no
+contradiction search, use `--research` instead. It runs the missing research,
+reviews only the new evidence, and rebuilds the reports. The drafted sections
+are kept, so it costs a small part of a full rerun:
+
+```bash
+.venv/bin/python -m grit resume-report --research --pack ste --date 2026-11-05 --profile wilson --no-submit
+``` Objections to the old report drafts are
 resolved as superseded, because each new report gets its own final critique.
 
 Rendering can overwrite report files in the run's usual output folder. Copy
@@ -225,7 +234,7 @@ A BA brief summarises its entity packs that ran on the same date. Its Taiwan-con
 
 ## Group pack
 
-The Group pack (`ste`) briefs the CEO and the Chairman each month on the geopolitical and technology picture facing ST Engineering as a whole ([spec 37](specs/37_STE_Group_Pack.md)). It binds news through all its business-area children, so a signal can link on the footprint rung: a country where an STE entity is registered, named with one of the 12 standing conditions. For each condition with evidence, the Assessor writes the risk pathway, any opportunity, and the counter-indicator, and the Proposer writes options.
+The Group pack (`ste`) briefs the CEO and the Chairman each month on the geopolitical and technology picture facing ST Engineering as a whole ([spec 37](specs/37_STE_Group_Pack.md)). It binds news through all its business-area children, so a signal can link on the footprint rung: a country where an STE entity is registered, named with one of the 13 standing conditions. For each condition with evidence, the Assessor writes the risk pathway, any opportunity, and the counter-indicator, and the Proposer writes options.
 
 1. Write the pack and the two reader profiles. Existing files are kept.
 
@@ -264,7 +273,7 @@ The monthly brief is the Group Strategic Radar: one row for each condition, with
 
 ## State of the Situation
 
-A State of the Situation (SotS) document explains one strategic topic in depth: its history, structural drivers, key actors, where things stand, the key uncertainties, and the indicators to watch. It is built only from the thought-leadership reports in the library, and every sentence cites a report page ([spec 38](specs/38_Report_Library_and_State_of_the_Situation.md)). It is the base for the Group pack's forecasts and options. There are 11 topics: Wilson's eight strategic shifts, plus China-Taiwan, defence budgets, and competitors.
+A State of the Situation (SotS) document explains one strategic topic in depth: its history, structural drivers, key actors, where things stand, the key uncertainties, and the indicators to watch. It is built only from the thought-leadership reports in the library, and every sentence cites a report page ([spec 38](specs/38_Report_Library_and_State_of_the_Situation.md)). It is the base for the Group pack's forecasts and options. There are 12 topics: Wilson's eight strategic shifts, plus China-Taiwan, defence budgets, competitors, and interest rates, FX and inflation.
 
 The history section uses more of the topic's own passages and lists authoritative sources proposed beyond the library. Those sources are not cited until a named person adds the file. The exposure section adds a table for every business area: Taiwan and China entities, staff, key suppliers, chip or component dependence, revenue and asset concentration, and a High, Medium, or Low rating for the best, medium, and worst case. A filled cell is proposed until the business area confirms it. A blank cell is a fact the register does not hold. Where STE could gain is copied from a reviewed scenario and marked "Hypothesis: to validate with BAs".
 

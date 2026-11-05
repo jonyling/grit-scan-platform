@@ -437,7 +437,7 @@ def _main() -> None:
     parser = argparse.ArgumentParser(description="Draft State of the Situation documents from the report library, for sign-off.")
     chosen = parser.add_mutually_exclusive_group()
     chosen.add_argument("--topic", nargs="+", help="Topic ids, such as SOTS-MIDEAST.")
-    chosen.add_argument("--all", action="store_true", help="All 11 topics. Default: the four pilot topics.")
+    chosen.add_argument("--all", action="store_true", help="All 12 topics. Default: the four pilot topics.")
     parser.add_argument("--model")
     parser.add_argument("--print", action="store_true", help="Print each document as Markdown.")
     parser.add_argument("--render-only", metavar="DATE", help="Re-render the drafts saved on DATE, with the exposure recomputed. No model call.")

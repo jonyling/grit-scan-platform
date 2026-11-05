@@ -200,7 +200,7 @@ def test_the_catalogue_is_consistent() -> None:
     covered = {theme for item in catalogue.TOPICS for theme in item.themes}
     assert {row["id"] for row in CONDITIONS} <= covered, "every dashboard theme has a State of the Situation"
     assert {f"STE-SHIFT-{number:02d}" for number in range(1, len(SHIFTS) + 1)} <= covered, "and every strategic shift"
-    assert len(catalogue.TOPICS) == 11 and set(catalogue.PILOT) <= {item.topic_id for item in catalogue.TOPICS}
+    assert len(catalogue.TOPICS) == 12 and set(catalogue.PILOT) <= {item.topic_id for item in catalogue.TOPICS}
     assert all(item.gap_sources for item in catalogue.TOPICS if item.coverage == "GAP")
 
 

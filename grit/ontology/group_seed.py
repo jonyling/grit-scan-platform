@@ -106,6 +106,14 @@ CONDITIONS = [
                ["Competitor acquisitions and partnerships", "Major competitor contract wins in STE markets", "Competitor entry into Middle East localisation"],
                ["AI + autonomous systems", "Middle East defence and infrastructure spending"],
                ["Defense News", "Breaking Defense", "Company announcements"]),
+    _condition(13, "Interest rates, FX and inflation", "Markets",
+               "Higher rates or a stronger Singapore dollar could raise STE's financing costs, reduce the Singapore-dollar value of "
+               "US-dollar and other foreign revenue, squeeze fixed-price contract margins when inflation outruns escalation clauses, "
+               "and tighten customers' budgets.",
+               ["Federal Reserve and MAS policy decisions", "SGD/USD and other STE currency moves", "US Treasury yields and credit spreads",
+                "Inflation and input-cost data in STE markets", "Brent crude and energy prices"],
+               ["Middle East defence and infrastructure spending"],
+               ["Federal Reserve", "Monetary Authority of Singapore", "IMF World Economic Outlook", "Reuters"]),
 ]
 
 # Theme keywords need six or more characters or a space (grit/ontology/link.py), so an acronym such as HBM is written as a phrase.
@@ -146,6 +154,10 @@ SCAN = {
                   ["export controls", "Entity List", "export restrictions", "sanctions", "export ban"], ["dsc", "urs"]),
     "STE-GC-12": (["Lockheed Martin acquisition", "Thales contract Asia", "Saab Elbit defence order", "Hanwha Aerospace export deal"],
                   ["Lockheed Martin", "Thales", "Saab", "Elbit", "Hanwha", "Leidos", "Rheinmetall"], ["dsc", "urs"]),
+    # A Group report's completeness gate needs macro and financial coverage (URS methodology, section 8).
+    "STE-GC-13": (["Federal Reserve FOMC interest rate decision", "MAS monetary policy statement Singapore dollar", "US Treasury yields outlook",
+                   "Asia inflation interest rates outlook"],
+                  ["Federal Reserve", "interest rate", "Singapore dollar", "Treasury yields", "inflation rate", "monetary policy"], ["urs", "dsc"]),
 }
 
 SOURCES = [
@@ -255,7 +267,7 @@ def documents(children: list[str]) -> dict[str, Any]:
         names["scan_plan"]: {
             "registerId": f"{PREFIX}-SCAN-PLAN", "status": STATUS, "standingSet": "conditions", "windowDays": 31,
             "audience": "Vincent S. Chong (CEO) and MK Teo (Chairman), ST Engineering, released by Wilson Yeo (Group Head, Risk & Assurance)",
-            "sectionTitles": {"CONDITIONS": "Group Strategic Radar: the 12 standing conditions", "PRIORITY_FINDINGS": "Signals to read in full"},
+            "sectionTitles": {"CONDITIONS": "Group Strategic Radar: the 13 standing conditions", "PRIORITY_FINDINGS": "Signals to read in full"},
             "conditions": [
                 {"conditionId": condition_id, "queries": queries, "keywords": keywords, "businessAreas": [child for child in areas if child in children], "businessAreaStatus": "PROPOSED"}
                 for condition_id, (queries, keywords, areas) in SCAN.items()

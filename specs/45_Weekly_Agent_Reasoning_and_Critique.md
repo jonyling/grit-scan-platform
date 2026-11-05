@@ -173,16 +173,23 @@ budget, so it blocks readiness. When the operator set the limit to zero, it is
 not material and is disclosed instead. The rule is checked again after every
 revision round, so a finding that review moves into the top set also needs its
 search, and while such an issue is open the revision round must be research.
-Because review can change the top findings after the budget is spent, a
-contradiction search for a top finding that has none may go up to five
-searches past an enabled limit; no other search may.
+Top findings are distinct stories: a report that shares an event cluster or
+two distinctive headline words with a higher-ranked finding is skipped, and a
+contradiction search on any report of a story covers the story. Because
+review can change the top findings after the budget is spent, a contradiction
+search for a top finding that has none may go up to five searches past an
+enabled limit for each evidence version; no other search may. A missing
+contradiction search blocks readiness only while that allowance remains. Once
+it is spent, the gap is disclosed in the gate row, as for an unrun search or
+page check, because review can keep reshuffling near-tied findings.
 A requested search that the budget could not run is disclosed as a limitation.
 Only a search that failed is material. The completeness gate always states how
 many top findings were challenged.
 Source-page verification shares this network budget. A page check the
 budget could not run is disclosed, like an unrun search, and does not block.
 A false-positive objection is resolved once the candidate's current selection
-excludes it, which is often in the same Critic call. A report refresh applies
+excludes it, which is often in the same Critic call. An objection to a risk
+link is resolved once the selection no longer carries any link it names. A report refresh applies
 these two rules to the issues it finds. The verifier pins a
 validated public IP and checks the TLS hostname. It follows one redirect only
 when the target is the same page: HTTPS, the same host apart from a leading

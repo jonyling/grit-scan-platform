@@ -202,7 +202,7 @@ def test_the_group_pack_runs_end_to_end(tmp_path: Path, monkeypatch) -> None:
     pool = Pool(tmp_path / "grit.sqlite")
     run = reader_scan.new_run(pool, GROUP_DATE, "ste")
     specs = reader_scan.plan(pool, run)
-    assert len(specs) == 48, "four queries for each of the 12 conditions"
+    assert len(specs) == 52, "four queries for each of the 13 conditions"
 
     def brave(url: str, params: dict[str, str]) -> BraveResponse:
         found = articles.get(params["q"].strip('"'), [])
@@ -223,7 +223,7 @@ def test_the_group_pack_runs_end_to_end(tmp_path: Path, monkeypatch) -> None:
     assert condition["counter_indicator"].startswith("A durable ceasefire")
 
     baseline = draft_baseline(pool, run, client=reader_scan.stub_client(_group_model), model="stub", log=lambda _m: None)
-    assert (baseline["DRAFTED"], baseline["WITHHELD"], baseline["NO_EVIDENCE"]) == (1, 1, 10), "a quote not in its source withholds the draft"
+    assert (baseline["DRAFTED"], baseline["WITHHELD"], baseline["NO_EVIDENCE"]) == (1, 1, 11), "a quote not in its source withholds the draft"
     drafted = json.loads(Path(baseline["files"]["json"]).read_text(encoding="utf-8"))
     entry = next(item for item in drafted["conditions"] if item["id"] == "STE-GC-02")
     withheld = next(item for item in drafted["conditions"] if item["id"] == "STE-GC-06")
@@ -291,7 +291,7 @@ def test_the_group_pack_runs_end_to_end(tmp_path: Path, monkeypatch) -> None:
     document = Document(files["docx"])
     radar = next([[cell.text for cell in row.cells] for row in table.rows] for table in document.tables if table.rows[0].cells[0].text == "Theme and what changed")
     assert radar[0] == ["Theme and what changed", "Sources, date and time", "Risk and opportunity for STE", "Business areas", "Counter-indicator", "Proposed response", "Priority and trend"]
-    assert len(radar) == 13, "one row for each of the 12 conditions"
+    assert len(radar) == 14, "a header and one row for each of the 13 conditions"
     row = next(item for item in radar[1:] if item[0].startswith("2. "))
     assert "Urban Solutions" in row[3] and row[4].startswith("A durable ceasefire") and "Consider reviewing site security plans" in row[5]
     outlook_table = next([[cell.text for cell in row.cells] for row in table.rows] for table in document.tables if table.rows[0].cells[0].text == "Strategic shift")
@@ -419,7 +419,7 @@ def test_pack_init_never_overwrites_a_file(tmp_path: Path) -> None:
     assert not second["written"] and len(second["kept"]) == 9
     assert baseline.read_text(encoding="utf-8") == '{"signed": true}', "a signed-off register is never replaced"
     plan = json.loads((tmp_path / "ste" / "STE-Scan-Plan.json").read_text(encoding="utf-8"))
-    assert len(plan["conditions"]) == 12 and all(set(row["businessAreas"]) <= {"urs"} for row in plan["conditions"]), "relevance is limited to the packs that exist"
+    assert len(plan["conditions"]) == 13 and all(set(row["businessAreas"]) <= {"urs"} for row in plan["conditions"]), "relevance is limited to the packs that exist"
     themes = json.loads((tmp_path / "ste" / "STE-Group-Themes.json").read_text(encoding="utf-8"))
     assert len(themes["themes"]) == 8
     assert all(len(keyword) >= 6 or " " in keyword for theme in themes["themes"] for keyword in theme["keywords"]), "every shift keyword can match"

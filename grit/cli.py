@@ -337,11 +337,22 @@ def cmd_resume_report(args: argparse.Namespace) -> int:
     pack = _packs(args)[0]
     run = ReaderRun(run_id_for(args.date, pack), args.date, pack)
     pool = _pool()
+    if args.research and args.refresh:
+        raise SystemExit("Use --research or --refresh, not both.")
     try:
-        result = resume_weekly_reporting(
-            pool, run, client=_client(), model=args.model, profiles=_profiles(args.profile),
-            progress=lambda message: print(message, flush=True), refresh=args.refresh,
-        )
+        if args.research:
+            from grit.pipeline import reader_scan
+            from grit.pipeline.weekly import countersearch, resume_weekly_research
+
+            result = resume_weekly_research(
+                pool, run, client=_client(), model=args.model, profiles=_profiles(args.profile), search=countersearch,
+                reassess=lambda: reader_scan.assess(pool, run), progress=lambda message: print(message, flush=True),
+            )
+        else:
+            result = resume_weekly_reporting(
+                pool, run, client=_client(), model=args.model, profiles=_profiles(args.profile),
+                progress=lambda message: print(message, flush=True), refresh=args.refresh,
+            )
     except (ValueError, LoopError) as exc:
         raise SystemExit(f"Report recovery stopped: {exc}") from None
     print(json.dumps(result, indent=2, default=str))
@@ -679,6 +690,9 @@ def build_parser() -> argparse.ArgumentParser:
     sub = reader("resume-report", cmd_resume_report, "Resume a failed reasoned Reporting call from its saved, unchanged review.")
     sub.add_argument("--refresh", action="store_true",
                      help="Rebuild every report from a finished review whose evidence has not changed, for example after an R&A RED decision.")
+    sub.add_argument("--research", action="store_true",
+                     help="Finish an analysis blocked only by research issues, such as a top finding without a contradiction search: "
+                          "one research pass, a review of the new evidence, then the reports. The drafted sections are kept.")
     sub.add_argument("--model", help="Model for reporting. Default: the model used by the failed call.")
     sub.add_argument("--profile", nargs="*", default=["all"])
     sub.add_argument("--no-submit", action="store_true", help="Render the resulting reports or incomplete previews without submission.")
