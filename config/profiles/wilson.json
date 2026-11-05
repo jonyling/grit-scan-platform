@@ -6,7 +6,7 @@
   "packs": [
     "urs",
     "urs-tw",
-    "dsc", 
+    "dsc",
     "ca",
     "ste"
   ],
@@ -79,7 +79,7 @@
         "pptx",
         "xlsx"
       ]
-    }, 
+    },
     "dsc": {
       "title": "GRIT-Scan: Digital Systems & Cybersecurity",
       "subtitle": "Business Area Weekly Risk Scan",
@@ -103,7 +103,7 @@
         "pptx",
         "xlsx"
       ]
-    }, 
+    },
     "ca": {
       "title": "GRIT-Scan: Commercial Aerospace",
       "subtitle": "Business Area Weekly Risk Scan",
@@ -142,7 +142,8 @@
       "maxFindings": 5,
       "formats": [
         "docx",
-        "pptx"
+        "pptx",
+        "xlsx"
       ]
     }
   }
