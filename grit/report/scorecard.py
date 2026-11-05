@@ -47,10 +47,11 @@ def scorecard(brief: Mapping[str, Any], corrections: Any = None) -> dict[str, An
                   if isinstance(row, Mapping) and row.get("signal_id")}
     decided = [row.get("editorial") or {} for row in selections.values()]
     escalating = v2.get("escalating") or []
-    escalating_scores = [_score(selections.get(str(row.get("lead")), {})) for row in escalating]
+    # A row's score is its event's: the best reviewed score of its members. The lead can be a cited report with a better band.
+    escalating_scores = [row["score"] if row.get("score") is not None else _score(selections.get(str(row.get("lead")), {})) for row in escalating]
     unsupported = sum(1 for row in escalating if row.get("signal_ids") and all(tiers.get(key) in {"T4", "CONTESTED"} for key in row["signal_ids"]))
-    weak_escalation = sum(1 for row, score in zip(escalating, escalating_scores)
-                          if score is not None and score < 8 and not (selections.get(str(row.get("lead")), {}).get("editorial") or {}).get("immediate_threat"))
+    threat = lambda row: any((selections.get(str(key), {}).get("editorial") or {}).get("immediate_threat") for key in row.get("signal_ids") or [])  # noqa: E731
+    weak_escalation = sum(1 for row, score in zip(escalating, escalating_scores) if score is not None and score < 8 and not threat(row))
     status_text = [*(v2.get("arrows") or []), *(v2.get("risk_window") or [])]
     truncated = [text for text in status_text if not re.search(r"[.!?…▲▼=)]$", str(text).strip())]
     passing = [row for row in v2.get("watch") or [] if _plain(row.get("text")).startswith("Passing mention only")]

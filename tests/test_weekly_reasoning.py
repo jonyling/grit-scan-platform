@@ -1254,6 +1254,37 @@ def test_a_completed_contradiction_search_resolves_the_issue_and_runs_first(week
     assert f"CONTRA-{ids[0]}" not in store.issues()
 
 
+@pytest.mark.parametrize("weekly", [2], indirect=True)
+def test_a_top_finding_gets_its_contradiction_search_after_the_budget_is_spent(weekly):
+    from grit.agents.weekly import PROMPTS
+    from grit.pipeline.weekly import TOP_FINDINGS
+    pool, store, coordinator, ids, original = weekly
+    coordinator.assess_and_critique(0)
+    limit = store.state["search_limit"]
+    for _ in range(limit):
+        assert store.reserve("search")
+    def requested(*args, system, payload, **kwargs):
+        if system == PROMPTS["Researcher"]:
+            return {"queries": [
+                {"query": "Alpha sector peers", "reason": "Coverage", "signal_ids": [], "purpose": "COVERAGE"},
+                {"query": "Alpha airport closed denied", "reason": "Disprove", "signal_ids": [ids[0]], "purpose": "CONTRADICT"}],
+                "missing_checks": []}
+        return original(*args, system=system, payload=payload, **kwargs)
+    coordinator.call = requested
+    searched = []
+    coordinator.research("late", lambda q: searched.append(q) or {"status": "SUCCEEDED", "candidates": []}, lambda: None)
+    assert searched == ["Alpha airport closed denied"], "only the needed contradiction search goes past the spent budget"
+    assert f"CONTRA-{ids[0]}" not in store.issues() and store.state["searches_used"] == limit + 1
+    for _ in range(TOP_FINDINGS - 1):
+        assert store.reserve("contradiction")
+    assert not store.reserve("contradiction"), "the allowance is at most TOP_FINDINGS searches"
+
+
+def test_a_disabled_search_budget_gets_no_contradiction_allowance(weekly):
+    pool, store, coordinator, ids, original = weekly
+    assert store.state["search_limit"] == 0 and not store.reserve("contradiction")
+
+
 def test_a_contradiction_search_purpose_must_be_known(weekly):
     from grit.agents.weekly import PROMPTS
     pool, store, coordinator, ids, original = weekly
@@ -1411,6 +1442,22 @@ def test_a_page_the_source_refused_is_disclosed_and_not_fetched_again(weekly, mo
     brief = {"v2": {"completeness": {}}}
     coordinator.disclose_unverified_pages(brief)
     assert ids[0] in brief["v2"]["completeness"]["limitations"][0]
+
+
+def test_a_page_check_the_spent_budget_could_not_run_is_disclosed_not_blocking(weekly):
+    from grit.agents.weekly import PROMPTS
+    pool, store, coordinator, ids, original = weekly
+    def requested(*args, system, payload, **kwargs):
+        if system == PROMPTS["Researcher"]:
+            return {"queries": [], "missing_checks": [], "verify_source_ids": [ids[0]]}
+        return original(*args, system=system, payload=payload, **kwargs)
+    coordinator.call = requested
+    coordinator.research("first", None, lambda: None)
+    issue = store.issues()[f"PAGE-{ids[0]}"]["issue"]
+    assert issue["material"] is False and "budget was spent" in issue["problem"]
+    brief = {"v2": {"completeness": {}}}
+    coordinator.disclose_unverified_pages(brief)
+    assert "were not run because the search budget was spent" in brief["v2"]["completeness"]["limitations"][0]
 
 
 def test_a_removed_risk_link_is_no_longer_a_strong_theme():
@@ -1741,3 +1788,16 @@ def test_a_scenario_signpost_from_an_earlier_run_does_not_block_readiness(weekly
                                 "assessed_at": "2026-11-02"}, ["signal_id", "run_id", "pack"])
     from grit.pipeline.weekly import scenario_history
     assert scenario_history(pool, "R", draft()) == set(), "a signal of this run is not history: the review must cover it"
+
+
+def test_a_false_positive_objection_is_settled_once_the_candidate_is_excluded(weekly):
+    pool, store, coordinator, ids, original = weekly
+    coordinator.reconcile_pool(search=None, reassess=lambda: None)
+    call_id = pool.one("SELECT MAX(call_id) AS id FROM weekly_calls WHERE run_id = 'R' AND role = 'Critic'")["id"]
+    excluded = next(row["signal_id"] for row in pool.weekly_assessments("R", include_excluded=True) if row["editorial"]["decision"] == "EXCLUDE")
+    kept = next(row["signal_id"] for row in pool.weekly_assessments("R"))
+    for key, target in (("FP-OUT", excluded), ("FP-IN", kept)):
+        store._issue(call_id, key, "OPEN", {"issue_id": key, "kind": "FALSE_POSITIVE", "target": target, "material": True,
+                                            "problem": "Unrelated to the business.", "source_ids": [target]})
+    coordinator.check_contradiction()
+    assert "FP-OUT" not in store.issues() and "FP-IN" in store.issues(), "only an excluded candidate's objection is settled"

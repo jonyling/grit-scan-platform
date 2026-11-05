@@ -173,10 +173,17 @@ budget, so it blocks readiness. When the operator set the limit to zero, it is
 not material and is disclosed instead. The rule is checked again after every
 revision round, so a finding that review moves into the top set also needs its
 search, and while such an issue is open the revision round must be research.
+Because review can change the top findings after the budget is spent, a
+contradiction search for a top finding that has none may go up to five
+searches past an enabled limit; no other search may.
 A requested search that the budget could not run is disclosed as a limitation.
 Only a search that failed is material. The completeness gate always states how
 many top findings were challenged.
-Source-page verification shares this network budget. The verifier pins a
+Source-page verification shares this network budget. A page check the
+budget could not run is disclosed, like an unrun search, and does not block.
+A false-positive objection is resolved once the candidate's current selection
+excludes it, which is often in the same Critic call. A report refresh applies
+these two rules to the issues it finds. The verifier pins a
 validated public IP and checks the TLS hostname. It follows one redirect only
 when the target is the same page: HTTPS, the same host apart from a leading
 `www.`, and the same path apart from a trailing slash. It validates the

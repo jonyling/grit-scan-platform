@@ -127,3 +127,25 @@ def test_a_report_the_selection_cites_can_lead_only_with_a_better_band(tmp_path:
     assert event["signal_ids"] == ["SIG-c", "SIG-y"] and event["cited"] == ["SIG-c"], "a cited report about another event stays out"
     assert event["score"] == 11, "the score comes from the members"
     assert module._lead([fed], [{**cnbc, "source_band": "T4"}])["signal_id"] == "SIG-y", "an equal band keeps the member"
+
+
+def test_one_shared_identifier_in_two_labels_names_one_story():
+    from grit.core.headlines import identifiers
+    from grit.pipeline.events import label_merges
+
+    assert identifiers("Active exploitation of PHP2Shell flaws in 2026") == {"php2shell"} and identifiers("COVID-19 cases rise") == frozenset()
+    events = [_event("a", "x", 12), _event("b", "y", 10), _event("c", "z", 9)]
+    rows = {"EVT-a": {"item": "Active exploitation of PHP2Shell vulnerabilities against network devices"},
+            "EVT-b": {"item": "PHP2Shell exploits compromise servers across multiple countries"},
+            "EVT-c": {"item": "COVID-19 cases rise in Singapore hospitals"}}
+    assert label_merges(events, rows) == {"EVT-b": "EVT-a"}
+
+
+def test_the_scorecard_scores_an_escalating_row_by_its_event():
+    from grit.report.scorecard import scorecard
+
+    row = {"lead": "CITED", "score": 10, "signal_ids": ["CITED", "MEMBER"]}
+    brief = {"v2": {"escalating": [row]}, "method": {"weekly": {"selections": [
+        {"signal_id": "CITED", "editorial": {"decision": "EXCLUDE", "significance": {"exposure": 0, "consequence": 0, "immediacy": 0, "evidence": 0, "change": 0}}}]}}}
+    result = scorecard(brief)
+    assert result["metrics"]["escalating_scores"] == [10] and result["checks"]["escalating rows have significance 8 or more"]

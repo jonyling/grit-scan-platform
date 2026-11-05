@@ -23,3 +23,13 @@ def distinctive_terms(text: str) -> frozenset[str]:
         folded = folded.replace(phrase, token)
     words = (word for word in re.findall(r"[a-z]{5,}", folded) if word not in GENERIC)
     return frozenset(word[:-1] if len(word) > 5 and word.endswith("s") and not word.endswith("ss") else word for word in words)
+
+
+COMMON_IDENTIFIERS = frozenset({"covid-19", "covid19", "g20", "g7", "q1", "q2", "q3", "q4", "h1", "h2", "5g", "mp4"})
+_IDENTIFIER = re.compile(r"\b(?=[a-z0-9-]*[a-z])(?=[a-z0-9-]*\d)[a-z0-9][a-z0-9-]{3,}\b")
+
+
+def identifiers(text: str) -> frozenset[str]:
+    """Names that mix letters and digits, such as "PHP2Shell", "CVE-2026-1096" or "A320neo". One shared identifier names
+    the same story; a plain number, such as a year, is not one."""
+    return frozenset(_IDENTIFIER.findall(str(text or "").casefold())) - COMMON_IDENTIFIERS

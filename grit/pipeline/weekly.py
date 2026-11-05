@@ -302,9 +302,15 @@ class WeeklyStore:
         return self.pool.one("SELECT * FROM weekly_runs WHERE run_id = ?", (self.run_id,)) or {}
 
     def reserve(self, kind: str) -> bool:
-        column, ceiling = ("searches_used", "search_limit") if kind == "search" else ("revisions_used", "2")
-        if kind not in {"search", "revision"}:
+        """kind "contradiction": a contradiction search for a top finding that has none may go up to TOP_FINDINGS past an
+        enabled search limit, because review can change the top findings after the budget is spent and every top finding
+        needs one before release (URS methodology, section 18)."""
+        column, ceiling = {"search": ("searches_used", "search_limit"), "revision": ("revisions_used", "2"),
+                           "contradiction": ("searches_used", f"search_limit + {TOP_FINDINGS}")}.get(kind, (None, None))
+        if column is None:
             raise ValueError(kind)
+        if kind == "contradiction" and int(self.state.get("search_limit") or 0) <= 0:
+            return False
         with self.pool.transaction() as conn:
             result = conn.execute(f"UPDATE weekly_runs SET {column} = {column} + 1, updated_at = ? WHERE run_id = ? AND {column} < {ceiling}", (utc_now(), self.run_id))
         return result.rowcount == 1
@@ -656,7 +662,8 @@ class WeeklyCoordinator:
             if previous or (request.get("purpose") == "CONTRADICT" and set(request["signal_ids"]) <= challenged):
                 continue
             status, result = "NOT_SEARCHED", {"reason": "Search is disabled or the recorded run budget is exhausted."}
-            if search is not None and self.store.reserve("search"):
+            needed = request.get("purpose") == "CONTRADICT" and bool((set(request["signal_ids"]) & set(top)) - challenged)
+            if search is not None and (self.store.reserve("search") or (needed and self.store.reserve("contradiction"))):
                 result = dict(search(query))
                 if not isinstance(result.get("candidates"), list) or result.get("status") != "SUCCEEDED":
                     status = "FAILED"
@@ -703,12 +710,14 @@ class WeeklyCoordinator:
             self.pool.log(actor_type="FUNCTION", actor="WeeklyPageVerification", run_id=self.run_id, version=VERSION,
                           subject=signal_id, status=result["status"], output_hash=canonical_hash(result), detail=result)
             if result["status"] != "SUCCEEDED":
-                # Material only while budget could still complete the check; a page the source refused is disclosed.
+                # A page the source refused, or one the spent or disabled budget could not check, is disclosed, not a
+                # blocker: like an unrun countersearch, the report relies on the retrieved text and says so.
                 attempted = bool(result.get("attempted"))
                 self.store._issue(call_id, f"PAGE-{signal_id}", "OPEN", {
-                    "issue_id": f"PAGE-{signal_id}", "target": signal_id, "kind": "COVERAGE", "material": not attempted,
+                    "issue_id": f"PAGE-{signal_id}", "target": signal_id, "kind": "COVERAGE", "material": False,
                     "problem": ("The source page could not be verified, so the report relies on the retrieved text."
-                                if attempted else "Requested source-page verification was not completed."),
+                                if attempted else "Source-page verification was not run because the search budget was spent or disabled, "
+                                                  "so the report relies on the retrieved text."),
                     "source_ids": [signal_id], "missing_evidence": result["reason"],
                 })
             elif f"PAGE-{signal_id}" in self.store.issues():
@@ -822,9 +831,30 @@ class WeeklyCoordinator:
                 self.store._issue(row["call_id"], issue_id, "RESOLVED", {
                     **issues[issue_id]["issue"], "resolution": {"response": f"Decided: {row['selection'].get('decision')}."}})
 
+    def settle_false_positives(self) -> None:
+        """A FALSE_POSITIVE objection is settled once the candidate's current selection excludes it, often by the same
+        Critic call that raised it."""
+        excluded = {row["signal_id"] for row in self.pool.weekly_assessments(self.run_id, include_excluded=True)
+                    if row["editorial"]["decision"] == "EXCLUDE"}
+        for issue_id, row in self.store.issues().items():
+            if row["issue"].get("kind") == "FALSE_POSITIVE" and str(row["issue"].get("target")) in excluded:
+                self.store._issue(row["call_id"], issue_id, "RESOLVED", {**row["issue"], "resolution": {
+                    "response": "The candidate is excluded, as the objection asked.", "source_ids": []}})
+
+    def requalify_unrun_page_checks(self) -> None:
+        """A page check the budget could not run was material before 5 November 2026; it is now a disclosed limitation."""
+        for issue_id, row in self.store.issues().items():
+            issue = row["issue"]
+            if issue_id.startswith("PAGE-") and issue.get("material") and "budget" in str(issue.get("missing_evidence") or ""):
+                self.store._issue(row["call_id"], issue_id, "OPEN", {**issue, "material": False, "problem": (
+                    "Source-page verification was not run because the search budget was spent or disabled, "
+                    "so the report relies on the retrieved text.")})
+
     def check_contradiction(self) -> None:
         """Review can change which findings rank top after the last research pass; each current top finding still needs
-        its contradiction search, and an issue for a finding that left the top set is resolved."""
+        its contradiction search, and an issue for a finding that left the top set is resolved. Settled false-positive
+        objections are resolved first."""
+        self.settle_false_positives()
         latest = self.pool.one(
             "SELECT MAX(call_id) AS call_id FROM weekly_calls WHERE run_id = ? AND version = ? AND role = 'Researcher' AND status = 'VALIDATED'",
             (self.run_id, self.store.state["version"]))
@@ -871,14 +901,20 @@ class WeeklyCoordinator:
             brief["bottom_line"]["label"] = policy["status"]
 
     def disclose_unverified_pages(self, brief: dict[str, Any]) -> None:
-        """A requested page check the source refused is a limitation of the report, not a blocker."""
+        """A requested page check the source refused, or the budget could not run, is a limitation of the report, not a blocker."""
         completeness = (brief.get("v2") or {}).get("completeness")
-        refused = sorted(row["issue"]["target"] for issue_id, row in self.store.issues().items()
-                         if issue_id.startswith("PAGE-") and row["status"] == "OPEN" and not row["issue"].get("material"))
+        open_pages = [row for issue_id, row in self.store.issues().items()
+                      if issue_id.startswith("PAGE-") and row["status"] == "OPEN" and not row["issue"].get("material")]
+        refused = sorted(row["issue"]["target"] for row in open_pages if "budget" not in row["issue"]["problem"])
+        unrun = sorted(row["issue"]["target"] for row in open_pages if "budget" in row["issue"]["problem"])
         if isinstance(completeness, dict) and refused:
             completeness.setdefault("limitations", []).append(
                 f"{len(refused)} requested source-page checks could not be completed because the source page could not be retrieved: "
                 + ", ".join(refused) + ". These findings rely on the retrieved text.")
+        if isinstance(completeness, dict) and unrun:
+            completeness.setdefault("limitations", []).append(
+                f"{len(unrun)} requested source-page checks were not run because the search budget was spent: "
+                + ", ".join(unrun) + ". These findings rely on the retrieved text.")
 
     def disclose_unrun_searches(self, brief: dict[str, Any]) -> None:
         """Countersearches the budget could not run are a limitation of the report, not a blocker."""
@@ -1391,6 +1427,9 @@ def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | N
         coordinator = WeeklyCoordinator(store, client=client, model=model or failed["model"], call=call, fast=fast,
                                         workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
         coordinator.progress("Refreshing every report from the saved review; no search or signal review will run.")
+        # Rule-based issue settlement that the review stage now applies, so a refresh uses the current rules.
+        coordinator.settle_false_positives()
+        coordinator.requalify_unrun_page_checks()
         # An objection to an earlier draft of a report no longer applies: every report is rebuilt and critiqued again.
         for key, row in store.issues().items():
             if str(row["issue"].get("target") or "").startswith("REPORT:"):

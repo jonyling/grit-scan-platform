@@ -187,7 +187,14 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     rising = [row["condition_id"] for row in conditions if row["trend"] == "Escalating"]
     config = (pool.run(run_id) or {}).get("config") or {}
     drafted = config.get("event_rows") or {}
-    events = event_register(pool, run_id, rows=shown, names=names, escalating=rising, merges=config.get("event_merges") or {})
+    from grit.pipeline.events import label_merges
+
+    merges = dict(config.get("event_merges") or {})
+    events = event_register(pool, run_id, rows=shown, names=names, escalating=rising, merges=merges)
+    # Drafted rows of one story that the recorded merges missed, for example after a merge rule changed, join here too.
+    extra = {key: value for key, value in label_merges([event for event in events if event["elevated"]], drafted).items() if key not in merges}
+    if extra:
+        events = event_register(pool, run_id, rows=shown, names=names, escalating=rising, merges={**merges, **extra})
     short = str((pack.manifest or {}).get("shortLabel") or pack.label)
     event_of = {signal_id: event["event_id"] for event in events for signal_id in event["signal_ids"]}
 
@@ -200,7 +207,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     assessed = set(drafted) | set(config.get("event_rows_withheld") or [])
     elevated = [event for event in events if event["elevated"] and (not recorded or event["event_id"] in assessed)][:8]
     escalating_rows = [{
-        "event_id": event["event_id"], "band": event["band"], "item": label(event), "risk": event["risk_label"], "tier": event["tier"],
+        "event_id": event["event_id"], "band": event["band"], "item": label(event), "risk": event["risk_label"], "tier": event["tier"], "score": event.get("score"),
         "row": drafted.get(event["event_id"]), "lead": event["lead"]["signal_id"], "signal_ids": event["signal_ids"][:6], "publishers": event["publishers"],
         # The event's best-banded reports (T1 to T3) beyond its lead, listed with the drafted row's own sources.
         "support_ids": [row["signal_id"] for row in event.get("reports") or event["members"] if row["signal_id"] != event["lead"]["signal_id"]

@@ -68,13 +68,15 @@ not count.
 
 A vague headline, such as "US Orders Evacuations As Major Ally Is Attacked", does not name its story, but the
 EventAssessor's item label does. After the rows are drafted, a drafted event whose label shares two or more distinctive
-words with the label of a higher-ranked drafted event, within a week, joins that event's row. The run records these
+words, or one identifier that mixes letters and digits such as "PHP2Shell" or "CVE-2026-1096", with the label of a
+higher-ranked drafted event, within a week, joins that event's row. The report repeats this check on the drafted rows. The run records these
 merges (`event_merges`) and the report applies them, so the drafting stage and the report agree. The run also records the
 events the EventAssessor withheld, and only drafted or withheld events are rows, so a slot that merging frees stays empty.
 
 An event's reports include the other reports of it that a member's selection cites, such as duplicates the review set
 aside, when the two headlines share a distinctive word. A cited report leads only when its band is better than every
-member's, and the row lists up to two T1 to T3 reports beside the drafted row's own sources. The score, band and risks
+member's, and the row lists up to two T1 to T3 reports beside the drafted row's own sources. The row's score is its
+event's score, so `grit scorecard` does not read a cited report's own score. The score, band and risks
 come from the members alone.
 "No report this week" is not easing: the changes table says "No new report" without an arrow, and the status line names only ▲
 events and standing risks whose trend eased. Status-line text ends at a sentence, or at a word with an ellipsis.

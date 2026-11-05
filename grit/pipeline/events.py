@@ -340,22 +340,23 @@ def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], place
 
 
 def label_merges(events: Sequence[Mapping[str, Any]], rows: Mapping[str, Mapping[str, Any]]) -> dict[str, str]:
-    """After the EventAssessor drafts the rows: a drafted event whose item label shares two or more distinctive words with
-    the label of a higher-ranked drafted event, within a week, joins that event's row, because a vague headline such as
+    """After the EventAssessor drafts the rows: a drafted event whose item label shares two or more distinctive words, or
+    one identifier such as "PHP2Shell", with the label of a higher-ranked drafted event, within a week, joins that event's row, because a vague headline such as
     "US Orders Evacuations As Major Ally Is Attacked" does not name its story but its label does. events: in report order.
     rows: event id -> drafted row. Returns event id -> the event it joins; no chains."""
-    from grit.core.headlines import distinctive_terms
+    from grit.core.headlines import distinctive_terms, identifiers
 
-    seeds: list[tuple[Mapping[str, Any], frozenset[str]]] = []
+    seeds: list[tuple[Mapping[str, Any], frozenset[str], frozenset[str]]] = []
     joins: dict[str, str] = {}
     for event in events:
         row = rows.get(event["event_id"])
         if not row or not row.get("item"):
             continue
-        words = distinctive_terms(str(row["item"]))
-        home = next((seed for seed, seed_words in seeds if len(seed_words & words) >= STORY_TERMS and _near(seed, event)), None)
+        words, names = distinctive_terms(str(row["item"])), identifiers(str(row["item"]))
+        home = next((seed for seed, seed_words, seed_names in seeds if _near(seed, event)
+                     and (len(seed_words & words) >= STORY_TERMS or seed_names & names)), None)
         if home is None:
-            seeds.append((event, words))
+            seeds.append((event, words, names))
         else:
             joins[event["event_id"]] = home["event_id"]
     return joins
