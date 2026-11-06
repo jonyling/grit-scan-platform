@@ -91,8 +91,11 @@ class Reach:
 
 
 def short_names(name: str, places: Iterable[str] = ()) -> list[str]:
-    """Names a news item may use for a registered name: no brackets, no legal suffix, no trailing country. Guarded against generic words."""
+    """Names a news item may use for a registered name: no brackets, no legal suffix, no trailing country. Guarded against generic words.
+    A ' - ... Branch' suffix names a branch, which news calls by its parent's name. A country after 'of', as in 'Ministry of
+    Home Affairs of Singapore', is part of the name and stays."""
     text = re.sub(r"\([^)]*\)", " ", name)
+    text = re.sub(r"\s+-\s+[^-]*\b(?:branch|office)\s*$", " ", text, flags=re.I)
     tokens = [token for token in re.split(r"[\s,]+", text) if token]
     place_tokens = [place.casefold().split() for place in places]
     while tokens:
@@ -100,7 +103,11 @@ def short_names(name: str, places: Iterable[str] = ()) -> list[str]:
         if not re.search(r"\w", tokens[-1]) or bare in _LEGAL_TOKENS:
             tokens.pop()
             continue
-        trimmed = next((tokens[: -len(parts)] for parts in place_tokens if len(parts) < len(tokens) and [t.casefold() for t in tokens[-len(parts):]] == parts), None)
+        trimmed = next(
+            (tokens[: -len(parts)] for parts in place_tokens
+             if len(parts) < len(tokens) and [t.casefold() for t in tokens[-len(parts):]] == parts and tokens[-len(parts) - 1].casefold() != "of"),
+            None,
+        )
         if trimmed is None:
             break
         tokens = trimmed

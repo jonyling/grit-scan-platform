@@ -1,0 +1,555 @@
+{
+  "registerId": "MARINE-EXPOSURE",
+  "workbook": "06_Marine_Entity_Info.xlsx",
+  "absence": {
+    "projects": "06_Marine_Entity_Info.xlsx has no project sheet. No project was invented.",
+    "sites": "Registered addresses were not promoted to site aliases. A repeated legal name was not split into a second site."
+  },
+  "counterpartyClassNote": "8 customer and supplier rows name a class of counterparty, such as 'Marine equipment vendors', not an organisation. They stay in the register and are not searched by name.",
+  "entities": [
+    {
+      "entityId": "ENTITY-first-response-marine-pte-ltd",
+      "sourceEntityId": "555",
+      "entityName": "First Response Marine Pte. Ltd.",
+      "cluster": null,
+      "businessArea": null,
+      "lobGrouping": "Marine",
+      "lob": "SG Marine",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Joint Venture (Non-Controlling)",
+      "reportingSegment": null,
+      "aliases": [
+        "First Response Marine Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-halter-marine-holdings-inc",
+      "sourceEntityId": "653",
+      "entityName": "Halter Marine Holdings, Inc.",
+      "cluster": null,
+      "businessArea": null,
+      "lobGrouping": "Marine",
+      "lob": "US Marine",
+      "countryOfIncorporation": "USA",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": null,
+      "aliases": [
+        "Halter Marine Holdings, Inc."
+      ]
+    },
+    {
+      "entityId": "ENTITY-joint-shipyard-management-services-pte-ltd",
+      "sourceEntityId": "556",
+      "entityName": "Joint Shipyard Management Services Pte Ltd",
+      "cluster": null,
+      "businessArea": null,
+      "lobGrouping": "Marine",
+      "lob": "SG Marine",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Joint Venture (Non-Controlling)",
+      "reportingSegment": null,
+      "aliases": [
+        "Joint Shipyard Management Services Pte Ltd"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-marine-ltd",
+      "sourceEntityId": "500",
+      "entityName": "ST Engineering Marine Ltd.",
+      "cluster": null,
+      "businessArea": null,
+      "lobGrouping": "Marine",
+      "lob": "SG Marine",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Marine Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-marine-ltd-abu-dhabi-branch",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Marine Ltd. - Abu Dhabi Branch",
+      "cluster": null,
+      "businessArea": null,
+      "lobGrouping": "Marine",
+      "lob": "SG Marine",
+      "countryOfIncorporation": "United Arab Emirates",
+      "natureOfShareholding": "Branch",
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Marine Ltd. - Abu Dhabi Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-st-engineering-marine-ltd-kingdom-saudi-arabia-branch",
+      "sourceEntityId": null,
+      "entityName": "ST Engineering Marine Ltd. - Kingdom Saudi Arabia Branch",
+      "cluster": null,
+      "businessArea": null,
+      "lobGrouping": "Marine",
+      "lob": "SG Marine",
+      "countryOfIncorporation": "Saudi Arabia",
+      "natureOfShareholding": "Branch",
+      "reportingSegment": null,
+      "aliases": [
+        "ST Engineering Marine Ltd. - Kingdom Saudi Arabia Branch"
+      ]
+    },
+    {
+      "entityId": "ENTITY-stehmo-holdings-inc",
+      "sourceEntityId": "600",
+      "entityName": "STEHMO Holdings, Inc.",
+      "cluster": null,
+      "businessArea": null,
+      "lobGrouping": "Marine",
+      "lob": "US Marine",
+      "countryOfIncorporation": "USA",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": null,
+      "aliases": [
+        "STEHMO Holdings, Inc."
+      ]
+    },
+    {
+      "entityId": "ENTITY-stse-shanghai-co-ltd",
+      "sourceEntityId": "616",
+      "entityName": "STSE (Shanghai) Co. Ltd.",
+      "cluster": null,
+      "businessArea": null,
+      "lobGrouping": "Marine",
+      "lob": "Environment Engineering Services",
+      "countryOfIncorporation": "China",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": null,
+      "aliases": [
+        "STSE (Shanghai) Co. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-stse-engineering-services-pte-ltd",
+      "sourceEntityId": "557",
+      "entityName": "STSE Engineering Services Pte Ltd",
+      "cluster": null,
+      "businessArea": null,
+      "lobGrouping": "Marine",
+      "lob": "Environment Engineering Services",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Subsidiary",
+      "reportingSegment": null,
+      "aliases": [
+        "STSE Engineering Services Pte Ltd"
+      ]
+    },
+    {
+      "entityId": "ENTITY-tp-stm-water-resources-pte-ltd",
+      "sourceEntityId": "558",
+      "entityName": "TP-STM Water Resources Pte. Ltd.",
+      "cluster": null,
+      "businessArea": null,
+      "lobGrouping": "Marine",
+      "lob": "Environment Engineering Services",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Associate",
+      "reportingSegment": null,
+      "aliases": [
+        "TP-STM Water Resources Pte. Ltd."
+      ]
+    },
+    {
+      "entityId": "ENTITY-tp-stm-water-services-pte-ltd",
+      "sourceEntityId": "559",
+      "entityName": "TP-STM Water Services Pte. Ltd.",
+      "cluster": null,
+      "businessArea": null,
+      "lobGrouping": "Marine",
+      "lob": "Environment Engineering Services",
+      "countryOfIncorporation": "Singapore",
+      "natureOfShareholding": "Associate",
+      "reportingSegment": null,
+      "aliases": [
+        "TP-STM Water Services Pte. Ltd."
+      ]
+    }
+  ],
+  "projects": [],
+  "customers": [
+    {
+      "customerId": "CUSTOMER-kuwait-naval-force-abu-dhabi-ship-building",
+      "customerName": "Kuwait Naval Force / Abu Dhabi Ship Building",
+      "aliases": [
+        "Kuwait Naval Force / Abu Dhabi Ship Building"
+      ],
+      "engagement": "Platform systems and vessels for missile gunboats",
+      "confidence": "Disclosed end customer and prime contractor"
+    },
+    {
+      "customerId": "CUSTOMER-uae-navy-abu-dhabi-ship-building",
+      "customerName": "UAE Navy / Abu Dhabi Ship Building",
+      "aliases": [
+        "UAE Navy / Abu Dhabi Ship Building"
+      ],
+      "engagement": "Offshore patrol-vessel design and support",
+      "confidence": "Disclosed end customer and prime contractor"
+    },
+    {
+      "customerId": "CUSTOMER-leading-oil-and-gas-company",
+      "customerName": "Leading oil and gas company",
+      "aliases": [
+        "Leading oil and gas company"
+      ],
+      "engagement": "Walk-to-Work vessel design and build",
+      "confidence": "Customer disclosed by class only",
+      "counterpartyClass": true
+    },
+    {
+      "customerId": "CUSTOMER-commercial-shipowners-and-operators",
+      "customerName": "Commercial shipowners and operators",
+      "aliases": [
+        "Commercial shipowners and operators"
+      ],
+      "engagement": "Repair and conversion for tankers, bulkers, container, offshore and specialised vessels",
+      "confidence": "Customer class",
+      "counterpartyClass": true
+    },
+    {
+      "customerId": "CUSTOMER-navies-and-maritime-security-agencies",
+      "customerName": "Navies and maritime-security agencies",
+      "aliases": [
+        "Navies and maritime-security agencies"
+      ],
+      "engagement": "Newbuild, MRO, upgrades and lifecycle support",
+      "confidence": "Customer class",
+      "counterpartyClass": true
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-defence-of-singapore",
+      "customerName": "Ministry of Defence of Singapore",
+      "aliases": [
+        "Ministry of Defence of Singapore"
+      ],
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-defence-science-and-technology-agency",
+      "customerName": "Defence Science and Technology Agency",
+      "aliases": [
+        "Defence Science and Technology Agency"
+      ],
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-ministry-of-home-affairs-of-singapore",
+      "customerName": "Ministry of Home Affairs of Singapore",
+      "aliases": [
+        "Ministry of Home Affairs of Singapore"
+      ],
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-home-team-science-and-technology-agency",
+      "customerName": "Home Team Science and Technology Agency",
+      "aliases": [
+        "Home Team Science and Technology Agency"
+      ],
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-abu-dhabi-ship-building-pjsc",
+      "customerName": "Abu Dhabi Ship Building PJSC",
+      "aliases": [
+        "Abu Dhabi Ship Building PJSC"
+      ],
+      "engagement": "Shipbuilding (Naval - Non-Mindef)",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-shell-australia-pty-ltd",
+      "customerName": "Shell Australia Pty Ltd",
+      "aliases": [
+        "Shell Australia Pty Ltd"
+      ],
+      "engagement": "Shipbuilding (Commercial)",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-transcontinental-capital-corp-bermuda-ltd",
+      "customerName": "Transcontinental Capital Corp. (Bermuda) Ltd",
+      "aliases": [
+        "Transcontinental Capital Corp. (Bermuda) Ltd"
+      ],
+      "engagement": "Shipbuilding (Commercial)",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-solstad-group",
+      "customerName": "Solstad Group",
+      "aliases": [
+        "Solstad Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-boskalis-group",
+      "customerName": "Boskalis Group",
+      "aliases": [
+        "Boskalis Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-deme-group",
+      "customerName": "Deme Group",
+      "aliases": [
+        "Deme Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-go-offshore-group",
+      "customerName": "Go Offshore Group",
+      "aliases": [
+        "Go Offshore Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-dong-fang-offshore-group",
+      "customerName": "Dong Fang Offshore Group",
+      "aliases": [
+        "Dong Fang Offshore Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-dof-group",
+      "customerName": "DOF Group",
+      "aliases": [
+        "DOF Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-cadeler-group",
+      "customerName": "Cadeler Group",
+      "aliases": [
+        "Cadeler Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-rivtow-marine-group",
+      "customerName": "Rivtow Marine Group",
+      "aliases": [
+        "Rivtow Marine Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-kotug-group",
+      "customerName": "Kotug Group",
+      "aliases": [
+        "Kotug Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-subsea-7-group",
+      "customerName": "Subsea 7 Group",
+      "aliases": [
+        "Subsea 7 Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-jan-de-nul-group",
+      "customerName": "Jan De Nul Group",
+      "aliases": [
+        "Jan De Nul Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-briese-schiffahrts-gmbh-co-kg-group",
+      "customerName": "Briese Schiffahrts Gmbh & Co. Kg Group",
+      "aliases": [
+        "Briese Schiffahrts Gmbh & Co. Kg Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-arcadia-group",
+      "customerName": "Arcadia Group",
+      "aliases": [
+        "Arcadia Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-tidewater-group",
+      "customerName": "Tidewater Group",
+      "aliases": [
+        "Tidewater Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    },
+    {
+      "customerId": "CUSTOMER-sapura-group",
+      "customerName": "Sapura Group",
+      "aliases": [
+        "Sapura Group"
+      ],
+      "engagement": "Commercial ship repair/conversion",
+      "confidence": "Named customer (BA entity info, 5 Nov 26)"
+    }
+  ],
+  "suppliers": [
+    {
+      "supplierId": "SUPPLIER-marine-steel-and-fabrication-suppliers",
+      "supplierName": "Marine steel and fabrication suppliers",
+      "businessArea": null,
+      "aliases": [
+        "Marine steel and fabrication suppliers"
+      ],
+      "dependency": "Plate, sections, piping and structural modules",
+      "counterpartyClass": true
+    },
+    {
+      "supplierId": "SUPPLIER-propulsion-and-machinery-oems",
+      "supplierName": "Propulsion and machinery OEMs",
+      "businessArea": null,
+      "aliases": [
+        "Propulsion and machinery OEMs"
+      ],
+      "dependency": "Engines, gearboxes, thrusters, generators and pumps",
+      "counterpartyClass": true
+    },
+    {
+      "supplierId": "SUPPLIER-navigation-and-combat-system-suppliers",
+      "supplierName": "Navigation and combat-system suppliers",
+      "businessArea": null,
+      "aliases": [
+        "Navigation and combat-system suppliers"
+      ],
+      "dependency": "Sensors, communications, weapons interfaces and bridge systems",
+      "counterpartyClass": true
+    },
+    {
+      "supplierId": "SUPPLIER-marine-equipment-vendors",
+      "supplierName": "Marine equipment vendors",
+      "businessArea": null,
+      "aliases": [
+        "Marine equipment vendors"
+      ],
+      "dependency": "Valves, HVAC, electrical systems, coatings and deck machinery",
+      "counterpartyClass": true
+    },
+    {
+      "supplierId": "SUPPLIER-subcontractors-and-skilled-trades",
+      "supplierName": "Subcontractors and skilled trades",
+      "businessArea": null,
+      "aliases": [
+        "Subcontractors and skilled trades"
+      ],
+      "dependency": "Welding, piping, electrical, commissioning and specialised yard work",
+      "counterpartyClass": true
+    },
+    {
+      "supplierId": "SUPPLIER-everllence-se",
+      "supplierName": "EVERLLENCE SE",
+      "businessArea": null,
+      "aliases": [
+        "EVERLLENCE SE"
+      ],
+      "dependency": "Critical supplier tracked in Sphera (BA entity info, 5 Nov 26)"
+    },
+    {
+      "supplierId": "SUPPLIER-ge-energy-power-conversion-uk-limited",
+      "supplierName": "GE ENERGY POWER CONVERSION UK LIMITED",
+      "businessArea": null,
+      "aliases": [
+        "GE ENERGY POWER CONVERSION UK LIMITED"
+      ],
+      "dependency": "Critical supplier tracked in Sphera (BA entity info, 5 Nov 26)"
+    },
+    {
+      "supplierId": "SUPPLIER-naval-group",
+      "supplierName": "NAVAL GROUP",
+      "businessArea": null,
+      "aliases": [
+        "NAVAL GROUP"
+      ],
+      "dependency": "Critical supplier tracked in Sphera (BA entity info, 5 Nov 26)"
+    },
+    {
+      "supplierId": "SUPPLIER-rolls-royce-solutions-asia-pte-ltd",
+      "supplierName": "ROLLS-ROYCE SOLUTIONS ASIA PTE. LTD.",
+      "businessArea": null,
+      "aliases": [
+        "ROLLS-ROYCE SOLUTIONS ASIA PTE. LTD."
+      ],
+      "dependency": "Critical supplier tracked in Sphera (BA entity info, 5 Nov 26)"
+    },
+    {
+      "supplierId": "SUPPLIER-wartsila-lyngso-marine-a-s",
+      "supplierName": "WARTSILA LYNGSO MARINE A/S",
+      "businessArea": null,
+      "aliases": [
+        "WARTSILA LYNGSO MARINE A/S"
+      ],
+      "dependency": "Critical supplier tracked in Sphera (BA entity info, 5 Nov 26)"
+    },
+    {
+      "supplierId": "SUPPLIER-kongsberg-maritime-as",
+      "supplierName": "KONGSBERG MARITIME AS",
+      "businessArea": null,
+      "aliases": [
+        "KONGSBERG MARITIME AS"
+      ],
+      "dependency": "Critical supplier tracked in Sphera (BA entity info, 5 Nov 26)"
+    },
+    {
+      "supplierId": "SUPPLIER-abb-pte-ltd",
+      "supplierName": "ABB PTE. LTD.",
+      "businessArea": null,
+      "aliases": [
+        "ABB PTE. LTD."
+      ],
+      "dependency": "Critical supplier tracked in Sphera (BA entity info, 5 Nov 26)"
+    },
+    {
+      "supplierId": "SUPPLIER-kongsberg-maritime-pte-ltd",
+      "supplierName": "KONGSBERG MARITIME PTE. LTD.",
+      "businessArea": null,
+      "aliases": [
+        "KONGSBERG MARITIME PTE. LTD."
+      ],
+      "dependency": "Critical supplier tracked in Sphera (BA entity info, 5 Nov 26)"
+    },
+    {
+      "supplierId": "SUPPLIER-everllence-singapore-pte-ltd",
+      "supplierName": "EVERLLENCE SINGAPORE PTE. LTD.",
+      "businessArea": null,
+      "aliases": [
+        "EVERLLENCE SINGAPORE PTE. LTD."
+      ],
+      "dependency": "Critical supplier tracked in Sphera (BA entity info, 5 Nov 26)"
+    }
+  ],
+  "sites": []
+}

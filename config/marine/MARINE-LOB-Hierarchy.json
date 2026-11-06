@@ -1,0 +1,50 @@
+{
+  "registerId": "MARINE-LOB-HIERARCHY",
+  "businessArea": "Marine",
+  "status": "PROPOSED: transcribed from the Marine workbook's 'Marine' sheet, 2. Capabilities & LOB Scope, a research-based first draft. The Marine business partner must validate it against the org chart.",
+  "source": "06_Marine_Entity_Info.xlsx, sheet 'Marine'",
+  "lobs": [
+    {
+      "lobName": "Naval Shipbuilding",
+      "lobGrouping": "Marine",
+      "aliases": []
+    },
+    {
+      "lobName": "Commercial Shipbuilding",
+      "lobGrouping": "Marine",
+      "aliases": []
+    },
+    {
+      "lobName": "Ship Repair & Conversion",
+      "lobGrouping": "Marine",
+      "aliases": [
+        "Ship Repair / Ship Conversion",
+        "Ship Repair and Conversion"
+      ]
+    },
+    {
+      "lobName": "Lifecycle Support",
+      "lobGrouping": "Marine",
+      "aliases": []
+    },
+    {
+      "lobName": "Offshore Renewables",
+      "lobGrouping": "Marine",
+      "aliases": []
+    },
+    {
+      "lobName": "Environmental Engineering",
+      "lobGrouping": "Marine",
+      "aliases": [
+        "Environment Engineering Services"
+      ]
+    }
+  ],
+  "unresolvedLabels": [
+    "Shipbuilding",
+    "SG Marine",
+    "US Marine",
+    "All LOBs"
+  ],
+  "unresolvedNote": "Sheet 6 files some keywords under 'Shipbuilding', which spans naval and commercial shipbuilding, and some under no LOB. Sheet 2 files entities under 'SG Marine' and 'US Marine', which are geographic units, not LOBs. They stay unresolved until the BA names one LOB for each."
+}

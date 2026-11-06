@@ -123,24 +123,28 @@ def category_of(row: Mapping[str, Any], names: Mapping[str, str]) -> str:
     return OPERATIONAL
 
 
-def _query_category(row: Mapping[str, Any], names: Mapping[str, str]) -> str:
+def _query_category(row: Mapping[str, Any], names: Mapping[str, str], requests: Mapping[str, str] | None = None) -> str:
     lane = str(row.get("lane") or "")
     if lane == "COMPETITOR":
         return COMPETITOR
     if lane == "SUPPLIER":
         return SUPPLY
+    if lane == "REQUEST" and str(row.get("target_id") or "") in (requests or {}):
+        return category_of_name((requests or {})[str(row["target_id"])])
     return category_of_name(names[row["target_id"]]) if row.get("target_id") in names else OPERATIONAL
 
 
 def _searched(pool: Any, run_id: str, names: Mapping[str, str], lookup: Mapping[str, str] | None = None) -> dict[str, Any]:
     """Answered planned searches, by category and by line of business. An answered search that returned nothing still
-    counts; a search the engine did not answer does not. A line of business counts only for a query aimed at it."""
+    counts; a search the engine did not answer does not. A line of business counts only for a query aimed at it. A
+    management request's search takes its category from the request's title."""
     lookup = lookup or {}
+    requests = {str(row["request_id"]): str(row.get("title") or "") for row in pool.management_requests()} if hasattr(pool, "management_requests") else {}
     counts: dict[str, int] = defaultdict(int)
     scoped: set[tuple[str, str]] = set()
     queries = pool.answered_searches(run_id)
     for row in queries:
-        category = _query_category(row, names)
+        category = _query_category(row, names, requests)
         counts[category] += 1
         lob = row.get("canonical_lob") or lookup.get(str(row.get("target_id") or ""))
         if lob:

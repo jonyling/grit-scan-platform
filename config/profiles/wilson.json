@@ -8,6 +8,7 @@
     "urs-tw",
     "dsc",
     "ca",
+    "marine",
     "ste"
   ],
   "businessScope": {
@@ -16,6 +17,7 @@
       "URS Taiwan",
       "Digital Systems & Cybersecurity",
       "Commercial Aerospace",
+      "Marine",
       "ST Engineering Group Strategic Radar"
     ],
     "lobs": [],
@@ -28,6 +30,7 @@
       "urs-tw",
       "urs",
       "ca",
+      "marine",
       "ste",
       "dsc"
     ]
@@ -106,6 +109,30 @@
     },
     "ca": {
       "title": "GRIT-Scan: Commercial Aerospace",
+      "subtitle": "Business Area Weekly Risk Scan",
+      "preparedFor": "Group Head, Risk & Assurance",
+      "sections": [
+        "BOTTOM_LINE",
+        "CONDITIONS",
+        "MANAGEMENT_REQUESTS",
+        "ENTITIES",
+        "CUSTOMERS",
+        "SUPPLIERS",
+        "COMPETITORS",
+        "PRIORITY_FINDINGS",
+        "QA_LOG",
+        "WATCHPOINTS",
+        "RESPONSE_OPTIONS"
+      ],
+      "maxFindings": 8,
+      "formats": [
+        "docx",
+        "pptx",
+        "xlsx"
+      ]
+    },
+    "marine": {
+      "title": "GRIT-Scan: Marine",
       "subtitle": "Business Area Weekly Risk Scan",
       "preparedFor": "Group Head, Risk & Assurance",
       "sections": [

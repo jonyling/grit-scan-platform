@@ -7,7 +7,8 @@
   "children": [
     "dsc",
     "urs",
-    "ca"
+    "ca",
+    "marine"
   ],
   "note": "The Group pack (spec 37). Its footprint, entities, customers, suppliers and competitors come from its business-area children at run time.",
   "registers": {

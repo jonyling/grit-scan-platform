@@ -1,0 +1,160 @@
+{
+  "registerId": "MARINE-LOB-PROFILES",
+  "workbook": "06_Marine_Entity_Info.xlsx",
+  "sheet": "6. LOB_Keywords",
+  "absence": "priorityCountries is empty. Country of incorporation is not a priority country, and none was invented.",
+  "lobHierarchy": {
+    "registerId": "MARINE-LOB-HIERARCHY",
+    "status": "PROPOSED: transcribed from the Marine workbook's 'Marine' sheet, 2. Capabilities & LOB Scope, a research-based first draft. The Marine business partner must validate it against the org chart."
+  },
+  "lobs": [
+    {
+      "lobId": "LOB-all-lobs",
+      "lobName": "All LOBs",
+      "canonicalLob": null,
+      "baName": null,
+      "lobGrouping": null,
+      "active": true,
+      "keywords": [
+        "naval shipbuilding",
+        "patrol vessel",
+        "Fearless class",
+        "ship repair",
+        "ship conversion",
+        "dry docking",
+        "vessel lifecycle support",
+        "offshore vessel",
+        "Walk-to-Work vessel",
+        "wind turbine installation vessel",
+        "retrofit",
+        "modernisation",
+        "methanol conversion",
+        "platform systems",
+        "maritime security"
+      ],
+      "keywordTiers": {
+        "KEY_TIER_2": [
+          "naval shipbuilding",
+          "patrol vessel",
+          "Fearless class",
+          "ship repair",
+          "ship conversion",
+          "dry docking",
+          "vessel lifecycle support",
+          "offshore vessel",
+          "Walk-to-Work vessel",
+          "wind turbine installation vessel",
+          "retrofit",
+          "modernisation",
+          "methanol conversion",
+          "platform systems",
+          "maritime security"
+        ],
+        "EMERGING": []
+      },
+      "priorityCountries": []
+    },
+    {
+      "lobId": "LOB-shipbuilding",
+      "lobName": "Shipbuilding",
+      "canonicalLob": null,
+      "baName": null,
+      "lobGrouping": null,
+      "active": true,
+      "keywords": [
+        "Shipbuilding",
+        "Vessel Construction",
+        "Commercial Shipbuilding",
+        "Naval Vessel",
+        "Commercial Vessel",
+        "Warship",
+        "Ship Design",
+        "Naval Architecture",
+        "Shipbuilding Engineering",
+        "Marine Engineering",
+        "Systems Integration",
+        "Autonomous Vessel",
+        "Unmanned Vessel",
+        "Electric Vessel",
+        "Digital Shipyard",
+        "Alternative Fuel Vessel",
+        "Alternative Propulsion",
+        "Advanced Manufacturing",
+        "Advanced Materials",
+        "Marine Decarbonisation"
+      ],
+      "keywordTiers": {
+        "KEY_TIER_2": [
+          "Shipbuilding",
+          "Vessel Construction",
+          "Commercial Shipbuilding",
+          "Naval Vessel",
+          "Commercial Vessel",
+          "Warship",
+          "Ship Design",
+          "Naval Architecture",
+          "Shipbuilding Engineering",
+          "Marine Engineering",
+          "Systems Integration",
+          "Autonomous Vessel",
+          "Unmanned Vessel",
+          "Electric Vessel",
+          "Digital Shipyard",
+          "Alternative Fuel Vessel",
+          "Alternative Propulsion",
+          "Advanced Manufacturing",
+          "Advanced Materials",
+          "Marine Decarbonisation"
+        ],
+        "EMERGING": []
+      },
+      "priorityCountries": []
+    },
+    {
+      "lobId": "LOB-ship-repair-ship-conversion",
+      "lobName": "Ship Repair / Ship Conversion",
+      "canonicalLob": "Ship Repair & Conversion",
+      "baName": "Marine",
+      "lobGrouping": "Marine",
+      "active": true,
+      "keywords": [
+        "Vessel Repair",
+        "Ship Maintenance",
+        "Marine MRO",
+        "Maintenance Repair Overhaul",
+        "Vessel Conversion",
+        "Shipyard Services",
+        "Dry Dock",
+        "Refurbishment",
+        "Life Extension",
+        "Engine Overhaul",
+        "Naval MRO",
+        "Lifecycle Sustainment",
+        "Fleet Sustainment",
+        "Predictive Maintenance",
+        "Condition-based Maintenance"
+      ],
+      "keywordTiers": {
+        "KEY_TIER_2": [
+          "Vessel Repair",
+          "Ship Maintenance",
+          "Marine MRO",
+          "Maintenance Repair Overhaul",
+          "Vessel Conversion",
+          "Shipyard Services",
+          "Dry Dock",
+          "Refurbishment",
+          "Life Extension",
+          "Engine Overhaul",
+          "Naval MRO",
+          "Lifecycle Sustainment",
+          "Fleet Sustainment",
+          "Predictive Maintenance",
+          "Condition-based Maintenance"
+        ],
+        "EMERGING": []
+      },
+      "priorityCountries": []
+    }
+  ]
+}

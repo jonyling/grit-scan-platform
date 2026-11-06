@@ -84,12 +84,55 @@ def _sheet_rows(workbook_path: Path, sheet_name: str) -> list[dict[str, object]]
     return result
 
 
+_CUSTOMER_NAME_HEADERS = ("customer", "existingcustomers", "harmonisedcustomername")
+# Plain entity-register headers (Marine) and the template header each stands for. A sheet with the template header keeps it.
+_ENTITY_HEADER_ALIASES = {
+    "entityname": "nameofentity",
+    "lobgrouping": "lobgrouping1",
+    "lob": "lob1",
+    "country": "countryofincorporation",
+    "ownershiptype": "natureofshareholding",
+}
+
+
+def entity_sheet_rows(workbook_path: Path, sheet_name: str) -> list[dict[str, object]]:
+    """The entity sheet's rows, keyed by template header. The header row is the one with a NameOfEntity or Entity Name
+    column, so a title or note line above it is skipped. Without one, the first filled row is the header."""
+    worksheet = read_worksheet(workbook_path, sheet_name)
+    header_index = next(
+        (index for index, row in enumerate(worksheet) if {_normalise_header(cell) for cell in row} & {"nameofentity", "entityname"}),
+        None,
+    )
+    if header_index is None:
+        return _sheet_rows(workbook_path, sheet_name)
+    headers = [_normalise_header(value) for value in worksheet[header_index]]
+    headers = [header if _ENTITY_HEADER_ALIASES.get(header) in (None, *headers) else _ENTITY_HEADER_ALIASES[header] for header in headers]
+    return [
+        dict(zip(headers, values, strict=False))
+        for values in worksheet[header_index + 1 :]
+        if any(value is not None and str(value).strip() for value in values)
+    ]
+
+
+def supplier_header(rows: list[list[object | None]]) -> tuple[int, bool]:
+    """The supplier sheet's header row, and whether column B is the business-area column. Column A is the name. Its
+    header is "Name" in the URS sheet and a stray number in the DS&C sheet, so a 'BA' column B finds the row first. A
+    sheet with no BA column (Marine) is found by a column A header that starts with 'Supplier'."""
+    for index, row in enumerate(rows):
+        if _normalise_header(row[1] if len(row) > 1 else None) == "ba":
+            return index, True
+    for index, row in enumerate(rows):
+        if row and _normalise_header(row[0]).startswith("supplier") and len(row) > 1 and _clean_text(row[1]):
+            return index, False
+    raise ValueError("Suppliers sheet is missing its Name/BA header row.")
+
+
 def _seed_entries(workbook_path: Path) -> tuple[RegistryEntry, ...]:
     """Seed the three actual source-sheet layouts without guessing headers."""
     entries: list[RegistryEntry] = []
     seen_ids: dict[str, str] = {}
 
-    entity_rows = _sheet_rows(workbook_path, "2. Entity Address")
+    entity_rows = entity_sheet_rows(workbook_path, "2. Entity Address")
     # Some rows leave NameOfEntity blank and put the legal name in LOB1 instead;
     # only treat LOB1 as a name when it never appears as a real LOB alongside a filled NameOfEntity.
     lob_names = {keyword.lob for keyword in load_lob_keywords(workbook_path)}
@@ -102,26 +145,27 @@ def _seed_entries(workbook_path: Path) -> tuple[RegistryEntry, ...]:
         if name:
             _add_entry(entries, seen_ids, RegistryKind.ENTITY, name, _value(row, "BusinessArea"), _value(row, "CountryOfIncorporation"))
 
-    for row in read_worksheet(workbook_path, "4. Customers"):
-        if len(row) < 2 or not str(row[0] or "").strip().isdigit():
-            continue
-        name = _clean_text(row[1])
+    customer_rows = read_worksheet(workbook_path, "4. Customers")
+    numbered = [_clean_text(row[1]) for row in customer_rows if len(row) >= 2 and str(row[0] or "").strip().isdigit()]
+    if not numbered:
+        # A list without a serial column (CA, Marine) is read below its customer-name header.
+        header = next(
+            ((index, col) for index, row in enumerate(customer_rows) for col, cell in enumerate(row) if _normalise_header(cell).startswith(_CUSTOMER_NAME_HEADERS)),
+            None,
+        )
+        if header is not None:
+            numbered = [_clean_text(row[header[1]]) for row in customer_rows[header[0] + 1 :] if len(row) > header[1]]
+    for name in numbered:
         if name:
             _add_entry(entries, seen_ids, RegistryKind.CUSTOMER, name, None, None)
 
     supplier_rows = read_worksheet(workbook_path, "5. Suppliers")
-    # Column A is the name and column B the business area. Column A's header is "Name" in the URS sheet and a stray number
-    # in the DS&C sheet, so the header row is found by column B.
-    supplier_header_index = next(
-        (index for index, row in enumerate(supplier_rows) if _normalise_header(row[1] if len(row) > 1 else None) == "ba"),
-        None,
-    )
-    if supplier_header_index is None:
-        raise ValueError("Suppliers sheet is missing its Name/BA header row.")
+    supplier_header_index, has_unit = supplier_header(supplier_rows)
     for values in supplier_rows[supplier_header_index + 1 :]:
         name = _clean_text(values[0]) if values else None
         if name:
-            _add_entry(entries, seen_ids, RegistryKind.SUPPLIER, name, (_clean_text(values[1]) if len(values) > 1 else "") or None, None)
+            unit = (_clean_text(values[1]) if len(values) > 1 else "") if has_unit else ""
+            _add_entry(entries, seen_ids, RegistryKind.SUPPLIER, name, unit or None, None)
 
     if not entries:
         raise ValueError("No canonical RegistryEntry rows could be seeded from URS Entity Info.xlsx sheets 2, 4, and 5.")

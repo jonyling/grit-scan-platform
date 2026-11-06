@@ -1,0 +1,286 @@
+{
+  "registerId": "MARINE-STE-THEMES",
+  "workbook": "06_Marine_Entity_Info.xlsx",
+  "sheet": "7. Annual Risks",
+  "absence": "Keywords beyond the governed risk title are generic business-risk vocabulary for the same entity-wide theme (see _GENERAL_RISK_KEYWORDS), not per-condition prose. Country- or condition-specific terms -- the Taiwan Layer-1 baseline -- are still not copied. Driver text is stored and is not used as a keyword.",
+  "draftThemes": [
+    {
+      "themeName": "Project cost and schedule",
+      "sheetDetail": "Complex newbuild and conversion programmes face design changes and cost overruns.",
+      "classification": "Key",
+      "reason": "NOT_IN_GOVERNED_REGISTER"
+    },
+    {
+      "themeName": "Workplace safety",
+      "sheetDetail": "Heavy lifting, confined spaces, hot work and marine operations create severe safety exposure.",
+      "classification": "Key",
+      "reason": "NOT_IN_GOVERNED_REGISTER"
+    },
+    {
+      "themeName": "Supplier and equipment lead times",
+      "sheetDetail": "Propulsion, electrical and mission systems may delay construction or repair.",
+      "classification": "Tier 2",
+      "reason": "NOT_IN_GOVERNED_REGISTER"
+    },
+    {
+      "themeName": "Quality and warranty",
+      "sheetDetail": "Design, fabrication or commissioning defects can drive rework and claims.",
+      "classification": "Key/Tier 2",
+      "reason": "NOT_IN_GOVERNED_REGISTER"
+    },
+    {
+      "themeName": "Environmental compliance",
+      "sheetDetail": "Shipyard emissions, waste, spills and vessel regulations require strict controls.",
+      "classification": "Key/Tier 2",
+      "reason": "NOT_IN_GOVERNED_REGISTER"
+    },
+    {
+      "themeName": "Customer and yard-utilisation concentration",
+      "sheetDetail": "Large contracts and uneven docking schedules can create earnings volatility.",
+      "classification": "Tier 2",
+      "reason": "NOT_IN_GOVERNED_REGISTER"
+    },
+    {
+      "themeName": "Geopolitical and export restrictions",
+      "sheetDetail": "Naval programmes and equipment transfers face sanctions and licensing risk.",
+      "classification": "Emerging/Tier 2",
+      "reason": "NOT_IN_GOVERNED_REGISTER"
+    }
+  ],
+  "draftNote": "Rows whose classification does not name 'BA Annual Risk Refresh' are drafts. They are listed, not scanned.",
+  "themes": [
+    {
+      "themeId": "MARINE-KEY-01",
+      "themeName": "Major workplace injuries",
+      "tier": "KEY",
+      "keywords": [
+        "workplace safety",
+        "shipyard accident",
+        "shipyard fatality",
+        "worker killed",
+        "hot work",
+        "confined space",
+        "stop-work order"
+      ],
+      "sheetDetail": "1. Hiring of more workers to meet increased manpower loading requirements for new projects",
+      "sheetExtra": "Key (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-KEY-02",
+      "themeName": "Major supply chain disruption",
+      "tier": "KEY",
+      "keywords": [
+        "supply chain disruption",
+        "trade restrictions",
+        "tariff",
+        "protectionism",
+        "vendor non-performance",
+        "equipment lead time",
+        "steel plate shortage"
+      ],
+      "sheetDetail": "1. Continued global logistics pressures, trade restrictions and tariffs due to increasing geopolitical tensions and protectionism 2. Non-performance by key vendors/partners",
+      "sheetExtra": "Key (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-KEY-03",
+      "themeName": "Challenges in attracting, developing & retaining talents, and overseas deployment",
+      "tier": "KEY",
+      "keywords": [
+        "marine engineer shortage",
+        "shipyard talent",
+        "ageing workforce",
+        "attrition",
+        "overseas deployment",
+        "travel advisory"
+      ],
+      "sheetDetail": "1. Marine is a laborious & ageing industry which makes it difficult to attract younger engineers to join 2. Positions to support Singapore defence-related projects and operations can only be filled by Singaporeans which limits the resource pool significantly 3. International business expansion 4. Interstate conflicts and regional instability leading to safety risks, travel and mobility constraints for overseas deployed teams and business travelers",
+      "sheetExtra": "Key (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-KEY-04",
+      "themeName": "Information & cybersecurity breach (N2 and N3 systems)",
+      "tier": "KEY",
+      "keywords": [
+        "Information & cybersecurity breach",
+        "cybersecurity",
+        "cyber attack",
+        "ransomware",
+        "data breach",
+        "insider threat",
+        "maritime cyber"
+      ],
+      "sheetDetail": "1. Breaches caused by human factor (e.g. error /negligence/ incompetence/ disgruntled employee)",
+      "sheetExtra": "Key (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-KEY-05",
+      "themeName": "Project management challenges (Shipbuilding)",
+      "tier": "KEY",
+      "keywords": [
+        "Project management challenges",
+        "cost overrun",
+        "delivery delay",
+        "liquidated damages",
+        "change order",
+        "classification society",
+        "rework"
+      ],
+      "sheetDetail": "1. Change of requirements after contract signing 2. Lack of proper understanding of technical and contractual specifications. 3. Failure to comply with technical specifications and classification standards 4. Poor planning to ensure timely delivery of information/drawings, materials and equipment [NEW] 5. Poor management of resources, control on quality and execution of works 6. Poor maintenance of facilities, tools/equipment 7. Loss of skill and workmanship 8. Non-performance of key vendors",
+      "sheetExtra": "Key (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-KEY-06",
+      "themeName": "Intense political lobbying in key markets",
+      "tier": "KEY",
+      "keywords": [
+        "political lobbying",
+        "local content requirement",
+        "domestic shipbuilding",
+        "market access",
+        "Jones Act"
+      ],
+      "sheetDetail": "1. Intensifying political lobbying that could result in restricted market access and unfavourable regulatory developments",
+      "sheetExtra": "Key (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-TIER_2-07",
+      "themeName": "Competition in shipbuilding, ship conversion and repair in local and international markets amid increasing geo-economic uncertainty/volatility",
+      "tier": "TIER_2",
+      "keywords": [
+        "shipyard competition",
+        "ship repair pricing",
+        "newbuild order",
+        "shipowner insolvency",
+        "credit risk",
+        "PaxOcean"
+      ],
+      "sheetDetail": "1. Heightened geo-economic uncertainty and volatility, and increased credit risk from financially strained customers. 2. The commencement of operations at PaxOcean’s new shipyard is expected to intensify competition across commercial shipbuilding, ship repair and conversion, including U.S. Navy repair projects. This may exert pressure on order wins, margins and market share. Marketing and Business Development teams are proactively strengthening customer engagement, expanding market outreach, and targeting both core and niche segments to sustain pipeline and reinforce long-term customer relationships. 3. This is a Tier-2 risk, reflecting the current positive, upcycle in the marine market and considering existing mitigations e.g. continual resource and cost optimisation, hedging of foreign currency exposures, price adjustment linked to an economic index agreed with customers, favourable customer payment terms such as higher advances and frequent milestones.",
+      "sheetExtra": "Tier 2 (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-TIER_2-08",
+      "themeName": "Collaboration/ partnership risk",
+      "tier": "TIER_2",
+      "keywords": [
+        "joint venture",
+        "strategic alliance",
+        "partner dispute",
+        "government-to-government"
+      ],
+      "sheetDetail": "1. Collaboration/partnership with technology leaders and overseas shipyards through strategic alliances, joint ventures and subcontractor relationships are key to augmenting our core competencies and making inroads into international markets. Collaboration/partnership risks include dependency on partners’ decisions, exclusion from opportunities due to government-to-government preferences, limited control over project outcomes, and potential misalignment or loss of business if partnerships shift or fail, esp. in a geopolitically driven market shaped by regional alliances and deglobalization. 2. This is a Tier-2 risk considering existing mitigations e.g. expansion of market and partnership portfolios, due diligence of partners/suppliers to mitigate risks associated with geopolitical instability, sanctions, and potential misalignment in strategic partnerships, and supply chain diversification to lessen reliance on critical partners.",
+      "sheetExtra": "Tier 2 (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-TIER_2-09",
+      "themeName": "Shortage of skilled, migrant workers for production",
+      "tier": "TIER_2",
+      "keywords": [
+        "foreign worker quota",
+        "migrant worker",
+        "work permit",
+        "foreign worker levy",
+        "labour shortage"
+      ],
+      "sheetDetail": "1. Global skilled labour demand and constant tightening of foreign workforce quota may affect our ability to scale further as scope of work is limited by the size of production workforce. 2. This is a Tier-2 risk given that there is no shortage at present in Marine and considering existing mitigations e.g. manpower sourcing through contractors, in-house training programmes to build internal capability, active workforce planning (recruitment, attrition monitoring), and retention initiatives.",
+      "sheetExtra": "Tier 2 (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-TIER_2-10",
+      "themeName": "Inability to contain contagious diseases",
+      "tier": "TIER_2",
+      "keywords": [
+        "pandemic",
+        "outbreak",
+        "lockdown",
+        "quarantine"
+      ],
+      "sheetDetail": "1. Pandemics can lead to significant operational disruptions, including lockdowns, supply chain interruptions, and increased compliance costs. 2. This is a Tier-2 risk considering existing mitigations e.g. response plans that are aligned with government policies and can be swiftly activated in the event of a future pandemic.",
+      "sheetExtra": "Tier 2 (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-TIER_2-11",
+      "themeName": "Fraud, bribery and corruption by intermediaries",
+      "tier": "TIER_2",
+      "keywords": [
+        "bribery",
+        "corruption",
+        "intermediary",
+        "kickback",
+        "agent commission"
+      ],
+      "sheetDetail": "1. To support Marine’s international business growth strategy, the establishment of partnerships with a broader network of intermediaries is anticipated. While this expansion enables market access and operational scalability, it also introduces heightened exposure to bribery and corruption risks associated with intermediary conduct. 2. This is a Tier-2 risk considering existing mitigations e.g. stringent due diligence onboarding and continuous monitoring of intermediaries, contractual safeguards, and compliance reviews/audits.",
+      "sheetExtra": "Tier 2 (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-TIER_2-12",
+      "themeName": "Violation of export control regulations",
+      "tier": "TIER_2",
+      "keywords": [
+        "export control",
+        "sanctions",
+        "ITAR",
+        "end-user certificate",
+        "export licence"
+      ],
+      "sheetDetail": "1. In light of the evolving global geopolitical landscape and increasingly complex trade policies, the risk of export control violations has become more pronounced. 2. This is a Tier-2 risk considering existing mitigations that include compliance with the Group export control policy, Trade & Customs Corporate Standard, SOPs, trainings, sharing of good practices, compliance reviews/audits.",
+      "sheetExtra": "Tier 2 (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-EMERGING-13",
+      "themeName": "Technological advancement, complexity, disruption & naval innovation",
+      "tier": "EMERGING",
+      "keywords": [
+        "autonomous vessel",
+        "unmanned surface vessel",
+        "alternative fuel",
+        "digital shipyard",
+        "additive manufacturing"
+      ],
+      "sheetDetail": "1. Ships are integrating advanced technologies such as automation, AI, and advanced materials, leading to challenges in design, construction, and maintenance. Rapid progress in naval technologies, including autonomous systems, unmanned vessels, advanced sensors, alternative fuels and additive manufacturing is transforming the industry. 2. Ignoring these innovations risks obsolescence and reduced competitiveness. These advancements bring new threats and opportunities, influencing marketing strategies, business models, competition, operational efficiency, and manufacturing lead times.",
+      "sheetExtra": "Emerging (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-EMERGING-14",
+      "themeName": "Geopolitical tension, protectionism, shifting alliances between countries, grey-zone warfare, and asymmetric threats",
+      "tier": "EMERGING",
+      "keywords": [
+        "geopolitical",
+        "South China Sea",
+        "Red Sea",
+        "piracy",
+        "grey-zone",
+        "shipping attack"
+      ],
+      "sheetDetail": "1. Geopolitical tensions in key regions such as MENA and South China Seas have led to uncertainties and potential delays in export approvals. 2. At the same time, shifts in maritime trade routes driven by protectionism and interstate conflicts may affect vessel demand, resource availability, and collaboration, with implications for material procurement, technology sharing, and defence ship construction. 3. More broadly, evolving geopolitical dynamics, including shifting alliances between countries may influence market access by creating new opportunities or altering existing market conditions. 4. Example: Conflicts in the Middle East may escalate regional tensions, heightening maritime security threats such as piracy and attacks on vessels. This could disrupt maritime traffic volumes, affect potential joint ventures, and increase demand for unmanned escort and patrol capabilities.",
+      "sheetExtra": "Emerging (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-EMERGING-15",
+      "themeName": "Adverse outcomes arising from AI deployment",
+      "tier": "EMERGING",
+      "keywords": [
+        "AI governance",
+        "AI misuse",
+        "AI hallucination",
+        "AI data leak"
+      ],
+      "sheetDetail": "Ineffective guardrails in the deployment of AI leading to malfunctions (e.g. bias, hallucination, misinformation) or misuse (e.g. data security breaches)",
+      "sheetExtra": "Emerging (BA Annual Risk Refresh)"
+    },
+    {
+      "themeId": "MARINE-EMERGING-16",
+      "themeName": "Climate change adaptation (shipyard facilities)",
+      "tier": "EMERGING",
+      "keywords": [
+        "Climate change adaptation",
+        "sea level rise",
+        "carbon tax",
+        "heat stress",
+        "coastal flooding",
+        "energy price"
+      ],
+      "sheetDetail": "1. Potential flooding due to increased sea level 2. Thermal expansion and material integrity of building and infrastructure due to temperature variation. 3. Energy disruption at the power grid 4. Increase in cost of operations due to increase in carbon tax (S$25/tCO2e in 2024/5, S$45 in 2026/7 and S$50-80 by 2030) and energy price 5. Heat stress by workers",
+      "sheetExtra": "Emerging (BA Annual Risk Refresh)"
+    }
+  ]
+}

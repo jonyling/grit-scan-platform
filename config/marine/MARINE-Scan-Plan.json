@@ -1,0 +1,417 @@
+{
+  "registerId": "MARINE-SCAN-PLAN",
+  "status": "PROPOSED: drafted by GRIT-Scan on 6 November 2026 from the Marine workbook. The Marine R&A business partner reviews the queries and request keywords.",
+  "standingSet": "themes",
+  "audience": "Marine management and its R&A business partner, released by Wilson Yeo (Group Head, Risk & Assurance)",
+  "themes": [
+    {
+      "themeId": "MARINE-KEY-01",
+      "queries": [
+        "Singapore shipyard worker killed",
+        "shipyard accident fatality investigation",
+        "Ministry of Manpower shipyard stop-work order"
+      ]
+    },
+    {
+      "themeId": "MARINE-KEY-02",
+      "queries": [
+        "shipbuilding supply chain disruption tariffs",
+        "marine engine thruster delivery delay shipyard",
+        "shipbuilding steel plate price shortage"
+      ]
+    },
+    {
+      "themeId": "MARINE-KEY-03",
+      "queries": [
+        "marine engineering talent shortage Singapore",
+        "Middle East travel advisory expatriate workers security"
+      ]
+    },
+    {
+      "themeId": "MARINE-KEY-04",
+      "queries": [
+        "shipyard cyberattack",
+        "maritime defence contractor ransomware data breach",
+        "naval shipbuilder insider data leak"
+      ]
+    },
+    {
+      "themeId": "MARINE-KEY-05",
+      "queries": [
+        "naval shipbuilding programme cost overrun delay",
+        "shipbuilding contract liquidated damages late delivery",
+        "offshore vessel newbuild delivery delay yard"
+      ]
+    },
+    {
+      "themeId": "MARINE-KEY-06",
+      "queries": [
+        "naval shipbuilding local content requirement foreign shipyard",
+        "US Navy ship repair foreign-owned shipyard restriction"
+      ]
+    },
+    {
+      "themeId": "MARINE-TIER_2-07",
+      "queries": [
+        "Singapore ship repair competition yard capacity",
+        "PaxOcean shipyard new yard"
+      ]
+    },
+    {
+      "themeId": "MARINE-TIER_2-08",
+      "queries": [
+        "naval shipbuilding joint venture partner dispute"
+      ]
+    },
+    {
+      "themeId": "MARINE-TIER_2-09",
+      "queries": [
+        "Singapore marine shipyard foreign worker quota levy"
+      ]
+    },
+    {
+      "themeId": "MARINE-TIER_2-10",
+      "queries": [
+        "shipyard outbreak workers quarantine"
+      ]
+    },
+    {
+      "themeId": "MARINE-TIER_2-11",
+      "queries": [
+        "shipbuilding bribery agent corruption naval contract"
+      ]
+    },
+    {
+      "themeId": "MARINE-TIER_2-12",
+      "queries": [
+        "naval vessel export control licence sanctions"
+      ]
+    },
+    {
+      "themeId": "MARINE-EMERGING-13",
+      "queries": [
+        "unmanned surface vessel navy programme",
+        "autonomous ship technology shipyard"
+      ]
+    },
+    {
+      "themeId": "MARINE-EMERGING-14",
+      "queries": [
+        "Red Sea shipping attacks naval escort",
+        "South China Sea naval tension shipbuilding"
+      ]
+    },
+    {
+      "themeId": "MARINE-EMERGING-15",
+      "queries": [
+        "AI deployment risk maritime industry"
+      ]
+    },
+    {
+      "themeId": "MARINE-EMERGING-16",
+      "queries": [
+        "Singapore carbon tax energy price shipyard",
+        "sea level rise coastal flooding port shipyard"
+      ]
+    }
+  ],
+  "managementRequests": [
+    {
+      "requestId": "MARINE-MR-R01",
+      "source": "Workbook sheet 7, Tier-2 risk 'Competition in shipbuilding, ship conversion and repair' (credit risk from financially strained customers, foreign-currency hedging, price adjustment linked to an economic index). Added because the completeness gate needs macro and financial coverage (URS methodology, section 8) and the governed register has no financial theme.",
+      "requestedBy": "GRIT-Scan (URS methodology, section 8)",
+      "title": "Financial and macro exposure: shipowner credit, currency and interest rates",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "queries": [
+        "shipowner insolvency credit risk offshore vessel",
+        "Singapore dollar US dollar exchange rate outlook",
+        "shipping finance interest rates newbuild orders"
+      ],
+      "keywords": []
+    },
+    {
+      "requestId": "MARINE-MR-F01",
+      "source": "Workbook sheet 10, focus item 1 (Management priority)",
+      "title": "Naval programme delivery",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "queries": [
+        "Kuwait Navy missile boat ST Engineering Abu Dhabi Ship Building",
+        "UAE Navy offshore patrol vessel Abu Dhabi Ship Building"
+      ],
+      "keywords": [
+        "Abu Dhabi Ship Building + navy",
+        "ADSB + vessel",
+        "Kuwait + missile boat",
+        "Falaj + patrol vessel"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F02",
+      "source": "Workbook sheet 10, focus item 2 (Research draft)",
+      "title": "Commercial newbuild execution and margins",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "queries": [
+        "Walk-to-Work vessel newbuild shipyard"
+      ],
+      "keywords": [
+        "Walk-to-Work vessel"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F03",
+      "source": "Workbook sheet 10, focus item 3 (Management priority)",
+      "title": "Yard utilisation and repair throughput",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "queries": [
+        "Singapore ship repair demand dry dock"
+      ],
+      "keywords": [
+        "ship repair + Singapore",
+        "dry dock + Singapore",
+        "Benoi + shipyard",
+        "Tuas + shipyard"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F04",
+      "source": "Workbook sheet 10, focus item 4 (Research draft)",
+      "title": "Decarbonisation retrofits and green conversions",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "queries": [
+        "methanol dual-fuel conversion retrofit shipyard order"
+      ],
+      "keywords": [
+        "methanol conversion",
+        "dual-fuel retrofit"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F05",
+      "source": "Workbook sheet 10, focus item 5 (Research draft)",
+      "title": "Offshore wind vessel repair and modifications",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "queries": [
+        "wind turbine installation vessel upgrade repair shipyard"
+      ],
+      "keywords": [
+        "wind turbine installation vessel",
+        "jack-up vessel + upgrade"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F06",
+      "source": "Workbook sheet 10, focus item 6 (Management priority)",
+      "title": "Naval through-life support",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "queries": [
+        "Republic of Singapore Navy vessel maintenance modernisation"
+      ],
+      "keywords": [
+        "Republic of Singapore Navy + maintenance",
+        "Fearless class",
+        "Littoral Mission Vessel",
+        "Multi-Role Combat Vessel"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F07",
+      "source": "Workbook sheet 10, focus item 7 (Core control focus)",
+      "title": "Workplace safety",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "queries": [
+        "Benoi Tuas shipyard accident worker"
+      ],
+      "keywords": [
+        "shipyard + killed",
+        "shipyard + fatal",
+        "shipyard + explosion",
+        "shipyard + fire + worker"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F08",
+      "source": "Workbook sheet 10, focus item 8 (Research draft)",
+      "title": "Supply chain and equipment lead times",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "queries": [
+        "marine propulsion equipment lead time shortage"
+      ],
+      "keywords": [
+        "marine engine + lead time",
+        "thruster + shortage"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F09",
+      "source": "Workbook sheet 10, focus item 9 (Management priority)",
+      "title": "Subcontractor and skilled workforce capacity",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "queries": [
+        "Singapore marine sector work permit quota foreign workers"
+      ],
+      "keywords": [
+        "foreign worker + marine sector",
+        "work permit + shipyard",
+        "foreign worker quota + Singapore"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F10",
+      "source": "Workbook sheet 10, focus item 10 (Core control focus)",
+      "title": "Environmental compliance",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "queries": [
+        "shipyard oil spill pollution fine Singapore MPA"
+      ],
+      "keywords": [
+        "shipyard + oil spill",
+        "shipyard + pollution",
+        "oil spill + Singapore",
+        "ballast water + violation"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F11",
+      "source": "Workbook sheet 10, focus item 11 (Research draft)",
+      "title": "US marine business performance",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "queries": [
+        "Halter Marine shipyard Pascagoula"
+      ],
+      "keywords": [
+        "Halter Marine"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F12",
+      "source": "Workbook sheet 10, focus item 12 (Core control focus)",
+      "title": "Export control and geopolitical exposure",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "queries": [
+        "warship export licence end-user restriction"
+      ],
+      "keywords": [
+        "naval + export control",
+        "warship + sanctions",
+        "naval vessel + export licence"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F13",
+      "source": "Workbook sheet 10, focus items 13 to 16 (Strategic focus area, per P25)",
+      "title": "Capability development: digital twin, unmanned, condition-based maintenance and AI",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "queries": [
+        "naval digital twin condition-based maintenance unmanned vessel"
+      ],
+      "keywords": [
+        "digital twin + vessel",
+        "unmanned surface vessel",
+        "condition-based maintenance + navy"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F14",
+      "source": "Workbook sheet 10, focus item 17 (Strategic focus area, per P25)",
+      "title": "Alternative energy for naval and commercial vessels",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "queries": [
+        "alternative fuel naval vessel hybrid propulsion"
+      ],
+      "keywords": [
+        "hybrid propulsion + vessel",
+        "ammonia-fuelled vessel"
+      ]
+    },
+    {
+      "requestId": "MARINE-MR-F15",
+      "source": "Workbook sheet 10, focus items 19 and 20 (Strategic focus area, per P25)",
+      "title": "International business and offshore renewables",
+      "kind": "TOPIC",
+      "status": "PROPOSED",
+      "queries": [
+        "international naval shipbuilding tender Asia Middle East"
+      ],
+      "keywords": [
+        "naval shipbuilding + tender",
+        "offshore patrol vessel + contract"
+      ]
+    }
+  ],
+  "namedItems": {
+    "source": "graph",
+    "lanes": {
+      "ENTITY": {
+        "cadenceWeeks": 2
+      },
+      "SUPPLIER": {
+        "cadenceWeeks": 2
+      },
+      "CUSTOMER": {
+        "cadenceWeeks": 4
+      },
+      "COMPETITOR": {
+        "cadenceWeeks": 8
+      }
+    },
+    "listQuiet": [
+      "ENTITY",
+      "CUSTOMER",
+      "SUPPLIER"
+    ],
+    "genericNames": {
+      "note": "A customer whose register name is a generic public-body title matches ministries in every country. It counts only when the page also names one of these places.",
+      "pattern": "^(ministry|department|bureau|defence science|home team)\\b",
+      "cues": [
+        "Singapore",
+        "Singaporean",
+        "MINDEF",
+        "MHA",
+        "DSTA",
+        "HTX"
+      ]
+    }
+  },
+  "contextCues": {
+    "sector": [
+      "shipyard",
+      "shipbuilding",
+      "shipbuilder",
+      "ship repair",
+      "dry dock",
+      "drydock",
+      "vessel",
+      "vessels",
+      "warship",
+      "navy",
+      "naval",
+      "maritime",
+      "marine",
+      "offshore",
+      "shipowner",
+      "frigate",
+      "corvette",
+      "patrol boat"
+    ]
+  },
+  "sectionTitles": {
+    "CONDITIONS": "Marine risk themes",
+    "CUSTOMERS": "Navy, offshore and shipowner customers",
+    "COMPETITORS": "Shipyard competitor and industry watch"
+  }
+}

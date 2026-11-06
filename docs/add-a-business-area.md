@@ -45,12 +45,18 @@ You need:
    | `entitySheet` | An entity sheet with another name, such as CA's `2a. Entity and Asset Address`. Its header row is found by its NameOfEntity column, so a note line above it is skipped. |
    | `assetSheet` | A finance asset listing, such as CA's `2. Asset Listing (Finance)`. Each entity gets `assetCountries`, which counts as footprint but is never taken as its country of incorporation. |
    | `supplierUnit`, `sharedSupplierSeparator` | Supplier BA values that name two business areas, such as `URS/DS&C`. Set the BA's own label (`DS&C`) and the separator (`/`). The supplier is recorded under the BA, and `sharedWith` names the other. |
+   | `themeLayout`, `themeClassificationRequire` | A sheet 7 that is one `Risk Theme \| Rationale \| Classification` table, as Marine's is. Set `themeLayout` to `"classified"`. Each row's tier is the first tier its classification names, so `Key/Tier 2` is Key. Set `themeClassificationRequire` to text that only governed rows carry, such as `"BA Annual Risk Refresh"`. Other rows are listed under `draftThemes` and are not scanned. With this layout, `themeCounts` is checked only for the tiers it names. |
+   | `classRows` | Customer or supplier rows that name a class of counterparty, such as `Marine equipment vendors`, not an organisation. Give a regular expression for each sheet, such as `{"customers": "\\bclass\\b", "suppliers": "\\b(suppliers\|OEMs\|vendors)\\b"}`. A matching row stays in the register, marked `counterpartyClass`, and is not searched by name. |
 
    The build also handles these differences without configuration:
    - A sheet 6 cell with two or more commas is split into one keyword per item.
-   - The supplier header row is found by its `BA` column, whatever column A says.
+   - A sheet 6 with a `Keyword | LOB` header, as Marine's has, is read keyword first. A keyword with no LOB is filed under `All LOBs`.
+   - An entity sheet with plain headers (`Entity Name`, `LOB Grouping`, `LOB`, `Country`, `Ownership Type`), as Marine's has, is read as the template's NameOfEntity, LOBGrouping1, LOB1, CountryOfIncorporation and NatureOfShareholding. A title line above the header is skipped.
+   - The supplier header row is found by its `BA` column, whatever column A says. A sheet with no `BA` column is found by a column A header that starts with `Supplier`, such as Marine's `Supplier Category`.
+   - A competitor sheet headed `Region | Competitors/Peers`, as Marine's is, keeps each row's region. The region is not a LOB.
    - A competitor LOB label such as "1. Mission Software & Services" resolves without its number.
    - A customer named only by country and programme, such as "Thailand NPE Programme Customer", is marked `anonymised`. It is not searched by name.
+   - A legal name is searched by a shorter name. A branch, such as `ST Engineering Marine Ltd. - Abu Dhabi Branch`, is searched by its parent's name. A country after "of", as in `Ministry of Home Affairs of Singapore`, stays in the name.
    - Customer and supplier sheets are read by their header row. A sheet with a serial column keeps numbered rows; a list without one, such as CA's harmonised customer list, keeps every named row once. A short name (match key) becomes an alias. Country, customer type, sector, primary LOB, workscope, contracting entity, customer group, category, goods or services, concentration flag, linked risk codes and confidence are copied when the sheet has them. The graph links a customer to its stated LOB and contracting entity, and a supplier to its stated LOB. A counterparty's country stays a field: it is not STE footprint.
    - Sheet 7 sections headed only `Ref | Risk` are found by their headings, such as `2. Tier-2 Risks`.
    - On sheet 10, a numbered row whose text is only a topic heading (Opportunities, Challenges, Key Risks) continues the request above it, and a request that lists its countries in its text keeps them. Each such reading is noted on the request.

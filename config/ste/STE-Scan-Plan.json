@@ -27,7 +27,8 @@
       ],
       "businessAreas": [
         "urs",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "businessAreaStatus": "PROPOSED"
     },
@@ -49,7 +50,8 @@
       ],
       "businessAreas": [
         "dsc",
-        "urs"
+        "urs",
+        "marine"
       ],
       "businessAreaStatus": "PROPOSED"
     },
@@ -69,7 +71,8 @@
         "defense spending"
       ],
       "businessAreas": [
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "businessAreaStatus": "PROPOSED"
     },
@@ -232,7 +235,8 @@
       ],
       "businessAreas": [
         "dsc",
-        "urs"
+        "urs",
+        "marine"
       ],
       "businessAreaStatus": "PROPOSED"
     },
@@ -255,7 +259,8 @@
       ],
       "businessAreas": [
         "dsc",
-        "urs"
+        "urs",
+        "marine"
       ],
       "businessAreaStatus": "PROPOSED"
     },
@@ -277,7 +282,8 @@
       ],
       "businessAreas": [
         "urs",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "businessAreaStatus": "PROPOSED"
     }

@@ -1,0 +1,260 @@
+{
+  "registerId": "MARINE-MANAGEMENT-FOCUS",
+  "workbook": "06_Marine_Entity_Info.xlsx",
+  "sheet": "10. Management Focus",
+  "absence": "The status text is copied unchanged. A status that says research draft means a business area has not validated the item.",
+  "requests": [],
+  "focusItems": [
+    {
+      "scope": "Naval Shipbuilding",
+      "allLobs": false,
+      "focus": "Naval programme delivery",
+      "whyItMatters": "Deliver naval newbuild programmes (e.g. Kuwait and UAE vessels) on schedule, cost and specification.",
+      "indicators": [
+        "Milestone adherence",
+        "cost variance",
+        "sea-trial outcomes",
+        "deliveries vs plan",
+        "LDs"
+      ],
+      "status": "Management priority — validate programme list",
+      "canonicalLob": "Naval Shipbuilding"
+    },
+    {
+      "scope": "Commercial Shipbuilding",
+      "allLobs": false,
+      "focus": "Commercial newbuild execution and margins",
+      "whyItMatters": "Fixed-price newbuilds (e.g. Walk-to-Work vessels) are exposed to design change and cost overrun.",
+      "indicators": [
+        "Contract margin",
+        "change orders",
+        "schedule slippage",
+        "warranty claims"
+      ],
+      "status": "Research draft — BA validation required",
+      "canonicalLob": "Commercial Shipbuilding"
+    },
+    {
+      "scope": "Ship Repair & Conversion",
+      "allLobs": false,
+      "focus": "Yard utilisation and repair throughput",
+      "whyItMatters": "Optimise dock and berth utilisation and turnaround across Benoi and Tuas yards.",
+      "indicators": [
+        "Dock utilisation",
+        "vessels handled",
+        "repair TAT",
+        "revenue per dock-day"
+      ],
+      "status": "Management priority — validate targets",
+      "canonicalLob": "Ship Repair & Conversion"
+    },
+    {
+      "scope": "Ship Repair & Conversion",
+      "allLobs": false,
+      "focus": "Decarbonisation retrofits and green conversions",
+      "whyItMatters": "Capture demand for methanol/LNG conversions, scrubber and energy-efficiency retrofits.",
+      "indicators": [
+        "Retrofit orders",
+        "conversion pipeline",
+        "project margin",
+        "repeat customers"
+      ],
+      "status": "Research draft — BA validation required",
+      "canonicalLob": "Ship Repair & Conversion"
+    },
+    {
+      "scope": "Offshore Renewables",
+      "allLobs": false,
+      "focus": "Offshore wind vessel repair and modifications",
+      "whyItMatters": "Grow repair and structural modification work for wind-installation and support vessels.",
+      "indicators": [
+        "Orders",
+        "pipeline",
+        "project TAT",
+        "customer concentration"
+      ],
+      "status": "Research draft — BA validation required",
+      "canonicalLob": "Offshore Renewables"
+    },
+    {
+      "scope": "Lifecycle Support",
+      "allLobs": false,
+      "focus": "Naval through-life support",
+      "whyItMatters": "Sustain fleet availability and modernisation for navies under long-term support contracts.",
+      "indicators": [
+        "Fleet availability",
+        "contract KPIs met",
+        "upgrade milestones",
+        "spares fill rate"
+      ],
+      "status": "Management priority — validate KPIs with BA",
+      "canonicalLob": "Lifecycle Support"
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Workplace safety",
+      "whyItMatters": "Heavy lifting, hot work, confined spaces and subcontractor activity create severe safety exposure.",
+      "indicators": [
+        "LTIFR",
+        "fatalities",
+        "high-potential incidents",
+        "near misses",
+        "safety audit findings"
+      ],
+      "status": "Core control focus — validate KPI definitions",
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Supply chain and equipment lead times",
+      "whyItMatters": "Propulsion, electrical and combat-system equipment lead times can delay construction and repair.",
+      "indicators": [
+        "Long-lead items",
+        "supplier OTIF",
+        "critical shortages",
+        "schedule impact days"
+      ],
+      "status": "Research draft — BA validation required",
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Subcontractor and skilled workforce capacity",
+      "whyItMatters": "Yards depend on skilled trades and subcontracted labour subject to supply and regulatory constraints.",
+      "indicators": [
+        "Headcount vs plan",
+        "foreign-worker quota",
+        "attrition",
+        "productivity per man-hour"
+      ],
+      "status": "Management priority — validate workforce plan",
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Environmental compliance",
+      "whyItMatters": "Shipyard emissions, waste, spills and ballast handling require strict control.",
+      "indicators": [
+        "Environmental incidents",
+        "regulatory findings",
+        "emissions",
+        "waste volumes"
+      ],
+      "status": "Core control focus — validate KPI definitions",
+      "canonicalLob": null
+    },
+    {
+      "scope": "US Marine",
+      "allLobs": false,
+      "focus": "US marine business performance",
+      "whyItMatters": "Manage programme execution and profitability in the US marine operations.",
+      "indicators": [
+        "Backlog",
+        "programme margin",
+        "schedule adherence",
+        "customer findings"
+      ],
+      "status": "Research draft — BA validation required",
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Export control and geopolitical exposure",
+      "whyItMatters": "Naval programmes and equipment transfers face licensing, sanctions and end-user restrictions.",
+      "indicators": [
+        "Licence status",
+        "screening exceptions",
+        "compliance findings"
+      ],
+      "status": "Core control focus — validate KPI definitions",
+      "canonicalLob": null
+    },
+    {
+      "scope": "Capability Development",
+      "allLobs": false,
+      "focus": "Digital Twin",
+      "whyItMatters": "Advanced design, systems integration and real-time monitoring",
+      "indicators": [],
+      "status": "Strategic focus area (per P25)",
+      "canonicalLob": null
+    },
+    {
+      "scope": "Capability Development",
+      "allLobs": false,
+      "focus": "Unmanned Capabilities",
+      "whyItMatters": "Development of unmanned drones and vessels",
+      "indicators": [],
+      "status": "Strategic focus area (per P25)",
+      "canonicalLob": null
+    },
+    {
+      "scope": "Capability Development",
+      "allLobs": false,
+      "focus": "Condition-based Maintenance",
+      "whyItMatters": "Predictive maintenance via sensorisation and data analytics",
+      "indicators": [],
+      "status": "Strategic focus area (per P25)",
+      "canonicalLob": null
+    },
+    {
+      "scope": "Capability Development",
+      "allLobs": false,
+      "focus": "AI and Automation",
+      "whyItMatters": "Enhance and optimize troubleshooting and maintenance, use technologies for productivity gains and product innovations",
+      "indicators": [],
+      "status": "Strategic focus area (per P25)",
+      "canonicalLob": null
+    },
+    {
+      "scope": "Capability Development",
+      "allLobs": false,
+      "focus": "Alternative Energy for Naval and Commercial Vessels",
+      "whyItMatters": null,
+      "indicators": [],
+      "status": "Strategic focus area (per P25)",
+      "canonicalLob": null
+    },
+    {
+      "scope": "Capability Development",
+      "allLobs": false,
+      "focus": "Developing our people",
+      "whyItMatters": "Empowering our workforce through continuous learning, growth and engagement",
+      "indicators": [],
+      "status": "Strategic focus area (per P25)",
+      "canonicalLob": null
+    },
+    {
+      "scope": "Adjacent",
+      "allLobs": false,
+      "focus": "International Business",
+      "whyItMatters": "Shipbuilding and Maintenance, Repair & Overhaul (MRO)",
+      "indicators": [],
+      "status": "Strategic focus area (per P25)",
+      "canonicalLob": null
+    },
+    {
+      "scope": "Adjacent",
+      "allLobs": false,
+      "focus": "Offshore Renewables and Infrastructure",
+      "whyItMatters": "Shipbuilding",
+      "indicators": [],
+      "status": "Strategic focus area (per P25)",
+      "canonicalLob": null
+    },
+    {
+      "scope": "Adjacent",
+      "allLobs": false,
+      "focus": "Greater collaboration for competitiveness",
+      "whyItMatters": "Work with Digital Systems and Land Systems for comprehensive solutions and competitive pursuits",
+      "indicators": [],
+      "status": "Strategic focus area (per P25)",
+      "canonicalLob": null
+    }
+  ],
+  "dropped": []
+}

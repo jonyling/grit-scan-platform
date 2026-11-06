@@ -1,0 +1,161 @@
+{
+  "pack": "marine",
+  "level": "BA",
+  "label": "Marine",
+  "shortLabel": "Marine",
+  "businessArea": "Marine",
+  "parent": "ste",
+  "children": [],
+  "registers": {
+    "source_register": "MARINE-Source-Register.json",
+    "exposure": "MARINE-Exposure-Ontology.json",
+    "lob_profiles": "MARINE-LOB-Profiles.json",
+    "themes": "MARINE-STE-Themes.json",
+    "baseline": "MARINE-Global-Baseline.json"
+  },
+  "optional": {
+    "keyword_library": "MARINE-Keyword-Library.json",
+    "competitors": "MARINE-Competitors.json",
+    "management_focus": "MARINE-Management-Focus.json",
+    "lob_hierarchy": "MARINE-LOB-Hierarchy.json",
+    "relationships": "MARINE-Relationships.json",
+    "scan_plan": "MARINE-Scan-Plan.json"
+  },
+  "build": {
+    "prefix": "MARINE",
+    "defaultWorkbook": "06_Marine_Entity_Info.xlsx",
+    "lobHierarchy": "MARINE-LOB-Hierarchy.json",
+    "keywordSheets": [],
+    "themeLayout": "classified",
+    "themeClassificationRequire": "BA Annual Risk Refresh",
+    "themeCounts": {
+      "KEY": 6,
+      "TIER_2": 6,
+      "EMERGING": 4
+    },
+    "classRows": {
+      "customers": "\\bclass\\b",
+      "suppliers": "\\b(suppliers|OEMs|vendors|trades)\\b"
+    },
+    "themeVocabulary": {
+      "major workplace injuries": [
+        "workplace safety",
+        "shipyard accident",
+        "shipyard fatality",
+        "worker killed",
+        "hot work",
+        "confined space",
+        "stop-work order"
+      ],
+      "major supply chain disruption": [
+        "supply chain disruption",
+        "trade restrictions",
+        "tariff",
+        "protectionism",
+        "vendor non-performance",
+        "equipment lead time",
+        "steel plate shortage"
+      ],
+      "challenges in attracting": [
+        "marine engineer shortage",
+        "shipyard talent",
+        "ageing workforce",
+        "attrition",
+        "overseas deployment",
+        "travel advisory"
+      ],
+      "information & cybersecurity": [
+        "cybersecurity",
+        "cyber attack",
+        "ransomware",
+        "data breach",
+        "insider threat",
+        "maritime cyber"
+      ],
+      "project management challenges": [
+        "cost overrun",
+        "delivery delay",
+        "liquidated damages",
+        "change order",
+        "classification society",
+        "rework"
+      ],
+      "intense political lobbying": [
+        "political lobbying",
+        "local content requirement",
+        "domestic shipbuilding",
+        "market access",
+        "Jones Act"
+      ],
+      "competition in shipbuilding": [
+        "shipyard competition",
+        "ship repair pricing",
+        "newbuild order",
+        "shipowner insolvency",
+        "credit risk",
+        "PaxOcean"
+      ],
+      "collaboration/ partnership": [
+        "joint venture",
+        "strategic alliance",
+        "partner dispute",
+        "government-to-government"
+      ],
+      "shortage of skilled, migrant": [
+        "foreign worker quota",
+        "migrant worker",
+        "work permit",
+        "foreign worker levy",
+        "labour shortage"
+      ],
+      "inability to contain": [
+        "pandemic",
+        "outbreak",
+        "lockdown",
+        "quarantine"
+      ],
+      "fraud, bribery": [
+        "bribery",
+        "corruption",
+        "intermediary",
+        "kickback",
+        "agent commission"
+      ],
+      "violation of export control": [
+        "export control",
+        "sanctions",
+        "ITAR",
+        "end-user certificate",
+        "export licence"
+      ],
+      "technological advancement": [
+        "autonomous vessel",
+        "unmanned surface vessel",
+        "alternative fuel",
+        "digital shipyard",
+        "additive manufacturing"
+      ],
+      "geopolitical tension": [
+        "geopolitical",
+        "South China Sea",
+        "Red Sea",
+        "piracy",
+        "grey-zone",
+        "shipping attack"
+      ],
+      "adverse outcomes arising from ai": [
+        "AI governance",
+        "AI misuse",
+        "AI hallucination",
+        "AI data leak"
+      ],
+      "climate change adaptation": [
+        "sea level rise",
+        "carbon tax",
+        "heat stress",
+        "coastal flooding",
+        "energy price"
+      ]
+    }
+  }
+}

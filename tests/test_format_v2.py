@@ -227,6 +227,23 @@ def test_coverage_counts_answered_searches_and_scopes_them_to_the_line_they_aim_
     pool.close()
 
 
+def test_a_management_request_search_takes_its_category_from_the_request_title(tmp_path: Path) -> None:
+    from grit.report.format_v2 import FINANCIAL, OPERATIONAL, _searched
+
+    pool = Pool(tmp_path / "pool.db")
+    pool.start_run("R", run_date="2026-11-06", pack="marine", kind="READER_SCAN", config={})
+    for request_id, title in (("MR-FIN", "Financial and macro exposure: shipowner credit, currency and interest rates"), ("MR-OPS", "Yard utilisation and repair throughput")):
+        pool.insert("management_requests", {
+            "request_id": request_id, "description": None, "requested_by": "test", "request_date": "2026-11-06", "status": "ACTIVE", "origin": "WORKBOOK",
+            "profile_id": None, "title": title, "kind": "TOPIC", "keywords_json": "[]", "queries_json": "[]", "country": None, "lob": None, "pack": "marine", "source": None,
+        })
+    for query_id, target in (("q1", "MR-FIN"), ("q2", "MR-OPS")):
+        pool.record_search("R", query_id=query_id, engine="BRAVE", query=f"query {query_id}", lane="REQUEST", target_id=target, canonical_lob=None,
+                           results=2, fetched_at="2026-11-06T00:00:00Z")
+    assert _searched(pool, "R", {})["counts"] == {FINANCIAL: 1, OPERATIONAL: 1}
+    pool.close()
+
+
 def test_the_scenario_window_includes_the_run_being_reported_before_it_finishes(tmp_path: Path) -> None:
     from grit.pipeline.scenarios import window_rows
 

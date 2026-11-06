@@ -1,0 +1,509 @@
+{
+  "registerId": "MARINE-COMPETITORS",
+  "workbook": "06_Marine_Entity_Info.xlsx",
+  "sheet": "3. Competitors",
+  "absence": "A LOB label that is not on the org chart has no canonicalLob. The same competitor can appear under more than one LOB.",
+  "competitors": [
+    {
+      "lobLabel": "Singapore",
+      "competitor": "ASL Marine",
+      "workscope": "Integrated shipbuilding, ship repair and conversion; construction and servicing of offshore support vessels, tugs, barges and specialised commercial vessels; marine engineering and fabrication.",
+      "note": null,
+      "category": null,
+      "row": 2,
+      "region": "Singapore",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Singapore",
+      "competitor": "Keppel Subic Yard",
+      "workscope": "Large-scale ship repair, conversion and offshore fabrication at Subic Bay; dry-docking, heavy steel renewal, module fabrication and support for commercial and offshore vessels.",
+      "note": null,
+      "category": null,
+      "row": 3,
+      "region": "Singapore",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Singapore",
+      "competitor": "Royal IHC",
+      "workscope": "Design and construction of complex custom vessels and equipment for dredging, offshore energy and mining; integrated systems, automation, lifecycle services and vessel upgrades.",
+      "note": null,
+      "category": null,
+      "row": 4,
+      "region": "Singapore",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Singapore",
+      "competitor": "Strategic Marine",
+      "workscope": "Design and construction of high-speed aluminium vessels, including crew transfer vessels, ferries, patrol craft and offshore support vessels; through-life service and refit.",
+      "note": null,
+      "category": null,
+      "row": 5,
+      "region": "Singapore",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Singapore",
+      "competitor": "PaxOcean (including its Batam shipyards)",
+      "workscope": "Shipbuilding, repair, conversion and offshore engineering across regional yards; offshore support vessels, tugs, barges, specialised vessels, rig and FPSO-related fabrication.",
+      "note": null,
+      "category": null,
+      "row": 6,
+      "region": "Singapore",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Singapore",
+      "competitor": "Penguin",
+      "workscope": "Design, build, own and operate high-speed aluminium vessels; crewboats, passenger ferries, patrol and security craft, with repair, maintenance and chartering support.",
+      "note": null,
+      "category": null,
+      "row": 7,
+      "region": "Singapore",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Singapore",
+      "competitor": "Seatrium",
+      "workscope": "Global offshore, marine and energy engineering; ship and rig repair, upgrading and conversion, FPSO/FPU projects, offshore platforms, specialised vessels and renewable-energy solutions.",
+      "note": null,
+      "category": null,
+      "row": 8,
+      "region": "Singapore",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Singapore",
+      "competitor": "CrestSA Marine & Offshore Pte Ltd",
+      "workscope": "Marine and offshore vessel services focused on ship repair, maintenance, conversion, steel and piping works, mechanical/electrical services and project support.",
+      "note": null,
+      "category": null,
+      "row": 9,
+      "region": "Singapore",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Bangkok docks",
+      "workscope": "Naval and commercial shipbuilding and repair; patrol craft and support vessels, dry-docking, maintenance, refit, steelwork and marine engineering for Thai government and commercial fleets.",
+      "note": null,
+      "category": null,
+      "row": 10,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Unithai",
+      "workscope": "Ship repair, conversion and offshore fabrication; dry-docking, hull and machinery repairs, life-extension work, topside/module fabrication and logistics support.",
+      "note": null,
+      "category": null,
+      "row": 11,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Asian Marine Services Public Company Limited (ASIMAR)",
+      "workscope": "Ship repair, maintenance, conversion and newbuilding; dry-docking, hull/machinery/electrical works, offshore support and fabrication for naval and commercial vessels.",
+      "note": null,
+      "category": null,
+      "row": 12,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Hyundai Heavy Industries",
+      "workscope": "Large-scale commercial and naval shipbuilding; LNG carriers, tankers, containerships, offshore units, engines and machinery, naval surface combatants and submarines, plus lifecycle support.",
+      "note": null,
+      "category": null,
+      "row": 13,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Hanwha Ocean",
+      "workscope": "Commercial and naval shipbuilding, including LNG carriers, tankers, containerships, submarines and surface combatants; offshore production units, smart-ship technology and MRO.",
+      "note": null,
+      "category": null,
+      "row": 14,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Lung Tuh",
+      "workscope": "Construction and repair of small-to-medium commercial and specialised vessels; tugs, barges, workboats, patrol craft, steel/aluminium fabrication and marine engineering.",
+      "note": null,
+      "category": null,
+      "row": 15,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Jing Long",
+      "workscope": "Shipbuilding and repair for commercial and specialised craft; steel/aluminium vessel construction, hull fabrication, machinery installation and maintenance services.",
+      "note": null,
+      "category": null,
+      "row": 16,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "CSSC",
+      "workscope": "Full-spectrum commercial and naval shipbuilding through multiple Chinese yards; bulkers, tankers, containerships, LNG vessels, offshore units, naval platforms, marine equipment and repair.",
+      "note": null,
+      "category": null,
+      "row": 17,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Muara Maritime Services",
+      "workscope": "Shipyard and marine support services in Brunei; vessel maintenance, repair, refit, logistics and technical support, including capability for naval and government fleets.",
+      "note": null,
+      "category": null,
+      "row": 18,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Lumut Naval Shipyard",
+      "workscope": "Naval shipbuilding and through-life support for the Royal Malaysian Navy; maintenance, repair, overhaul, refit, systems integration and construction of patrol and combat vessels.",
+      "note": null,
+      "category": null,
+      "row": 19,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "HJ Shipbuilding & Construction",
+      "workscope": "Commercial and naval shipbuilding; containerships and specialised vessels, amphibious and patrol vessels, MRO, conversion and heavy engineering.",
+      "note": null,
+      "category": null,
+      "row": 20,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Namura Shipbuilding",
+      "workscope": "Design and construction of commercial vessels, particularly bulk carriers, tankers and specialised cargo ships; ship repair and lifecycle technical services.",
+      "note": null,
+      "category": null,
+      "row": 21,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Sumitomo Heavy Industries Marine and Engineering",
+      "workscope": "Design and construction of commercial ships, including tankers and specialised vessels; marine engineering, production technology and lifecycle support.",
+      "note": null,
+      "category": null,
+      "row": 22,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Mitsubishi Shipbuilding",
+      "workscope": "Engineering and construction of ferries, Ro-Ro ships, patrol and specialised vessels; LNG and alternative-fuel solutions, marine systems integration and ship lifecycle services.",
+      "note": null,
+      "category": null,
+      "row": 23,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Subic Drydock Corporation",
+      "workscope": "Ship repair, overhaul and conversion at Subic Bay; dry-docking, voyage repairs, steel, piping, mechanical and electrical works, including support for US and allied naval vessels.",
+      "note": null,
+      "category": null,
+      "row": 24,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "Herma Shipyard Inc",
+      "workscope": "Philippine shipbuilding and repair for commercial and government vessels; dry-docking, hull and machinery repair, fabrication, conversion and maintenance.",
+      "note": null,
+      "category": null,
+      "row": 25,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "L&T Shipbuilding",
+      "workscope": "Defence and commercial shipbuilding; patrol vessels, interceptor craft, offshore support vessels and specialised ships, plus design, systems integration, repair and refit.",
+      "note": null,
+      "category": null,
+      "row": 26,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "PT. Marcopolo Shipyard (Batam facilities)",
+      "workscope": "Construction, repair and conversion of tugs, barges, landing craft, offshore support and specialised vessels; steel fabrication, dry-docking and marine engineering.",
+      "note": null,
+      "category": null,
+      "row": 27,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "PT. BATAMEC Shipyard",
+      "workscope": "Ship repair, conversion and newbuilding in Batam; dry-docking, offshore fabrication, hull/machinery/electrical work and servicing of tankers, cargo and offshore support vessels.",
+      "note": null,
+      "category": null,
+      "row": 28,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Asia (excludng Singapore)",
+      "competitor": "PT. Waruna Shipyard Indonesia",
+      "workscope": "Large-vessel repair and conversion; dry-docking, hull steel renewal, blasting/painting, piping, machinery and electrical work for tankers and commercial fleets.",
+      "note": null,
+      "category": null,
+      "row": 29,
+      "region": "Asia (excludng Singapore)",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "MENA",
+      "competitor": "Dearsan",
+      "workscope": "Naval ship design and construction, especially patrol boats, fast attack craft, offshore patrol vessels and support craft; combat-system integration, modernisation and lifecycle support.",
+      "note": null,
+      "category": null,
+      "row": 30,
+      "region": "MENA",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "MENA",
+      "competitor": "Tersan",
+      "workscope": "Commercial and specialised shipbuilding, including fishing, offshore, battery/hybrid and service vessels; repair, conversion, outfitting and lifecycle support.",
+      "note": null,
+      "category": null,
+      "row": 31,
+      "region": "MENA",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "MENA",
+      "competitor": "Istanbul Naval Yards",
+      "workscope": "Turkish naval design, construction, modernisation and maintenance; frigates, corvettes, submarines, patrol and support vessels, combat-system integration and through-life support.",
+      "note": null,
+      "category": null,
+      "row": 32,
+      "region": "MENA",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "MENA",
+      "competitor": "TK Tuzla Shipyard",
+      "workscope": "Naval and commercial vessel construction, repair and conversion; patrol/support craft, dry-docking, steel and outfitting works, maintenance and modernisation.",
+      "note": null,
+      "category": null,
+      "row": 33,
+      "region": "MENA",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "MENA",
+      "competitor": "Tais shipyard",
+      "workscope": "Naval shipbuilding consortium capabilities covering patrol vessels, landing ships, support vessels and specialised craft; design, construction, systems integration and export programmes.",
+      "note": null,
+      "category": null,
+      "row": 34,
+      "region": "MENA",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "MENA",
+      "competitor": "Abu Dhabi Shipbuilding",
+      "workscope": "Naval shipbuilding, repair, refit and lifecycle support; corvettes, patrol vessels and small craft, combat-system integration, maintenance and regional MRO services.",
+      "note": null,
+      "category": null,
+      "row": 35,
+      "region": "MENA",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "MENA",
+      "competitor": "Zamil Shipyard",
+      "workscope": "Commercial and offshore vessel newbuilding and repair; tugs, offshore support vessels and workboats, dry-docking, fabrication, maintenance and fleet support.",
+      "note": null,
+      "category": null,
+      "row": 36,
+      "region": "MENA",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "MENA",
+      "competitor": "ASFAT",
+      "workscope": "Turkish state-owned defence engineering and programme integrator; naval shipbuilding, modernisation, maintenance, export programmes, shipyard development and technical assistance.",
+      "note": null,
+      "category": null,
+      "row": 37,
+      "region": "MENA",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "MENA",
+      "competitor": "Milaha",
+      "workscope": "Maritime and logistics services with shipyard capabilities; vessel repair, maintenance, dry-docking and technical support for commercial and offshore fleets, plus shipping and port services.",
+      "note": null,
+      "category": null,
+      "row": 38,
+      "region": "MENA",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Europe",
+      "competitor": "Saab Kockums AB",
+      "workscope": "Naval design and shipbuilding focused on submarines and surface combatants; stealth technology, combat-system integration, upgrades, maintenance and through-life support.",
+      "note": null,
+      "category": null,
+      "row": 39,
+      "region": "Europe",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Europe",
+      "competitor": "Naval Group",
+      "workscope": "End-to-end naval prime contractor for submarines, frigates, corvettes and support vessels; platform design, combat systems, nuclear and conventional propulsion, MRO and lifecycle services.",
+      "note": null,
+      "category": null,
+      "row": 40,
+      "region": "Europe",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Europe",
+      "competitor": "Fassmer",
+      "workscope": "Design and construction of specialised vessels, patrol craft, research ships, ferries and lifeboats; composite/aluminium capability, deck equipment and after-sales service.",
+      "note": null,
+      "category": null,
+      "row": 41,
+      "region": "Europe",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Europe",
+      "competitor": "Thyssenkrupp Marine Systems",
+      "workscope": "Naval shipbuilding specialising in conventional submarines, frigates and corvettes; air-independent propulsion, platform and combat-system integration, modernisation and services.",
+      "note": null,
+      "category": null,
+      "row": 42,
+      "region": "Europe",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Europe",
+      "competitor": "Damen",
+      "workscope": "Standardised and custom commercial, offshore, dredging and naval vessels; modular shipbuilding, repair and conversion, equipment, digital services and global lifecycle support.",
+      "note": null,
+      "category": null,
+      "row": 43,
+      "region": "Europe",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Europe",
+      "competitor": "Lurssen",
+      "workscope": "Design and construction of naval and coast-guard vessels, patrol boats, yachts and specialised craft; systems integration, refit, repair and through-life support.",
+      "note": null,
+      "category": null,
+      "row": 44,
+      "region": "Europe",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Europe",
+      "competitor": "German Naval Yards",
+      "workscope": "Construction and integration of complex naval surface vessels, including frigates and corvettes; large-platform assembly, systems integration, repair and modernisation.",
+      "note": null,
+      "category": null,
+      "row": 45,
+      "region": "Europe",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Europe",
+      "competitor": "Navantia",
+      "workscope": "Naval ship design and construction for frigates, submarines, amphibious and support vessels; combat and platform systems, digital shipyard, repair, modernisation and lifecycle support.",
+      "note": null,
+      "category": null,
+      "row": 46,
+      "region": "Europe",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Europe",
+      "competitor": "Fincantieri",
+      "workscope": "Diversified shipbuilding for cruise, naval, offshore and specialised vessels; design and systems integration, marine equipment, repair/conversion and lifecycle support.",
+      "note": null,
+      "category": null,
+      "row": 47,
+      "region": "Europe",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Europe",
+      "competitor": "Babcock",
+      "workscope": "Naval engineering and through-life support; warship and submarine maintenance, refit and life extension, naval base operations, systems integration and construction of selected frigate programmes.",
+      "note": null,
+      "category": null,
+      "row": 48,
+      "region": "Europe",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Americas",
+      "competitor": "Austal",
+      "workscope": "Design and construction of high-speed aluminium and steel vessels, including ferries, patrol craft, littoral and support ships; modular construction, sustainment and autonomous systems.",
+      "note": null,
+      "category": null,
+      "row": 49,
+      "region": "Americas",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Americas",
+      "competitor": "MMHE",
+      "workscope": "Offshore and marine engineering; fabrication of offshore structures, vessel conversion, repair and refurbishment, LNG-related services, decommissioning and heavy engineering.",
+      "note": null,
+      "category": null,
+      "row": 50,
+      "region": "Americas",
+      "canonicalLob": null
+    },
+    {
+      "lobLabel": "Americas",
+      "competitor": "BAE",
+      "workscope": "Naval ship design, construction, combat-system integration and sustainment; surface combatants and submarines, ship repair, modernisation, munitions and mission systems.",
+      "note": null,
+      "category": null,
+      "row": 51,
+      "region": "Americas",
+      "canonicalLob": null
+    }
+  ],
+  "dropped": []
+}

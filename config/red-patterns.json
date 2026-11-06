@@ -9,7 +9,8 @@
       "packs": [
         "urs-tw",
         "urs",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "requiresTaiwan": true,
       "phrases": [
@@ -66,7 +67,8 @@
       "packs": [
         "urs-tw",
         "urs",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "requiresTaiwan": false,
       "phrases": [
@@ -126,7 +128,8 @@
       "packs": [
         "urs-tw",
         "urs",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "requiresRung": [
         "DIRECT"
@@ -148,7 +151,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -192,7 +196,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -226,7 +231,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -265,7 +271,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -308,7 +315,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -351,7 +359,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -394,7 +403,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -428,7 +438,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -465,7 +476,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -508,7 +520,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -551,7 +564,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -594,7 +608,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -637,7 +652,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -681,7 +697,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -723,7 +740,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -768,7 +786,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",
@@ -810,7 +829,8 @@
         "ste",
         "urs",
         "urs-tw",
-        "dsc"
+        "dsc",
+        "marine"
       ],
       "excludeInSentence": [
         "unlikely",

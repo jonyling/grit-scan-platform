@@ -14,9 +14,18 @@ differs per business area sits in the pack's pack.json under "build":
     managementFocusLayout    "requests" (URS) or "areas" (one row per focus area, DS&C)
     supplierUnit             the business area's own label in the supplier sheet's BA column, such as "DS&C"
     sharedSupplierSeparator  the separator in a BA value naming two business areas, such as "/" in "URS/DS&C"
-    entitySheet              the entity sheet, if not "2. Entity Address". Its header row is found by its NameOfEntity column.
+    entitySheet              the entity sheet, if not "2. Entity Address". Its header row is found by its NameOfEntity (or plain
+                             Entity Name) column. Plain headers (Entity Name, LOB Grouping, LOB, Country, Ownership Type) are
+                             read as the template's.
     assetSheet               a finance asset listing (entity, LOB grouping, country per asset), such as CA's
                              "2. Asset Listing (Finance)". It adds assetCountries to each entity, and adds an entity only it names.
+    themeLayout              "sections" (default: Key, Tier-2 and Emerging tables) or "classified" (Marine: one 'Risk Theme |
+                             Rationale | Classification' table, the tier read from the first tier the classification names)
+    themeClassificationRequire  with "classified": only rows whose classification contains this text become themes, such as
+                             "BA Annual Risk Refresh". The others are listed under draftThemes, not scanned.
+    classRows                {"customers": regex, "suppliers": regex}. A row whose cells match names a class of counterparty,
+                             such as "Marine equipment vendors", not an organisation. It stays in the register, marked
+                             counterpartyClass, and is not searched by name.
 
 Customer and supplier sheets are read by their header row. Beyond the name, a column the sheet has is copied: short name
 (match key), country, customer type, sector, primary LOB, workscope, contracting entity, customer group, category, goods or
@@ -36,7 +45,7 @@ from urllib.parse import urlparse
 from grit.ontology.lob_hierarchy import resolve_lob
 from grit.ontology.lob_keyword_loader import load_lob_keywords
 from grit.ontology.search_inputs import load_competitors, load_keyword_library, load_management_focus
-from grit.ontology.registry_loader import slugify
+from grit.ontology.registry_loader import entity_sheet_rows, slugify, supplier_header
 from grit.ontology.workbook import workbook_path as default_workbook
 from grit.ontology.xlsx_reader import read_worksheet
 from grit.settings import CONFIG_DIR, ROOT
@@ -63,12 +72,15 @@ def build_pack(
     hierarchy = json.loads(hierarchy_file.read_text(encoding="utf-8-sig")) if hierarchy_file.is_file() else None
     # A manifest without keywordSheets reads the URS keyword sheets. An empty list reads none.
     sheets = tuple(build["keywordSheets"]) if "keywordSheets" in build else None
+    classes = build.get("classRows") or {}
     documents = {
         "source_register": _sources(workbook, prefix, _source_layouts(build.get("sourceSheets"))),
         "exposure": _exposure(workbook, prefix, own_label=build.get("supplierUnit"), shared_separator=build.get("sharedSupplierSeparator"),
-                              entity_sheet=str(build.get("entitySheet") or ENTITY_SHEET), asset_sheet=build.get("assetSheet")),
+                              entity_sheet=str(build.get("entitySheet") or ENTITY_SHEET), asset_sheet=build.get("assetSheet"),
+                              customer_class=classes.get("customers"), supplier_class=classes.get("suppliers")),
         "lob_profiles": _lobs(workbook, hierarchy, prefix, entity_sheet=str(build.get("entitySheet") or ENTITY_SHEET)),
-        "themes": _themes(workbook, prefix, counts=build.get("themeCounts"), vocabulary=build.get("themeVocabulary"), action_plans=bool(build.get("themeActionPlans"))),
+        "themes": _themes(workbook, prefix, counts=build.get("themeCounts"), vocabulary=build.get("themeVocabulary"), action_plans=bool(build.get("themeActionPlans")),
+                          layout=str(build.get("themeLayout") or "sections"), require=build.get("themeClassificationRequire")),
         "baseline": _baseline(prefix, ba_name, list(manifest.get("children") or [])),
         "keyword_library": load_keyword_library(workbook, hierarchy, sheets=sheets, prefix=prefix),
         "competitors": load_competitors(workbook, hierarchy, prefix=prefix),
@@ -179,6 +191,7 @@ _COUNTERPARTY_FIELDS: tuple[tuple[str, str], ...] = (
     ("geopolitical", "concentrationFlag"), ("alsoacompetitor", "alsoCompetitor"),
     ("linkedriskcodes", "linkedRiskCodes"), ("basisconfidence", "confidence"), ("datastatus", "confidence"),
     ("publicreference", "reference"), ("spheraibu", "ibu"), ("ibu", "ibu"),
+    ("validationstatus", "confidence"), ("dependency", "dependency"), ("engagement", "engagement"),
 )
 _LIST_FIELDS = {"linkedRiskCodes"}
 _CUSTOMER_NAMES = ("customer", "existingcustomers", "harmonisedcustomername", "customername")
@@ -212,9 +225,10 @@ def _counterparty_details(values: list, columns: dict[int, str], name: str) -> d
     return {"aliases": aliases, **{key: value for key, value in details.items() if key != "shortName"}}
 
 
-def _customers(workbook: Path) -> list[dict]:
+def _customers(workbook: Path, class_pattern: str | None = None) -> list[dict]:
     """Customers from sheet 4. A sheet with a serial column (URS, DS&C) keeps numbered rows only. A sheet without one
-    (CA's harmonised customer list) keeps every named row. A name listed twice is kept once."""
+    (CA's harmonised customer list) keeps every named row. A name listed twice is kept once. A row matching class_pattern
+    names a class of customer and is marked counterpartyClass."""
     rows = read_worksheet(workbook, "4. Customers")
     header_index = name_col = None
     for index, row in enumerate(rows):
@@ -240,19 +254,19 @@ def _customers(workbook: Path) -> list[dict]:
         customer = {"customerId": f"CUSTOMER-{slugify(name)}", "customerName": name, **_counterparty_details(row, columns, name)}
         if _ANONYMISED.search(name):
             customer["anonymised"] = True
+        if _is_class_row(row, class_pattern):
+            customer["counterpartyClass"] = True
         customers.append(customer)
     return customers
 
 
+def _is_class_row(row: list, pattern: str | None) -> bool:
+    return bool(pattern) and re.search(str(pattern), " | ".join(_clean(cell) for cell in row), re.I) is not None
+
+
 def _entity_rows(workbook: Path, sheet: str) -> list[dict[str, object]]:
-    """The entity sheet's rows, keyed by header. The header row is the one with a NameOfEntity column, so a note line
-    above it, such as 'last updated on 16 Oct', is skipped."""
-    worksheet = read_worksheet(workbook, sheet)
-    header_index = next((index for index, row in enumerate(worksheet) if any(_key(cell) == "nameofentity" for cell in row)), None)
-    if header_index is None:
-        return _sheet_dicts(workbook, sheet)
-    headers = [_key(value) for value in worksheet[header_index]]
-    return [dict(zip(headers, values, strict=False)) for values in worksheet[header_index + 1:] if any(_clean(value) for value in values)]
+    """The entity sheet's rows, keyed by template header (see entity_sheet_rows)."""
+    return entity_sheet_rows(workbook, sheet)
 
 
 def _assets(workbook: Path, sheet: str) -> dict[str, dict[str, object]]:
@@ -272,7 +286,7 @@ def _assets(workbook: Path, sheet: str) -> dict[str, dict[str, object]]:
 
 def _exposure(
     workbook: Path, prefix: str = "URS", *, own_label: str | None = None, shared_separator: str | None = None,
-    entity_sheet: str = ENTITY_SHEET, asset_sheet: str | None = None,
+    entity_sheet: str = ENTITY_SHEET, asset_sheet: str | None = None, customer_class: str | None = None, supplier_class: str | None = None,
 ) -> dict:
     sheet_rows = _entity_rows(workbook, entity_sheet)
     lob_names = {keyword.lob for keyword in load_lob_keywords(workbook)}
@@ -320,27 +334,23 @@ def _exposure(
                 asset_only += 1
             row["assetCountries"] = list(asset["countries"])
             row["assetCount"] = asset["assets"]
-    customers = _customers(workbook)
+    customers = _customers(workbook, customer_class)
     suppliers = []
     seen.clear()
     supplier_rows = read_worksheet(workbook, "5. Suppliers")
-    # The name is column A and the business area column B. Column A's header is "Name" in the URS sheet and a stray
-    # number in the DS&C sheet, so the header row is found by column B.
-    header_index = next(
-        (index for index, row in enumerate(supplier_rows) if _key(row[1] if len(row) > 1 else None) == "ba"),
-        None,
-    )
-    if header_index is None:
-        raise ValueError("Suppliers sheet is missing its Name/BA header row.")
-    supplier_columns = {index: field for index, field in _counterparty_columns(supplier_rows[header_index]).items() if index > 1}
+    header_index, has_unit = supplier_header(supplier_rows)
+    first_detail = 2 if has_unit else 1
+    supplier_columns = {index: field for index, field in _counterparty_columns(supplier_rows[header_index]).items() if index >= first_detail}
     shared_count = 0
     for values in supplier_rows[header_index + 1 :]:
         name = _clean(values[0] if values else None)
         if not name or name in seen:
             continue
         seen.add(name)
-        unit = _clean(values[1] if len(values) > 1 else None) or None
+        unit = (_clean(values[1] if len(values) > 1 else None) or None) if has_unit else None
         supplier = {"supplierId": f"SUPPLIER-{slugify(name)}", "supplierName": name, "businessArea": unit, **_counterparty_details(values, supplier_columns, name)}
+        if _is_class_row(values, supplier_class):
+            supplier["counterpartyClass"] = True
         parts = [part.strip() for part in unit.split(shared_separator)] if unit and shared_separator and own_label else []
         if own_label in parts and len(parts) > 1:
             supplier["businessArea"] = own_label
@@ -387,6 +397,17 @@ def _exposure(
                 )
             }
             if any(row.get("anonymised") for row in customers)
+            else {}
+        ),
+        **(
+            {
+                "counterpartyClassNote": (
+                    f"{sum(1 for row in [*customers, *suppliers] if row.get('counterpartyClass'))} customer and supplier rows name a "
+                    "class of counterparty, such as 'Marine equipment vendors', not an organisation. They stay in the register "
+                    "and are not searched by name."
+                )
+            }
+            if any(row.get("counterpartyClass") for row in [*customers, *suppliers])
             else {}
         ),
         **(
@@ -517,23 +538,31 @@ _THEME_COUNTS = {"KEY": 6, "TIER_2": 5, "EMERGING": 3}
 
 
 def _themes(
-    workbook: Path, prefix: str = "URS", *, counts: dict[str, int] | None = None, vocabulary: dict[str, list[str]] | None = None, action_plans: bool = False
+    workbook: Path, prefix: str = "URS", *, counts: dict[str, int] | None = None, vocabulary: dict[str, list[str]] | None = None, action_plans: bool = False,
+    layout: str = "sections", require: str | None = None,
 ) -> dict:
     """counts is the number of rows each sheet 7 section must have. A different count fails loudly, so a section that
     lost or gained a row is never read silently. action_plans keeps a Key Risk's fifth column, Action Plans, which the
-    Proposer builds on (spec 36). It is opt-in, so a pack's register changes only when it is rebuilt with the flag."""
+    Proposer builds on (spec 36). It is opt-in, so a pack's register changes only when it is rebuilt with the flag.
+    layout "classified" reads one table whose third column states each theme's tier (see _classified)."""
     rows = read_worksheet(workbook, "7. Annual Risks")
-    expected = {**_THEME_COUNTS, **(counts or {})}
-    sections = (
-        ("KEY", "ref", "keyrisk", expected["KEY"], "keyrisks"),
-        ("TIER_2", "sn", "tier2risk", expected["TIER_2"], "tier2risks"),
-        ("EMERGING", "no", "emergingrisk", expected["EMERGING"], "emergingrisks"),
-    )
+    drafts: list[dict] = []
+    if layout == "classified":
+        grouped, drafts = _classified(rows, require)
+        expected = dict(counts or {})
+        found_sections = [(tier, grouped[tier], expected.get(tier)) for tier in ("KEY", "TIER_2", "EMERGING")]
+    else:
+        expected = {**_THEME_COUNTS, **(counts or {})}
+        sections = (
+            ("KEY", "ref", "keyrisk", expected["KEY"], "keyrisks"),
+            ("TIER_2", "sn", "tier2risk", expected["TIER_2"], "tier2risks"),
+            ("EMERGING", "no", "emergingrisk", expected["EMERGING"], "emergingrisks"),
+        )
+        found_sections = [(tier, _section(rows, ref_key, name_key) or _headed_section(rows, heading), count) for tier, ref_key, name_key, count, heading in sections]
     themes = []
-    for tier, ref_key, name_key, expected, heading in sections:
-        found = _section(rows, ref_key, name_key) or _headed_section(rows, heading)
-        if len(found) != expected:
-            raise ValueError(f"Sheet 7 {tier} section has {len(found)} rows; expected {expected}.")
+    for tier, found, expected_count in found_sections:
+        if expected_count is not None and len(found) != expected_count:
+            raise ValueError(f"Sheet 7 {tier} section has {len(found)} rows; expected {expected_count}.")
         for ref, name, detail, extra, plans in found:
             theme_id = f"{prefix}-{tier}-{int(ref):02d}"
             short = name.split("(", 1)[0].strip()
@@ -564,8 +593,47 @@ def _themes(
             "prose. Country- or condition-specific terms -- the Taiwan Layer-1 baseline -- "
             "are still not copied. Driver text is stored and is not used as a keyword."
         ),
+        **({"draftThemes": drafts, "draftNote": f"Rows whose classification does not name '{require}' are drafts. They are listed, not scanned."} if drafts else {}),
         "themes": themes,
     }
+
+
+# The tier a classification names first wins: "Key/Tier 2" is KEY, "Emerging/Tier 2" is EMERGING.
+_TIER_WORDS = re.compile(r"\b(key|tier[\s-]*2|emerging)\b", re.I)
+
+
+def _classified(rows: list[list], require: str | None) -> tuple[dict[str, list[tuple[str, str, str, str, str]]], list[dict]]:
+    """Sheet 7 as one table, 'Risk Theme | Exposure Rationale | Proposed Classification' (Marine). Each row's tier is the
+    first tier its classification names. With require, a row whose classification lacks that text is a draft."""
+    header = next(
+        (index for index, row in enumerate(rows) if len(row) > 2 and _key(row[0]).startswith("risk") and "classification" in _key(row[2])),
+        None,
+    )
+    if header is None:
+        raise ValueError("Sheet 7 is missing its 'Risk Theme | Rationale | Classification' header.")
+    grouped: dict[str, list[tuple[str, str, str, str, str]]] = {"KEY": [], "TIER_2": [], "EMERGING": []}
+    drafts: list[dict] = []
+    ordered: list[tuple[str, str, str, str]] = []
+    for row in rows[header + 1:]:
+        name, detail, classification = (_clean(row[index] if len(row) > index else None) for index in (0, 1, 2))
+        if not name:
+            continue
+        word = _TIER_WORDS.search(classification)
+        if word is None:
+            drafts.append({"themeName": name, "sheetDetail": detail or None, "classification": classification or None, "reason": "NO_TIER_STATED"})
+            continue
+        if require and require.casefold() not in classification.casefold():
+            drafts.append({"themeName": name, "sheetDetail": detail or None, "classification": classification, "reason": "NOT_IN_GOVERNED_REGISTER"})
+            continue
+        tier = {"key": "KEY", "emerging": "EMERGING"}.get(word.group(1).casefold(), "TIER_2")
+        ordered.append((tier, name, detail, classification))
+    number = 0
+    for tier in grouped:
+        for row_tier, name, detail, classification in ordered:
+            if row_tier == tier:
+                number += 1
+                grouped[tier].append((str(number), name, detail, classification, ""))
+    return grouped, drafts
 
 
 def _baseline(prefix: str = "URS", ba_name: str = "Urban Solutions", children: list[str] | None = None) -> dict:

@@ -131,11 +131,11 @@ SHIFTS = [
 SCAN = {
     "STE-GC-01": (["Saudi PIF investment defence technology 2026", "UAE sovereign fund AI infrastructure investment", "Qatar infrastructure investment programme 2026",
                    "Saudi Vision 2030 localisation defence contract"],
-                  ["Public Investment Fund", "Vision 2030", "PIF invest", "Mubadala", "Qatar Investment Authority", "Saudi localisation"], ["urs", "dsc"]),
+                  ["Public Investment Fund", "Vision 2030", "PIF invest", "Mubadala", "Qatar Investment Authority", "Saudi localisation"], ["urs", "dsc", "marine"]),
     "STE-GC-02": (["Middle East security escalation Gulf", "Houthi attack Saudi Arabia", "Gulf air defence counter-drone", "Red Sea shipping attack"],
-                  ["Houthi", "missile attack", "drone attack", "Red Sea", "Gulf security", "air defence"], ["dsc", "urs"]),
+                  ["Houthi", "missile attack", "drone attack", "Red Sea", "Gulf security", "air defence"], ["dsc", "urs", "marine"]),
     "STE-GC-03": (["defence budget increase 2027", "NATO defence spending target", "Asia defence budget rise", "Pentagon budget drones counter-UAS"],
-                  ["defence budget", "defense budget", "military spending", "defence spending", "defense spending"], ["dsc"]),
+                  ["defence budget", "defense budget", "military spending", "defence spending", "defense spending"], ["dsc", "marine"]),
     "STE-GC-04": (["Ukraine reconstruction contracts", "Ukraine recovery conference financing", "World Bank Ukraine reconstruction", "Ukraine rail energy rebuild tender"],
                   ["Ukraine reconstruction", "Ukraine recovery", "rebuild Ukraine", "reconstruction of Ukraine"], ["urs", "dsc"]),
     "STE-GC-05": (["China Taiwan military pressure", "PLA drills Taiwan", "Taiwan Strait blockade", "US arms sale Taiwan"],
@@ -151,13 +151,13 @@ SCAN = {
     "STE-GC-10": (["quantum computing milestone", "post-quantum cryptography migration deadline", "NIST post-quantum standard", "quantum computer error correction breakthrough"],
                   ["quantum computer", "quantum computing", "post-quantum", "PQC", "quantum-safe"], ["dsc"]),
     "STE-GC-11": (["BIS Entity List additions", "US export controls AI chips", "OFAC sanctions designations technology", "China export restrictions critical minerals"],
-                  ["export controls", "Entity List", "export restrictions", "sanctions", "export ban"], ["dsc", "urs"]),
+                  ["export controls", "Entity List", "export restrictions", "sanctions", "export ban"], ["dsc", "urs", "marine"]),
     "STE-GC-12": (["Lockheed Martin acquisition", "Thales contract Asia", "Saab Elbit defence order", "Hanwha Aerospace export deal"],
-                  ["Lockheed Martin", "Thales", "Saab", "Elbit", "Hanwha", "Leidos", "Rheinmetall"], ["dsc", "urs"]),
+                  ["Lockheed Martin", "Thales", "Saab", "Elbit", "Hanwha", "Leidos", "Rheinmetall"], ["dsc", "urs", "marine"]),
     # A Group report's completeness gate needs macro and financial coverage (URS methodology, section 8).
     "STE-GC-13": (["Federal Reserve FOMC interest rate decision", "MAS monetary policy statement Singapore dollar", "US Treasury yields outlook",
                    "Asia inflation interest rates outlook"],
-                  ["Federal Reserve", "interest rate", "Singapore dollar", "Treasury yields", "inflation rate", "monetary policy"], ["urs", "dsc"]),
+                  ["Federal Reserve", "interest rate", "Singapore dollar", "Treasury yields", "inflation rate", "monetary policy"], ["urs", "dsc", "marine"]),
 }
 
 SOURCES = [

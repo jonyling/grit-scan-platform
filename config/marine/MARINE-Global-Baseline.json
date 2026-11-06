@@ -1,0 +1,12 @@
+{
+  "baselineId": "MARINE-LAYER1-ABSENT",
+  "readerId": "MARINE",
+  "readerName": "Marine",
+  "revisionPrefix": "MARINE",
+  "deltaTitle": "MARINE WEEKLY STRATEGIC DELTA",
+  "effectiveDate": null,
+  "conditions": [],
+  "absence": "No governed Layer 1 condition set exists for Marine. Its weekly brief stands on the business area's risk themes.",
+  "posture": "Marine has no governed Layer 1 condition set yet. Do not treat an entity pack's conditions as the Marine picture. Entity-level action stays evidence-led.",
+  "idleLine": "No material change was recorded. Marine has no governed Layer 1 condition set to revise."
+}

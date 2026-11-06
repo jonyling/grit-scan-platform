@@ -175,9 +175,13 @@ def parse_competitor_rows(rows: list[list[str]]) -> dict[str, Any]:
     seen: set[tuple[str, str]] = set()
     lob = ""
     category: str | None = None
+    by_region = False
     for number, (label, name, workscope, note) in enumerate(rows, start=1):
         if name.casefold() == "competitor" and "lob" in label.casefold():
             continue  # the header row: "LOB" or "Line of Business (LOB)"
+        if name.casefold().startswith("competitor") and label.casefold() == "region":
+            by_region = True  # Marine: 'Region | Competitors/Peers | Workscope'. The label is a region, not a LOB.
+            continue
         if label:
             lob = label
             category = None
@@ -198,7 +202,8 @@ def parse_competitor_rows(rows: list[list[str]]) -> dict[str, Any]:
             continue
         seen.add((lob, name.casefold()))
         competitors.append(
-            {"lobLabel": lob, "competitor": name, "workscope": workscope or None, "note": note or None, "category": category, "row": number}
+            {"lobLabel": lob, "competitor": name, "workscope": workscope or None, "note": note or None, "category": category, "row": number,
+             **({"region": lob} if by_region else {})}
         )
     return {"competitors": competitors, "dropped": dropped}
 

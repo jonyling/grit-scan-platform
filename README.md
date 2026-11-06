@@ -358,7 +358,7 @@ Use the project virtual environment. Do not install packages into system Python,
 
 The `urs` pack is built from the confidential URS Entity Info workbook. Git ignores `secrets/`, `output/`, `.env`, and every `.xlsx` file.
 
-1. Copy the workbook to `secrets/`. A file whose name carries the business area's tag, such as `02_URS_Entity_Info.xlsx`, `04_DSC_Entity_Info.xlsx` or `01_CA_Entity_Info.xlsx`, is found when the manifest's own file name is missing; the newest one wins. To use another path, set `GRIT_WORKBOOK` for URS, or the business area's own variable, such as `GRIT_WORKBOOK_DSC`.
+1. Copy the workbook to `secrets/`. A file whose name carries the business area's tag, such as `02_URS_Entity_Info.xlsx`, `04_DSC_Entity_Info.xlsx`, `01_CA_Entity_Info.xlsx` or `06_Marine_Entity_Info.xlsx`, is found when the manifest's own file name is missing; the newest one wins. To use another path, set `GRIT_WORKBOOK` for URS, or the business area's own variable, such as `GRIT_WORKBOOK_DSC`.
 2. Copy `.env.example` to `.env` and fill in the values you need:
    - Gemini on Vertex: `GOOGLE_CLOUD_PROJECT` and `GOOGLE_APPLICATION_CREDENTIALS` for a service-account file, or `GOOGLE_API_KEY` for express mode. `GEMINI_MODEL` names the model.
    - Search: `BRAVE_SEARCH_API_KEY`, and optionally `CURRENTS_API_KEY`. `BRAVE_MONTHLY_LIMIT` sets the local monthly guard (default 2000).
@@ -376,7 +376,7 @@ Do not commit `.env`, `secrets/`, or a service-account file, and do not paste cr
 
 Run these commands from the repository root. `DATE` is the run date, `YYYY-MM-DD`; it defaults to today. Without `--pack`, every pack with a scan plan runs, entity packs first. To run one pack, add `--pack urs` or `--pack urs-tw`.
 
-> **Warning:** The scan spends Brave queries. A run costs about 147 queries for DS&C, 140 for URS, 94 for Commercial Aerospace, 66 for URS Taiwan and 54 for the Group pack (29 October 2026, after the 29 October workbooks added customers and suppliers), and a run date already answered costs nothing more. Brave's free credit covers about 1,000 queries a month; beyond that Brave refuses with HTTP 402, and the scan falls back to Currents for at most 40 queries a run. The local counter in `output/brave-usage.json` stops at `BRAVE_MONTHLY_LIMIT` (1,000) and ignores queries sent outside this repository. To rewrite a brief, rerun `grit agents` and `grit report`, which spend no Brave queries, not `grit scan` or `grit weekly` with a new date. `--sweep N` adds up to N queries from the 12-week business-area digest plan.
+> **Warning:** The scan spends Brave queries. A run costs about 147 queries for DS&C, 140 for URS, 94 for Commercial Aerospace, 66 for URS Taiwan and 54 for the Group pack (29 October 2026, after the 29 October workbooks added customers and suppliers), and 71 for Marine (6 November 2026), and a run date already answered costs nothing more. Brave's free credit covers about 1,000 queries a month; beyond that Brave refuses with HTTP 402, and the scan falls back to Currents for at most 40 queries a run. The local counter in `output/brave-usage.json` stops at `BRAVE_MONTHLY_LIMIT` (1,000) and ignores queries sent outside this repository. To rewrite a brief, rerun `grit agents` and `grit report`, which spend no Brave queries, not `grit scan` or `grit weekly` with a new date. `--sweep N` adds up to N queries from the 12-week business-area digest plan.
 
 1. Print the queries. This sends nothing.
 
@@ -542,7 +542,7 @@ Profiles are JSON files in `config/profiles/`. A profile changes what a reader s
 
 | Profile | Role | Aperture | Review role | Brief |
 |---|---|---|---|---|
-| `wilson` | Group Head, Risk & Assurance | Wide | Reviewer | URS and URS Taiwan. The Taiwan brief matches the reference. |
+| `wilson` | Group Head, Risk & Assurance | Wide | Reviewer | URS, URS Taiwan, DS&C, Commercial Aerospace, Marine, and the Group radar. The Taiwan brief matches the reference. |
 | `hwaimay` | R&A business partner, URS | Material | Reviewer | URS and URS Taiwan, with priority findings and other signals. |
 | `gareth` | Head, URS | Material | BA head | Short URS and URS Taiwan briefs. Approves for AIRIS. |
 | `ksyong` | Head, URS Taiwan | Material | Reader | URS Taiwan only. |
@@ -576,6 +576,7 @@ The proposal and a review file, with each change's quote and a diff, go to `secr
 |---|---|
 | `config/urs/` | The Urban Solutions pack, built from the workbook: 41 entities, customers, suppliers, 201 competitors, the LOB hierarchy and keyword library, 14 STE themes, 130 sources, and management focus. `URS-Scan-Plan.json` holds the weekly theme queries, the sheet 10 management requests with their P1 keywords, the name rotation, and the brief's section titles. `URS-Relationships.json` holds BA-approved answers to the graph's gaps. |
 | `config/urs-tw/` | The Taiwan reader pack: ten standing conditions, named projects, customers, suppliers and sites, 26 rated sources, the scan plan (`URS-TW-Scan-Plan.json`), and order-book anchors (`URS-TW-Order-Book.json`). |
+| `config/marine/` | The Marine pack, built from `06_Marine_Entity_Info.xlsx` (6 November 2026): 11 entities, 27 customers and 14 suppliers (8 rows name a class of counterparty and are not searched), 50 competitors by region, 16 governed themes from the BA Annual Risk Refresh (the 7 research-draft rows are listed, not scanned), 21 management focus items, and 124 sources. `MARINE-Scan-Plan.json` and the LOB hierarchy are PROPOSED until the Marine R&A business partner reviews them. |
 | `config/risk/` | The Group risk universe (101 risks and their keywords), and `Risk-Cascade.json`, which orders entity, BA, and Group registers by weight and crosswalks BA themes to Group codes. Every crosswalk row is proposed until R&A approves it. |
 | `config/red-patterns.json` | The small RED patterns, which raise RED candidates, and the RED triggers that R&A confirms against (URS methodology, section 14). |
 | `config/source-ratings.json` | Shared outlet credibility ratings (HIGH, MEDIUM or LOW) for every pack, and the contested-outlet list, owned by R&A. Seeded on 30 October 2026 with the 60 outlets already rated in the URS Taiwan and Group registers, all PROPOSED. |
