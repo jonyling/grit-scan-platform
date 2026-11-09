@@ -2,6 +2,7 @@
 msal
 requests
 google-genai
+deepseek-harness-sdk
 streamlit
 pandas
 python-docx

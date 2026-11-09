@@ -149,6 +149,10 @@ def _group_model(system: str, payload: dict) -> dict:
             anchor = area["countries"][0] if area.get("countries") else area["business_areas"][0]
             return {"movement": "ESCALATING", "summary": "A missile attack struck an industrial area. [S1]", "source_ids": ["S1"],
                     "quotes": [{"source_id": "S1", "quote": "A missile attack struck an industrial area"}], "change_from_prior": "First assessment.",
+                    "sequence": [
+                        {"date": sources["S1"].get("date", "27 Oct"), "text": "A missile attack struck an industrial area.", "source_id": "S1"},
+                        {"date": sources["S1"].get("date", "27 Oct"), "text": f"The strike reached {anchor}.", "source_id": "S1"},
+                    ],
                     "implication": f"Attacks of this kind could disrupt STE staff and sites in {anchor}. [S1]", "opportunity": None,
                     "counter_indicator": "A durable ceasefire between the parties would show the risk is easing."}
         return {"movement": "NO_MATERIAL_CHANGE", "summary": "No new development was found this week in the checked sources.", "source_ids": [], "quotes": []}
@@ -340,12 +344,21 @@ def test_a_country_alone_or_outside_a_group_pack_is_not_on_the_footprint_rung(tm
 def test_group_extras_are_checked_one_by_one() -> None:
     from grit.agents.reader import check_extras
 
-    sources = {"S1": {"title": "Missile attack hits Riyadh", "text": "A missile attack struck an industrial area of Riyadh in Saudi Arabia."}}
     anchors = ["Saudi Arabia", "Urban Solutions"]
-    good = {"implication": "Attacks could disrupt STE sites in Saudi Arabia. [S1]", "opportunity": "Demand for air defence could open work for Urban Solutions. [S1]",
-            "counter_indicator": "A durable ceasefire would show the risk is easing."}
+    sources = {"S1": {"title": "Missile attack hits Riyadh", "text": "A missile attack struck an industrial area of Riyadh in Saudi Arabia on 27 Oct.",
+                      "date": "27 Oct 2026"}}
+    good = {
+        "sequence": [
+            {"date": "27 Oct", "text": "A missile attack struck an industrial area of Riyadh.", "source_id": "S1"},
+            {"date": "27 Oct", "text": "The strike reached Saudi Arabia.", "source_id": "S1"},
+        ],
+        "implication": "Attacks could disrupt STE sites in Saudi Arabia. [S1]",
+        "opportunity": "Demand for air defence could open work for Urban Solutions. [S1]",
+        "counter_indicator": "A durable ceasefire would show the risk is easing.",
+    }
     accepted, failing = check_extras(good, ["S1"], sources, anchors, True)
-    assert failing == {} and set(accepted) == {"implication", "opportunity", "counter_indicator"}
+    assert failing == {} and "sequence" in accepted and "implication" in accepted and "opportunity" in accepted
+    assert accepted["implication"].startswith("27 Oct:")
     accepted, failing = check_extras({**good, "opportunity": None}, ["S1"], sources, anchors, True)
     assert accepted["opportunity"] is None and not failing, "an opportunity is optional"
     accepted, failing = check_extras({**good, "opportunity": "It will open work somewhere. [S1]", "counter_indicator": ""}, ["S1"], sources, anchors, True)
@@ -355,7 +368,7 @@ def test_group_extras_are_checked_one_by_one() -> None:
     accepted, failing = check_extras({**good, "counter_indicator": "A fall of 40 percent in attacks."}, ["S1"], sources, anchors, True)
     assert "UNGROUNDED_NUMBER" in " ".join(failing["counter_indicator"])
     accepted, failing = check_extras(good, ["S1"], sources, anchors, False)
-    assert set(accepted) == {"implication"}, "a business-area key risk has no opportunity or counter-indicator"
+    assert set(accepted) == {"sequence", "implication"}, "a business-area key risk has no opportunity or counter-indicator"
 
 
 def test_each_baseline_and_scenario_check_names_its_violation() -> None:

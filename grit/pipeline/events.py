@@ -306,9 +306,9 @@ def _replace(events: list[dict[str, Any]], groups: Mapping[str, Sequence[dict[st
 
 
 def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], places: Mapping[str, re.Pattern[str]] | None = None) -> list[dict[str, Any]]:
-    """In a reasoned run, elevated events are one story (methodology: cluster the same incident once) when, within a week,
-    their members' reports share two or more distinctive headline words, or name the same jurisdiction where the business
-    has entities and share a risk. The merged event keeps the best-sourced lead, the top score and its most common risks."""
+    """In a reasoned run, elevated events are one story when, within a week, their members' reports share two or more
+    distinctive headline words. A shared country and risk alone do not join stories (places is unused). The merged
+    event keeps the best-sourced lead, the top score and its most common risks."""
     from grit.core.headlines import distinctive_terms
 
     merging = [event for event in events if event["elevated"] and event["members"] and event.get("score") is not None]
@@ -316,21 +316,22 @@ def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], place
         return events
     titles = {event["event_id"]: " ".join(str(row.get("title") or "") for row in event["members"]) for event in merging}
     terms = {key: distinctive_terms(text) for key, text in titles.items()}
-    # A jurisdiction counts when a headline names it. A page whose headline is too poor to compare (fewer than two distinctive
-    # words) is read by its opening instead, so it still joins its story; body text never joins two well-titled stories.
+    # A page whose headline is too poor to compare (fewer than two distinctive words) is read by its opening instead, so it
+    # still joins its story; body text never joins two well-titled stories.
     def place_text(row: Mapping[str, Any]) -> str:
         title = str(row.get("title") or "")
         return title if len(distinctive_terms(title)) >= STORY_TERMS else f"{title} {str(row.get('text') or '')[:300]}"
 
-    leads = {event["event_id"]: " ".join(place_text(row) for row in event["members"]) for event in merging}
-    named = {key: {country for country, pattern in (places or {}).items() if pattern.search(text)} for key, text in leads.items()}
+    for event in merging:
+        if len(terms[event["event_id"]]) < STORY_TERMS:
+            terms[event["event_id"]] = distinctive_terms(" ".join(place_text(row) for row in event["members"]))
     # Each event joins the highest-scored story whose own reports it matches, never through a chain of weak matches.
     seeds: list[dict[str, Any]] = []
     groups: dict[str, list[dict[str, Any]]] = {}
     for event in sorted(merging, key=lambda item: (-(item["score"] or 0), item["event_id"])):
-        home = next((seed for seed in seeds if _near(seed, event) and (
-            len(terms[seed["event_id"]] & terms[event["event_id"]]) >= STORY_TERMS
-            or (named[seed["event_id"]] & named[event["event_id"]] and set(seed["risks"]) & set(event["risks"])))), None)
+        # A shared country and risk is not enough: a politics page and a weather page for Taiwan must stay separate.
+        home = next((seed for seed in seeds if _near(seed, event)
+                     and len(terms[seed["event_id"]] & terms[event["event_id"]]) >= STORY_TERMS), None)
         if home is None:
             seeds.append(event)
             groups[event["event_id"]] = [event]
@@ -422,9 +423,14 @@ def draft_rows(pool: Pool, run: Any, *, client: Any, model: str, log: Callable[[
         counts[result["status"]] = counts.get(result["status"], 0) + 1
         if result["status"] == "VALIDATED":
             swap = lambda text: re.sub(r"\[(S\d+(?:\s*,\s*S\d+)*)\]", lambda m: "[" + ", ".join(back[ref.strip()] for ref in m.group(1).split(",") if ref.strip() in back) + "]", text)  # noqa: E731
+            sequence = [
+                {"date": step["date"], "text": swap(step["text"]), "source_id": back.get(step["source_id"], step["source_id"])}
+                for step in result.get("sequence") or [] if isinstance(step, Mapping)
+            ]
             saved[event["event_id"]] = {
                 "item": result["item"], "summary": swap(result["summary"]), "implications": swap(result["implications"]),
-                "response": result["response"], "source_ids": [back[ref] for ref in result["source_ids"] if ref in back],
+                "sequence": sequence, "response": result["response"],
+                "source_ids": [back[ref] for ref in result["source_ids"] if ref in back],
             }
         else:
             pool.add_qa(run.run_id, item=f"Event: {event['lead'].get('title')}", prior=None,

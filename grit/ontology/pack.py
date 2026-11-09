@@ -1,9 +1,8 @@
-"""Reader ontology packs. Registers are loaded. They are not invented.
+"""Reader ontology packs.
 
-A pack is a folder under config/ with a pack.json manifest: its level (GROUP, BA, or ENTITY), its parent and children,
-and the register files it loads. ``urs`` is Urban Solutions, a business-area pack built from the URS Entity Info workbook.
-``urs-tw`` is URS Taiwan, an entity pack with ten standing conditions and named projects. Taiwan is layer 5, not the whole
-ontology.
+A pack is a folder under ``config/`` with a ``pack.json`` manifest. The manifest names the level (``GROUP``, ``BA``, or ``ENTITY``), the parent and children, and the register files. The loader reads those files. Every row comes from a register file.
+
+Current packs: ``urs``, ``urs-tw``, ``dsc``, ``ca``, ``marine``, and ``ste``. Add another business area as data, using the guide in ``docs/add-a-business-area.md``.
 """
 
 from __future__ import annotations

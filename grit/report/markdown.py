@@ -113,10 +113,47 @@ def _v2_tail(brief: Mapping[str, Any], number: int) -> list[str]:
     corrections = brief.get("corrections") or []
     lines += ["### Corrections ledger", ""]
     lines += [f"*{CORRECTIONS_NOTE}*", "", *_table(list(CORRECTIONS_HEADERS), [correction_cells(row) for row in corrections]), ""] if corrections else [NO_CORRECTIONS, ""]
+    # Source register before the appendix, matching the Word brief: SIG and research-coverage QA follow it.
+    register = _source_register_lines(brief)
+    if register:
+        lines += [f"## {number + 1}. Source register", "", *register, ""]
+    return lines
+
+
+def _source_register_lines(brief: Mapping[str, Any]) -> list[str]:
+    """Cited membership rows as a markdown source register, so the appendix sits after it."""
+    seen: dict[str, Mapping[str, Any]] = {}
+    for table in ("escalating", "changes", "priorities", "look_ahead", "jurisdictions"):
+        for row in (brief.get("v2") or {}).get(table) or []:
+            for ref in row.get("sources") or []:
+                key = str(ref.get("signal_id") or ref.get("url") or ref.get("title") or "")
+                if key and key not in seen:
+                    seen[key] = ref
+    for line in (brief.get("v2") or {}).get("coverage") or []:
+        for cell in (line.get("cells") or {}).values():
+            for ref in cell.get("sources") or []:
+                key = str(ref.get("signal_id") or ref.get("url") or ref.get("title") or "")
+                if key and key not in seen:
+                    seen[key] = ref
+    if not seen:
+        return []
+    tiers = (brief.get("v2") or {}).get("tiers") or {}
+    lines: list[str] = []
+    for index, ref in enumerate(seen.values(), start=1):
+        tier = tiers.get(str(ref.get("signal_id")), "T4")
+        outlet = ref.get("outlet") or "source"
+        title = ref.get("title") or ""
+        when = ref.get("when") or ref.get("date") or "date not stated"
+        url = ref.get("url")
+        label = f"[{index}] {outlet}, {title}, {when} ({tier})"
+        lines.append(f"- {label}" + (f" <{url}>" if url else ""))
     return lines
 
 
 def render_markdown(brief: Mapping[str, Any]) -> str:
+    from grit.report.script import latin_copy
+
+    brief = latin_copy(brief)
     meta = brief["meta"]
     bottom = brief["bottom_line"]
     lines = [

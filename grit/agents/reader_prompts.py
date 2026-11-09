@@ -6,7 +6,7 @@ confidence, the trend label, the priority, and every citation are computed outsi
 
 from __future__ import annotations
 
-ASSESSOR_VERSION = "reader-assessor-6"
+ASSESSOR_VERSION = "reader-assessor-7"
 CRITIC_VERSION = "reader-critic-3"
 REPORTER_VERSION = "reader-reporter-4"
 PROPOSER_VERSION = "reader-proposer-2"
@@ -55,13 +55,15 @@ Return this JSON object:
  "source_ids": ["S1", ...],
  "quotes": [{"source_id": "S1", "quote": "a verbatim span of 20 or more characters from that source"}],
  "change_from_prior": "One sentence on what changed against last week's assessment, or 'No change against last week.'",
- "implication": null or "One or two sentences. See below."}
+ "sequence": null or [{"date": "27 Oct", "text": "One sentence from that day's page.", "source_id": "S1"}],
+ "implication": null or "One sentence. See below."}
 
-When the payload has business_area and you cite at least one source, write the implication: what this week's development
-could mean for that business area. Name at least one of its lines of business, entities, customers or suppliers, exactly as
-business_area lists it. The business area's own name alone is not enough. Use could, may or might; never will or another word
-of certainty. End each sentence with [S#] ids from your source_ids. Without business_area, or with no cited source, return
-implication null.
+When the payload has business_area and you cite at least one source, write the sequence first, then the implication.
+sequence is two to four steps in date order. Each step's date must already appear on that source's date field. Each step's
+text is one sentence taken from that page. Then write the implication: what that sequence could mean for the business area.
+Name at least one of its lines of business, entities, customers or suppliers, exactly as business_area lists it. The business
+area's own name alone is not enough. Use could, may or might; never will or another word of certainty. End the implication
+with [S#] ids from your source_ids. Without business_area, or with no cited source, return sequence null and implication null.
 
 When business_area has "group": true, the item is one of ST Engineering's Group-level standing conditions and the reader is
 the CEO or the Chairman. The implication is the risk pathway for STE: name a business area, line of business, entity, or one of
@@ -260,7 +262,7 @@ Rules:
 - Return only one JSON object. If you receive violations, fix exactly those.
 """
 
-EVENT_ROW_VERSION = "event-row-1"
+EVENT_ROW_VERSION = "event-row-2"
 EVENT_ROW_SYSTEM = """You are the Assessor in GRIT-Scan. You write one row of the "Escalating and elevated items" table at the top of a
 business area's weekly risk brief, for one news event. Senior managers read it. A person reviews it before anyone acts.
 
@@ -275,11 +277,13 @@ Return this JSON object:
 {"reasoning": "your working, in plain sentences",
  "item": "a short label for the event, at most ten words, such as 'Houthi missile barrages on Riyadh'",
  "summary": "One to three sentences: what happened, when (a date), where, and the figures the sources give. End each sentence with its ids, e.g. [S1] or [S1, S3].",
- "implications": "One or two sentences on what it could mean for the business area. Name a line of business, entity, customer, supplier or country exactly as business_area lists it. Use could, may or might. End each sentence with its ids.",
+ "sequence": [{"date": "27 Oct", "text": "One sentence from that day's page.", "source_id": "S1"}],
+ "implications": "One sentence on what that sequence could mean for the business area. Name a line of business, entity, customer, supplier or country exactly as business_area lists it. Use could, may or might. End with its ids.",
  "response": {"action": "One sentence starting with 'Consider': what the business area could do now.", "owner": "one of owners"},
  "source_ids": ["every id you cite"]}
 
 Rules:
+- Write sequence first: two to four dated steps. Each date must already appear on that source's date field. Then write the implication.
 - Be specific. Give the date of the development (such as 27 Oct) and the figures a source states (counts, amounts, percentages).
   Copy each figure exactly as the source gives it. Name the actor and the place. "Tensions rose" is not a summary.
 - Use only facts in the sources. Do not add background you know from elsewhere.

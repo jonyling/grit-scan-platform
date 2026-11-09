@@ -13,7 +13,9 @@ from grit.pool import Pool
 from grit.report.format_v2 import NIL, NOT_SEARCHED, category_of_name, clean_title, source_tier
 from grit.report.lookahead import dates_in, look_ahead
 
-SOURCES = {"S1": {"title": "Houthis fire five missiles at Riyadh", "text": "Saudi forces intercepted five ballistic missiles on 27 Oct over Riyadh.", "date": "27 Oct 2026"}}
+SOURCES = {"S1": {"title": "Houthis fire five missiles at Riyadh",
+                  "text": "Saudi forces intercepted five ballistic missiles on 27 Oct over Riyadh. The barrage reached the capital's air-defence belt.",
+                  "date": "27 Oct 2026"}}
 ANCHORS = ["ST Engineering Saudi Limited", "Mobility Rail"]
 OWNERS = ["Business area head", "Human Resources"]
 
@@ -22,6 +24,10 @@ def _row(**changes) -> dict:
     row = {
         "item": "Houthi missile barrages on Riyadh",
         "summary": "Saudi forces intercepted five ballistic missiles over Riyadh on 27 Oct 2026 [S1].",
+        "sequence": [
+            {"date": "27 Oct", "text": "Saudi forces intercepted five ballistic missiles over Riyadh.", "source_id": "S1"},
+            {"date": "27 Oct", "text": "The barrage reached the capital's air-defence belt.", "source_id": "S1"},
+        ],
         "implications": "Staff of ST Engineering Saudi Limited in Riyadh could face disruption [S1].",
         "response": {"action": "Consider reconfirming the safety of Riyadh staff.", "owner": "Human Resources"},
         "source_ids": ["S1"],
@@ -103,6 +109,9 @@ def test_source_tiers_titles_and_categories() -> None:
     assert clean_title("ST Engineering bags $5.6 billion | The Straits Times") == "ST Engineering bags $5.6 billion"
     assert clean_title("Critical Node.js flaw exposes servers < IT·Gaming < 기사본문") == "Critical Node.js flaw exposes servers"
     assert clean_title("World news » Asia » Typhoon Champi nears Taiwan") == "World news » Asia » Typhoon Champi nears Taiwan", "a leading breadcrumb stays"
+    thai = "Red Hat เปิดศูนย์ AI CoE ภูมิภาคเอเชียแปซิฟิกในสิงคโปร์ ผนึก EDB และ DSTA"
+    assert clean_title(thai) == "Red Hat AI CoE EDB DSTA"
+    assert clean_title("เปิดศูนย์ภูมิภาคเอเชีย") == ""
     assert category_of_name("Financial volatility (inflation, interest rate)") == "Financial / macro"
     assert category_of_name("Violation of Trade Compliance") == "Regulatory / legal"
     assert category_of_name("Workplace health and safety") == "Operational"

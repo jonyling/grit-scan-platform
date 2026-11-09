@@ -425,6 +425,24 @@ BEGIN SELECT RAISE(ABORT, 'corrections is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS corrections_no_delete BEFORE DELETE ON corrections
 BEGIN SELECT RAISE(ABORT, 'corrections is append-only'); END;
 
+-- Accepted review misses. The next reasoned run can read them. They are not new facts about the world.
+CREATE TABLE IF NOT EXISTS misses (
+    miss_row_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    pack          TEXT NOT NULL,
+    miss_id       TEXT NOT NULL,
+    kind          TEXT NOT NULL CHECK (kind IN ('KEYWORD_DROP', 'RANK_REJECT', 'REPORT_RETURN')),
+    text          TEXT NOT NULL,
+    keyword       TEXT,
+    signal_id     TEXT,
+    recorded_by   TEXT NOT NULL,
+    recorded_at   TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS misses_by_pack ON misses (pack, miss_row_id);
+CREATE TRIGGER IF NOT EXISTS misses_no_update BEFORE UPDATE ON misses
+BEGIN SELECT RAISE(ABORT, 'misses is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS misses_no_delete BEFORE DELETE ON misses
+BEGIN SELECT RAISE(ABORT, 'misses is append-only'); END;
+
 -- AIRIS handoff: signals the BA head approved, packaged for import.
 CREATE TABLE IF NOT EXISTS airis_exports (
     export_id       TEXT PRIMARY KEY,

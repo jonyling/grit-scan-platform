@@ -1,5 +1,23 @@
 # Developer documentation writing standard
 
+## Plain sentences
+
+Write so a reader can say the sentence aloud in one breath. Apply this section to plans and chat replies as well as to docs.
+
+- Put the result in the first sentence of a section. Say what the reader will see.
+- Use one idea per sentence. If a sentence has more than one clause joined by "and", "so", or a semicolon, split it.
+- Use words you would say to a colleague. Then give the file or the field name, on its own, after the point is clear.
+- Define a specialist word in the same sentence, the first time you use it. After that, use the same word.
+- Keep one rule in one sentence. Put the exception in the next sentence.
+- Start a section with the change. A boundary the reader did not ask about can wait until the end of the section, in its own sentence.
+
+Rewrite a draft that does any of these:
+
+- The first line of a section is a file path, a spec number, or a stack of field names.
+- One sentence names three or more mechanisms.
+- A sentence tells the reader what something is not, before it says what it is.
+- A paragraph mixes the result, the rule, the example, and the file path.
+
 Use project-specific style first. Use this standard when the project does not make a different choice.
 
 This standard follows the practical guidance in the [Google developer documentation style guide](https://developers.google.com/style/). Check the current official guide when an exact or changing convention matters.

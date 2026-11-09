@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date
 from typing import Any, Callable, Mapping, Sequence
 
-from grit.agents.checks import text_problems
+from grit.agents.checks import sentence_cite_problems, text_problems
 from grit.agents.loop.llm import LoopError, call_json
 from grit.agents.weekly import (
     significance_band,
@@ -60,6 +60,50 @@ def stable_batches(keys: Sequence[str], target: int, limit: int) -> list[list[st
 
 
 SAME_EVENT_DAYS, SAME_EVENT_TERMS, SAME_EVENT_MAX = 7, 2, 6
+# Transmission that may enter DeepSeek ranking without a named register anchor.
+RANK_RUNGS = frozenset({"DIRECT", "COUNTERPARTY", "SECTOR"})
+_ASK_CONFIRM = re.compile(r"\b(confirm|reconfirm|check)\b", re.I)
+_ASK_TIME = re.compile(r"\b(before|by|next cycle|the next cycle)\b", re.I)
+_ASK_MANY = re.compile(r"\b(and also|secondly|additionally, consider)\b", re.I)
+
+
+def escalation_problems(text: str, *, owners: Sequence[str], forum: str = "", forum_date: str = "",
+                        triggers: Sequence[str] = ()) -> list[str]:
+    """Reject an escalation that does not name who, a confirmation verb, and a time, unless a forum ask applies."""
+    if not isinstance(text, str) or not text.strip():
+        return ["bottom_line.escalation is empty."]
+    found: list[str] = []
+    if forum and forum_date:
+        if forum.casefold() not in text.casefold() or forum_date.casefold() not in text.casefold():
+            found.append(f"bottom_line.escalation must name the meeting {forum} on {forum_date}.")
+        if triggers and not any(str(trigger).casefold() in text.casefold() for trigger in triggers):
+            found.append("bottom_line.escalation must name one RED trigger from the pack patterns.")
+        if _ASK_MANY.search(text) or text.count("Consider ") > 1:
+            found.append("bottom_line.escalation must state one ask, not several.")
+        return found
+    roles = [role for role in owners if isinstance(role, str) and role.strip()]
+    if roles and not any(role.casefold() in text.casefold() for role in roles):
+        found.append("bottom_line.escalation must name an owner role from the pack.")
+    if not _ASK_CONFIRM.search(text):
+        found.append("bottom_line.escalation must ask to confirm, reconfirm, or check something.")
+    if not _ASK_TIME.search(text):
+        found.append("bottom_line.escalation must name a time (before, by, or the next cycle).")
+    if _ASK_MANY.search(text) or text.count("Consider ") > 1:
+        found.append("bottom_line.escalation must state one ask, not several.")
+    return found
+
+
+def rank_noise(editorial: Mapping[str, Any], source: Mapping[str, Any], names: Sequence[str]) -> bool:
+    """True when a kept signal should leave the ranking: no register anchor and no material transmission."""
+    from grit.agents.weekly import _register_named
+
+    if not names:
+        return False
+    fact = " ".join(str(editorial.get(field) or "") for field in ("fact", "exposure", "transmission", "impact"))
+    haystack = f"{fact} {source.get('title') or ''}"
+    has_anchor = bool(editorial.get("risk_ids")) or bool(source.get("condition_ids")) or _register_named(haystack, names)
+    rung = str(source.get("rung") or (source.get("link") or {}).get("rung") or "").upper()
+    return not has_anchor and rung not in RANK_RUNGS
 
 
 def event_terms(row: Mapping[str, Any]) -> frozenset[str]:
@@ -397,12 +441,15 @@ class WeeklyStore:
 
 class WeeklyCoordinator:
     def __init__(self, store: WeeklyStore, *, client: Any, model: str, call: RoleCall = call_json,
-                 fast: bool = False, workers: int = 1, progress: Callable[[str], Any] | None = None) -> None:
+                 fast: bool = False, workers: int = 1, progress: Callable[[str], Any] | None = None,
+                 reasoner: str | None = None, harness: Callable[[str, Mapping[str, Any]], Mapping[str, Any]] | None = None) -> None:
         self.store, self.pool, self.run_id = store, store.pool, store.run_id
         self.client, self.model, self.call = client, model, call
         self.fast, self.workers = fast, max(1, int(workers))
         self.retries = 2 if fast else 1
         self.progress = progress or (lambda _message: None)
+        self.reasoner = reasoner if reasoner == "deepseek" else None
+        self.harness = harness
 
     @property
     def sources(self) -> dict[str, dict[str, Any]]:
@@ -434,6 +481,176 @@ class WeeklyCoordinator:
             (self.run_id, self.store.state["version"], exclude))}
         return sorted(key for key, row in sources.items()
                       if (latest[key]["decision"] in {"INCLUDE", "WATCH"} if key in latest else row.get("decision") == "KEEP"))
+
+    def _weekly_context(self) -> Mapping[str, Any]:
+        return ((self.pool.run(self.run_id) or {}).get("config") or {}).get("weekly_context") or {}
+
+    def _register_names(self) -> list[str]:
+        """Names a cascade hop may end on: standing items and the business's own entities and counterparties."""
+        context = self._weekly_context()
+        names = [str(item.get("name")) for item in context.get("standing_items") or [] if isinstance(item, Mapping) and item.get("name")]
+        business = context.get("business") or {}
+        if isinstance(business, Mapping):
+            for key in ("entities", "lines_of_business", "customers", "suppliers", "anchors"):
+                names += [str(item) for item in business.get(key) or [] if isinstance(item, str)]
+        return list(dict.fromkeys(name for name in names if len(name.strip()) >= 4))
+
+    def _register_descriptions(self) -> dict[str, Any]:
+        context = self._weekly_context()
+        items = [{"id": item.get("id"), "name": item.get("name"), "transmission": item.get("transmission")}
+                 for item in (context.get("standing_items") or [])[:80] if isinstance(item, Mapping)]
+        business = context.get("business") or {}
+        listed = business if isinstance(business, Mapping) else {}
+        return {"standing_items": items, "entities": list(listed.get("entities") or [])[:40],
+                "lines_of_business": list(listed.get("lines_of_business") or [])[:40]}
+
+    def _note_skip(self, task: str, exc: BaseException) -> None:
+        notes = list(((self.pool.run(self.run_id) or {}).get("config") or {}).get("deepseek_notes") or [])
+        notes.append({"task": task, "skipped": str(exc)[:200]})
+        self.pool.update_run_config(self.run_id, deepseek_notes=notes[-20:])
+        self.progress(f"  DeepSeek {task} skipped: {exc}")
+
+    def _harness_invoke(self, role: str, task: str, payload: Mapping[str, Any], validate: Callable[[Any], Any]) -> tuple[dict[str, Any], int] | None:
+        """One harness proposal. A contract failure is retried once with the error text, then skipped. Gemini stands."""
+        if self.harness is None:
+            return None
+        from grit.agents.harness import ground_report_edits, ground_selection_ids, normalize_report_edits, prepare_output
+
+        run = self.pool.run(self.run_id)
+        base = {"contract": VERSION, "run": run["run_date"], "pack": run["pack"], "task": task,
+                "authority": run["config"].get("weekly_context", {}), "accepted_misses": memory_context(self.pool, self.run_id),
+                **dict(payload)}
+        last_error: BaseException | None = None
+        raw: Any = {}
+        for attempt in range(2):
+            envelope = dict(base)
+            if last_error is not None:
+                envelope["repair"] = {"error": str(last_error)[:400], "attempt": attempt + 1}
+            digest = canonical_hash({"model": self.model, "system": PROMPTS[role], "payload": envelope, "reasoner": "deepseek"})
+            record = self.pool.insert("weekly_calls", {
+                "run_id": self.run_id, "version": self.store.state["version"], "role": role, "task": task,
+                "prompt_version": VERSION, "model": self.model, "input_hash": digest, "input_json": envelope,
+                "output_json": {}, "status": "STARTED", "created_at": utc_now(),
+            })
+            raw = {}
+            try:
+                raw = prepare_output(self.harness(task, envelope))
+                if role == "Reporting":
+                    raw = normalize_report_edits(raw, payload.get("editable_fields") or {})
+                    raw = ground_report_edits(raw, self.sources)
+                elif role == "Assessment" and isinstance(raw, dict):
+                    raw = ground_selection_ids(raw, self.sources, payload)
+                validate(raw)
+            except Exception as exc:
+                with self.pool.transaction() as conn:
+                    conn.execute("UPDATE weekly_calls SET status = 'FAILED', output_json = ?, error = ? WHERE call_id = ?",
+                                 (json.dumps(raw if isinstance(raw, dict) else {}), str(exc)[:500], record))
+                last_error = exc
+                if attempt == 0:
+                    self.progress(f"  DeepSeek {task} retrying after: {exc}")
+                    continue
+                self._note_skip(task, exc)
+                return None
+            with self.pool.transaction() as conn:
+                conn.execute("UPDATE weekly_calls SET status = 'VALIDATED', output_json = ?, output_hash = ? WHERE call_id = ?",
+                             (json.dumps(raw), canonical_hash(raw), record))
+            return raw, record
+        return None
+
+    def _save_harness_selections(self, task: str, payload: Mapping[str, Any], members: set[str], *, chain: bool,
+                                 names: Sequence[str]) -> dict[str, Any] | None:
+        def validate(raw: Any) -> None:
+            check_selections(raw, self.sources, members, chain=chain, register=self.register, register_names=names)
+        found = self._harness_invoke("Assessment", task, payload, validate)
+        if found is None:
+            return None
+        raw, call_id = found
+        self.store.select(call_id, raw["selections"])
+        return raw
+
+    def _drop_rank_noise(self, chosen: Sequence[str], rows: Mapping[str, Mapping[str, Any]],
+                         sources: Mapping[str, Mapping[str, Any]], names: Sequence[str]) -> list[str]:
+        """Leave hobby and stock notes out of DeepSeek ranking when they lack a register anchor and a material rung."""
+        noise = [key for key in chosen if rank_noise(rows[key].get("editorial") or {}, sources.get(key) or {}, names)]
+        keep = [key for key in chosen if key not in set(noise)]
+        if noise:
+            self.progress(f"  Dropping {len(noise)} signals with no register anchor before ranking")
+            self._record_noise_excludes(noise)
+        return keep
+
+    def _record_noise_excludes(self, keys: Sequence[str]) -> None:
+        """Record EXCLUDE selections for noise so they stay out of the opening summary."""
+        selections = [{
+            "signal_id": key, "decision": "EXCLUDE",
+            "reason": "No register anchor and no direct, counterparty, or sector transmission.",
+            "source_ids": [key],
+        } for key in keys]
+        task = f"noise-{keys[0]}"
+        envelope = {"task": task, "selections": selections}
+        digest = canonical_hash({"model": self.model, "role": "Assessment", "payload": envelope, "reason": "noise-filter"})
+        record = self.pool.insert("weekly_calls", {
+            "run_id": self.run_id, "version": self.store.state["version"], "role": "Assessment", "task": task,
+            "prompt_version": VERSION, "model": self.model, "input_hash": digest, "input_json": envelope,
+            "output_json": {"selections": selections}, "output_hash": canonical_hash({"selections": selections}),
+            "status": "VALIDATED", "created_at": utc_now(),
+        })
+        self.store.select(record, selections)
+
+    def reason_with_harness(self) -> None:
+        """Meaning review, cascade, then a ranking of the kept signals. Gemini selections stand when a task fails."""
+        if self.reasoner != "deepseek" or self.harness is None:
+            return
+        sources, names = self.sources, self._register_names()
+        dropped = sorted(key for key, row in sources.items() if row.get("drop_reason") == "NOT_RELEVANT")
+        rescued: list[str] = []
+        offered = 0
+        for offset in range(0, len(dropped), 40):
+            if len(rescued) >= 12:
+                break
+            batch = dropped[offset:offset + 40]
+            if not batch:
+                break
+            offered += len(batch)
+            self.progress(f"  DeepSeek is reviewing {len(batch)} keyword drops by meaning"
+                          + (f" (batch {offset // 40 + 1})" if offset else ""))
+            result = self._save_harness_selections(
+                f"meaning-{batch[0]}",
+                {"candidates": {key: screen_view(sources[key]) for key in batch}, "register_descriptions": self._register_descriptions()},
+                set(batch), chain=False, names=names)
+            if result:
+                for row in result["selections"]:
+                    if row["decision"] != "EXCLUDE" and row["signal_id"] not in rescued:
+                        rescued.append(row["signal_id"])
+                        if len(rescued) >= 12:
+                            break
+        unseen = max(0, len(dropped) - offered)
+        if unseen:
+            self.pool.update_run_config(self.run_id, deepseek_unreviewed_drops=unseen)
+        if rescued:
+            self.progress(f"  DeepSeek sent {len(rescued)} drops to full review")
+            self.full_review(90, rescued, self.sources)
+            self._save_harness_selections(
+                f"cascade-{rescued[0]}",
+                {"candidates": {key: index_view(self.sources[key], 800) for key in rescued}, "register_names": names,
+                 "register_descriptions": self._register_descriptions()},
+                set(rescued), chain=True, names=names)
+        rows = {row["signal_id"]: row for row in self.pool.weekly_assessments(self.run_id)}
+        chosen = [key for key in self.included_ids(self.sources) if key in rows]
+        chosen.sort(key=lambda key: (-significance_score(rows[key].get("editorial") or {}), key))
+        chosen = chosen[:80]
+        chosen = self._drop_rank_noise(chosen, rows, self.sources, names)
+        if not chosen:
+            return
+        self.progress(f"  DeepSeek is ranking {len(chosen)} included signals")
+        ranked = self._save_harness_selections(
+            f"rank-{chosen[0]}",
+            {"candidates": {key: index_view(self.sources[key], 800) for key in chosen},
+             "current_selections": {key: rows[key]["editorial"] for key in chosen}, "register_names": names},
+            set(chosen), chain=True, names=names)
+        if ranked and isinstance(ranked.get("selections"), list):
+            order = [row["signal_id"] for row in ranked["selections"]
+                     if isinstance(row, Mapping) and row.get("decision") in {"INCLUDE", "WATCH"} and row.get("signal_id")]
+            self.pool.update_run_config(self.run_id, deepseek_rank=order[:12])
 
     @property
     def register(self) -> frozenset[str]:
@@ -575,12 +792,23 @@ class WeeklyCoordinator:
                 payload = job["envelope"]
                 if rejected:
                     errors = "; ".join(item["error"] for item in rejected)
-                    payload = {**job["envelope"], "previous_output": raw,
-                               "contract_feedback": f"Your previous output was rejected: {errors} Return a corrected complete response."}
+                    feedback = f"Your previous output was rejected: {errors} Return a corrected complete response."
+                    if "JSON" in errors:
+                        feedback += " Return one JSON object with the fields the instructions name."
+                    payload = {**job["envelope"], "contract_feedback": feedback}
+                    if isinstance(raw, dict) and raw:
+                        payload["previous_output"] = raw
                     size = len(json.dumps(payload, ensure_ascii=False, default=str))
                     if size > MAX_PAYLOAD_CHARS:
                         raise ContractError(f"{job['role']} {job['task']}: repair input of {size} characters exceeds the {MAX_PAYLOAD_CHARS}-character model budget.")
-                raw = self.call(self.client, model=self.model, system=job["system"], payload=payload, retries=self.retries)
+                try:
+                    raw = self.call(self.client, model=self.model, system=job["system"], payload=payload, retries=self.retries)
+                except LoopError as exc:
+                    raw = {}
+                    if attempt == repairs:
+                        raise
+                    rejected.append({"error": str(exc), "output": {}})
+                    continue
                 try:
                     validate(raw)
                     break
@@ -786,6 +1014,31 @@ class WeeklyCoordinator:
         words = [distinctive_terms(str((sources.get(key) or {}).get("title") or "")) for key in (first, second)]
         return len(words[0] & words[1]) >= STORY_TERMS
 
+    def front_page_findings(self, sources: Mapping[str, Mapping[str, Any]] | None = None) -> list[dict[str, Any]]:
+        """Up to three in-window ranked findings with a material rung or a register id, for the status line and bottom line."""
+        sources = sources if sources is not None else self.sources
+        config = (self.pool.run(self.run_id) or {}).get("config") or {}
+        order = [str(key) for key in (config.get("deepseek_rank") or []) if isinstance(key, str) and key in sources]
+        if not order:
+            return []
+        editorials = {row["signal_id"]: row.get("editorial") or {}
+                      for row in self.pool.weekly_assessments(self.run_id, include_excluded=True)}
+        kept: list[dict[str, Any]] = []
+        for key in order:
+            row, editorial = sources[key], editorials.get(key) or {}
+            if str(row.get("time_scope") or "IN_WINDOW") not in {"IN_WINDOW", ""}:
+                continue
+            rung = str(row.get("rung") or (row.get("link") or {}).get("rung") or "").upper()
+            has_register = bool(row.get("condition_ids")) or bool(editorial.get("risk_ids"))
+            if rung not in RANK_RUNGS and not has_register:
+                continue
+            from grit.report.format_v2 import clean_title
+
+            kept.append({"signal_id": key, "title": clean_title(str(row.get("title") or key)), "rung": rung or None})
+            if len(kept) >= 3:
+                break
+        return kept
+
     def status_policy(self) -> dict[str, Any]:
         """The report status from the reviewed selections (URS methodology section 14), separate from headline severity.
         RED: impact on the business confirmed by the Risk & Assurance operator. ELEVATED: identifiable exposure, credible
@@ -793,7 +1046,8 @@ class WeeklyCoordinator:
         A headline-pattern RED candidate alone raises nothing; it is listed for the R&A decision.
         WATCHPOINT: anything included or watched. NORMAL: nothing."""
         decisions = self.pool.red_decisions(str((self.pool.run(self.run_id) or {}).get("pack") or ""))
-        rows = [dict(row.get("editorial") or {"decision": "INCLUDE"}) | {"signal_id": row["signal_id"], "red_candidate": bool(row.get("red"))}
+        rows = [dict(row.get("editorial") or {"decision": "INCLUDE"}) | {"signal_id": row["signal_id"], "red_candidate": bool(row.get("red")),
+                 "title": (self.sources.get(row["signal_id"]) or {}).get("title")}
                 for row in self.pool.weekly_assessments(self.run_id)]
         for row in rows:
             row["red_decision"] = (decisions.get(row["signal_id"]) or {}).get("decision")
@@ -805,6 +1059,7 @@ class WeeklyCoordinator:
             and all(int((row.get("significance") or {}).get(key, 0)) >= 2 for key in ("exposure", "immediacy", "evidence")))]
         elevated += [row for row in awaiting if row not in elevated]
         candidates = sorted(row["signal_id"] for row in rows if row["red_candidate"])
+        front = self.front_page_findings()
         if red:
             from grit.core.red_events import red_triggers
 
@@ -812,6 +1067,11 @@ class WeeklyCoordinator:
             named = sorted({labels.get(str((decisions.get(row["signal_id"]) or {}).get("trigger_id")), "") for row in red} - {""})
             status, basis, ids = "RED", (f"The Risk & Assurance operator confirmed the impact of {len(red)} findings"
                                          + (f" ({'; '.join(named)})." if named else ".")), red
+        elif front:
+            titles = [str(item["title"] or item["signal_id"])[:80] for item in front]
+            status, basis, ids = "ELEVATED", (
+                "Lead findings: " + "; ".join(titles) + ". No impact on the business is confirmed."
+            ), [{"signal_id": item["signal_id"]} for item in front]
         elif elevated:
             status, basis, ids = "ELEVATED", (f"{len(elevated)} included findings combine identifiable exposure, credible evidence and "
                                               "near-term timing, or a credible immediate threat; no impact is confirmed."), elevated
@@ -819,7 +1079,7 @@ class WeeklyCoordinator:
             status, basis, ids = "WATCHPOINT", f"{len(rows)} findings are worth watching; none shows identifiable near-term exposure.", []
         else:
             status, basis, ids = "NORMAL", "No finding was included or watched this week.", []
-        if awaiting:
+        if awaiting and status != "RED":
             basis += f" {len(awaiting)} included findings with assessed impact await R&A confirmation."
         undecided = [key for key in candidates if key not in {row["signal_id"] for row in awaiting} and not decisions.get(key)]
         if undecided and status != "RED":
@@ -835,6 +1095,7 @@ class WeeklyCoordinator:
         return {"status": status, "basis": basis, "signal_ids": sorted(row["signal_id"] for row in ids), "red_candidates": candidates,
                 "red_awaiting_confirmation": sorted({row["signal_id"] for row in awaiting} | set(undecided)), "red_excluded": excluded,
                 "red_decisions": {row["signal_id"]: row["red_decision"] for row in rows if row["red_decision"]},
+                "front_page": front,
                 "priorities": [{"signal_id": row["signal_id"], "score": significance_score(row),
                                 "band": significance_band(significance_score(row), bool(row.get("immediate_threat")))} for row in ranked]}
 
@@ -860,9 +1121,9 @@ class WeeklyCoordinator:
                     **issues[issue_id]["issue"], "resolution": {"response": f"Decided: {row['selection'].get('decision')}."}})
 
     def settle_false_positives(self) -> None:
-        """A FALSE_POSITIVE or UNSUPPORTED objection is settled once the candidate's current selection excludes it, often
-        by the same Critic call that raised it. An objection to a risk link is settled once the selection no longer carries any risk
-        link the objection names."""
+        """A FALSE_POSITIVE, UNSUPPORTED or WRONG_ATTRIBUTION objection is settled once the candidate's current selection
+        excludes it, often by the same Critic call that raised it. An objection to a risk link is settled once the
+        selection no longer carries any risk link the objection names."""
         selections = {row["signal_id"]: row["editorial"] for row in self.pool.weekly_assessments(self.run_id, include_excluded=True)}
         for issue_id, row in self.store.issues().items():
             issue, target = row["issue"], str(row["issue"].get("target"))
@@ -870,9 +1131,10 @@ class WeeklyCoordinator:
             if editorial is None:
                 continue
             named = set(RISK_ID.findall(str(issue.get("problem") or "")))
-            if issue.get("kind") in {"FALSE_POSITIVE", "UNSUPPORTED"} and editorial["decision"] == "EXCLUDE":
+            kind = issue.get("kind")
+            if kind in {"FALSE_POSITIVE", "UNSUPPORTED", "WRONG_ATTRIBUTION"} and editorial["decision"] == "EXCLUDE":
                 response = "The candidate is excluded, so the challenged claim is not reported."
-            elif issue.get("kind") == "UNSUPPORTED" and named and not named & set(editorial.get("risk_ids") or []):
+            elif kind in {"UNSUPPORTED", "WRONG_ATTRIBUTION"} and named and not named & set(editorial.get("risk_ids") or []):
                 response = "The selection no longer carries the challenged risk link."
             else:
                 continue
@@ -898,6 +1160,21 @@ class WeeklyCoordinator:
         if latest and latest.get("call_id"):
             sources = self.sources
             self.require_contradiction(latest["call_id"], self.top_findings(sources, self.included_ids(sources)))
+
+    def ensure_top_findings_contradicted(self, *, search: Callable[[str], Mapping[str, Any]] | None,
+                                         reassess: Callable[[], Any] | None) -> None:
+        """After DeepSeek ranking, a newly promoted top finding still needs its contradiction search."""
+        sources = self.sources
+        missing = set(self.top_findings(sources, self.included_ids(sources))) - self.contradicted()
+        if not missing:
+            self.check_contradiction()
+            return
+        self.progress(f"  Ranking promoted {len(missing)} top finding(s) that still need a contradiction search")
+        before = self.digests() if self.fast else {}
+        if search is not None and reassess is not None and self.research("post-rank-contradiction", search, reassess):
+            self.review(int(self.store.state["revisions_used"]) + 3, self.changed(before) if self.fast else None)
+        self.require_decisions()
+        self.check_contradiction()
 
     def contradicted(self) -> set[str]:
         """Findings with a completed contradiction search in this run."""
@@ -941,6 +1218,11 @@ class WeeklyCoordinator:
         policy = self.status_policy()
         if isinstance(brief.get("v2"), dict):
             brief["v2"]["status"], brief["v2"]["status_basis"] = policy["status"], policy
+            front = policy.get("front_page") or []
+            if front:
+                from grit.pipeline.events import UP
+
+                brief["v2"]["arrows"] = [f"{item['title'][:80]} {UP}" for item in front]
         if isinstance(brief.get("bottom_line"), dict):
             brief["bottom_line"]["label"] = policy["status"]
 
@@ -1026,6 +1308,7 @@ class WeeklyCoordinator:
     def scoped(self, members: set[str], sources: Mapping[str, Any], open_issues: Mapping[str, Any],
                selections: bool = True, chain: bool = True) -> Callable[[Any], Any]:
         """A thread-safe critique check against a snapshot of the open issues."""
+        register = self.register  # read on the caller thread; workers must not touch the pool
         def validate(raw: Any) -> None:
             if not selections and isinstance(raw, dict) and "selections" in raw:
                 # Selections are not this task's output; an unrequested list is set aside rather than failing the run.
@@ -1039,7 +1322,7 @@ class WeeklyCoordinator:
                 raw["resolutions"] = [item for item in raw.get("resolutions", []) if item.get("issue_id") not in outside]
                 raw["ignored_resolutions"] = outside
             if selections:
-                check_selections(raw, sources, members, chain=chain, register=self.register)
+                check_selections(raw, sources, members, chain=chain, register=register)
         return validate
 
     def screen(self, round_number: int, keys: Sequence[str], sources: Mapping[str, Any]) -> set[str]:
@@ -1070,12 +1353,13 @@ class WeeklyCoordinator:
         included = self.included_ids(sources, before_round=round_number)
         open_issues = self.store.issues()
         corrections = memory_context(self.pool, self.run_id)
+        register = self.register  # snapshot before workers run
         inputs = [{"candidates": {key: full_view(sources[key]) for key in batch},
                    "sources": self.related(batch, sources, included), "open_issues": self.batch_issues(batch, sources),
                    "admitted_corrections": corrections} for batch in batches]
         assessments = self.invoke_many([
             ("Assessment", f"pool-{round_number}-{batch[0]}", payload,
-             (lambda members: lambda raw: check_selections(raw, sources, members, register=self.register))(set(batch)), None)
+             (lambda members: lambda raw: check_selections(raw, sources, members, register=register))(set(batch)), None)
             for batch, payload in zip(batches, inputs)], f"Assessor full review of {len(keys)} signals")
         for selections, call_id in assessments:
             self.store.select(call_id, selections["selections"])
@@ -1138,12 +1422,36 @@ class WeeklyCoordinator:
             self.require_decisions()
             self.check_contradiction()
 
+    def _red_triggers(self) -> list[str]:
+        """RED trigger labels this pack may name in the recommended action."""
+        from grit.settings import CONFIG_DIR
+
+        run = self.pool.run(self.run_id) or {}
+        pack = str(run.get("pack") or "")
+        path = CONFIG_DIR / "red-patterns.json"
+        if not path.is_file():
+            return []
+        try:
+            patterns = json.loads(path.read_text(encoding="utf-8")).get("patterns") or []
+        except (OSError, json.JSONDecodeError):
+            return []
+        return [str(row.get("label") or row.get("ruleId")) for row in patterns
+                if isinstance(row, Mapping) and pack in (row.get("packs") or []) and (row.get("label") or row.get("ruleId"))]
+
     def report_payload(self, profile_id: str, brief: Mapping[str, Any],
                        sources: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
+        conflicts = ((brief.get("v2") or {}).get("conflicts") or [])
+        front = self.front_page_findings(sources)
         return {
             "report": model_brief(brief), "editable_fields": narrative_fields(brief),
             "sources": self.report_sources(brief, sources), "open_issues": self.store.issues(), "budget": self.store.state,
             "reader_memory": memory_context(self.pool, self.run_id, profile_id),
+            "settled_conflicts": [{"item": row.get("item"), "chosen": row.get("chosen"),
+                                   "rejected": list(row.get("rejected") or []), "treatment": row.get("treatment")}
+                                  for row in conflicts if isinstance(row, Mapping)],
+            "red_triggers": self._red_triggers(),
+            "front_page": front,
+            "owner_roles": list(self._weekly_context().get("owner_roles") or []),
             "human_feedback": [row["membership"].get("review") for row in self.pool.rows(
                 "SELECT * FROM packages WHERE run_id = ? AND profile_id = ? AND status IN ('RETURNED_FOR_REWORK', 'REJECTED') ORDER BY version",
                 (self.run_id, profile_id))],
@@ -1154,6 +1462,24 @@ class WeeklyCoordinator:
         brief, critic_id = self.write_report(profile, draft)
         return self.decide_report(profile, brief, routed, critic_id)
 
+    def _report_response(self, task: str, payload: Mapping[str, Any], validate: Callable[[Any], Any]) -> tuple[dict[str, Any], int]:
+        """DeepSeek drafts the narrative when the flag is on. A failed draft falls back to the Gemini call."""
+        if self.reasoner == "deepseek" and self.harness is not None:
+            found = self._harness_invoke("Reporting", task, payload, validate)
+            if found is not None:
+                return found
+            self.progress(f"  DeepSeek report draft skipped. Gemini will draft {task}.")
+        return self.invoke("Reporting", task, dict(payload), validate)
+
+    def _supersede_report_issues(self, target: str, call_id: int | None = None) -> None:
+        """A new draft replaces earlier objections to this report; the next Critic may raise only what still stands."""
+        for key, row in self.store.issues().items():
+            if str(row["issue"].get("target") or "") != target:
+                continue
+            self.store._issue(call_id or row["call_id"], key, "RESOLVED", {**row["issue"], "resolution": {
+                "response": "Superseded: a new report draft replaces this objection; the next Critic reviews the new text.",
+                "source_ids": []}})
+
     def write_report(self, profile: Any, draft: Mapping[str, Any]) -> tuple[dict[str, Any], int]:
         brief = copy.deepcopy(dict(draft))
         sources = self.sources
@@ -1161,6 +1487,7 @@ class WeeklyCoordinator:
         task = f"report-{profile.profile_id}"
         target = f"REPORT:{profile.profile_id}"
         rewrites = 0
+        self._supersede_report_issues(target)
         self.progress(f"  Report {profile.profile_id}: Reporting is writing the narrative")
         from grit.core.corrections import retired_in
 
@@ -1177,6 +1504,12 @@ class WeeklyCoordinator:
                 paths = [edit.get("path") for edit in edits]
                 if not all(isinstance(path, str) for path in paths) or len(paths) != len(set(paths)) or not {"bottom_line.text", "bottom_line.escalation"}.issubset(paths):
                     raise ContractError("Reporting must synthesize both bottom-line fields once.")
+                posture = (self._weekly_context().get("action_posture") or {}) if isinstance(self._weekly_context(), Mapping) else {}
+                forum = str(posture.get("next_forum") or "").strip()
+                forum_date = str(posture.get("next_forum_date") or "").strip()
+                triggers = payload.get("red_triggers") or []
+                owners = [str(role) for role in (payload.get("owner_roles") or []) if isinstance(role, str) and role.strip()]
+                front_ids = {str(item["signal_id"]) for item in (payload.get("front_page") or []) if isinstance(item, Mapping)}
                 for edit in edits:
                     if edit.get("path") not in editable or not isinstance(edit.get("text"), str) or not edit["text"].strip():
                         raise ContractError("Reporting attempted an unknown narrative edit.")
@@ -1201,11 +1534,28 @@ class WeeklyCoordinator:
                         if edit["text"][last:].strip(" .!?\n"):
                             raise ContractError("Uncited narrative after the final reference.")
                     # A cited source's title is part of its evidence, as it is for quotes.
-                    cited = " ".join(f"{sources[ref].get('title') or ''} {sources[ref]['text']}" for ref in refs)
+                    cited = " ".join(f"{sources[ref].get('title') or ''} {sources[ref].get('text') or ''}" for ref in refs)
                     problems = text_problems(CITE.sub("", edit["text"]), cited, "report edit")
                     if problems:
                         raise ContractError("; ".join(problems))
-            response, _ = self.invoke("Reporting", task, payload, validate_edits)
+                    cite_issues = sentence_cite_problems(edit["text"], sources, edit["path"])
+                    if cite_issues:
+                        raise ContractError("; ".join(cite_issues))
+                    if edit.get("path") == "bottom_line.text" and front_ids and set(refs) - front_ids:
+                        raise ContractError("bottom_line.text must cite only the front-page findings when a DeepSeek rank is stored.")
+                    if edit.get("path") == "bottom_line.escalation":
+                        ask_problems = escalation_problems(edit["text"], owners=owners, forum=forum, forum_date=forum_date,
+                                                           triggers=triggers)
+                        if ask_problems:
+                            raise ContractError("; ".join(ask_problems))
+                    for conflict in payload.get("settled_conflicts") or []:
+                        if not isinstance(conflict, Mapping):
+                            continue
+                        for rejected in conflict.get("rejected") or []:
+                            if isinstance(rejected, str) and rejected and rejected.casefold() in edit["text"].casefold():
+                                raise ContractError(
+                                    f"{edit['path']} quotes {rejected}; use the settled figure {conflict.get('chosen')} instead.")
+            response, _ = self._report_response(task, payload, validate_edits)
             for edit in response["edits"]:
                 apply_edit(brief, edit, sources)
             brief["evidence_ids"] = sorted(set(brief.get("evidence_ids", [])) | set(brief["membership"]))
@@ -1225,6 +1575,8 @@ class WeeklyCoordinator:
                 "report": model_brief(brief), "report_hash": brief["content_hash"], "targets": [target],
                 "sources": self.report_sources(brief, sources), "open_issues": open_issues,
                 "fixed_values": fixed_values(brief),
+                # A rewrite after a material objection must not reuse a cached Critic answer for the same prose.
+                "rewrite_pass": rewrites,
             }, self.scoped({target}, sources, open_issues, selections=False))
             self.store.record_critique(critic_id, critique)
             # Each report has its own rewrite: pool revision rounds must not use up the chance to fix a report objection.
@@ -1234,6 +1586,7 @@ class WeeklyCoordinator:
             rewrites += 1
             self.progress(f"  Report {profile.profile_id}: rewriting after a material objection")
             self.supervise(["REVISE_REPORT"], {"profile": profile.profile_id, "issues": self.store.issues()})
+            self._supersede_report_issues(target, critic_id)
         return brief, critic_id
 
     def decide_report(self, profile: Any, brief: dict[str, Any], routed: Sequence[Mapping[str, Any]], critic_id: int) -> dict[str, Any]:
@@ -1388,6 +1741,29 @@ def frozen_report(pool: Pool, run_id: str, profile_id: str, *, ready: bool = Tru
     return row
 
 
+def coordinator_for(store: WeeklyStore, *, client: Any, model: str, call: RoleCall = call_json,
+                    fast: bool = False, workers: int = 1, progress: Callable[[str], Any] | None = None) -> WeeklyCoordinator:
+    """A coordinator for this run. A stored reasoner of deepseek attaches the harness. Gemini stays the default."""
+    config = (store.pool.run(store.run_id) or {}).get("config") or {}
+    reasoner = config.get("reasoner") if config.get("reasoner") == "deepseek" else None
+    harness = None
+    if reasoner == "deepseek":
+        from grit.agents.harness import deepseek_harness
+        harness = deepseek_harness
+    return WeeklyCoordinator(store, client=client, model=model, call=call, fast=fast, workers=workers, progress=progress,
+                             reasoner=reasoner, harness=harness)
+
+
+def _selection_reviewed(row: Mapping[str, Any], checkpoint_id: int) -> bool:
+    """A latest selection may come from the Critic or from a DeepSeek task that ran before the report checkpoint."""
+    if row["status"] != "VALIDATED" or row["call_id"] >= checkpoint_id:
+        return False
+    task = str(row["task"])
+    if task.startswith(("pool-", "screen-")) and row["role"] == "Critic":
+        return True
+    return task.startswith(("meaning-", "cascade-", "rank-")) and row["role"] == "Assessment"
+
+
 def run_weekly(pool: Pool, run: Any, *, client: Any, model: str, search_limit: int,
                profiles: Sequence[Any], call: RoleCall = call_json,
                search: Callable[[str], Mapping[str, Any]] | None = None,
@@ -1401,9 +1777,12 @@ def run_weekly(pool: Pool, run: Any, *, client: Any, model: str, search_limit: i
         conn.execute("UPDATE runs SET status = 'STARTED', finished_at = NULL WHERE run_id = ?", (run.run_id,))
     config = (pool.run(run.run_id) or {}).get("config") or {}
     fast = config.get("weekly_review") == "fast"
-    coordinator = WeeklyCoordinator(store, client=client, model=model, call=call, fast=fast,
-                                    workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
+    coordinator = coordinator_for(store, client=client, model=model, call=call, fast=fast,
+                                  workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
     coordinator.reconcile_pool(search=search, reassess=reassess)
+    coordinator.reason_with_harness()
+    # DeepSeek ranking can promote a new top finding after the contradiction budget was spent in reconcile.
+    coordinator.ensure_top_findings_contradicted(search=search, reassess=reassess)
     coordinator.supervise(["DRAFT_REPORT"], {"stage": "pool reconciled", "issues": store.issues()})
     draft_sections()
     return _finish_weekly_reports(pool, run, profiles, coordinator)
@@ -1445,8 +1824,8 @@ def resume_weekly_research(pool: Pool, run: Any, *, client: Any, model: str | No
     store = WeeklyStore(pool, run.run_id, search_limit=state["search_limit"], refresh=False)
     config = saved_run.get("config") or {}
     fast = config.get("weekly_review") == "fast"
-    coordinator = WeeklyCoordinator(store, client=client, model=model or last["model"], call=call, fast=fast,
-                                    workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
+    coordinator = coordinator_for(store, client=client, model=model or last["model"], call=call, fast=fast,
+                                  workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
     # Rule-settled objections first, so only live issues decide whether research alone can finish the analysis.
     coordinator.settle_false_positives()
     coordinator.requalify_unrun_page_checks()
@@ -1520,16 +1899,14 @@ def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | N
              WHERE t.run_id = s.run_id AND t.version = s.version AND t.signal_id = s.signal_id)""",
         (run.run_id, state["version"]))
     if not selected or {row["signal_id"] for row in latest} != {row["signal_id"] for row in selected} or any(
-        row["role"] != "Critic" or row["status"] != "VALIDATED" or not row["task"].startswith(("pool-", "screen-"))
-        or row["call_id"] >= checkpoint["call_id"] for row in latest
-    ):
+            not _selection_reviewed(row, checkpoint["call_id"]) for row in latest):
         raise ValueError("The latest selection for every candidate must have a validated Critic before the report checkpoint.")
     if refresh:
         store = WeeklyStore(pool, run.run_id, search_limit=state["search_limit"], refresh=False)
         config = saved_run.get("config") or {}
         fast = config.get("weekly_review") == "fast"
-        coordinator = WeeklyCoordinator(store, client=client, model=model or failed["model"], call=call, fast=fast,
-                                        workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
+        coordinator = coordinator_for(store, client=client, model=model or failed["model"], call=call, fast=fast,
+                                      workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
         coordinator.progress("Refreshing every report from the saved review; no search or signal review will run.")
         # Rule-based issue settlement that the review stage now applies, so a refresh uses the current rules.
         coordinator.settle_false_positives()
@@ -1551,8 +1928,8 @@ def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | N
     store = WeeklyStore(pool, run.run_id, search_limit=state["search_limit"], refresh=False)
     config = saved_run.get("config") or {}
     fast = config.get("weekly_review") == "fast"
-    coordinator = WeeklyCoordinator(store, client=client, model=model or failed["model"], call=call, fast=fast,
-                                    workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
+    coordinator = coordinator_for(store, client=client, model=model or failed["model"], call=call, fast=fast,
+                                  workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
     from grit.report.brief import build_brief
     draft = build_brief(pool, run.run_id, anchor)
     coordinator.prepare_report(draft, coordinator.sources)
@@ -1620,7 +1997,8 @@ def run_memory(pool: Pool, *, package_id: str, version: int, client: Any, model:
 
 
 def memory_context(pool: Pool, run_id: str, profile_id: str | None = None) -> list[dict[str, Any]]:
-    """Admitted Memory corrections and reader preferences, then the open corrections in R&A's corrections ledger."""
+    """Admitted Memory corrections, the corrections ledger, and accepted review misses."""
+    from grit.agents.harness import as_miss
     from grit.core.corrections import as_admitted
 
     run = pool.run(run_id)
@@ -1630,7 +2008,7 @@ def memory_context(pool: Pool, run_id: str, profile_id: str | None = None) -> li
            JOIN runs r ON r.run_id = p.run_id WHERE a.intent = 'ADMIT' AND r.pack = ?""", (run["pack"],))
     admitted = [row["proposal"] for row in records if row["proposal"]["kind"] == "CORRECTION" or (
         profile_id is not None and row["proposal"].get("profile_id") == profile_id)]
-    return admitted + [as_admitted(row) for row in pool.corrections(run["pack"])]
+    return admitted + [as_admitted(row) for row in pool.corrections(run["pack"])] + [as_miss(row) for row in pool.misses(run["pack"])]
 
 
 def admit_memory(pool: Pool, memory_id: int, reviewer: Any, intent: str) -> dict[str, Any]:

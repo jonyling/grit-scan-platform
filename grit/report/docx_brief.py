@@ -268,6 +268,9 @@ def _row(table: Any, values: Sequence[Any], widths: Sequence[float]) -> None:
 
 
 def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
+    from grit.report.script import latin_copy
+
+    brief = latin_copy(brief)
     meta = brief["meta"]
     document = Document()
     for section in document.sections:
@@ -736,13 +739,16 @@ def _others(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -
 
 
 def _qa(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    """Per-signal QA lines and the research-coverage list: appendix only, after the source register."""
     if dry:
         return True
     _heading(document, title)
     if not brief["qa"]:
         document.add_paragraph("The Critic raised no supported issue this week, and every draft passed its checks.")
         return True
-    document.add_paragraph("What changed or was withheld as a direct result of this week's checks and the Critic's review.")
+    document.add_paragraph(
+        "What changed or was withheld as a direct result of this week's checks and the Critic's review, "
+        "including research-coverage notes.")
     widths = (4.0, 5.0, 8.2)
     table = _table(document, ("Item", "Prior version stated", "Correction after this QA pass"), widths)
     for row in brief["qa"]:

@@ -72,6 +72,10 @@ def test_an_implication_names_the_business_area_reads_as_a_possibility_and_rests
 def test_an_implication_that_fails_twice_is_dropped_and_the_assessment_stands() -> None:
     draft = {"movement": "ESCALATING", "summary": "DRAM prices rose 30 percent as memory makers cut output. [S1]", "source_ids": ["S1"],
              "quotes": [{"source_id": "S1", "quote": "DRAM prices rose 30 percent as memory makers cut output"}], "change_from_prior": "First assessment.",
+             "sequence": [
+                 {"date": "1 Oct", "text": "DRAM prices rose 30 percent as memory makers cut output.", "source_id": "S1"},
+                 {"date": "1 Oct", "text": "Defence electronics makers face longer lead times.", "source_id": "S1"},
+             ],
              "implication": "Prices will hurt the business area. [S1]"}
     calls = []
 
@@ -147,15 +151,21 @@ def test_action_plans_are_kept_only_when_the_pack_asks(tmp_path: Path) -> None:
 
 
 def test_a_retry_for_the_implication_never_replaces_the_validated_assessment() -> None:
+    sequence = [
+        {"date": "1 Oct", "text": "DRAM prices rose 30 percent as memory makers cut output.", "source_id": "S1"},
+        {"date": "1 Oct", "text": "Defence electronics makers face longer lead times.", "source_id": "S1"},
+    ]
     first = {"movement": "ESCALATING", "summary": "DRAM prices rose 30 percent as memory makers cut output. [S1]", "source_ids": ["S1"],
              "quotes": [{"source_id": "S1", "quote": "DRAM prices rose 30 percent as memory makers cut output"}], "change_from_prior": "First assessment.",
-             "implication": "This will hurt us. [S1]"}
+             "sequence": sequence, "implication": "This will hurt us. [S1]"}
     nothing = {"movement": "NO_MATERIAL_CHANGE", "summary": "No new development was found this week in the checked sources.", "source_ids": [], "quotes": []}
-    fixed = {**nothing, "implication": "Longer lead times could delay Advanced Networks & Sensors deliveries. [S1]"}
+    fixed_implication = "Longer lead times could delay Advanced Networks & Sensors deliveries. [S1]"
+    fixed = {**nothing, "sequence": sequence, "implication": fixed_implication}
     area = {"name": "Digital Systems & Cyber", "anchors": ANCHORS}
     item = {"id": "DSC-KEY-06", "name": "Supply chain", "kind": "THEME", "tier": "KEY"}
+    from grit.agents.reader import format_timeline
 
-    for retry, implication in ((nothing, None), (fixed, fixed["implication"])):
+    for retry, implication in ((nothing, None), (fixed, format_timeline(sequence, fixed_implication))):
         replies = iter([first, retry])
         result, _ = assess_condition(stub_client(lambda system, payload: next(replies)), "stub", condition=item, prior=None, sources=SOURCES, business_area=area)
         assert (result["status"], result["movement"], result["source_ids"]) == ("VALIDATED", "ESCALATING", ["S1"]), "the first validated assessment stands"

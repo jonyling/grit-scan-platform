@@ -43,6 +43,7 @@ class EditorialSelection(TypedDict):
     impact_status: NotRequired[Literal["CONFIRMED", "PLAUSIBLE", "NOT_ESTABLISHED"]]
     significance: NotRequired[dict[str, int]]
     immediate_threat: NotRequired[bool]
+    hops: NotRequired[list[dict[str, Any]]]
 
 
 class CritiqueIssue(TypedDict):
@@ -102,10 +103,21 @@ def source_ids(value: Any, sources: Mapping[str, Any]) -> list[str]:
 
 
 CHAIN_FIELDS = ("fact", "exposure", "transmission", "impact")
+REASON_CHARS = 800
+MAX_HOPS = 4
+HOP_CHARS = 300
+HOP_SUPPORT = frozenset({"cited", "not established"})
 # The hidden significance score from the URS methodology: maximum 14.
 # "consequence" is the methodology's severity; "severity" is the controlled harm score that agents cannot write.
 SIGNIFICANCE = {"exposure": 3, "consequence": 3, "immediacy": 3, "evidence": 3, "change": 2}
 IMPACT_STATUSES = frozenset({"CONFIRMED", "PLAUSIBLE", "NOT_ESTABLISHED"})
+# Models sometimes write a near-synonym. These map onto the three allowed values instead of failing the batch.
+IMPACT_STATUS_ALIASES = {
+    "POTENTIAL": "PLAUSIBLE", "POSSIBLE": "PLAUSIBLE", "LIKELY": "PLAUSIBLE", "INFERRED": "PLAUSIBLE",
+    "UNCONFIRMED": "PLAUSIBLE", "PLAUSIBLE": "PLAUSIBLE", "PLAI": "PLAUSIBLE",
+    "NOT_ESTABLISHED": "NOT_ESTABLISHED", "NOT ESTABLISHED": "NOT_ESTABLISHED", "UNKNOWN": "NOT_ESTABLISHED",
+    "NONE": "NOT_ESTABLISHED", "N/A": "NOT_ESTABLISHED", "CONFIRMED": "CONFIRMED",
+}
 CONFIDENCE_CAP = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
 
 
@@ -171,20 +183,80 @@ def check_significance(row: Any, sources: Mapping[str, Any]) -> None:
 
 
 def check_impact_status(row: Any, sources: Mapping[str, Any]) -> None:
-    """Confirmed impact needs approved internal evidence among the selection's sources; otherwise it is PLAUSIBLE."""
+    """Confirmed impact needs approved internal evidence among the selection's sources; otherwise it is PLAUSIBLE.
+    An unrecognised value is recorded as NOT_ESTABLISHED. One bad label does not fail the batch."""
     status = row.get("impact_status")
-    if status is None:
+    if status is None or not isinstance(row, dict):
         return
-    if status not in IMPACT_STATUSES:
-        raise ContractError("Invalid impact_status.")
-    if status == "CONFIRMED" and isinstance(row, dict) and not any(
-            (sources.get(ref) or {}).get("internal_exposure") for ref in row.get("source_ids") or []):
+    label = IMPACT_STATUS_ALIASES.get(str(status).strip().upper())
+    if label is None:
+        row["impact_status"] = "NOT_ESTABLISHED"
+        row["impact_status_downgraded"] = status
+        return
+    if label != status:
+        row["impact_status"] = label
+        row["impact_status_downgraded"] = status
+        status = label
+    if status == "CONFIRMED" and not any((sources.get(ref) or {}).get("internal_exposure") for ref in row.get("source_ids") or []):
         row["impact_status"] = "PLAUSIBLE"
         row["impact_status_downgraded"] = status
 
 
+def _register_named(text: str, names: Collection[str]) -> bool:
+    folded = text.casefold()
+    return any(name.casefold() in folded for name in names if isinstance(name, str) and len(name.strip()) >= 4)
+
+
+def check_hops(row: Any, sources: Mapping[str, Any], names: Collection[str] | None = None) -> None:
+    """A cascade path is at most four hops. An uncited hop cannot raise exposure above indirect or mark an immediate threat.
+    The last hop must name a register item when the caller supplies names."""
+    if not isinstance(row, dict):
+        return
+    reason = row.get("reason")
+    if isinstance(reason, str) and len(reason) > REASON_CHARS:
+        raise ContractError("A selection reason is longer than 800 characters.")
+    hops = row.get("hops")
+    if hops is None:
+        return
+    if not isinstance(hops, list) or not hops or len(hops) > MAX_HOPS:
+        raise ContractError("hops must be one to four steps.")
+    cleaned: list[dict[str, Any]] = []
+    for hop in hops:
+        if not isinstance(hop, Mapping):
+            raise ContractError("Each hop must be an object.")
+        start, end = hop.get("from"), hop.get("to")
+        if not isinstance(start, str) or not isinstance(end, str) or not start.strip() or not end.strip():
+            raise ContractError("Each hop needs from and to.")
+        if len(start) > HOP_CHARS or len(end) > HOP_CHARS:
+            raise ContractError("A hop is longer than 300 characters.")
+        support = hop.get("support")
+        if support not in HOP_SUPPORT:
+            raise ContractError("Hop support must be cited or not established.")
+        refs = source_ids(hop.get("source_ids"), sources) if support == "cited" else []
+        if support == "cited" and not refs:
+            raise ContractError("A cited hop needs source_ids.")
+        cleaned.append({"from": start.strip(), "to": end.strip(), "support": support, "source_ids": refs})
+    row["hops"] = cleaned
+    if any(hop["support"] != "cited" for hop in cleaned):
+        if row.get("decision") == "INCLUDE":
+            row["decision"], row["decision_downgraded"] = "WATCH", "INCLUDE"
+        score = row.get("significance")
+        if isinstance(score, dict) and isinstance(score.get("exposure"), int) and score["exposure"] > 1:
+            row["significance"] = {**score, "exposure": 1}
+            row["hop_exposure_capped"] = True
+        if row.get("immediate_threat"):
+            row["immediate_threat"] = False
+            row["immediate_threat_downgraded"] = True
+    named = [name for name in (names or []) if isinstance(name, str) and len(name.strip()) >= 4]
+    if named and row.get("decision") != "EXCLUDE" and not _register_named(cleaned[-1]["to"], named):
+        row["decision"] = "EXCLUDE"
+        row["hop_rejected"] = True
+        extra = " The last hop does not name a register item."
+        row["reason"] = ((row.get("reason") or "").rstrip() + extra)[:REASON_CHARS]
+
+
 def check_selections(raw: Any, sources: Mapping[str, Any], expected: set[str], *, chain: bool = True,
-                     register: Collection[str] | None = None) -> Mapping[str, Any]:
+                     register: Collection[str] | None = None, register_names: Collection[str] | None = None) -> Mapping[str, Any]:
     """chain: an INCLUDE or WATCH must state the reasoning chain. The compact drop screen is exempt; anything it does not
     EXCLUDE goes to full review, where the chain is required."""
     raw = object_response(raw)
@@ -220,6 +292,7 @@ def check_selections(raw: Any, sources: Mapping[str, Any], expected: set[str], *
         check_risk_ids(row, sources, register)
         if chain and row["decision"] in {"INCLUDE", "WATCH"}:
             check_significance(row, sources)
+        check_hops(row, sources, register_names)
         check_fact_support(row, sources, chain)
     return raw
 
@@ -445,9 +518,18 @@ Raise an issue only for a material problem you can show from the supplied record
 Return {"edits":[{"path":"one supplied editable field path", "text":"concise prose [SIGNAL-ID]",
 "source_ids":["SIGNAL-ID"]}]}.
 Include one edit each for bottom_line.text and bottom_line.escalation; edit other fields only when needed.
+When front_page lists findings, bottom_line.text covers only those (at most three): what happened, who in the business
+could be affected, and that no impact is confirmed unless a cited selection says so. Cite only those signal ids. Other
+elevated rows stay in the escalating table; do not promote them into the status sentence.
 bottom_line.escalation is the recommended action posture (URS methodology, section 15): one principal ask, saying who
 should do what by when, then the specific development that would raise the status. Keep it to two or three sentences.
-Cite each sentence separately, with the supplied signal-ID citation before its final punctuation.
+When authority.action_posture names next_forum and next_forum_date, the ask must name that meeting and that date, one
+action, and one RED trigger from red_triggers. Do not invent a meeting. Do not list several asks. Do not
+name only the readers. When the meeting fields are blank, name one owner_roles role, a confirmation verb (confirm,
+reconfirm, or check), and a time (before, by, or the next cycle); do not invent a forum or a meeting.
+When settled_conflicts are supplied, quote only each row's chosen figure; the quality section already records the rest.
+Cite each sentence separately, with the supplied signal-ID citation before its final punctuation. Each citation must be
+a page that states that sentence's dates, numbers, and distinctive names.
 Call exposure confirmed only when a cited selection has exposure_status CONFIRMED; otherwise write possible exposure.
 The report status (v2.status) is set by policy from the reviewed selections; state it and its basis, and never call
 the business's position RED unless the status is RED. Only the Risk & Assurance operator confirms a RED impact; a RED
@@ -456,7 +538,8 @@ Use a number only when it appears in the cited source text; otherwise omit it. W
 bps, units); if the source gives a number without its unit, leave the number out rather than guess the unit. The previous output, if supplied
 for repair, is a draft, not evidence. Do not convert an unsearched scope into nil impact.
 Use the standing risks' trends as given: call a risk escalating or easing only when its trend is Escalating or Easing.
-Explain event -> business exposure -> conditional implication -> response. Remove repetition, not evidence.""",
+Explain event -> business exposure -> conditional implication -> response. Remove repetition, not evidence.
+Where a selection has hops, follow those hops in the transmission sentence. Write "not established" for a hop whose support is not established.""",
     "Memory": COMMON + """The named human has decided on the exact package.
 Return {"proposals":[{"kind":"CORRECTION|READER_PREFERENCE", "text":"...",
 "source_ids":["..."], "profile_id":"reader ID for a preference, null for a correction"}]}.

@@ -451,6 +451,24 @@ class Pool:
                 found[row["correction_id"]].update(closed_by=row["recorded_by"], closed_at=row["recorded_at"], close_reason=row["note"])
         return [row for row in found.values() if include_closed or not row["closed_at"]]
 
+    def record_miss(self, *, pack: str, kind: str, text: str, recorded_by: str, keyword: str | None = None,
+                    signal_id: str | None = None) -> dict[str, Any]:
+        """Record a review miss a named person accepted. The next run can read it. It does not change a score."""
+        if kind not in {"KEYWORD_DROP", "RANK_REJECT", "REPORT_RETURN"}:
+            raise ValueError("A miss kind is KEYWORD_DROP, RANK_REJECT, or REPORT_RETURN.")
+        if not text.strip() or not recorded_by.strip():
+            raise ValueError("A miss needs the text and your name.")
+        count = (self.one("SELECT COUNT(*) AS n FROM misses WHERE pack = ?", (pack,)) or {}).get("n") or 0
+        row = {"pack": pack, "miss_id": f"MISS-{pack}-{count + 1:03d}", "kind": kind, "text": text.strip(),
+               "keyword": (keyword or "").strip() or None, "signal_id": (signal_id or "").strip() or None,
+               "recorded_by": recorded_by.strip(), "recorded_at": utc_now()}
+        row["miss_row_id"] = self.insert("misses", row)
+        return row
+
+    def misses(self, pack: str) -> list[dict[str, Any]]:
+        """A pack's accepted misses, oldest first."""
+        return self.rows("SELECT * FROM misses WHERE pack = ? ORDER BY miss_row_id", (pack,))
+
     def management_requests(self, *, active_only: bool = False) -> list[dict[str, Any]]:
         where = "WHERE status = 'ACTIVE'" if active_only else ""
         return self.rows(f"SELECT * FROM management_requests {where} ORDER BY request_date, request_id")

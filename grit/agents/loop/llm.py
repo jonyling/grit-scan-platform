@@ -11,6 +11,48 @@ class LoopError(RuntimeError):
     pass
 
 
+_RESPONSE_KEYS = ("selections", "next_action", "queries", "reviewed_ids", "edits", "proposals", "issues")
+
+
+def _object(value: Any) -> dict[str, Any] | None:
+    """The role contract wants one object. A model often returns that object as a one-item array, a JSON string, or a bare list of selections."""
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        text = value.strip()
+        if text[:1] in "{[":
+            try:
+                return _object(json.loads(text))
+            except json.JSONDecodeError:
+                return None
+        return None
+    if not isinstance(value, list) or not value or not all(isinstance(item, dict) for item in value):
+        return None
+    if len(value) == 1 and any(key in value[0] for key in _RESPONSE_KEYS):
+        return value[0]
+    if any("signal_id" in item for item in value):
+        return {"selections": value}
+    if any("issue_id" in item for item in value):
+        return {"issues": value}
+    if len(value) == 1:
+        return value[0]
+    return None
+
+
+def _shape(value: Any) -> str:
+    if isinstance(value, list):
+        return f"a JSON array of {len(value)} items"
+    if value is None:
+        return "JSON null"
+    if isinstance(value, str):
+        return "a JSON string"
+    if isinstance(value, bool):
+        return "a JSON boolean"
+    if isinstance(value, (int, float)):
+        return "a JSON number"
+    return f"a JSON {type(value).__name__}"
+
+
 def call_json(
     client: Any, *, model: str, system: str, payload: dict[str, Any], retries: int = 1, pause: float = 2.0, thinking: str | None = "LOW"
 ) -> dict[str, Any]:
@@ -42,7 +84,8 @@ def call_json(
         except json.JSONDecodeError:
             last = "the model did not return JSON"
             continue
-        if isinstance(value, dict):
-            return value
-        last = "the model did not return a JSON object"
+        found = _object(value)
+        if found is not None:
+            return found
+        last = f"the model returned {_shape(value)}, and the role needs one JSON object"
     raise LoopError(last)

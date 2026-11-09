@@ -106,8 +106,12 @@ def weekly(tmp_path, request):
                 result.update(reviewed_ids=list(payload["candidates"]), issues=[], resolved_issue_ids=[])
             return result
         if system == PROMPTS["Reporting"]:
-            return {"edits": [{"path": path, "text": f"Alpha operations are reported open [{ids[0]}].", "source_ids": [ids[0]]}
-                              for path in ("bottom_line.text", "bottom_line.escalation")]}
+            return {"edits": [
+                {"path": "bottom_line.text", "text": f"Alpha operations are reported open [{ids[0]}].", "source_ids": [ids[0]]},
+                {"path": "bottom_line.escalation",
+                 "text": f"Operations should confirm Alpha remains open before the next cycle [{ids[0]}].",
+                 "source_ids": [ids[0]]},
+            ]}
         if system == PROMPTS["Critic"]:
             return {"reviewed_ids": payload["targets"], "issues": [], "resolved_issue_ids": []}
         if system == PROMPTS["Memory"]:
@@ -215,9 +219,9 @@ def _final_objection(original, *, resolve_on_rewrite):
     def disputed(*args, system, payload, **kwargs):
         if system == PROMPTS["Critic"] and "targets" in payload:
             finals.append(payload)
+            # A rewrite supersedes the prior REPORT objection before this Critic runs, so a clear pass opens nothing.
             if resolve_on_rewrite and len(finals) > 1:
-                return {"reviewed_ids": payload["targets"], "issues": [], "resolved_issue_ids": ["UNSUPPORTED-1"],
-                        "resolutions": [{"issue_id": "UNSUPPORTED-1", "response": "The rewrite removed the claim.", "source_ids": []}]}
+                return {"reviewed_ids": payload["targets"], "issues": [], "resolved_issue_ids": []}
             return {"reviewed_ids": payload["targets"], "issues": [{
                 "issue_id": "UNSUPPORTED-1", "target": payload["targets"][0], "kind": "UNSUPPORTED",
                 "problem": "The bottom line overstates exposure", "material": True, "source_ids": [],
@@ -897,6 +901,42 @@ def test_switching_to_fast_review_starts_a_new_version_but_full_review_hash_is_u
     assert WeeklyStore(pool, "R", search_limit=0).state["version"] == version + 1
 
 
+def test_a_bare_selection_list_is_read_as_the_selections_object():
+    import json
+    from types import SimpleNamespace
+    from grit.agents.loop.llm import LoopError, call_json
+
+    def client(text):
+        return SimpleNamespace(models=SimpleNamespace(generate_content=lambda **_k: SimpleNamespace(text=text)))
+
+    rows = [{"signal_id": "SIG-1", "decision": "EXCLUDE"}]
+    assert call_json(client(json.dumps(rows)), model="m", system="s", payload={}, retries=0, pause=0) == {"selections": rows}
+    wrapped = [{"selections": rows, "reviewed_ids": ["SIG-1"]}]
+    assert call_json(client(json.dumps(wrapped)), model="m", system="s", payload={}, retries=0, pause=0) == wrapped[0]
+    encoded = json.dumps(json.dumps({"next_action": "REVIEW"}))
+    assert call_json(client(encoded), model="m", system="s", payload={}, retries=0, pause=0) == {"next_action": "REVIEW"}
+    with pytest.raises(LoopError, match="JSON number"):
+        call_json(client("1"), model="m", system="s", payload={}, retries=0, pause=0)
+
+
+def test_a_reply_that_is_not_an_object_is_sent_back(weekly):
+    from grit.agents.loop.llm import LoopError
+    _pool, store, coordinator, _ids, original = weekly
+    seen = []
+
+    def flaky(*args, system, payload, **kwargs):
+        seen.append(payload)
+        if len(seen) == 1:
+            raise LoopError("the model returned a JSON array of 16 items, and the role needs one JSON object")
+        return original(*args, system=system, payload=payload, **kwargs)
+
+    coordinator.call = flaky
+    coordinator.assess_and_critique(0)
+    assert "one JSON object" in seen[1]["contract_feedback"]
+    assert "previous_output" not in seen[1]
+    assert store.state["status"] != "INCOMPLETE"
+
+
 def test_parallel_failure_keeps_completed_batches_for_resume(weekly):
     from grit.agents.loop.llm import LoopError
     from grit.agents.weekly import PROMPTS
@@ -977,8 +1017,12 @@ def test_reporting_may_not_write_a_phrase_the_corrections_ledger_retired(weekly)
         if system != PROMPTS["Reporting"]:
             return original(*args, system=system, payload=payload, **kwargs)
         attempts.append(payload)
-        return {"edits": [{"path": path, "text": f"Alpha has 28 Airports [{ids[0]}].", "source_ids": [ids[0]]}
-                          for path in ("bottom_line.text", "bottom_line.escalation")]}
+        return {"edits": [
+            {"path": "bottom_line.text", "text": f"Alpha has 28 Airports [{ids[0]}].", "source_ids": [ids[0]]},
+            {"path": "bottom_line.escalation",
+             "text": f"Operations should confirm Alpha has 28 Airports before the next cycle [{ids[0]}].",
+             "source_ids": [ids[0]]},
+        ]}
     coordinator.call = retired
     with pytest.raises(ContractError, match="correction COR-test-001 retired"):
         coordinator.report(_profile(), {**_draft(ids[0]), "corrections": ledger}, [])
@@ -1024,9 +1068,15 @@ def _failed_report_checkpoint(weekly, monkeypatch, *, material=False):
         if system != PROMPTS["Reporting"]:
             return original(*args, system=system, payload=payload, **kwargs)
         attempts.append(payload)
-        text = f"Alpha has 28 airports [{ids[0]}]." if len(attempts) == 1 else f"Alpha is open. A second claim is made [{ids[0]}]."
-        return {"edits": [{"path": path, "text": text, "source_ids": [ids[0]]}
-                          for path in ("bottom_line.text", "bottom_line.escalation")]}
+        if len(attempts) == 1:
+            text, ask = f"Alpha has 28 airports [{ids[0]}].", f"Operations should confirm Alpha has 28 airports before the next cycle [{ids[0]}]."
+        else:
+            text = f"Alpha is open. A second claim is made [{ids[0]}]."
+            ask = f"Operations should confirm Alpha is open before the next cycle [{ids[0]}]."
+        return {"edits": [
+            {"path": "bottom_line.text", "text": text, "source_ids": [ids[0]]},
+            {"path": "bottom_line.escalation", "text": ask, "source_ids": [ids[0]]},
+        ]}
     coordinator.call = invalid
     with pytest.raises(ContractError, match="Cite each factual sentence"):
         coordinator.report(profile, _draft(ids[0]), [])
@@ -1328,6 +1378,14 @@ def test_significance_is_required_and_capped_by_the_evidence():
     sources = {"A": {"evidence_confidence": "HIGH", "corroboration": 2}}
     row = check_selections({"selections": [{**base, "significance": {**high, "exposure": 2}}]}, sources, {"A"})["selections"][0]
     assert "significance_capped" not in row
+
+
+def test_an_unrecognised_impact_status_does_not_fail_the_batch():
+    base = {"signal_id": "A", "decision": "WATCH", "reason": "Named", "source_ids": ["A"], **CHAIN}
+    potential = check_selections({"selections": [{**base, "impact_status": "POTENTIAL"}]}, {"A": {}}, {"A"})["selections"][0]
+    assert potential["impact_status"] == "PLAUSIBLE" and potential["impact_status_downgraded"] == "POTENTIAL"
+    unknown = check_selections({"selections": [{**base, "impact_status": "MAYBE"}]}, {"A": {}}, {"A"})["selections"][0]
+    assert unknown["impact_status"] == "NOT_ESTABLISHED" and unknown["impact_status_downgraded"] == "MAYBE"
 
 
 def test_significance_bands_follow_the_methodology():
@@ -1688,19 +1746,28 @@ def test_reports_are_decided_after_every_final_critic_so_order_does_not_matter(w
     coordinator.reconcile_pool(search=None, reassess=lambda: None)
     coordinator.supervise(["DRAFT_REPORT"], {"stage": "pool reconciled", "issues": store.issues()})
     call_id = pool.one("SELECT MAX(call_id) AS id FROM weekly_calls WHERE run_id = 'R'")["id"]
-    store._issue(call_id, "STALE", "OPEN", {"issue_id": "STALE", "target": "REPORT:second", "kind": "NARRATIVE", "material": True,
-                                            "problem": "Old objection to the second report.", "source_ids": []})
-    def resolving(*args, system, payload, **kwargs):
-        response = original(*args, system=system, payload=payload, **kwargs)
-        if system == PROMPTS["Critic"] and payload.get("targets") == ["REPORT:second"]:
-            response.update(resolved_issue_ids=["STALE"], resolutions=[{"issue_id": "STALE", "response": "Rewritten.", "source_ids": []}])
-        return response
-    coordinator.call = resolving
     profiles = [_profile("first"), _profile("second")]
     for profile in profiles:
         profile.brief_for = lambda pack: {"formats": ["docx"]}
     monkeypatch.setattr("grit.report.brief.build_brief", lambda *args: _draft(ids[0]))
     monkeypatch.setattr("grit.report.brief.routed_signals", lambda *args: [])
+    # write_report supersedes prior REPORT:second issues at the start; re-seed after that so the second Critic can clear it.
+    reports = []
+    def resolving(*args, system, payload, **kwargs):
+        response = original(*args, system=system, payload=payload, **kwargs)
+        if system == PROMPTS["Reporting"]:
+            reports.append(1)
+            if len(reports) == 2 and "STALE" not in store.issues():
+                store._issue(call_id, "STALE", "OPEN", {
+                    "issue_id": "STALE", "target": "REPORT:second", "kind": "NARRATIVE", "material": True,
+                    "problem": "Old objection to the second report.", "source_ids": [],
+                    "missing_evidence": "A rewritten bottom line",
+                })
+        if system == PROMPTS["Critic"] and payload.get("targets") == ["REPORT:second"] and "STALE" in store.issues():
+            response.update(resolved_issue_ids=["STALE"],
+                            resolutions=[{"issue_id": "STALE", "response": "Rewritten.", "source_ids": []}])
+        return response
+    coordinator.call = resolving
     result = _finish_weekly_reports(pool, SimpleNamespace(run_id="R", pack="test"), profiles, coordinator)
     assert [row["status"] for row in result["reports"]] == ["READY", "READY"] and result["status"] == "READY"
 
@@ -1715,8 +1782,12 @@ def test_a_number_in_a_cited_source_s_title_is_grounded(weekly, monkeypatch):
     monkeypatch.setattr(WeeklyCoordinator, "sources", property(lambda self: titled))
     def reporting(*args, system, payload, **kwargs):
         if system == PROMPTS["Reporting"]:
-            return {"edits": [{"path": path, "text": f"Alpha reopened 4 gates [{ids[0]}].", "source_ids": [ids[0]]}
-                              for path in ("bottom_line.text", "bottom_line.escalation")]}
+            return {"edits": [
+                {"path": "bottom_line.text", "text": f"Alpha reopened 4 gates [{ids[0]}].", "source_ids": [ids[0]]},
+                {"path": "bottom_line.escalation",
+                 "text": f"Operations should confirm the 4 reopened gates before the next cycle [{ids[0]}].",
+                 "source_ids": [ids[0]]},
+            ]}
         return original(*args, system=system, payload=payload, **kwargs)
     coordinator.call = reporting
     assert coordinator.report(_profile(), _draft(ids[0]), [])["status"] == "READY"
@@ -1853,11 +1924,13 @@ def test_an_objection_to_a_risk_link_the_selection_dropped_is_settled(weekly):
     linked = (kept["editorial"].get("risk_ids") or [None])[0]
     store._issue(call_id, "LINK-GONE", "OPEN", {"issue_id": "LINK-GONE", "kind": "UNSUPPORTED", "target": kept["signal_id"], "material": True,
                                                 "problem": "Not about AI capability (STE-GC-08).", "source_ids": []})
+    store._issue(call_id, "WRONG-GONE", "OPEN", {"issue_id": "WRONG-GONE", "kind": "WRONG_ATTRIBUTION", "target": kept["signal_id"],
+                                                 "material": True, "problem": "Toll rises are not Competition (URS-KEY-01).", "source_ids": []})
     if linked:
         store._issue(call_id, "LINK-KEPT", "OPEN", {"issue_id": "LINK-KEPT", "kind": "UNSUPPORTED", "target": kept["signal_id"], "material": True,
                                                     "problem": f"Not supported ({linked}).", "source_ids": []})
     coordinator.settle_false_positives()
-    assert "LINK-GONE" not in store.issues()
+    assert "LINK-GONE" not in store.issues() and "WRONG-GONE" not in store.issues()
     assert not linked or "LINK-KEPT" in store.issues(), "a link the selection still carries stays challenged"
 
 

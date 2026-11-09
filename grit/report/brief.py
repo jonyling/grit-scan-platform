@@ -347,6 +347,17 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         drafted = row.get("row")
         row["summary"] = render(drafted["summary"]) if drafted else None
         row["implications"] = render(drafted["implications"]) if drafted else None
+        size = row.get("financial_size") or {}
+        if row["implications"] and isinstance(size, Mapping) and size.get("label") and size["label"] != "not established":
+            note = f" Financial size: {size['label']} ({size.get('currency') or 'SGD'} {size.get('amount_millions')} million)."
+            sized = (row["implications"].get("plain") or "") + note
+            row["implications"] = {**row["implications"], "plain": sized,
+                                   "runs": [*(row["implications"].get("runs") or []), {"text": note}]}
+        elif row["implications"] and isinstance(size, Mapping):
+            note = " Financial size: not established."
+            sized = (row["implications"].get("plain") or "") + note
+            row["implications"] = {**row["implications"], "plain": sized,
+                                   "runs": [*(row["implications"].get("runs") or []), {"text": note}]}
         row["response"] = (drafted or {}).get("response")
         cited = list((drafted or {}).get("source_ids") or row["signal_ids"][:3])
         cited += [signal_id for signal_id in row.get("support_ids") or [] if signal_id not in cited]

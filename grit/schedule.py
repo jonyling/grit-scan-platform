@@ -1,20 +1,17 @@
-"""grit scheduled: the weekly scans that are due today, run one after another (README, "Run the scans on a schedule").
+"""Run the weekly scans that are due today.
 
-The schedule keeps Brave within its free credit of about 1,000 queries a month:
+`grit scheduled` runs on Mondays. `SCHEDULE` is the cadence, and `tests/test_schedule.py` locks the planned Brave counts:
 
-| Pack | Due | Brave queries a month |
+| Pack | Due | Planned queries a run |
 |---|---|---|
-| dsc | every Monday | 496 to 620 (four or five Mondays) |
-| urs | the first and third Monday of the month | 234 |
-| urs-tw | the first Monday of the month | about 60 |
-| ste | the first Monday of the month | 48 |
+| dsc | Every Monday | 124 |
+| urs | First and third Monday | 117 |
+| urs-tw | First Monday | 60 |
+| ste | First Monday | 48 |
 
-With the 16-query source sweep, the heaviest month (five Mondays) comes to about 978 queries. On other days nothing is
-scanned with Brave; the daily lane still runs. Packs due on the same day run in one process, entity
-packs first, so they never write the pool at the same time.
+The schedule test adds one 16-query source sweep for the month. A five-Monday month of these packs stays at or under 1,000 queries before the adverse scan. Commercial Aerospace (`ca`) and Marine (`marine`) stay off `SCHEDULE`. Run them with `grit weekly --pack` when you accept the extra search cost.
 
-Every Monday, after those scans, the adverse news scan (spec 46) runs and spends up to 40 more Brave queries, about 160 to
-200 a month. That takes the total above the free credit; raise BRAVE_MONTHLY_LIMIT to match the plan, or pass --no-adverse.
+Packs due on the same day run in one process, entity packs first. Every Monday, after those scans, the adverse news scan can send up to 40 more Brave queries. That extra spend sits outside the 1,000-query check. Raise `BRAVE_MONTHLY_LIMIT` to match the Brave plan, or pass `--no-adverse`.
 """
 
 from __future__ import annotations

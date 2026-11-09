@@ -58,7 +58,7 @@ def test_elevated_reports_of_one_story_merge_into_one_event():
     assert saudi["score"] == 12 and saudi["lead"]["signal_id"] == "b", "the top score stands and the T1 report leads"
 
 
-def test_reports_naming_the_same_jurisdiction_and_risk_are_one_story():
+def test_reports_sharing_a_country_and_risk_but_not_headline_words_stay_separate():
     import re
 
     from grit.pipeline.events import UP, _merge_stories
@@ -69,16 +69,17 @@ def test_reports_naming_the_same_jurisdiction_and_risk_are_one_story():
                 "red_candidate": False, "lead": row, "members": [row], "signal_ids": [key], "publishers": 1, "first_date": "2026-11-01",
                 "last_date": "2026-11-02", "risks": risks, "risk_label": "", "requests": []}
 
-    places = {"Saudi Arabia": re.compile(r"(?<![\w])(?:Saudi Arabia|Saudi)", re.IGNORECASE),
-              "Israel": re.compile(r"(?<![\w])(?:Israel)", re.IGNORECASE)}
-    events = [event("a", "US warns of Houthi strikes on Saudi airports", ["URS-EMERGING-01", "URS-KEY-05", "URS-KEY-04"], 12),
-              event("b", "State Department orders non-emergency staff out of Saudi Arabia", ["URS-EMERGING-01"]),
-              event("c", "Saudi Arabia hosts a tourism summit", ["URS-KEY-01"]),
-              event("d", "Israeli shekel drops amid election deadlock", ["URS-KEY-02"])]
-    merged = _merge_stories(events, {}, places)
-    assert sorted(sorted(item["signal_ids"]) for item in merged) == [["a", "b"], ["c"], ["d"]]
-    saudi = next(item for item in merged if len(item["signal_ids"]) == 2)
-    assert saudi["risks"][0] == "URS-EMERGING-01" and len(saudi["risks"]) <= 3
+    places = {"Taiwan": re.compile(r"(?<![\w])(?:Taiwan|Taipei)", re.IGNORECASE),
+              "Saudi Arabia": re.compile(r"(?<![\w])(?:Saudi Arabia|Saudi)", re.IGNORECASE)}
+    # Shared risk and jurisdiction, one shared headline word ("taiwan" / "saudi") — not enough to merge.
+    taiwan = [event("t1", "Typhoon Champi nears Taiwan coast", ["URS-KEY-04"], 12),
+              event("t2", "Taipei Times says DPP faces political pressure in Taiwan", ["URS-KEY-04"], 11)]
+    saudi = [event("a", "US warns of Houthi strikes on Saudi airports", ["URS-EMERGING-01"], 12),
+             event("b", "State Department orders non-emergency staff out of Saudi Arabia", ["URS-EMERGING-01"], 10),
+             event("c", "Saudi Arabia hosts a tourism summit", ["URS-KEY-01"]),
+             event("d", "Israeli shekel drops amid election deadlock", ["URS-KEY-02"])]
+    assert sorted(sorted(item["signal_ids"]) for item in _merge_stories(taiwan, {}, places)) == [["t1"], ["t2"]]
+    assert sorted(sorted(item["signal_ids"]) for item in _merge_stories(saudi, {}, places)) == [["a"], ["b"], ["c"], ["d"]]
 
 
 def _event(key, title, score, *, band="UNRATED", day="2026-11-01"):

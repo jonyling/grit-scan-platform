@@ -12,3 +12,4 @@ secrets/
 # Confidential workbooks stay in secrets/ and out of Git.
 *.xlsx
 *.egg-info/
+*:Zone.Identifier

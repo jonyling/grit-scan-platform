@@ -57,6 +57,8 @@ def _run(pool: Any, args: argparse.Namespace, pack: str) -> Any:
 
     run = new_run(pool, args.date, pack)
     config = (pool.run(run.run_id) or {}).get("config") or {}
+    if getattr(args, "reasoner", None) and not (getattr(args, "reasoned", False) or config.get("weekly_mode") == "reasoned"):
+        raise SystemExit("--reasoner applies only to --reasoned runs.")
     if getattr(args, "reasoned", False) or config.get("weekly_mode") == "reasoned":
         state = pool.one("SELECT * FROM weekly_runs WHERE run_id = ?", (run.run_id,)) or {}
         limit = getattr(args, "countersearch_limit", None)
@@ -69,6 +71,14 @@ def _run(pool: Any, args: argparse.Namespace, pack: str) -> Any:
         if getattr(args, "follow_ups", False):
             raise SystemExit("Reasoned weekly runs share one countersearch budget; do not pass --follow-ups.")
         pool.update_run_config(run.run_id, weekly_mode="reasoned", countersearch_limit=limit)
+        reasoner = getattr(args, "reasoner", None)
+        if reasoner == "deepseek":
+            load_local_env()
+            if not os.environ.get("DEEPSEEK_API_KEY", "").strip():
+                raise SystemExit("--reasoner deepseek needs DEEPSEEK_API_KEY in .env.")
+            pool.update_run_config(run.run_id, reasoner="deepseek")
+        elif getattr(args, "reasoned", False):
+            pool.update_run_config(run.run_id, reasoner="gemini")
         if getattr(args, "reasoned", False):
             workers = getattr(args, "workers", None) or 6
             if workers < 1:
@@ -205,11 +215,17 @@ def agents_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
 
         config = pool.run(run.run_id)["config"]
         ontology = reader_scan._load_pack(pack)
+        posture = (ontology.manifest or {}).get("actionPosture") or {}
         pool.update_run_config(run.run_id, weekly_context={
             "business": reader_scan.business_area_context(ontology),
             "jurisdictions": reader_scan.jurisdictions(ontology),
             "standing_items": reader_scan.standing_items(ontology),
             "owner_roles": reader_scan.owner_roles(ontology),
+            "action_posture": {
+                "next_forum": str(posture.get("nextForum") or "").strip(),
+                "next_forum_date": str(posture.get("nextForumDate") or "").strip(),
+            },
+            "severity_bands": (ontology.manifest or {}).get("severityBands"),
         })
         _admit_supplied_evidence(pool, run, args)
         reader_scan.cover_child_sources(pool, run)
@@ -462,6 +478,42 @@ def cmd_red(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_misses(args: argparse.Namespace) -> int:
+    """Accepted review misses. The next reasoned run can read them. propose writes a file and does not change the rules."""
+    pool = _pool()
+    if args.action == "list":
+        rows = pool.misses(args.pack)
+        if not rows:
+            print(f"No accepted miss for {args.pack}.")
+        for row in rows:
+            keyword = f"  keyword: {row['keyword']}" if row.get("keyword") else ""
+            print(f"{row['miss_id']}  {row['kind']}  recorded by {row['recorded_by']} {row['recorded_at'][:10]}{keyword}")
+            print(f"    {row['text']}")
+        return 0
+    if args.action == "propose":
+        from pathlib import Path
+
+        from grit.agents.harness import assert_proposal_path, propose_changes
+        if not args.out:
+            raise SystemExit("misses propose needs --out FILE.")
+        try:
+            path = assert_proposal_path(Path(args.out))
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(propose_changes(pool.misses(args.pack)), indent=2) + "\n", encoding="utf-8")
+        print(f"Wrote {path}. Nothing in the repository was changed. Review the file before you accept a keyword or a prompt change.")
+        return 0
+    if not args.kind or not (args.text or "").strip() or not (args.by or "").strip():
+        raise SystemExit("misses add needs --kind, --text, and --by.")
+    try:
+        row = pool.record_miss(pack=args.pack, kind=args.kind, text=args.text, recorded_by=args.by, keyword=args.keyword, signal_id=args.signal)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    print(f"Recorded {row['miss_id']} for {args.pack}. The next reasoned run can read it. It does not change a score.")
+    return 0
+
+
 def cmd_corrections(args: argparse.Namespace) -> int:
     """The corrections ledger (URS methodology, section 22). Reports show the open corrections in their quality check."""
     pool = _pool()
@@ -657,6 +709,7 @@ def build_parser() -> argparse.ArgumentParser:
         sub.add_argument("--sweep", type=int, default=0, help="Add up to N due queries from a business-area pack's 12-week digest plan. Default 0.")
         if name == "weekly":
             sub.add_argument("--reasoned", action="store_true", help="Use whole-pool reasoning and exact-report critique (opt-in).")
+            sub.add_argument("--reasoner", choices=("gemini", "deepseek"), help="With --reasoned: deepseek ranks kept signals and drafts the report. Default: gemini.")
             sub.add_argument("--countersearch-limit", type=int, help="Required for --reasoned: explicit maximum searches for the run, including 0.")
             sub.add_argument("--fast", action="store_true", help="With --reasoned: Critic screens dropped signals from compact records and calls run in parallel.")
             sub.add_argument("--workers", type=int, help="With --reasoned --fast: model calls in flight at once. Default 6.")
@@ -677,6 +730,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--findings", type=int, default=6)
     sub.add_argument("--follow-ups", action="store_true")
     sub.add_argument("--reasoned", action="store_true")
+    sub.add_argument("--reasoner", choices=("gemini", "deepseek"))
     sub.add_argument("--countersearch-limit", type=int)
     sub.add_argument("--fast", action="store_true")
     sub.add_argument("--workers", type=int)
@@ -717,6 +771,17 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--impact", help="For confirm or reject: the impact on the business, or why there is none.")
     sub.add_argument("--trigger", help="For confirm: the RED trigger that happened, from `grit red triggers`.")
     sub.set_defaults(handler=cmd_red)
+
+    sub = commands.add_parser("misses", help="Record a review miss the next reasoned run can read, or write a proposal file without changing the rules.")
+    sub.add_argument("action", choices=("list", "add", "propose"))
+    sub.add_argument("--pack", required=True)
+    sub.add_argument("--kind", choices=("KEYWORD_DROP", "RANK_REJECT", "REPORT_RETURN"), help="For add: what was missed.")
+    sub.add_argument("--text", help="For add: what you accepted.")
+    sub.add_argument("--keyword", help="For add: a search word to propose later. It is not added to the scan plan.")
+    sub.add_argument("--signal", help="For add: the signal id, when the miss is about one signal.")
+    sub.add_argument("--by", help="For add: your name.")
+    sub.add_argument("--out", help="For propose: where to write the review file. It cannot be under config, grit, or specs.")
+    sub.set_defaults(handler=cmd_misses)
 
     sub = commands.add_parser("corrections", help="List, add or close entries in a pack's corrections ledger. Every later report carries the open entries.")
     sub.add_argument("action", choices=("list", "add", "close"))

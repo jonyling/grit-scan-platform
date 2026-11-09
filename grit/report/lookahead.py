@@ -10,6 +10,8 @@ import re
 from datetime import date, timedelta
 from typing import Any, Mapping, Sequence
 
+from grit.report.script import has_latin_letter, latin_script
+
 LOOK_AHEAD_DAYS = 30
 MAX_ROWS = 15
 MAX_SENTENCE = 320
@@ -72,8 +74,8 @@ def look_ahead(rows: Sequence[Mapping[str, Any]], run_date: date, *, days: int =
     for row in rows:
         text = f"{row.get('title') or ''}. {str(row.get('text') or '')[:TEXT_CHARS]}"
         for sentence in _SENTENCES.split(" ".join(text.split())):
-            sentence = sentence.strip()
-            if len(sentence) > MAX_SENTENCE or len(sentence) < 25:
+            sentence = latin_script(sentence.strip())
+            if not has_latin_letter(sentence) or len(sentence) > MAX_SENTENCE or len(sentence) < 25:
                 continue
             for when in dates_in(sentence, run_date):
                 if not run_date < when <= end:

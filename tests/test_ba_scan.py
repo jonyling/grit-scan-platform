@@ -46,6 +46,10 @@ def _model(system: str, payload: dict) -> dict:
             lob = payload["business_area"]["lines_of_business"][0]
             return {"movement": "ESCALATING", "summary": "A ransomware cyberattack disrupted ticketing at a European rail operator. [S1]", "source_ids": ["S1"],
                     "quotes": [{"source_id": "S1", "quote": "A ransomware cyberattack disrupted ticketing systems"}], "change_from_prior": "First assessment.",
+                    "sequence": [
+                        {"date": sources["S1"].get("date", "1 Oct"), "text": "A ransomware cyberattack disrupted ticketing systems.", "source_id": "S1"},
+                        {"date": sources["S1"].get("date", "1 Oct"), "text": "A European rail operator was hit.", "source_id": "S1"},
+                    ],
                     "implication": f"A similar attack could disrupt systems that {lob} delivers to rail operators. [S1]"}
         return {"movement": "NO_MATERIAL_CHANGE", "summary": "No new development was found this week in the checked sources.", "source_ids": [], "quotes": []}
     if system == CRITIC_SYSTEM:

@@ -12,7 +12,10 @@ from datetime import datetime
 from typing import Any, Mapping, Sequence
 
 from grit.acquisition.brave_plan import without_navigation
-from grit.agents.checks import MIN_QUOTE, haystack, marked_ids, normalise, quote_problems, source_problems, strip_marks, text_problems
+from grit.agents.checks import (
+    MIN_QUOTE, haystack, marked_ids, normalise, quote_problems, sentence_cite_problems, source_problems, strip_marks,
+    text_problems,
+)
 from grit.agents.loop.llm import LoopError, call_json
 from grit.agents.reader_prompts import (
     ASSESSOR_SYSTEM,
@@ -133,6 +136,50 @@ def anchor_hits(text: str, anchors: Sequence[str]) -> list[str]:
     return [anchor for anchor in anchors if len(anchor) >= 3 and re.search(rf"(?<![\w&]){re.escape(normalise(anchor))}(?![\w&])", folded)]
 
 
+def _date_on_source(stated: str, source: Mapping[str, Any]) -> bool:
+    """True when the stated day already appears on the source's date field or in its text."""
+    stated = " ".join(str(stated or "").split())
+    if not stated or not _DAY_MONTH.search(stated):
+        return False
+    hay = f"{source.get('date') or ''} {source.get('title') or ''} {str(source.get('text') or '')[:400]}"
+    folded = normalise(hay)
+    tokens = [token for token in re.findall(r"[A-Za-z]+|\d{1,4}", stated) if token.casefold() not in {"st", "nd", "rd", "th", "of"}]
+    return bool(tokens) and all(normalise(token) in folded for token in tokens)
+
+
+def check_sequence(value: Any, cited_ids: Sequence[str], sources: Mapping[str, Mapping[str, Any]]) -> tuple[list[dict[str, str]], list[str]]:
+    """Two to four dated steps. Each date must already be on the cited source. Returns (cleaned steps, problems)."""
+    if not isinstance(value, list) or not (2 <= len(value) <= 4):
+        return [], ["SEQUENCE_MISSING: sequence: write two to four dated steps when the assessment cites a source."]
+    cleaned: list[dict[str, str]] = []
+    found: list[str] = []
+    for item in value:
+        if not isinstance(item, Mapping):
+            found.append("SEQUENCE_SHAPE: sequence: each step is an object with date, text and source_id.")
+            continue
+        day, text, source_id = item.get("date"), item.get("text"), item.get("source_id")
+        if not isinstance(day, str) or not day.strip() or not isinstance(text, str) or not text.strip():
+            found.append("SEQUENCE_SHAPE: sequence: each step needs a date and one sentence.")
+            continue
+        if source_id not in cited_ids or source_id not in sources:
+            found.append(f"SEQUENCE_SOURCE: sequence: '{source_id}' must be one of the cited source_ids.")
+            continue
+        if not _date_on_source(day, sources[source_id]):
+            found.append(f"SEQUENCE_DATE: sequence: '{day}' must already appear on {source_id}'s date or page.")
+            continue
+        found += text_problems(text, haystack(sources, [source_id]), "sequence")
+        cleaned.append({"date": day.strip(), "text": text.strip(), "source_id": str(source_id)})
+    if found:
+        return [], found
+    return cleaned, []
+
+
+def format_timeline(sequence: Sequence[Mapping[str, str]], implication: str) -> str:
+    """The Implications column: dated steps first, then the conditional sentence."""
+    steps = [f"{step['date']}: {step['text'].rstrip(' .')} [{step['source_id']}]." for step in sequence]
+    return (" ".join(steps) + " " + implication.strip()).strip()
+
+
 def check_implication(
     text: Any, cited_ids: Sequence[str], sources: Mapping[str, Mapping[str, Any]], anchors: Sequence[str], field_name: str = "implication"
 ) -> list[str]:
@@ -154,6 +201,15 @@ def check_implication(
     if certain:
         found.append(f"CERTAINTY_CLAIM: {field_name}: '{certain.group(0)}'. It is a possibility, not a forecast.")
     found += text_problems(text, haystack(sources, [mark for mark in marks if mark in cited_ids] or list(cited_ids)), field_name)
+    # Anchors are the business's own names. A possibility may name them without those words appearing on the cited page.
+    named = sources
+    if anchors:
+        extra = " ".join(str(item) for item in anchors)
+        named = {
+            key: {**dict(value), "text": f"{value.get('text') or ''} {extra}".strip()} if isinstance(value, Mapping) else value
+            for key, value in sources.items()
+        }
+    found += sentence_cite_problems(text, named, field_name)
     return found
 
 
@@ -169,15 +225,19 @@ def check_counter_indicator(text: Any, cited_ids: Sequence[str], sources: Mappin
 
 def check_extras(
     draft: Any, cited_ids: Sequence[str], sources: Mapping[str, Mapping[str, Any]], anchors: Sequence[str], group: bool
-) -> tuple[dict[str, str | None], dict[str, list[str]]]:
-    """The fields that ride on a validated assessment, each checked on its own: the implication, and for a Group condition the
+) -> tuple[dict[str, Any], dict[str, list[str]]]:
+    """The fields that ride on a validated assessment: the dated sequence, the implication, and for a Group condition the
     opportunity and the counter-indicator (spec 37). Returns the fields that passed and the problems of those that failed."""
-    accepted: dict[str, str | None] = {}
+    accepted: dict[str, Any] = {}
     failing: dict[str, list[str]] = {}
     if not anchors or not cited_ids:
         return accepted, failing
     draft = draft if isinstance(draft, Mapping) else {}
-    checks: dict[str, list[str]] = {"implication": check_implication(draft.get("implication"), cited_ids, sources, anchors)}
+    steps, sequence_problems = check_sequence(draft.get("sequence"), cited_ids, sources)
+    checks: dict[str, list[str]] = {
+        "sequence": sequence_problems,
+        "implication": check_implication(draft.get("implication"), cited_ids, sources, anchors),
+    }
     if group:
         opportunity = draft.get("opportunity")
         checks["opportunity"] = [] if opportunity in (None, "") else check_implication(opportunity, cited_ids, sources, anchors, "opportunity")
@@ -185,11 +245,17 @@ def check_extras(
     for name, problems in checks.items():
         if problems:
             failing[name] = problems
+        elif name == "sequence":
+            accepted[name] = steps
         else:
             value = draft.get(name)
             if name == "counter_indicator" and isinstance(value, str):
                 value = strip_marks(value)  # it needs no citation, and a local [S#] would mean nothing in the brief
             accepted[name] = value.strip() if isinstance(value, str) and value.strip() else None
+    if "sequence" in failing:
+        accepted.pop("implication", None)
+    elif "sequence" in accepted and "implication" in accepted and accepted["implication"]:
+        accepted["implication"] = format_timeline(accepted["sequence"], accepted["implication"])
     return accepted, failing
 
 
@@ -820,7 +886,10 @@ def check_event_row(draft: Any, sources: Mapping[str, Mapping[str, Any]], anchor
     # A source's own date is a fact the row may state, so it counts as grounded text.
     dated = f"{haystack(sources, ids)} " + " ".join(str(sources[item].get("date") or "") for item in ids if item in sources)
     found += text_problems(summary, dated, "summary")
+    found += sentence_cite_problems(summary, sources, "summary")
     found += specificity_problems(summary, sources, marks or ids)
+    steps, sequence_problems = check_sequence(draft.get("sequence"), ids, sources)
+    found += sequence_problems
     found += check_implication(draft.get("implications"), ids, sources, anchors, "implications")
     response = draft.get("response") if isinstance(draft.get("response"), Mapping) else {}
     action, owner = str(response.get("action") or ""), response.get("owner")
@@ -831,6 +900,9 @@ def check_event_row(draft: Any, sources: Mapping[str, Mapping[str, Any]], anchor
     if owner not in owners:
         found.append(f"UNKNOWN_OWNER: response.owner: '{str(owner)[:40]}' is not one of owners.")
     found += text_problems(strip_marks(action), haystack(sources, ids), "response.action")
+    if not found and steps and isinstance(draft, dict):
+        draft["implications"] = format_timeline(steps, str(draft.get("implications") or ""))
+        draft["sequence"] = steps
     return found
 
 
@@ -856,7 +928,8 @@ def draft_event_row(
         if not violations:
             log.status = "VALIDATED"
             return {
-                "status": "VALIDATED", "item": draft["item"].strip(), "summary": draft["summary"].strip(), "implications": draft["implications"].strip(),
+                "status": "VALIDATED", "item": draft["item"].strip(), "summary": draft["summary"].strip(),
+                "implications": draft["implications"].strip(), "sequence": draft.get("sequence") or [],
                 "response": {"action": strip_marks(draft["response"]["action"]), "owner": draft["response"]["owner"]},
                 "source_ids": [ref for ref in draft["source_ids"] if ref in sources], "violations": [],
             }, log

@@ -48,6 +48,53 @@ def text_problems(text: str, haystack: str, where: str) -> list[str]:
     return found
 
 
+# Local S# marks (reader drafts) and SIG- marks (weekly narrative).
+_ANY_CITE = re.compile(
+    r"\[((?:S\d{1,3}|SIG-[0-9a-f]{16})(?:\s*,\s*(?:S\d{1,3}|SIG-[0-9a-f]{16}))*)\]"
+)
+_DAY_TOKEN = re.compile(r"\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\b", re.I)
+
+
+def sentence_cite_problems(text: str, sources: Mapping[str, Mapping[str, Any]], where: str) -> list[str]:
+    """Each cited sentence must be supported by the page(s) it cites: dates, numbers, and distinctive names."""
+    from grit.core.headlines import distinctive_terms, identifiers
+
+    if not isinstance(text, str) or not text.strip() or not isinstance(sources, Mapping):
+        return []
+    found: list[str] = []
+    last = 0
+    for mark in _ANY_CITE.finditer(text):
+        claim = text[last:mark.start()].strip(" .!?\n")
+        last = mark.end()
+        if not claim:
+            continue
+        refs = [part.strip() for part in mark.group(1).split(",")]
+        pages = " ".join(
+            f"{(sources.get(ref) or {}).get('title') or ''} {(sources.get(ref) or {}).get('text') or ''} "
+            f"{(sources.get(ref) or {}).get('date') or ''}"
+            for ref in refs
+        )
+        folded = normalise(pages)
+        if not folded:
+            found.append(f"UNSUPPORTED_CITE: {where}: '{claim[:80]}' cites {', '.join(refs)}, which have no stored text.")
+            continue
+        for match in _DAY_TOKEN.finditer(claim):
+            day = f"{match.group(1)} {match.group(2)[:3]}"
+            if normalise(day) not in folded and normalise(match.group(0)) not in folded:
+                found.append(f"UNSUPPORTED_DATE: {where}: '{match.group(0)}' is not on the cited page(s) {', '.join(refs)}.")
+        for token in numbers_in(claim):
+            if not has_number(token, pages):
+                found.append(f"UNSUPPORTED_NUMBER: {where}: {token} is not on the cited page(s) {', '.join(refs)}.")
+        names = distinctive_terms(claim) | identifiers(claim)
+        missing = sorted(name for name in names if len(name) >= 5 and name not in distinctive_terms(pages) and name not in identifiers(pages)
+                         and normalise(name) not in folded)
+        # Require at least one distinctive claim word to appear when the claim asserts several; reject when none do.
+        if names and len(missing) == len(names):
+            sample = ", ".join(missing[:4])
+            found.append(f"UNSUPPORTED_NAME: {where}: '{claim[:80]}' cites {', '.join(refs)}, which do not state {sample}.")
+    return found
+
+
 def quote_problems(quotes: Any, sources: Mapping[str, Mapping[str, Any]], where: str, allowed: Iterable[str] | None = None) -> list[str]:
     found: list[str] = []
     if not isinstance(quotes, list):

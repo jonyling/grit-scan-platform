@@ -23,6 +23,21 @@
     "relationships": "URS-Relationships.json",
     "scan_plan": "URS-Scan-Plan.json"
   },
+  "actionPosture": {
+    "nextForum": "",
+    "nextForumDate": ""
+  },
+  "severityBands": {
+    "currency": "SGD",
+    "note": "From specs/15_Severity_Definition.md (URS Entity Info workbook). Replace when the workbook changes.",
+    "bands": [
+      {"name": "Insignificant", "underMillions": 1.4},
+      {"name": "Minor", "fromMillions": 1.4, "underMillions": 6.8},
+      {"name": "Moderate", "fromMillions": 6.8, "underMillions": 27.2},
+      {"name": "Major", "fromMillions": 27.2, "underMillions": 68.1},
+      {"name": "Severe", "fromMillions": 68.1}
+    ]
+  },
   "build": {
     "note": "Inputs for grit pack-build. The workbook follows the BA Entity Info template; these name what differs per business area.",
     "prefix": "URS",

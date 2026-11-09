@@ -13,6 +13,7 @@ from datetime import date
 from typing import Any, Mapping, Sequence
 
 from grit.pipeline.events import DOWN, SAME, UP, event_register, risk_labels
+from grit.report.script import has_latin_letter, latin_script
 
 CATEGORIES = ("Operational", "Financial / macro", "Supply / cost", "Competitor / tech", "Regulatory / legal")
 OPERATIONAL, FINANCIAL, SUPPLY, COMPETITOR, REGULATORY = CATEGORIES
@@ -22,6 +23,7 @@ NIL = "No item kept (searched)"
 NIL_WIDE = "No item kept (business-area-wide search only)"
 NO_FINDING = "No item found in the checked sources."
 NO_COUNTRY_SEARCH = "No item found; no country-specific search ran this week."
+NO_ENGLISH = "No English-language headline in the kept sources."
 MAX_PRIORITIES = 12
 MAX_CHANGES = 12
 _CATEGORY_WORDS = (
@@ -40,12 +42,45 @@ _SUFFIX = re.compile(r"\s+(?:[|\u2013\u2014<-]\s+[^|\u2013\u2014<-]{2,60})$")
 _CONFLICT = re.compile(r"(\d[\d,]*)\s+(?:people\s+|persons\s+)?(killed|dead|deaths|died|injured|wounded|missing|cancelled|flights|missiles|drones)\b", re.I)
 
 
+def settle_count_conflict(values: Mapping[str, set[str]], members: Sequence[Mapping[str, Any]]) -> tuple[str, set[str]]:
+    """Pick one figure: stronger source band first, then more outlets, then the lower count as a stable tie-break."""
+    from grit.core.source_bands import BANDS
+
+    def band_for(outlets: set[str]) -> int:
+        ranks = []
+        for row in members:
+            publisher = str(row.get("publisher") or "source")
+            if publisher in outlets or any(outlet in publisher or publisher in outlet for outlet in outlets):
+                band = str(row.get("source_band") or "UNRATED")
+                ranks.append(BANDS.index(band) if band in BANDS else len(BANDS))
+        return min(ranks) if ranks else len(BANDS)
+
+    chosen_value, chosen_outlets = min(
+        values.items(),
+        key=lambda pair: (band_for(pair[1]), -len(pair[1]), int(pair[0])),
+    )
+    return chosen_value, chosen_outlets
+
+
 def clean_title(title: str | None) -> str:
-    """A headline without its outlet or breadcrumb suffix, such as ' | The Straits Times'."""
+    """A headline without its outlet suffix, and without letters from a non-Latin script."""
     text = " ".join(str(title or "").split())
     for _ in range(2):
         text = _SUFFIX.sub("", text)
-    return text.strip()
+    return latin_script(text).strip()
+
+
+def english_headlines(rows: Sequence[Mapping[str, Any]], limit: int = 2) -> list[tuple[str, Mapping[str, Any]]]:
+    """Kept rows whose headlines still contain a Latin letter after non-English script is removed."""
+    kept: list[tuple[str, Mapping[str, Any]]] = []
+    for row in rows:
+        title = clean_title(row.get("title"))
+        if not has_latin_letter(title):
+            continue
+        kept.append((title, row))
+        if len(kept) >= limit:
+            break
+    return kept
 
 
 def category_of_name(name: str) -> str:
@@ -210,13 +245,21 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     recorded = "event_rows_withheld" in config
     assessed = set(drafted) | set(config.get("event_rows_withheld") or [])
     elevated = [event for event in events if event["elevated"] and (not recorded or event["event_id"] in assessed)][:8]
-    escalating_rows = [{
-        "event_id": event["event_id"], "band": event["band"], "item": label(event), "risk": event["risk_label"], "tier": event["tier"], "score": event.get("score"),
-        "row": drafted.get(event["event_id"]), "lead": event["lead"]["signal_id"], "signal_ids": event["signal_ids"][:6], "publishers": event["publishers"],
-        # The event's best-banded reports (T1 to T3) beyond its lead, listed with the drafted row's own sources.
-        "support_ids": [row["signal_id"] for row in event.get("reports") or event["members"] if row["signal_id"] != event["lead"]["signal_id"]
-                        and str(row.get("source_band") or "") in {"T1", "T2", "T3"}][:2],
-    } for event in elevated]
+    from grit.core.financial_band import financial_size as _financial_size
+
+    pack_bands = ((getattr(pack, "manifest", None) or {}) if hasattr(pack, "manifest") else {}).get("severityBands")
+    escalating_rows = []
+    for event in elevated:
+        lead = event["lead"]
+        size = _financial_size(f"{lead.get('title') or ''} {str(lead.get('text') or '')[:1500]}", pack_bands)
+        escalating_rows.append({
+            "event_id": event["event_id"], "band": event["band"], "item": label(event), "risk": event["risk_label"], "tier": event["tier"], "score": event.get("score"),
+            "row": drafted.get(event["event_id"]), "lead": lead["signal_id"], "signal_ids": event["signal_ids"][:6], "publishers": event["publishers"],
+            "financial_size": size,
+            # The event's best-banded reports (T1 to T3) beyond its lead, listed with the drafted row's own sources.
+            "support_ids": [row["signal_id"] for row in event.get("reports") or event["members"] if row["signal_id"] != lead["signal_id"]
+                            and str(row.get("source_band") or "") in {"T1", "T2", "T3"}][:2],
+        })
 
     # 2. What changed since the last report.
     previous = {row["condition_id"]: row for row in pool.conditions(pool.latest_run(run["pack"], before=run["run_date"], kind="READER_SCAN")["run_id"])} \
@@ -272,9 +315,13 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         line = {"lob": lob, "cells": {}}
         for category in CATEGORIES:
             found = cells.get((lob, category)) or []
-            if found:
-                line["cells"][category] = {"text": "; ".join(clean_title(item.get("title")) for item in found[:2]), "signal_ids": [item["signal_id"] for item in found[:2]],
-                                           "more": max(0, len(found) - 2)}
+            headlines = english_headlines(found)
+            if headlines:
+                line["cells"][category] = {"text": "; ".join(title for title, _row in headlines),
+                                           "signal_ids": [row["signal_id"] for _title, row in headlines],
+                                           "more": max(0, sum(1 for row in found if has_latin_letter(clean_title(row.get("title")))) - len(headlines))}
+            elif found:
+                line["cells"][category] = {"text": NO_ENGLISH, "signal_ids": [], "more": len(found)}
             else:
                 specific = lob == BA_WIDE or (lob, category) in scoped
                 text = NOT_SEARCHED if not searched.get(category) else NIL if specific else NIL_WIDE
@@ -291,10 +338,11 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         found.sort(key=lambda item: (item.get("tier") or 9, -(item.get("corroboration") or 1)))
         country_searched = any(str(query.get("target_id") or "") in entity_ids or _names_country(country, str(query.get("query") or ""))
                                for query in scope["queries"])
+        headline = english_headlines(found, 1)
         jurisdictions.append({
             "country": country, "entities": entities[:6], "more_entities": max(0, len(entities) - 6),
-            "finding": clean_title(found[0].get("title")) if found else NO_FINDING if country_searched else NO_COUNTRY_SEARCH,
-            "signal_ids": [found[0]["signal_id"]] if found else [], "searched": country_searched,
+            "finding": headline[0][0] if headline else (NO_ENGLISH if found else NO_FINDING if country_searched else NO_COUNTRY_SEARCH),
+            "signal_ids": [headline[0][1]["signal_id"]] if headline else [], "searched": country_searched,
             "trend": UP if any(row["signal_id"] in up_ids for row in found) else SAME if found else "–",
         })
 
@@ -315,9 +363,25 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
             for match in _CONFLICT.finditer(f"{row.get('title') or ''} {str(row.get('text') or '')[:1500]}"):
                 said[match.group(2).casefold()][match.group(1).replace(",", "")].add(str(row.get("publisher") or "source"))
         for word, values in said.items():
-            if len(values) > 1:
-                text = "; ".join(f"{', '.join(sorted(outlets)[:2])}: {value} {word}" for value, outlets in sorted(values.items(), key=lambda pair: int(pair[0])))
-                conflicts.append({"item": label(event), "said": text, "treatment": "The sources differ. The brief shows each figure with its outlet; check the primary source before quoting one."})
+            if len(values) <= 1:
+                continue
+            chosen_value, chosen_outlets = settle_count_conflict(values, event["members"])
+            rejected = [
+                f"{value} {word}"
+                for value, outlets in sorted(values.items(), key=lambda pair: int(pair[0]))
+                if value != chosen_value
+            ]
+            others = [
+                f"{value} {word} ({', '.join(sorted(outlets)[:2])})"
+                for value, outlets in sorted(values.items(), key=lambda pair: int(pair[0]))
+                if value != chosen_value
+            ]
+            outlet = sorted(chosen_outlets)[0]
+            treatment = (f"This brief uses {chosen_value} {word}, from {outlet}."
+                         + (f" Another outlet said {others[0]}." if others else ""))
+            text = "; ".join(f"{', '.join(sorted(outlets)[:2])}: {value} {word}" for value, outlets in sorted(values.items(), key=lambda pair: int(pair[0])))
+            conflicts.append({"item": label(event), "said": text, "chosen": f"{chosen_value} {word}",
+                              "rejected": rejected, "treatment": treatment})
     lines = [lob for lob in lobs if lob != BA_WIDE]
     unswept = [lob for lob in lines if not any((lob, category) in scoped for category in CATEGORIES)
                and not any(cell["signal_ids"] for line in coverage if line["lob"] == lob for cell in line["cells"].values())]

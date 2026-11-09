@@ -82,6 +82,7 @@ def scorecard(brief: Mapping[str, Any], corrections: Any = None) -> dict[str, An
         "requests_unanswered": sum(1 for row in requests if not row.get("signals")),
         "contradiction_search": contradiction,
         "open_corrections": len(ledger),
+        "corrections_on_brief": len(brief.get("corrections") or []),
         "retired_phrases_used": retired,
     }
     checks = {
@@ -92,6 +93,7 @@ def scorecard(brief: Mapping[str, Any], corrections: Any = None) -> dict[str, An
         "the narrative's trend words match the trends": not trend_mismatch,
         "top findings were contradiction-searched": contradiction in (None, "Yes"),
         "no phrase the corrections ledger retired": not retired,
+        "every open correction appears on the brief": len(brief.get("corrections") or []) >= len(ledger),
     }
     return {"metrics": metrics, "checks": checks, "passed": sum(checks.values()), "of": len(checks)}
 
