@@ -499,6 +499,36 @@ class Pool:
             states[(row["signal_id"], row["execution_id"])] = row["state"]
         return states
 
+    # WSH precedents (spec 47) ---------------------------------------------------------------------------------
+
+    def add_wsh_precedent(
+        self,
+        *,
+        hazard: str,
+        mechanism: str,
+        earlier_date: str,
+        stated_by: str,
+        run_id: str,
+    ) -> int:
+        """Store an earlier case only when a WSH Council bulletin named it."""
+        return self.insert(
+            "wsh_precedents",
+            {
+                "hazard": hazard,
+                "mechanism": mechanism,
+                "earlier_date": earlier_date,
+                "stated_by": stated_by,
+                "run_id": run_id,
+                "created_at": utc_now(),
+            },
+        )
+
+    def wsh_precedents_for_hazard(self, hazard: str) -> list[dict[str, Any]]:
+        return self.rows(
+            "SELECT * FROM wsh_precedents WHERE lower(hazard) = lower(?) ORDER BY earlier_date DESC, precedent_id DESC",
+            (hazard,),
+        )
+
     # Logs -----------------------------------------------------------------------------------------------------
 
     def log(self, *, actor_type: str, actor: str, status: str, run_id: str | None = None, version: str | None = None, model: str | None = None,

@@ -1,8 +1,8 @@
 """Reader ontology packs.
 
-A pack is a folder under ``config/`` with a ``pack.json`` manifest. The manifest names the level (``GROUP``, ``BA``, or ``ENTITY``), the parent and children, and the register files. The loader reads those files. Every row comes from a register file.
+A pack is a folder under ``config/`` with a ``pack.json`` manifest. The manifest names the level (``GROUP``, ``BA``, ``ENTITY``, or ``FUNCTION``), the parent and children, and the register files. The loader reads those files. Every row comes from a register file.
 
-Current packs: ``urs``, ``urs-tw``, ``dsc``, ``ca``, ``marine``, and ``ste``. Add another business area as data, using the guide in ``docs/add-a-business-area.md``.
+Current packs: ``urs``, ``urs-tw``, ``dsc``, ``ca``, ``marine``, ``ste``, and ``wsh``. ``wsh`` is Workplace Safety & Health, a functional pack with a monthly discussion digest (spec 47). Add another business area as data, using the guide in ``docs/add-a-business-area.md``.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from typing import Any
 from grit.settings import CONFIG_DIR
 
 MANIFEST = "pack.json"
-LEVELS = ("ENTITY", "BA", "GROUP")
+LEVELS = ("ENTITY", "BA", "FUNCTION", "GROUP")
 
 
 def manifests(config_dir: Path = CONFIG_DIR) -> dict[str, dict[str, Any]]:
@@ -51,6 +51,8 @@ class OntologyPack:
     relationships: dict[str, Any] | None = None
     scan_plan: dict[str, Any] | None = None
     order_book: dict[str, Any] | None = None
+    scope: dict[str, Any] | None = None
+    alert_patterns: dict[str, Any] | None = None
     manifest: dict[str, Any] | None = None
 
     @property
@@ -64,6 +66,10 @@ class OntologyPack:
     @property
     def children(self) -> list[str]:
         return list((self.manifest or {}).get("children") or [])
+
+    @property
+    def report_kind(self) -> str:
+        return str((self.manifest or {}).get("reportKind") or "ba-brief")
 
 
 def _read(path: Path) -> Any:

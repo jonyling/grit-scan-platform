@@ -8,6 +8,8 @@ output/
 secrets/
 ~$*
 *.code-workspace
+*:Zone.Identifier
+*.Zone.Identifier
 
 # Confidential workbooks stay in secrets/ and out of Git.
 *.xlsx

@@ -577,3 +577,15 @@ CREATE TABLE IF NOT EXISTS adverse_items (
     created_at      TEXT NOT NULL,
     PRIMARY KEY (scan_id, item_id)
 );
+
+-- WSH precedents (spec 47): earlier cases named by a WSH Council bulletin. Never inferred by keyword.
+CREATE TABLE IF NOT EXISTS wsh_precedents (
+    precedent_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    hazard          TEXT NOT NULL,
+    mechanism       TEXT NOT NULL,
+    earlier_date    TEXT NOT NULL,
+    stated_by       TEXT NOT NULL REFERENCES signals (signal_id),
+    run_id          TEXT NOT NULL REFERENCES runs (run_id),
+    created_at      TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_wsh_precedents_hazard ON wsh_precedents (hazard);

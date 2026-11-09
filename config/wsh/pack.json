@@ -1,0 +1,22 @@
+{
+  "pack": "wsh",
+  "level": "FUNCTION",
+  "label": "Workplace Safety & Health",
+  "shortLabel": "WSH",
+  "parent": null,
+  "children": [],
+  "reportKind": "wsh-digest",
+  "note": "Functional track for James Lek (spec 47). External WSH signals discussed in depth. No Entity Info workbook; no commercial graph; not packaged for AIRIS.",
+  "registers": {
+    "source_register": "WSH-Source-Register.json",
+    "exposure": "WSH-Exposure-Ontology.json",
+    "lob_profiles": "WSH-LOB-Profiles.json",
+    "themes": "WSH-Themes.json",
+    "baseline": "WSH-Global-Baseline.json"
+  },
+  "optional": {
+    "scan_plan": "WSH-Scan-Plan.json",
+    "scope": "WSH-Scope.json",
+    "alert_patterns": "WSH-Alert-Patterns.json"
+  }
+}

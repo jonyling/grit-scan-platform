@@ -27,6 +27,18 @@ def write_pack(pool: Pool, run_id: str, profile: Profile, *, folder: Path | None
     brief_config = profile.brief_for(str(run.get("pack")))
     if brief_config is None:
         return {"profile": profile.profile_id, "skipped": f"This profile receives no brief for the {run.get('pack')} pack."}
+    from grit.ontology.pack import manifests
+    from grit.pipeline.reader_scan import _load_pack
+
+    pack_name = str(run.get("pack"))
+    pack = _load_pack(pack_name) if pack_name in manifests() else None
+    if pack is not None and pack.report_kind == "wsh-digest":
+        from grit.wsh.digest import write_digest_pack
+
+        return write_digest_pack(
+            pool, run_id, profile, folder=folder, submit=submit,
+            use_reasoned=True, progress=lambda message: print(message, flush=True),
+        )
     reasoned = (run.get("config") or {}).get("weekly_mode") == "reasoned"
     snapshot = None
     if reasoned:

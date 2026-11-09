@@ -1,0 +1,15 @@
+{
+  "registerId": "WSH-EXPOSURE",
+  "absence": {
+    "entities": "Functional pack: no STE commercial entities are registered here. Industry and place come from WSH-Scope.json.",
+    "customers": "No customer register for the WSH digest.",
+    "suppliers": "No supplier register for the WSH digest.",
+    "projects": "No project register for the WSH digest.",
+    "sites": "No site register for the WSH digest."
+  },
+  "entities": [],
+  "customers": [],
+  "suppliers": [],
+  "projects": [],
+  "sites": []
+}

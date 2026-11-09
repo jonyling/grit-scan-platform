@@ -1,0 +1,116 @@
+{
+  "registerId": "WSH-SCAN-PLAN",
+  "status": "DRAFT_FOR_REVIEW",
+  "note": "Monthly Workplace Safety & Health digest for James Lek (spec 47). Queries are anchored to Singapore workplace loci, the six STE industries, high-energy hazards, MOM/WSH Council, and named practice bodies. Bare words such as 'workplace safety' alone are avoided. windowDays is a month so this pack is not selected by the default weekly command.",
+  "standingSet": "themes",
+  "windowDays": 35,
+  "audience": "James Lek, Workplace Safety & Health",
+  "themes": [
+    {
+      "themeId": "WSH-SERIOUS-01",
+      "queries": [
+        "Singapore construction fall from height fatality",
+        "Singapore construction worker killed worksite",
+        "Singapore workplace fatality MOM",
+        "Singapore MOM workplace death investigation",
+        "Singapore shipyard worker killed accident",
+        "Singapore shipyard fire worker injured",
+        "Singapore offshore marine workplace fatality",
+        "Singapore crane collapse serious injury",
+        "Singapore lifting operation workplace accident",
+        "Singapore confined space workplace death",
+        "Singapore industrial fire workplace fatality",
+        "Singapore factory explosion worker",
+        "Singapore electrocution workplace accident",
+        "Singapore hangar aircraft maintenance accident",
+        "Singapore aerospace MRO workplace injury",
+        "Singapore facilities management worker accident",
+        "Singapore security officer workplace fatality",
+        "Singapore defence contractor workplace accident",
+        "MOM stop-work order workplace safety Singapore",
+        "MOM composition fine Workplace Safety and Health Act",
+        "Singapore struck by falling object construction",
+        "Singapore caught in machinery workplace death"
+      ]
+    },
+    {
+      "themeId": "WSH-LEADING-01",
+      "queries": [
+        "Campbell Institute leading indicators safety",
+        "Campbell Institute safety performance indicators",
+        "ICMM critical control management leading indicator",
+        "ICMM fatality prevention leading indicators",
+        "industry leading indicator workplace safety practice",
+        "near miss reporting leading indicator construction",
+        "pre-task planning safety leading indicator",
+        "safety observation program leading indicator"
+      ]
+    },
+    {
+      "themeId": "WSH-SIF-01",
+      "queries": [
+        "Construction Safety Research Alliance Energy Wheel",
+        "Matthew Hallowell Energy Wheel hazard recognition",
+        "CSRA Safety Classification and Learning SCL model",
+        "HECA high-energy control assessment SIF",
+        "Hallowell direct controls high energy",
+        "EEI SIF prevention precursor",
+        "National Safety Council SIF prevention",
+        "NSC SIF prevention model",
+        "OSHA SIF Prevention Alliance CSRA",
+        "serious injury fatality precursor workplace"
+      ]
+    },
+    {
+      "themeId": "WSH-HFACS-01",
+      "queries": [
+        "HFACS Wiegmann Shappell industry application",
+        "Human Factors Analysis and Classification System workplace",
+        "HFACS construction maintenance human factors",
+        "HFACS aviation maintenance hangar",
+        "HFACS organisational influences workplace accident"
+      ]
+    },
+    {
+      "themeId": "WSH-EMERGING-01",
+      "queries": [
+        "WSH Council heat stress circular Singapore",
+        "Singapore workplace heat stress MOM",
+        "MOM heat stress outdoor work WBGT Singapore",
+        "Singapore construction fatigue workplace safety",
+        "ageing workforce workplace safety Singapore construction",
+        "contractor management workplace safety Singapore",
+        "principal contractor WSH duties Singapore",
+        "robotics automation workplace safety construction Singapore",
+        "Singapore haze outdoor work MOM guidelines",
+        "Singapore WSH Council circular contractor",
+        "new technology workplace safety construction Singapore",
+        "Singapore facilities management heat stress workers"
+      ]
+    },
+    {
+      "themeId": "WSH-BULLETIN-01",
+      "queries": [
+        "site:wshc.sg \"WSH Alert\"",
+        "site:wshc.sg \"WSH Advisory\"",
+        "site:wshc.sg \"WSH Insights\"",
+        "\"WSH Alert\" Singapore fatality",
+        "\"WSH Advisory\" Singapore",
+        "\"WSH Insights\" Singapore"
+      ]
+    }
+  ],
+  "managementRequests": [],
+  "namedItems": {
+    "source": "none",
+    "note": "Functional pack: no named commercial entities, customers or suppliers are searched."
+  },
+  "watchpoints": [],
+  "sectionTitles": {
+    "SERIOUS": "Serious incidents",
+    "LEADING": "Leading indicators",
+    "SIF": "Energy Wheel and SIF prevention",
+    "HFACS": "Human factors — HFACS",
+    "EMERGING": "Emerging risks"
+  }
+}

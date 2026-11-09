@@ -1,0 +1,128 @@
+{
+  "registerId": "WSH-SCOPE",
+  "status": "ACTIVE",
+  "note": "Scope for the Workplace Safety & Health digest (spec 47). An item must be workplace safety in STE's watched industries (defence, aerospace, marine, construction, facilities management, security services), not a residential, clinical, combat or generic news hit. Phase 1 place is Singapore as the incident or regulatory locus.",
+  "geographyPhase": 1,
+  "places": {
+    "phase1": ["Singapore", "SG", "Republic of Singapore"],
+    "phase2": [],
+    "phase2Note": "Add DPS overseas locations only when James Lek confirms them. The DS&C exposure register is not that list."
+  },
+  "placeFalsePositives": [
+    "singapore-flagged",
+    "singapore flagged",
+    "singapore says",
+    "singapore said",
+    "singapore dollar",
+    "mas singapore",
+    "singapore airlines passenger",
+    "visit singapore"
+  ],
+  "industries": [
+    {"id": "defence", "label": "Defence", "cues": ["defence contractor", "defense contractor", "MINDEF", "armed forces workshop", "military base maintenance", "defence shipyard", "defence worksite"]},
+    {"id": "aerospace", "label": "Aerospace", "cues": ["aerospace", "aircraft hangar", "hangar", "aircraft MRO", "MRO facility", "aviation maintenance", "aircraft maintenance"]},
+    {"id": "marine", "label": "Marine", "cues": ["shipyard", "shipbuilding", "ship repair", "offshore yard", "marine workshop", "dry dock", "dockyard"]},
+    {"id": "construction", "label": "Construction", "cues": ["construction", "construction worksite", "building site", "scaffolding", "tower crane", "construction site"]},
+    {"id": "facilities", "label": "Facilities management", "cues": ["facilities management", "facility management", "building maintenance", "FM contractor", "facilities worker"]},
+    {"id": "security", "label": "Security services", "cues": ["security officer", "security services", "guard force", "protective services", "security guard"]}
+  ],
+  "highEnergyHazards": [
+    {"id": "fall", "label": "Falls from height", "cues": ["fall from height", "fell from height", "fallen from height", "working at height", "work at height", "work-at-height"]},
+    {"id": "struck", "label": "Struck-by", "cues": ["struck by", "hit by a crane", "crushed by falling", "struck by falling"]},
+    {"id": "caught", "label": "Caught-in", "cues": ["caught in", "caught between", "entangled in machinery", "pinched by"]},
+    {"id": "electrical", "label": "Electrical", "cues": ["electrocution", "electrical shock", "electric shock", "arc flash"]},
+    {"id": "lifting", "label": "Lifting", "cues": ["crane collapse", "lifting operation", "rigging failure", "hoist failure"]},
+    {"id": "confined", "label": "Confined space", "cues": ["confined space", "tank entry", "silo entry"]},
+    {"id": "fire", "label": "Fire", "cues": ["workplace fire", "industrial fire", "factory explosion", "shipyard fire"]}
+  ],
+  "workplaceCues": [
+    "workplace",
+    "worksite",
+    "worker",
+    "workers",
+    "employee",
+    "employees",
+    "construction site",
+    "building site",
+    "shipyard",
+    "hangar",
+    "factory",
+    "plant",
+    "dockyard",
+    "dry dock",
+    "MRO",
+    "contractor",
+    "occupational",
+    "WSH",
+    "stop-work",
+    "stop work order",
+    "MOM",
+    "Ministry of Manpower"
+  ],
+  "excludeCues": [
+    "hdb",
+    "hdb block",
+    "residential",
+    "no foul play",
+    "suicide",
+    "homicide",
+    "projectile",
+    "missile",
+    "drone strike",
+    "strait of hormuz",
+    "warship",
+    "combat",
+    "battlefield",
+    "endotracheal",
+    "hospital patient",
+    "clinical trial",
+    "school cca",
+    "hawker",
+    "passenger airline",
+    "tourist",
+    "domestic helper",
+    "maid",
+    "window cleaning",
+    "hotel pool",
+    "luxury hotel",
+    "metar"
+  ],
+  "emergingTopics": [
+    "heat stress",
+    "heat strain",
+    "wbgt",
+    "fatigue",
+    "ageing workforce",
+    "aging workforce",
+    "contractor management",
+    "robotics",
+    "automation safety",
+    "new technology safety"
+  ],
+  "frameworkBodies": [
+    {"id": "campbell", "label": "Campbell Institute", "cues": ["Campbell Institute", "NSC Campbell"]},
+    {"id": "icmm", "label": "ICMM", "cues": ["ICMM", "International Council on Mining and Metals"]},
+    {"id": "csra", "label": "Construction Safety Research Alliance", "cues": ["CSRA", "Construction Safety Research Alliance", "Matthew Hallowell", "Dr Hallowell", "Energy Wheel", "high-energy control assessment", "HECA assessment"]},
+    {"id": "eei", "label": "EEI", "cues": ["Edison Electric Institute", "EEI SIF", "EEI safety"]},
+    {"id": "nsc", "label": "National Safety Council", "cues": ["National Safety Council SIF", "NSC SIF", "Campbell Institute"]},
+    {"id": "hfacs", "label": "HFACS authors", "cues": ["HFACS", "Wiegmann", "Shappell", "Human Factors Analysis and Classification"]}
+  ],
+  "methodSources": ["campbell", "icmm", "csra", "eei", "nsc", "hfacs"],
+  "regulators": [
+    {"id": "mom", "label": "Ministry of Manpower", "cues": ["Ministry of Manpower", "MOM", "mom.gov.sg"]},
+    {"id": "wshc", "label": "Workplace Safety and Health Council", "cues": ["Workplace Safety and Health Council", "WSH Council", "wshc.sg"]},
+    {"id": "wsha", "label": "Workplace Safety and Health Act", "cues": ["Workplace Safety and Health Act", "WSHA", "subsidiary legislation"]},
+    {"id": "scdf", "label": "Singapore Civil Defence Force", "cues": ["SCDF", "Singapore Civil Defence"]}
+  ],
+  "sections": [
+    {"id": "SERIOUS", "themeId": "WSH-SERIOUS-01", "title": "Serious incidents"},
+    {"id": "LEADING", "themeId": "WSH-LEADING-01", "title": "Leading indicators"},
+    {"id": "SIF", "themeId": "WSH-SIF-01", "title": "Energy Wheel and SIF prevention"},
+    {"id": "HFACS", "themeId": "WSH-HFACS-01", "title": "Human factors — HFACS"},
+    {"id": "EMERGING", "themeId": "WSH-EMERGING-01", "title": "Emerging risks"}
+  ],
+  "frameworkBoxes": {
+    "SIF": "Energy Wheel (hazard recognition), Safety Classification and Learning (SCL) model (SIF potential), and High-Energy Control Assessment (HECA) with direct controls — Construction Safety Research Alliance and Dr Matthew Hallowell. SIF prevention practices and precursors also from EEI, the National Safety Council, and industry leaders.",
+    "HFACS": "Human Factors Analysis and Classification System (HFACS) by Dr Douglas Wiegmann and Dr Scott Shappell. Industry applications are recorded only when a source states them."
+  }
+}

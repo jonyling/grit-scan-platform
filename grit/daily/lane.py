@@ -41,8 +41,10 @@ def daily_run_id(day: date, pack: str) -> str:
 
 
 def daily_packs(packs: Sequence[str] | None = None) -> list[str]:
-    """The packs with a daily run: those an active feed serves, plus the Group pack's Currents queries."""
-    found = sorted({pack for feed in active() for pack in feed.packs} | {"ste"})
+    """The packs with a daily run: those an active feed serves, packs with a Currents source query, plus the Group pack."""
+    found = sorted({pack for feed in active() for pack in feed.packs}
+                   | {pack for feed in FEEDS if feed.currents for pack in feed.packs}
+                   | {"ste"})
     return [pack for pack in found if not packs or pack in packs]
 
 
@@ -244,14 +246,20 @@ def run_daily(
     result.queued = queue_kept(pool, run.run_id, pack)
     result.csv = str(write_signals_csv(pool, run.run_id, run.folder))
     if profiles is not None:
-        from grit.report.red import draft_red_alerts
+        ontology = reader_scan._load_pack(pack)
+        if ontology.report_kind == "wsh-digest":
+            from grit.wsh.alerts import draft_wsh_alerts
 
-        result.red_drafts = len(draft_red_alerts(pool, run.run_id, pack, list(profiles), run.folder / "alerts"))
-        if send_mail:
-            from grit.report.red_mail import send_daily_red_alerts
+            result.red_drafts = len(draft_wsh_alerts(pool, run.run_id, ontology, list(profiles), run.folder / "alerts"))
+        else:
+            from grit.report.red import draft_red_alerts
 
-            result.red_mail = send_daily_red_alerts(pool, run.run_id)
-            log(f"  {pack:7} RED mail {result.red_mail.get('status')} ({result.red_mail.get('sent', 0)} sent)")
+            result.red_drafts = len(draft_red_alerts(pool, run.run_id, pack, list(profiles), run.folder / "alerts"))
+            if send_mail:
+                from grit.report.red_mail import send_daily_red_alerts
+
+                result.red_mail = send_daily_red_alerts(pool, run.run_id)
+                log(f"  {pack:7} RED mail {result.red_mail.get('status')} ({result.red_mail.get('sent', 0)} sent)")
     pool.log(actor_type="FUNCTION", actor="DailyLane", status="SUCCEEDED", run_id=run.run_id, detail=result.as_record())
     return result
 
