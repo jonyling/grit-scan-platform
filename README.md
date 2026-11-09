@@ -36,7 +36,7 @@ The weekly command uses the compatibility path. `--reasoned` is the opt-in path 
 | `grit/library/` | The report library and State of the Situation drafts. Spec 38. |
 | `grit/ui/` | The Streamlit dashboard and the Co-Pilot drawer. |
 | `grit/cli.py` | The command line: `python -m grit`. |
-| `grit/schedule.py` | The Monday cadence for `grit scheduled`. |
+| `grit/schedule.py` | The Thursday cadence for `grit scheduled`. |
 | `config/` | Reader packs, profiles, the risk universe, adverse registers, and shared source ratings. |
 | `specs/` | Governing specifications. |
 | `docs/` | Guides, design notes, reference files, and progress records. See [docs/README.md](docs/README.md). |
@@ -105,7 +105,7 @@ Run these commands from the repository root. `DATE` is the run date, `YYYY-MM-DD
 
 `grit weekly` with no `--pack` runs every pack that has a scan plan and a window of 10 days or less. That set includes Commercial Aerospace and Marine. The Group pack is monthly, so it runs only when you name `--pack ste`. `grit scheduled` runs only the packs in `SCHEDULE`.
 
-> **Warning:** A scan spends Brave queries. The Monday budget in [Run the Monday schedule](#run-the-monday-schedule) covers DS&C, Urban Solutions, URS Taiwan, and the Group pack. An unnamed `grit weekly` also searches Commercial Aerospace and Marine, including named customers and suppliers. A search already stored for that run date is reused. `BRAVE_MONTHLY_LIMIT` stops the local counter. The default is 2000. Brave's free credit is about 1,000 queries. Past that credit, Brave refuses with HTTP 402. The scan then falls back to Currents for at most `CURRENTS_FALLBACK_MAX` queries a run (default 40). The counter in `output/brave-usage.json` counts queries from this repository. To rewrite a brief, rerun `grit agents` and `grit report`. Those commands call the model and the renderers. `--sweep N` adds up to N queries from the 12-week business-area digest plan.
+> **Warning:** A scan spends Brave queries. The Thursday budget in [Run the Thursday schedule](#run-the-thursday-schedule) covers DS&C, Urban Solutions, URS Taiwan, the Group pack, Commercial Aerospace, and Marine. Urban Solutions runs every Thursday. The other five run on the first Thursday. An unnamed `grit weekly` searches every pack with a scan plan and a window of 10 days or less, including named customers and suppliers. A search already stored for that run date is reused. `BRAVE_MONTHLY_LIMIT` stops the local counter. The default is 2000. Brave's free credit is about 1,000 queries. Past that credit, Brave refuses with HTTP 402. The scan then falls back to Currents for at most `CURRENTS_FALLBACK_MAX` queries a run (default 40). The counter in `output/brave-usage.json` counts queries from this repository. To rewrite a brief, rerun `grit agents` and `grit report`. Those commands call the model and the renderers. `--sweep N` adds up to N queries from the 12-week business-area digest plan.
 
 1. Print the queries. This sends nothing.
 
@@ -240,33 +240,35 @@ The refresh needs a finished reasoned run for that date in the same database. A 
 
 A RED candidate that the review excluded is omitted from the report. The status basis gives the number of excluded candidates. `grit red list` still shows them.
 
-## Run the Monday schedule
+## Run the Thursday schedule
 
-`grit scheduled` runs the packs due that Monday, then the adverse news scan. The cadence and the planned query counts live in `grit/schedule.py`. `tests/test_schedule.py` locks these planned counts:
+`grit scheduled` runs the packs due that Thursday, then the adverse news scan. The cadence and the planned query counts live in `grit/schedule.py`. `tests/test_schedule.py` locks these planned counts. A run's count moves with the names due that week. The figures below are the high end of that rotation on the plans as of 9 November 2026.
 
 | Pack | Due | Planned Brave queries a run | Planned queries a month |
 |---|---|---|---|
-| `dsc` | Every Monday | 124 | 496 to 620 |
-| `urs` | First and third Monday | 117 | 234 |
-| `urs-tw` | First Monday | 60 | 60 |
-| `ste` | First Monday | 48 | 48 |
+| `dsc` | First Thursday | 139 | 139 |
+| `urs` | Every Thursday | 151 | 604 to 755 |
+| `urs-tw` | First Thursday | 60 | 60 |
+| `ste` | First Thursday | 52 | 52 |
+| `ca` | First Thursday | 92 | 92 |
+| `marine` | First Thursday | 69 | 69 |
 
-The schedule test adds one 16-query source sweep for the month. A five-Monday month of these four packs is 978 queries, at or under 1,000 before the adverse scan. A live `grit weekly --dry-run` prints the queries for that date. A live run can send a different number when named customers and suppliers are searched. `SCHEDULE` names `dsc`, `urs`, `urs-tw`, and `ste`.
+The schedule test adds one 16-query source sweep for the month. A four-Thursday month of these high-end counts is 1,032 queries. A five-Thursday month is 1,183, above Brave's free credit of about 1,000, before the adverse scan. `BRAVE_MONTHLY_LIMIT` defaults to 2000. A live `grit weekly --dry-run` prints the queries for that date. `SCHEDULE` names `dsc`, `urs`, `urs-tw`, `ste`, `ca`, and `marine`.
 
 To see the packs due on a day, or to run them:
 
 ```bash
-.venv/bin/python -m grit scheduled --dry-run --date 2026-11-02
+.venv/bin/python -m grit scheduled --dry-run --date 2026-11-05
 .venv/bin/python -m grit scheduled
 ```
 
-This crontab line runs the due scans at 06:30 each Monday. Replace the path with this repository.
+This crontab line runs the due scans at 06:30 each Thursday. Replace the path with this repository.
 
 ```text
-30 6 * * 1 cd /path/to/grit-scan-platform && .venv/bin/grit scheduled >> output/scheduled.log 2>&1
+30 6 * * 4 cd /path/to/grit-scan-platform && .venv/bin/grit scheduled >> output/scheduled.log 2>&1
 ```
 
-To change a cadence, edit `SCHEDULE` in `grit/schedule.py`. After the due scans, `grit scheduled` also runs the adverse news scan every Monday. Add `--no-adverse` to leave it out.
+To change a cadence, edit `SCHEDULE` in `grit/schedule.py`. After the due scans, `grit scheduled` also runs the adverse news scan every Thursday. Add `--no-adverse` to leave it out.
 
 ## Run the adverse news scan
 
@@ -274,7 +276,7 @@ The Adverse News & Lessons Learnt Scan is Wilson's weekly early-warning report o
 
 The scan reads pool pages in the reporting period and adds searches from `config/adverse/Adverse-Scan-Plan.json`. It binds pages through the Group pack's graph and `config/adverse/Adverse-Watchlist.json`. A Screener, an Assessor, and a Critic propose. Rules in `grit/adverse/checks.py` check each fact against a verbatim quote from a page that was opened.
 
-> **Warning:** A run sends up to 40 Brave queries (`--limit-queries`). With the Monday business-area scans, a month can exceed Brave's free credit of about 1,000 queries. Raise `BRAVE_MONTHLY_LIMIT` to match your Brave plan, or run with `--no-search` to use the pool only.
+> **Warning:** A run sends up to 40 Brave queries (`--limit-queries`). With the Thursday business-area scans, a month can exceed Brave's free credit of about 1,000 queries. Raise `BRAVE_MONTHLY_LIMIT` to match your Brave plan, or run with `--no-search` to use the pool only.
 
 1. Print the reporting period, the planned queries, and the candidate counts. This sends nothing and calls no model.
 
@@ -586,7 +588,7 @@ Run `grit COMMAND --help` for a command's arguments. Delegated commands take the
 |---|---|
 | `plan`, `scan`, `assess`, `agents`, `report`, `weekly` | One stage, or the whole week. |
 | `resume-report` | Recover or refresh a reasoned report stage. |
-| `scheduled` | Run the Monday packs, then the adverse scan. |
+| `scheduled` | Run the Thursday packs, then the adverse scan. |
 | `adverse` | Write the adverse news email for review. |
 | `daily`, `feeds`, `index` | The daily lane, the feed register, and the nightly index. |
 | `red` | List RED candidates, or record a confirmation or rejection. |
@@ -611,7 +613,7 @@ These are the open items for the MVP.
 4. The URS Taiwan order-book anchors are `REPORTED_FOR_CONFIRMATION`. A named business-area owner confirms them.
 5. The business-area relationship files have no edges yet. Entity-level paths stay limited until those rows are imported. See [Export relationship gaps](#export-relationship-gaps).
 6. Scheduled scans start from cron and `grit scheduled`. A daily RED alert is mailed when Graph mail is configured. Otherwise it stays a draft. The dashboard has no user sign-in. The workflow ledger is written to the pool. Dataverse receives signals only through `grit dataverse --push`.
-7. Commercial Aerospace and Marine have scan plans, and `grit weekly` with no `--pack` includes them. `SCHEDULE` does not. Use `grit scheduled`, or name `--pack`, when you want the Monday budget.
+7. The Commercial Aerospace and Marine scan plans are still proposed for business-area review. `grit scheduled` runs both on the first Thursday.
 8. A generated short name can match the wrong company. On 7 October 2026, "Amtech Systems" matched a US semiconductor company. Reject such aliases through `grit gaps`.
 
 ## Specifications

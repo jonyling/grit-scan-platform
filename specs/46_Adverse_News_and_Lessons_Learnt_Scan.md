@@ -122,7 +122,7 @@ The email carries the standard notice that the content is GRIT-Scan AI-generated
 
 ## 9. Schedule and cost
 
-`grit scheduled` runs `grit adverse` every Monday after the business-area scans due that day, so it reads their pages; `--no-adverse` leaves it out. A week costs at most 40 Brave queries (36 planned, plus up to 4 corroboration searches), about 160 to 200 a month, which is above the free Brave credit. Model calls: up to 13 screening batches, up to 70 assessments with retries, and one or two Critic calls. On the 5 November 2026 pool, with no searches, a run took about 10 minutes.
+`grit scheduled` runs `grit adverse` every Thursday after the business-area scans due that day, so it reads their pages; `--no-adverse` leaves it out. A week costs at most 40 Brave queries (36 planned, plus up to 4 corroboration searches), about 160 to 200 a month, which is above the free Brave credit. Model calls: up to 13 screening batches, up to 70 assessments with retries, and one or two Critic calls. On the 5 November 2026 pool, with no searches, a run took about 10 minutes.
 
 A first trial on 5 November 2026 (a copy of the pool, `--no-search`) screened 6,601 pages, verified 33 source pages, and reported 4 Section A and 4 Section B items. The Screener's choices vary from run to run by a few candidates at the margin; the rules and the Critic hold the reported set steady.
 

@@ -666,7 +666,7 @@ def _delegates() -> dict[str, tuple[str, Callable[[], Callable[..., Any]], str]]
         "library-ingest": ("Read the reports in secrets/reports/ into the library and embed their passages.", lambda: __import__("grit.library.sots", fromlist=["_ingest_main"])._ingest_main, "grit library-ingest"),
         "sots": ("Draft State of the Situation documents from the report library, for sign-off.", lambda: __import__("grit.library.sots", fromlist=["_main"])._main, "grit sots"),
         "ask": ("Ask the Co-Pilot a question as a named reader.", lambda: __import__("grit.copilot.commands", fromlist=["main"]).main, "grit ask"),
-        "scheduled": ("Run the weekly scans due today under the Brave-saving schedule.", lambda: __import__("grit.schedule", fromlist=["main"]).main, "grit scheduled"),
+        "scheduled": ("Run the scans due today under the Thursday schedule.", lambda: __import__("grit.schedule", fromlist=["main"]).main, "grit scheduled"),
         "adverse": ("Write the weekly Adverse News & Lessons Learnt Scan as an email for review (spec 46). Nothing is sent.", lambda: __import__("grit.adverse.scan", fromlist=["main"]).main, "grit adverse"),
         "daily": ("Run the daily feed lane for each pack, then the nightly index.", lambda: __import__("grit.daily.commands", fromlist=["daily_main"]).daily_main, "grit daily"),
         "index": ("Run the nightly index only: full text, events, digests and retention.", lambda: __import__("grit.daily.commands", fromlist=["index_main"]).index_main, "grit index"),

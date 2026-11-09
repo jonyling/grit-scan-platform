@@ -292,11 +292,11 @@ def test_a_dry_run_spends_nothing(pool: Pool, tmp_path: Path) -> None:
     assert pool.rows("SELECT * FROM adverse_scans") == [] and not (tmp_path / "usage.json").exists()
 
 
-def test_grit_scheduled_runs_the_adverse_scan_on_mondays_only() -> None:
+def test_grit_scheduled_runs_the_adverse_scan_on_thursdays_only() -> None:
     from grit.schedule import adverse_due
 
-    assert adverse_due(date(2026, 11, 9)) and adverse_due(date(2026, 11, 16))
-    assert not adverse_due(date(2026, 11, 10))
+    assert adverse_due(date(2026, 11, 5)) and adverse_due(date(2026, 11, 12))
+    assert not adverse_due(date(2026, 11, 9))
 
 
 def test_same_event_items_merge_with_their_sources_and_quotes() -> None:
