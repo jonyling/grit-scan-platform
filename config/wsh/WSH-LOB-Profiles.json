@@ -1,0 +1,60 @@
+{
+  "registerId": "WSH-LOB-PROFILES",
+  "absence": "Functional pack. Industries are named in WSH-Scope.json, not as commercial lines of business.",
+  "lobs": [
+    {
+      "lobId": "LOB-wsh-defence",
+      "lobName": "Defence",
+      "canonicalLob": "Defence",
+      "baName": "Workplace Safety & Health",
+      "lobGrouping": "Industries in scope",
+      "active": true,
+      "keywords": ["defence", "defense", "military", "MINDEF"]
+    },
+    {
+      "lobId": "LOB-wsh-aerospace",
+      "lobName": "Aerospace",
+      "canonicalLob": "Aerospace",
+      "baName": "Workplace Safety & Health",
+      "lobGrouping": "Industries in scope",
+      "active": true,
+      "keywords": ["aerospace", "aircraft", "hangar", "MRO", "aviation"]
+    },
+    {
+      "lobId": "LOB-wsh-marine",
+      "lobName": "Marine",
+      "canonicalLob": "Marine",
+      "baName": "Workplace Safety & Health",
+      "lobGrouping": "Industries in scope",
+      "active": true,
+      "keywords": ["marine", "shipyard", "vessel", "shipbuilding", "offshore"]
+    },
+    {
+      "lobId": "LOB-wsh-construction",
+      "lobName": "Construction",
+      "canonicalLob": "Construction",
+      "baName": "Workplace Safety & Health",
+      "lobGrouping": "Industries in scope",
+      "active": true,
+      "keywords": ["construction", "worksite", "building site", "scaffolding", "crane"]
+    },
+    {
+      "lobId": "LOB-wsh-facilities",
+      "lobName": "Facilities management",
+      "canonicalLob": "Facilities management",
+      "baName": "Workplace Safety & Health",
+      "lobGrouping": "Industries in scope",
+      "active": true,
+      "keywords": ["facilities management", "facility management", "building maintenance"]
+    },
+    {
+      "lobId": "LOB-wsh-security",
+      "lobName": "Security services",
+      "canonicalLob": "Security services",
+      "baName": "Workplace Safety & Health",
+      "lobGrouping": "Industries in scope",
+      "active": true,
+      "keywords": ["security services", "security officer", "guard force"]
+    }
+  ]
+}

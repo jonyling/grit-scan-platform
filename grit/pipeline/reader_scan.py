@@ -75,8 +75,9 @@ def _aliases() -> dict[str, Any]:
 
 def graph_pack(pack: OntologyPack) -> OntologyPack:
     """The business-area pack whose typed graph binds names: the pack itself at BA level, else its parent. A Group pack binds
-    names through all its business-area children: this returns a view with their registers joined (spec 37)."""
-    if pack.level == "BA":
+    names through all its business-area children: this returns a view with their registers joined (spec 37). A FUNCTION pack
+    (spec 47) has no parent and an empty commercial graph: it returns itself."""
+    if pack.level in {"BA", "FUNCTION"}:
         return pack
     if pack.level == "GROUP":
         import dataclasses

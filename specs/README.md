@@ -28,5 +28,6 @@ Specs 13–33 state the rules. Spec 34 states the rebuild order. Spec 35 describ
 | [44](44_Brief_Format_v2.md) | Brief format v2, in Wilson's BA-wide layout: events and the escalating-items table, what changed, look-ahead, prioritisation, coverage, jurisdictions, quality gate, the source register, and scenarios for every business area. |
 | [45](45_Weekly_Agent_Reasoning_and_Critique.md) | Opt-in weekly reasoning: whole-pool selection, independent critique, bounded research and reconciliation, frozen report snapshots, and post-decision Memory proposals. |
 | [46](46_Adverse_News_and_Lessons_Learnt_Scan.md) | Wilson's weekly Adverse News & Lessons Learnt Scan: the watchlist, the screen, verified sources, the five tests, the rules that decide each field, duplicates and material updates, and the email. |
+| [47](47_WSH_Digest_and_Alerts.md) | Workplace Safety & Health functional pack: monthly discussion digest for James Lek, five sections, Council Alert/Advisory/Insights line, Assessment→Critic notes, Singapore-then-DPS geography, serious-incident and regulatory alerts. |
 
 `archive/` holds an early draft of spec 17 for reference. It does not govern.

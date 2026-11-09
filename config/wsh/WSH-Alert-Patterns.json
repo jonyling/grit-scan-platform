@@ -1,0 +1,62 @@
+{
+  "registerId": "WSH-ALERT-PATTERNS",
+  "status": "ACTIVE",
+  "note": "Pack-local alert patterns for the WSH track (spec 47). A hit drafts an alert for James Lek. It does not set business-report RED status and is not merged into config/red-patterns.json.",
+  "patterns": [
+    {
+      "ruleId": "WSH-ALERT-FATALITY",
+      "kind": "SERIOUS_INCIDENT",
+      "label": "Workplace fatality or serious injury from a high-energy hazard",
+      "packs": ["wsh"],
+      "requiresPlace": true,
+      "requiresIndustryOrHazard": true,
+      "phrases": [
+        "workplace fatality",
+        "worker was killed",
+        "worker killed",
+        "workers were killed",
+        "died after falling",
+        "fall from height",
+        "serious injury",
+        "succumbed to his injuries",
+        "succumbed to her injuries"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "scenario",
+        "drill",
+        "exercise",
+        "hypothetical",
+        "could",
+        "might",
+        "risk of",
+        "fear of"
+      ]
+    },
+    {
+      "ruleId": "WSH-ALERT-REGULATORY",
+      "kind": "REGULATORY",
+      "label": "WSH regulatory or enforcement change",
+      "packs": ["wsh"],
+      "requiresRegulator": true,
+      "phrases": [
+        "Workplace Safety and Health Act",
+        "WSH Council circular",
+        "MOM circular",
+        "new WSH regulation",
+        "amended WSH",
+        "stop-work order",
+        "heat stress guidelines",
+        "subsidiary legislation"
+      ],
+      "excludeInSentence": [
+        "unlikely",
+        "scenario",
+        "hypothetical",
+        "could",
+        "might",
+        "risk of"
+      ]
+    }
+  ]
+}

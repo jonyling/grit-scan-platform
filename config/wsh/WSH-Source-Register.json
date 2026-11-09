@@ -1,0 +1,96 @@
+{
+  "registerId": "WSH-SOURCE-REGISTER",
+  "absence": "Hand-authored for the WSH functional pack (spec 47). Phase 1 Singapore regulators and practice bodies.",
+  "sources": [
+    {
+      "sourceName": "Ministry of Manpower",
+      "sourceDomain": "mom.gov.sg",
+      "sourceUrl": "https://www.mom.gov.sg",
+      "sourceClass": "OFFICIAL",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "group": "Singapore WSH regulators",
+      "focus": "Workplace fatalities, serious injuries, enforcement and WSH circulars"
+    },
+    {
+      "sourceName": "Workplace Safety and Health Council",
+      "sourceDomain": "wshc.sg",
+      "sourceUrl": "https://www.wshc.sg",
+      "sourceClass": "OFFICIAL",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "group": "Singapore WSH regulators",
+      "focus": "WSH Council guidance, campaigns and circulars"
+    },
+    {
+      "sourceName": "Singapore Statutes Online",
+      "sourceDomain": "sso.agc.gov.sg",
+      "sourceUrl": "https://www.sso.agc.gov.sg",
+      "sourceClass": "OFFICIAL",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "group": "Singapore WSH regulators",
+      "focus": "Workplace Safety and Health Act and subsidiary legislation"
+    },
+    {
+      "sourceName": "Singapore Civil Defence Force",
+      "sourceDomain": "scdf.gov.sg",
+      "sourceUrl": "https://www.scdf.gov.sg",
+      "sourceClass": "OFFICIAL",
+      "credibilityRating": "HIGH",
+      "active": true,
+      "group": "Singapore WSH regulators",
+      "focus": "Workplace and industrial fire incidents"
+    },
+    {
+      "sourceName": "Campbell Institute",
+      "sourceDomain": "thecampbellinstitute.org",
+      "sourceUrl": "https://www.thecampbellinstitute.org",
+      "sourceClass": "RESEARCH",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "group": "WSH practice bodies",
+      "focus": "Leading indicators and good practices"
+    },
+    {
+      "sourceName": "ICMM",
+      "sourceDomain": "icmm.com",
+      "sourceUrl": "https://www.icmm.com",
+      "sourceClass": "RESEARCH",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "group": "WSH practice bodies",
+      "focus": "Leading indicators and industry safety practice"
+    },
+    {
+      "sourceName": "Construction Safety Research Alliance",
+      "sourceDomain": "csra.colorado.edu",
+      "sourceUrl": "https://www.colorado.edu/center/csra",
+      "sourceClass": "RESEARCH",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "group": "WSH practice bodies",
+      "focus": "Energy Wheel, SCL model, HECA and SIF research"
+    },
+    {
+      "sourceName": "Edison Electric Institute",
+      "sourceDomain": "eei.org",
+      "sourceUrl": "https://www.eei.org",
+      "sourceClass": "RESEARCH",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "group": "WSH practice bodies",
+      "focus": "SIF prevention practices and precursors"
+    },
+    {
+      "sourceName": "National Safety Council",
+      "sourceDomain": "nsc.org",
+      "sourceUrl": "https://www.nsc.org",
+      "sourceClass": "RESEARCH",
+      "credibilityRating": "MEDIUM",
+      "active": true,
+      "group": "WSH practice bodies",
+      "focus": "SIF prevention, Campbell Institute publications"
+    }
+  ]
+}

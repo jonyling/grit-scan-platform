@@ -2,7 +2,7 @@
 
 GRIT-Scan tracks external risks that can affect ST Engineering. Each week it searches for a reader's standing conditions, named projects, suppliers, customers, and hazards. It binds each page to the STE register. It writes that reader's brief in Word, PowerPoint, Excel, and Markdown. A dashboard and a Co-Pilot answer questions from the same records.
 
-This repository is the proof of concept for Wilson, Group Head of Risk & Assurance, and the baseline for the MVP. [Spec 35](specs/35_GRIT_Scan_POC_Architecture.md) describes that proof of concept as first built, with Urban Solutions and URS Taiwan. The checkout now also holds Digital Systems & Cyber, Commercial Aerospace, Marine, and the Group pack. To add another business area, follow [Add a business area](docs/add-a-business-area.md). The governing specs are listed in [specs/README.md](specs/README.md).
+This repository is the proof of concept for Wilson, Group Head of Risk & Assurance, and the baseline for the MVP. [Spec 35](specs/35_GRIT_Scan_POC_Architecture.md) describes that proof of concept as first built, with Urban Solutions and URS Taiwan. The checkout now also holds Digital Systems & Cyber, Commercial Aerospace, Marine, the Group pack, and the Workplace Safety & Health functional pack. To add another business area, follow [Add a business area](docs/add-a-business-area.md). The governing specs are listed in [specs/README.md](specs/README.md).
 
 ## The rule
 
@@ -32,6 +32,7 @@ The weekly command uses the compatibility path. `--reasoned` is the opt-in path 
 | `grit/report/` | The brief model and the Word, PowerPoint, Excel, and Markdown renderers. |
 | `grit/workflow/` | The Supervisor, the theme register, and packages through review. |
 | `grit/adverse/` | The adverse news and lessons learnt scan. Spec 46. |
+| `grit/wsh/` | The Workplace Safety & Health monthly digest and alert drafts. Spec 47. |
 | `grit/dataverse/` | The Dataverse gateway and the sync to `grit_signals`. |
 | `grit/library/` | The report library and State of the Situation drafts. Spec 38. |
 | `grit/ui/` | The Streamlit dashboard and the Co-Pilot drawer. |
@@ -296,6 +297,16 @@ The scan reads pool pages in the reporting period and adds searches from `config
 
 The reporting period runs from the end of the previous `READY` scan to `DATE`. The first scan covers seven days. If a model call fails, the scan is `INCOMPLETE`. The email is written as `email-DRAFT-INCOMPLETE.txt`. The next scan's period still starts from the last `READY` scan.
 
+## Run the WSH digest
+
+Workplace Safety & Health is a functional pack for James Lek ([spec 47](specs/47_WSH_Digest_and_Alerts.md)). It is not a business-area brief, and it is not on the Thursday schedule. `grit digest` scans, assesses, and writes the monthly discussion digest plus serious-incident and regulatory alert drafts. Nothing is sent.
+
+```bash
+.venv/bin/python -m grit digest --pack wsh --date DATE --profile james --no-submit
+```
+
+`--dry-run` prints the query plan and spends nothing. Re-write the digest from a finished run with `grit report --pack wsh --date DATE --profile james --no-submit`. Scope, sections, and the reference bulletins are in [docs/wsh/README.md](docs/wsh/README.md).
+
 ## Run the daily lane
 
 Once a day, GRIT-Scan reads the primary-source feeds that readers named. It asks GDELT's artlist for each standing condition and active management request. That call is capped, free, and not a Brave query. It sends one Currents query for the same set. The scan's own rules assess every page. Kept pages are queued for the next weekly or monthly scan. Once a week it also sweeps named sources that block feed readers, with one Brave `site:` query each, about 15 a week. A nightly index groups pages into events and writes a digest per pack for the Co-Pilot's "what's new" ([spec 42](specs/42_Daily_Lane_and_Nightly_Index.md)).
@@ -388,6 +399,7 @@ A reader pack is a folder under `config/` with a `pack.json` manifest. The manif
 | `ca` | Business area | 16 themes | 57 entities, 458 customers, 45 suppliers, 43 competitors. The scan plan is still proposed for CA review. |
 | `marine` | Business area | 16 governed themes. 7 draft themes are listed for review. The scan uses the governed themes. | 11 entities, 27 customers, 14 suppliers, 50 competitors. The scan plan is still proposed for Marine review. |
 | `ste` | Group | 13 standing conditions. The baseline is a draft pending Wilson's sign-off. | Footprint comes from `dsc`, `urs`, `ca`, and `marine`. |
+| `wsh` | Function | 6 themes. No commercial graph. | None. Scope is industries and hazards in [spec 47](specs/47_WSH_Digest_and_Alerts.md). |
 
 A business-area brief summarizes entity packs that ran on the same date. Run entity packs first. `grit weekly` orders packs that way when more than one pack is selected.
 
@@ -590,6 +602,7 @@ Run `grit COMMAND --help` for a command's arguments. Delegated commands take the
 | `resume-report` | Recover or refresh a reasoned report stage. |
 | `scheduled` | Run the Thursday packs, then the adverse scan. |
 | `adverse` | Write the adverse news email for review. |
+| `digest` | Run the Workplace Safety & Health monthly digest. |
 | `daily`, `feeds`, `index` | The daily lane, the feed register, and the nightly index. |
 | `red` | List RED candidates, or record a confirmation or rejection. |
 | `review`, `airis`, `feedback` | Decide a package, export to AIRIS, or record a signal decision. |

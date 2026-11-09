@@ -1,0 +1,109 @@
+{
+  "registerId": "WSH-THEMES",
+  "absence": "Hand-authored functional themes for the WSH digest (spec 47). No Entity Info workbook.",
+  "themes": [
+    {
+      "themeId": "WSH-SERIOUS-01",
+      "themeName": "Serious incidents",
+      "tier": "KEY",
+      "sectionId": "SERIOUS",
+      "keywords": [
+        "workplace fatality",
+        "serious injury",
+        "fall from height",
+        "struck by",
+        "caught in",
+        "electrocution",
+        "confined space",
+        "industrial fire",
+        "crane collapse",
+        "WSH stop-work"
+      ],
+      "sheetDetail": "Fatal and serious injuries from high-energy hazards: falls from height, struck-by, caught-in, electrical, lifting, confined space, fire. Investigation findings and lessons learnt when published."
+    },
+    {
+      "themeId": "WSH-LEADING-01",
+      "themeName": "Leading indicators",
+      "tier": "KEY",
+      "sectionId": "LEADING",
+      "keywords": [
+        "leading indicator",
+        "Campbell Institute",
+        "ICMM",
+        "safety culture",
+        "near miss reporting",
+        "pre-task planning",
+        "safety observation"
+      ],
+      "sheetDetail": "Good practices from the Campbell Institute, ICMM and named industry leaders."
+    },
+    {
+      "themeId": "WSH-SIF-01",
+      "themeName": "Energy Wheel and SIF prevention",
+      "tier": "KEY",
+      "sectionId": "SIF",
+      "keywords": [
+        "Energy Wheel",
+        "SIF",
+        "serious injury and fatality",
+        "HECA",
+        "high-energy control",
+        "SCL model",
+        "Hallowell",
+        "CSRA",
+        "direct control",
+        "SIF precursor"
+      ],
+      "sheetDetail": "Energy Wheel, Safety Classification and Learning (SCL) model, High-Energy Control Assessment (HECA), and SIF prevention practices from CSRA, EEI, NSC and industry leaders."
+    },
+    {
+      "themeId": "WSH-HFACS-01",
+      "themeName": "Human factors — HFACS",
+      "tier": "KEY",
+      "sectionId": "HFACS",
+      "keywords": [
+        "HFACS",
+        "human factors",
+        "Wiegmann",
+        "Shappell",
+        "unsafe acts",
+        "preconditions",
+        "unsafe supervision",
+        "organisational influences"
+      ],
+      "sheetDetail": "Human Factors Analysis and Classification System by Dr Douglas Wiegmann and Dr Scott Shappell, including industry applications."
+    },
+    {
+      "themeId": "WSH-EMERGING-01",
+      "themeName": "Emerging risks",
+      "tier": "EMERGING",
+      "sectionId": "EMERGING",
+      "keywords": [
+        "heat stress",
+        "heat strain",
+        "fatigue",
+        "ageing workforce",
+        "aging workforce",
+        "contractor management",
+        "new technology safety",
+        "robotics workplace",
+        "WBGT"
+      ],
+      "sheetDetail": "Heat stress, fatigue, ageing workforce, contractor management and new technologies."
+    },
+    {
+      "themeId": "WSH-BULLETIN-01",
+      "themeName": "WSH Council bulletins",
+      "tier": "KEY",
+      "sectionId": "SERIOUS",
+      "keywords": [
+        "WSH Alert",
+        "WSH Advisory",
+        "WSH Insights",
+        "Workplace Safety and Health Council",
+        "wshc.sg"
+      ],
+      "sheetDetail": "Standing queries for WSH Council Alert, Advisory and Insights series. Sightings feed the five digest sections; this theme is not a sixth section."
+    }
+  ]
+}

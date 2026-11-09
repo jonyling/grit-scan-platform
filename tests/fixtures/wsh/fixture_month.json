@@ -1,0 +1,46 @@
+{
+  "note": "Fixture month for the WSH digest (spec 47). Four pages: in-scope fatality, heat-stress circular, CSRA Energy Wheel paper, out-of-scope fatality.",
+  "run_date": "2026-11-01",
+  "signals": [
+    {
+      "id": "sg-fatality",
+      "url": "https://www.mom.gov.sg/newsroom/press-releases/2026/fixture-singapore-construction-fall",
+      "title": "Worker killed after fall from height at Singapore construction worksite",
+      "publisher": "mom.gov.sg",
+      "published_at": "2026-10-20",
+      "text": "The Ministry of Manpower said a construction worker died after a fall from height at a worksite in Singapore on 18 October 2026. Investigations are ongoing. No investigation findings or lessons learnt have been published yet.",
+      "theme_id": "WSH-SERIOUS-01",
+      "expect": {"section": "SERIOUS", "in_scope": true, "alert_kind": "SERIOUS_INCIDENT", "lesson": "not established"}
+    },
+    {
+      "id": "heat-circular",
+      "url": "https://www.wshc.sg/circulars/2026/fixture-heat-stress",
+      "title": "WSH Council circular on heat stress measures for outdoor work in Singapore",
+      "publisher": "wshc.sg",
+      "published_at": "2026-10-22",
+      "text": "The Workplace Safety and Health Council issued a circular on heat stress guidelines for outdoor work in Singapore, including rest cycles and hydration. The circular updates guidance for employers.",
+      "theme_id": "WSH-EMERGING-01",
+      "expect": {"section": "EMERGING", "in_scope": true, "alert_kind": "REGULATORY"}
+    },
+    {
+      "id": "csra-paper",
+      "url": "https://www.colorado.edu/center/csra/fixture-energy-wheel",
+      "title": "Construction Safety Research Alliance updates Energy Wheel for hazard recognition",
+      "publisher": "csra.colorado.edu",
+      "published_at": "2026-09-15",
+      "text": "Dr Matthew Hallowell and the Construction Safety Research Alliance describe the Energy Wheel for hazard recognition and note HECA direct controls. The paper does not report a Singapore incident.",
+      "theme_id": "WSH-SIF-01",
+      "expect": {"section": "SIF", "in_scope": true, "alert_kind": null}
+    },
+    {
+      "id": "overseas-fatality",
+      "url": "https://news.example/texas-construction-fall-2026",
+      "title": "Construction worker killed after fall from height at Texas worksite",
+      "publisher": "news.example",
+      "published_at": "2026-10-18",
+      "text": "A construction worker was killed after a fall from height at a worksite in Texas. Authorities opened an investigation.",
+      "theme_id": "WSH-SERIOUS-01",
+      "expect": {"section": "SERIOUS", "in_scope": false, "alert_kind": null, "drop_reason": "INCIDENT_OUTSIDE_PLACE"}
+    }
+  ]
+}

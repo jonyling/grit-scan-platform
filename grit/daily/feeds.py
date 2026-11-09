@@ -60,10 +60,11 @@ class Feed:
     currents: str | None = None  # a daily Currents query for a source with no feed: news that reports the source's notices
 
 
-GROUP, TECH, CYBER, URS_TW = ("ste",), ("ste", "dsc"), ("ste", "dsc", "urs"), ("urs-tw",)
+GROUP, TECH, CYBER, URS_TW, WSH = ("ste",), ("ste", "dsc"), ("ste", "dsc", "urs"), ("urs-tw",), ("wsh",)
 WILSON = "wilson N1 (9 Oct 2026)"
 REGISTERS = "DS&C and URS source registers; Jony Ling, 23 Oct 2026"
 TW_HAZARDS = "URS-TW official hazard and cross-strait sources; Jony Ling, improvement point 14, 26 Oct 2026"
+WSH_BASIS = "WSH functional pack for James Lek; spec 47"
 KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 USGS_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson"
 NCDR_URL = "https://alerts.ncdr.nat.gov.tw/RssAtomFeeds.ashx"
@@ -104,6 +105,12 @@ FEEDS: tuple[Feed, ...] = (
          note="Needs a free FIRMS_MAP_KEY from firms.modaps.eosdis.nasa.gov/api/map_key."),
     Feed("cwa", "Taiwan Central Weather Administration", None, URS_TW, TW_HAZARDS, BLOCKED,
          "CWA's RSS terms forbid parsing it into derived products, and its open-data API needs a key. Its warnings arrive through the NCDR feed."),
+    Feed("mom-wsh", "Ministry of Manpower WSH", None, WSH, WSH_BASIS, BLOCKED,
+         "mom.gov.sg publishes no stable public WSH RSS for automated readers; notices are read through Currents and the monthly scan.",
+         "site:mom.gov.sg workplace safety", currents="Ministry of Manpower Singapore workplace safety fatality"),
+    Feed("wshc", "Workplace Safety and Health Council", None, WSH, WSH_BASIS, BLOCKED,
+         "wshc.sg publishes no stable public RSS for automated readers; circulars are read through Currents and the monthly scan.",
+         "site:wshc.sg", currents="WSH Council Singapore circular"),
     Feed("trendforce", "TrendForce", "https://www.trendforce.com/news/feed/", TECH, WILSON, STALE, "The feed's newest item is from July 2026.", "site:trendforce.com"),
     Feed("csis", "CSIS", "https://www.csis.org/rss.xml", GROUP, WILSON, STALE, "The feed's newest item is from 2016.", "site:csis.org"),
     Feed("isw", "Institute for the Study of War", None, GROUP, WILSON, BLOCKED, "understandingwar.org refuses automated readers (HTTP 403).", "site:understandingwar.org"),

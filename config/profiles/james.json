@@ -1,0 +1,46 @@
+{
+  "profileId": "james",
+  "name": "James Lek",
+  "role": "Workplace Safety & Health",
+  "aperture": "MATERIAL_APERTURE",
+  "packs": [
+    "wsh"
+  ],
+  "businessScope": {
+    "businessAreas": [
+      "Workplace Safety & Health"
+    ],
+    "lobs": [],
+    "countries": [
+      "Singapore"
+    ]
+  },
+  "reviewRole": "REVIEWER",
+  "redAlerts": {
+    "receive": true,
+    "packs": [
+      "wsh"
+    ]
+  },
+  "email": null,
+  "briefs": {
+    "wsh": {
+      "title": "GRIT-Scan: Workplace Safety & Health",
+      "subtitle": "Monthly Workplace Safety & Health Digest",
+      "preparedFor": "James Lek",
+      "sections": [
+        "SERIOUS",
+        "LEADING",
+        "SIF",
+        "HFACS",
+        "EMERGING"
+      ],
+      "maxFindings": 12,
+      "formats": [
+        "docx",
+        "md"
+      ]
+    }
+  },
+  "note": "WSH functional digest reader (spec 47). No BA_HEAD role, so nothing from this pack is packaged for AIRIS. Receives monthly digests and interim serious-incident and regulatory alert drafts."
+}

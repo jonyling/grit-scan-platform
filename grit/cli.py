@@ -259,29 +259,37 @@ def agents_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
 
 def report_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
     from grit.profiles import load_profiles
+    from grit.pipeline.reader_scan import _load_pack
     from grit.report.package import write_pack
     from grit.report.red import draft_red_alerts
 
     run = _run(pool, args, pack)
     state = pool.run(run.run_id) or {}
+    ontology = _load_pack(pack)
     if state.get("status") != "COMPLETE" and not (args.no_submit and (state.get("config") or {}).get("weekly_mode") == "reasoned"):
         raise SystemExit("The analysis is not complete. Run the agents first, or render an incomplete reasoned preview with --no-submit.")
     for profile in _profiles(args.profile):
         result = write_pack(pool, run.run_id, profile, submit=not args.no_submit)
         print(json.dumps({key: value for key, value in result.items() if key != "package"} | {"package": {k: v for k, v in (result.get("package") or {}).items() if k != "members"}}, indent=2, default=str))
-        if profile.brief_for(pack):
+        if profile.brief_for(pack) and ontology.report_kind != "wsh-digest":
             from grit.profiles.fit import write_fit_report
 
             try:
                 print(f"Fit report: {write_fit_report(pool, run.run_id, profile)}")
             except Exception as exc:  # the fit report is for Jony; it never stops a brief
                 print(f"Fit report for {profile.profile_id} not written: {type(exc).__name__}: {exc}")
-    drafts = draft_red_alerts(pool, run.run_id, pack, list(load_profiles().values()), run.folder / "alerts")
-    print(f"RED drafts written: {len(drafts)}")
-    from grit.daily.index import cluster_events, write_digests
+    if ontology.report_kind == "wsh-digest":
+        from grit.wsh.alerts import draft_wsh_alerts
 
-    cluster_events(pool)
-    write_digests(pool, run.run_date, [pack])  # the day's digest now carries this run's moved items and watchpoints
+        drafts = draft_wsh_alerts(pool, run.run_id, ontology, list(load_profiles().values()), run.folder / "alerts")
+        print(f"WSH alert drafts written: {len(drafts)}")
+    else:
+        drafts = draft_red_alerts(pool, run.run_id, pack, list(load_profiles().values()), run.folder / "alerts")
+        print(f"RED drafts written: {len(drafts)}")
+        from grit.daily.index import cluster_events, write_digests
+
+        cluster_events(pool)
+        write_digests(pool, run.run_date, [pack])  # the day's digest now carries this run's moved items and watchpoints
     return 0
 
 
@@ -340,6 +348,42 @@ def cmd_weekly(args: argparse.Namespace) -> int:
             code = step(pool, args, pack)
             if code:
                 return code
+    return 0
+
+
+def cmd_digest(args: argparse.Namespace) -> int:
+    """Monthly Workplace Safety & Health digest (spec 47): scan, assess, write the discussion digest and alert drafts.
+
+    Business-area packs keep using grit weekly. This command is for reportKind wsh-digest only.
+    """
+    from grit.pipeline.reader_scan import _load_pack
+
+    if not args.pack:
+        args.pack = ["wsh"]
+    if args.dry_run:
+        return cmd_scan(args)
+    # report_step expects a completed run; WSH digest writing runs Assessment → Critic (spec 45 pattern).
+    if not hasattr(args, "profile") or args.profile is None:
+        args.profile = ["james"]
+    if not hasattr(args, "no_submit"):
+        args.no_submit = False
+    pool = _pool()
+    for pack in _packs(args):
+        ontology = _load_pack(pack)
+        if ontology.report_kind != "wsh-digest":
+            print(f"Skipped {pack}: grit digest is for reportKind wsh-digest. Use grit weekly for business-area packs.")
+            continue
+        print(f"== {pack} (WSH digest)")
+        code = scan_step(pool, args, pack)
+        if code:
+            return code
+        code = assess_step(pool, args, pack)
+        if code:
+            return code
+        pool.finish_run(_run(pool, args, pack).run_id)
+        code = report_step(pool, args, pack)
+        if code:
+            return code
     return 0
 
 
@@ -720,6 +764,14 @@ def build_parser() -> argparse.ArgumentParser:
             sub.add_argument("--follow-ups", action="store_true", help="Let the finding loop spend Brave follow-up searches.")
             sub.add_argument("--profile", nargs="*", default=["all"])
             sub.add_argument("--no-submit", action="store_true", help="Write the packs without putting them into review.")
+    sub = reader("digest", cmd_digest, "Run the Workplace Safety & Health monthly digest (spec 47): scan, assess, digest, alerts.")
+    sub.add_argument("--limit-queries", type=int, help="Send at most this many queries, dealt one per lane in turn.")
+    sub.add_argument("--currents", nargs="*", help="Up to two Currents queries to add to the pool.")
+    sub.add_argument("--no-embed", action="store_true", help="Skip embeddings. Duplicates then merge by identical title only.")
+    sub.add_argument("--dry-run", action="store_true", help="Print the queries and stop. Spends nothing.")
+    sub.add_argument("--sweep", type=int, default=0, help="Unused for WSH; kept for scan_step compatibility.")
+    sub.add_argument("--profile", nargs="*", default=["james"])
+    sub.add_argument("--no-submit", action="store_true", help="Write the digest without putting it into review.")
     reader("assess", cmd_assess, "Rerun the deterministic assessment on a scanned run. No network.")
     reader("baseline-draft", cmd_baseline, "Draft a Group pack's baseline for sign-off from a completed run.").add_argument("--model")
     sub = reader("scenarios", cmd_scenarios, "Propose the best, medium and worst case for STE under each strategic shift, from a completed run, for review.")
