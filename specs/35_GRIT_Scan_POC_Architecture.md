@@ -97,7 +97,7 @@ The live run `2026-10-07-urs-tw` searched 60 queries, kept 240 of 793 pages, val
 
 Write each item as trigger, deterministic decision, who signs off, and what is logged (spec 34 section 7).
 
-1. GDELT's artlist feeds the daily lane (spec 42) and is not part of the weekly Brave scan. Sphera has no documented API contract. `secrets/sphera.env` is the placeholder, and the lane fetches nothing.
+1. GDELT's artlist feeds the daily lane (spec 42) and is not part of the weekly Brave scan. Sphera event messages join that daily lane from `secrets/sphera.env`. Sphera's own scores are not read. The weekly scan does not call Sphera.
 2. The harm scorer's severity stays not established: acquisition supplies prose, not structured observations, and no value-at-risk register exists.
 3. Source ratings cover 26 Taiwan outlets. Most business-area sources are unrated.
 4. Order-book anchors are copied from the reference brief and need a named BA owner's confirmation.

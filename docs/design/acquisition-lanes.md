@@ -14,7 +14,7 @@ Each candidate carries one source lane:
 |---|---|---|
 | `APPROVED` | Pages from an approved source list. | Adapter only. No command uses it. |
 | `WILD` | Search results from Brave News, Currents, or GDELT. | In use. |
-| `SPHERA` | Sphera supplier-risk alerts. Sphera's own scores are dropped. | Closed. `secrets/sphera.env` is the placeholder. Nothing is fetched until an API contract exists. |
+| `SPHERA` | Sphera supplier-risk alerts. Sphera's own scores are dropped. | In use on the daily lane. `secrets/sphera.env` holds the OAuth password grant. |
 | `AGILE` | AGILE alerts. AGILE's own scores are dropped. | Adapter only. |
 | `ISOS` | International SOS alerts. | Returns an empty list until a feed exists. |
 
@@ -53,7 +53,7 @@ The daily lane does call the DOC artlist, because a page needs a title before th
 
 ## Sphera
 
-`grit/acquisition/sphera_lane.py` does not call a server. `secrets/sphera.env` may hold `SPHERA_API_URL` and `SPHERA_API_KEY`. Until an API contract is documented, a present licence file changes only the status line. The status never includes a value from the file.
+`grit/acquisition/sphera_lane.py` reads `secrets/sphera.env`. The file holds `SPHERA_AUTH_URL`, `SPHERA_CLIENT_ID`, `SPHERA_CLIENT_SECRET`, `SPHERA_USERNAME`, `SPHERA_PASSWORD`, and one `SPHERA_API_URL` per resource. A live `grit daily` asks the token endpoint, then reads `event_messages` newest first for the lookback window. Directly affected supplier names come from `risk_objects`. `score_cards` and `total_risk_score` are not read. The same pages are added to each pack in that run. `--no-sphera` skips the lane. A failed auth or a failed read is reported and is not treated as an empty day. The status line never includes a value from the file.
 
 ## Credentials
 

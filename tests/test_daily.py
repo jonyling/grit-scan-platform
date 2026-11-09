@@ -411,6 +411,26 @@ def test_gdelt_pages_follow_the_keep_rule_and_a_failed_fetch_is_not_an_empty_day
     assert stopped.gdelt["stopped"] == "GDELT request failed" and stopped.gdelt["sent"] == 0 and stopped.signals == 0
 
 
+def test_sphera_pages_are_added_once_for_the_pack_and_a_stop_is_not_an_empty_day(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    pool = Pool(tmp_path / "grit.sqlite")
+    page = {"url": "https://www.example.com/acme-stop", "title": "Acme plant stopped", "text": "Affected supplier: Acme Metals. Plant stopped.",
+            "publisher": "Example News", "published_at": f"{DAY.isoformat()}T02:00:00Z"}
+    result = run_daily(
+        pool, "urs-tw", DAY, feeds=[], use_currents=False, sphera_pages=[page],
+        embedder=_Embedder(), score_harm_fn=lambda *a, **k: {"status": "NOT_RUN"}, log=lambda _m: None,
+    )
+    stored = pool.one("SELECT lane, title FROM signals WHERE url = ?", (page["url"],))
+    assert stored["lane"] == "SPHERA" and stored["title"] == "Acme plant stopped"
+    assert result.sphera == {"messages": 1, "stopped": None} and result.signals == 1
+
+    stopped = run_daily(
+        Pool(tmp_path / "stopped.sqlite"), "urs-tw", DAY, feeds=[], use_currents=False, sphera_pages=[], sphera_stopped="Sphera auth failed: HTTP 401",
+        embedder=_Embedder(), score_harm_fn=lambda *a, **k: {"status": "NOT_RUN"}, log=lambda _m: None,
+    )
+    assert stopped.sphera["stopped"] == "Sphera auth failed: HTTP 401" and stopped.signals == 0
+
+
 def test_the_daily_run_sends_red_mail_only_when_asked(tmp_path: Path, monkeypatch) -> None:
     import grit.report.red_mail as red_mail
 

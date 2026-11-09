@@ -5,7 +5,8 @@ For each pack and day:
 1. Start the run DATE-PACK-daily (kind DAILY). Weekly and monthly code ignores DAILY runs.
 2. Read each active feed for the pack, add the week's source-sweep results for its stale and blocked sources, and send the
    pack's daily Currents queries. Every item becomes a signal and a sighting in the run, as a scanned page does.
-3. Ask GDELT's artlist for the same conditions and requests, capped, with a timeout. Sphera is not called.
+3. Ask GDELT's artlist for the same conditions and requests, capped, with a timeout. Sphera event messages,
+   fetched once for the day, are added to every pack. Sphera's own scores are not read.
 4. Embed new pages, then run the same deterministic assessment as a weekly scan: link ladder, keep rule, tier, conditions,
    harm and RED.
 5. Queue every kept page for the pack's next weekly or monthly scan, whose rules assess it again for the brief.
@@ -128,6 +129,7 @@ class DailyResult:
     red_drafts: int = 0
     csv: str | None = None
     gdelt: dict[str, Any] = field(default_factory=dict)
+    sphera: dict[str, Any] = field(default_factory=dict)
     red_mail: dict[str, Any] = field(default_factory=dict)
 
     def as_record(self) -> dict[str, Any]:
@@ -148,7 +150,8 @@ def run_daily(
     currents_getter: Callable[..., Any] | None = None, use_currents: bool = True, lookback_days: int = LOOKBACK_DAYS, embedder: Any | None = None,
     score_harm_fn: Callable[..., dict[str, Any]] | None = None, profiles: Sequence[Any] | None = None, log: Callable[[str], None] = print,
     swept_pages: Mapping[str, Sequence[dict[str, Any]]] | None = None, use_gdelt: bool = False, gdelt_getter: Callable[..., Any] | None = None,
-    gdelt_pause: float = GDELT_PAUSE_SECONDS, send_mail: bool = False,
+    gdelt_pause: float = GDELT_PAUSE_SECONDS, send_mail: bool = False, sphera_pages: Sequence[Mapping[str, Any]] | None = None,
+    sphera_stopped: str | None = None,
 ) -> DailyResult:
     """swept_pages: the source sweep's results, feed id -> pages, shared by every pack the source serves."""
     from grit.pipeline import reader_scan
@@ -224,6 +227,15 @@ def run_daily(
         result.currents["skipped"] = "CURRENTS_API_KEY is not set."
     if use_gdelt:
         _gdelt(pool, run, result, lookback_days=lookback_days, getter=gdelt_getter, pause=gdelt_pause, log=log)
+    if sphera_pages is not None or sphera_stopped:
+        for rank, item in enumerate(sphera_pages or [], start=1):
+            if item.get("url") and item.get("title"):
+                _add(pool, run.run_id, dict(item), lane="SPHERA", query_id="sphera-events", query="Sphera event messages", sighting_lane="SPHERA", target_id=None, rank=rank, result=result)
+        result.sphera = {"messages": len(list(sphera_pages or [])), "stopped": sphera_stopped}
+        if sphera_stopped:
+            log(f"  {pack:7} Sphera stopped: {sphera_stopped}")
+        else:
+            log(f"  {pack:7} Sphera {result.sphera['messages']} event messages")
     reader_scan.embed(pool, run, embedder=embedder)
     options = {"score_harm_fn": score_harm_fn} if score_harm_fn is not None else {}
     assessed = reader_scan.assess(pool, run, **options)

@@ -22,6 +22,7 @@ def daily_main(argv: list[str] | None = None) -> int:
     parser.add_argument("--lookback-days", type=int, default=2, help="Read feed items published this many days before the day. Use 7 to catch up.")
     parser.add_argument("--no-currents", action="store_true", help="Send no Currents query.")
     parser.add_argument("--no-gdelt", action="store_true", help="Send no GDELT artlist query.")
+    parser.add_argument("--no-sphera", action="store_true", help="Do not read Sphera event messages.")
     parser.add_argument("--no-sweep", action="store_true", help="Skip the weekly source sweep of stale and blocked sources.")
     parser.add_argument("--dry-run", action="store_true", help="Print the packs and feeds. Fetch nothing.")
     args = parser.parse_args(argv)
@@ -36,12 +37,12 @@ def daily_main(argv: list[str] | None = None) -> int:
             due = due_sweeps(Pool(), args.date)
             print(f"Source sweep due: {', '.join(feed.feed_id for feed in due) or 'none'} ({len(due)} Brave queries).")
         ensure_placeholder()
-        print(f"Sphera: {sphera_status()}")
+        print(f"Sphera: {'skipped' if args.no_sphera else sphera_status()}")
         return 0
     report_synced(CONFIG_DIR / "red-patterns.json")
     pool = Pool()
     ensure_placeholder()
-    print(f"Sphera: {sphera_status()}")
+    sphera_pages, sphera_stopped = _sphera_pages(args)
     swept_pages = {} if args.no_sweep else sweep_sources(pool, args.date)
     profiles = list(load_profiles().values())
     for pack in packs:
@@ -49,6 +50,7 @@ def daily_main(argv: list[str] | None = None) -> int:
         result = run_daily(
             pool, pack, args.date, use_currents=not args.no_currents, use_gdelt=not args.no_gdelt, send_mail=True,
             lookback_days=args.lookback_days, profiles=profiles, swept_pages=swept_pages,
+            sphera_pages=sphera_pages, sphera_stopped=sphera_stopped,
         )
         mail = result.red_mail.get("status") or "not sent"
         print(f"  {result.signals} pages ({result.new_signals} new), {result.kept} kept, {result.queued} queued for the next scan, {result.red_drafts} RED drafts. Mail: {mail}.")
@@ -56,6 +58,26 @@ def daily_main(argv: list[str] | None = None) -> int:
     index = nightly(pool, args.date)
     print(f"Index: {index['fts_added']} pages indexed; events {index['events']}; digests {index['digests']}; {index['retained']} old dropped pages trimmed.")
     return 0
+
+
+def _sphera_pages(args: argparse.Namespace) -> tuple[list[dict] | None, str | None]:
+    """One fetch for every pack. None means the lane is off. A failure is reported and is not an empty day."""
+    from grit.acquisition.sphera_lane import SpheraFetchError, alert_pages, sphera_configured, sphera_status
+
+    if args.no_sphera:
+        print("Sphera: skipped")
+        return None, None
+    if not sphera_configured():
+        print(f"Sphera: {sphera_status()}")
+        return None, None
+    try:
+        pages = alert_pages(args.date, args.lookback_days)
+    except SpheraFetchError as exc:
+        stopped = str(exc)[:160]
+        print(f"Sphera stopped: {stopped}")
+        return [], stopped
+    print(f"Sphera: {len(pages)} event messages")
+    return pages, None
 
 
 def index_main(argv: list[str] | None = None) -> int:

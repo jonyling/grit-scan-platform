@@ -21,7 +21,7 @@ The weekly command uses the compatibility path. `--reasoned` is the opt-in path 
 |---|---|
 | `grit/core/` | Deterministic functions: harm, `TransitionGuard()`, `ReviewGate()`, priority, document type, routing, RED, confidence, the keep rule, and the condition cascade. |
 | `grit/ontology/` | Pack manifests, the pack builder, the typed graph, the link ladder, query plans, and workbook readers. |
-| `grit/acquisition/` | Brave News, Currents, GDELT, and the closed Sphera lane. They emit candidates. They do not score. |
+| `grit/acquisition/` | Brave News, Currents, GDELT, and Sphera event messages. They emit candidates. They do not score. |
 | `grit/retrieval/` | Embeddings, the vector cache, similarity, and the business-area digest filter. |
 | `grit/agents/` | The model client, reader agents, checks, and the finding loop in `loop/`. |
 | `grit/copilot/` | Co-Pilot scope, search, tools, and checks. Specs 40 and 41. |
@@ -300,7 +300,7 @@ The reporting period runs from the end of the previous `READY` scan to `DATE`. T
 
 Once a day, GRIT-Scan reads the primary-source feeds that readers named. It asks GDELT's artlist for each standing condition and active management request. That call is capped, free, and not a Brave query. It sends one Currents query for the same set. The scan's own rules assess every page. Kept pages are queued for the next weekly or monthly scan. Once a week it also sweeps named sources that block feed readers, with one Brave `site:` query each, about 15 a week. A nightly index groups pages into events and writes a digest per pack for the Co-Pilot's "what's new" ([spec 42](specs/42_Daily_Lane_and_Nightly_Index.md)).
 
-GDELT's seen time is the page date, because the artlist has no publication date. `--no-gdelt` skips GDELT. Sphera waits for an API contract. `secrets/sphera.env` is the placeholder for that license.
+GDELT's seen time is the page date, because the artlist has no publication date. `--no-gdelt` skips GDELT. Sphera event messages are read from `secrets/sphera.env` when that file holds the OAuth password grant and an `event_messages` URL. Supplier names are attached. Sphera's own scores are not read. `--no-sphera` skips that lane.
 
 A new RED draft from the daily run is sent to the R&A duty team when `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`, `GRAPH_MAIL_SENDER`, and `GRIT_RED_MAIL_TO` are set. The app registration needs application permission Mail.Send. The message goes only to those mailboxes. A named person forwards it. If any setting is missing, the draft stays unsent.
 
@@ -607,7 +607,7 @@ Run `grit COMMAND --help` for a command's arguments. Delegated commands take the
 
 These are the open items for the MVP.
 
-1. GDELT's artlist feeds the daily lane. The weekly scan uses Brave, with Currents as the fallback. Sphera stays closed until an API contract exists. `secrets/sphera.env` is the placeholder.
+1. GDELT's artlist feeds the daily lane. The weekly scan uses Brave, with Currents as the fallback. Sphera event messages join the daily lane from `secrets/sphera.env`. The weekly scan does not call Sphera.
 2. Severity stays "not established". No source supplies structured observations. No value-at-risk register exists.
 3. Shared outlet bands live in `config/source-ratings.json`. A pack source with no band stays `UNRATED` until you rate it. `grit ratings unrated` lists the outlets a run actually cited.
 4. The URS Taiwan order-book anchors are `REPORTED_FOR_CONFIRMATION`. A named business-area owner confirms them.

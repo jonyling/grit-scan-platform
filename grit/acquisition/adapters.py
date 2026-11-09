@@ -48,7 +48,7 @@ def sphera(records: list[dict[str, Any]], *, fetched_at: str) -> list[Candidate]
             "title": record.get("title") or record.get("event_title"),
             "text": record.get("text") or record.get("description"),
             "url": record.get("url"),
-            "publisher": "Sphera",
+            "publisher": record.get("publisher") or "Sphera",
             "published_at": record.get("published_at") or record.get("event_date"),
         }
         for record in records
