@@ -2,7 +2,7 @@
 
 GRIT-Scan tracks external risks that can affect ST Engineering. Each week it searches for a reader's standing conditions, named projects, suppliers, customers, and hazards. It binds each page to the STE register. It writes that reader's brief in Word, PowerPoint, Excel, and Markdown. A dashboard and a Co-Pilot answer questions from the same records.
 
-This repository is the proof of concept for Wilson, Group Head of Risk & Assurance, and the baseline for the MVP. [Spec 35](specs/35_GRIT_Scan_POC_Architecture.md) describes that proof of concept as first built, with Urban Solutions and URS Taiwan. The checkout now also holds Digital Systems & Cyber, Commercial Aerospace, Marine, the Group pack, and the Workplace Safety & Health functional pack. To add another business area, follow [Add a business area](docs/add-a-business-area.md). The governing specs are listed in [specs/README.md](specs/README.md).
+This repository is the Minimum Viable Product for Wilson, Group Head of Risk & Assurance, and the baseline for the full product. [Spec 35](specs/35_GRIT_Scan_POC_Architecture.md) describes that proof of concept as first built, with Urban Solutions and URS Taiwan. The checkout now also holds Digital Systems & Cyber, Commercial Aerospace, Marine, the Group pack, and the Workplace Safety & Health functional pack. To add another business area, follow [Add a business area](docs/add-a-business-area.md). The governing specs are listed in [specs/README.md](specs/README.md).
 
 ## The rule
 
