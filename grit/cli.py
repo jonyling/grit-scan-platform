@@ -680,7 +680,16 @@ def cmd_ui(_args: argparse.Namespace) -> int:
 
     from grit.settings import ROOT
 
-    return subprocess.call([sys.executable, "-m", "streamlit", "run", str(ROOT / "grit" / "ui" / "app.py")])
+    process = subprocess.Popen([sys.executable, "-m", "streamlit", "run", str(ROOT / "grit" / "ui" / "app.py")])
+    try:
+        return process.wait()
+    except KeyboardInterrupt:
+        # Ctrl-C reaches Streamlit too, and it shuts down on its own. Wait for it instead of printing a traceback.
+        try:
+            return process.wait(timeout=15)
+        except (KeyboardInterrupt, subprocess.TimeoutExpired):
+            process.kill()
+            return process.wait()
 
 
 # Ontology and the business-area digest ---------------------------------------------------------------------------

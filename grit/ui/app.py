@@ -35,6 +35,7 @@ def main() -> None:
     from grit.report.brief import build_brief, routed_signals
     from grit.report.markdown import render_markdown
     from grit.ui import actions
+    from grit.ui.runs import listed_runs, ready_snapshot
     from grit.ui.view_model import kpis, profile_in_force, screen_context, signal_detail, signal_rows, table_html
 
     load_local_env()
@@ -69,7 +70,7 @@ def main() -> None:
     with st.sidebar:
         st.title("GRIT-Scan")
         profile = readers[st.selectbox("Reader", labels, index=default)]
-        runs = [row for row in db.rows("SELECT run_id, pack FROM runs WHERE status = 'COMPLETE' AND kind != 'DAILY' ORDER BY run_date DESC, pack, started_at DESC") if profile.brief_for(row["pack"])]
+        runs = listed_runs(db, profile)
         if not runs:
             st.info("No run yet for this reader's packs. Start one with: .venv/bin/python -m grit weekly --dry-run")
             return
@@ -87,8 +88,14 @@ def main() -> None:
         for line in lines[1:]:
             st.caption(line)
 
-    brief = build_brief(db, run_id, profile)
-    routed = routed_signals(db, run_id, profile)
+    status = next(row["status"] for row in runs if row["run_id"] == run_id)
+    snapshot = ready_snapshot(db, run_id, profile.profile_id) if status != "COMPLETE" else None
+    if snapshot:
+        # The current analysis is incomplete; show the last report that passed review, as it was written to the files.
+        brief, routed = snapshot["brief"], snapshot["routed"]
+    else:
+        brief = build_brief(db, run_id, profile)
+        routed = routed_signals(db, run_id, profile)
     packages = db.rows("SELECT * FROM packages WHERE run_id = ? AND profile_id = ? ORDER BY version DESC", (run_id, profile.profile_id))
     decisions = {signal_id: decision for (_profile, signal_id), decision in db.latest_decisions(profile.profile_id).items()} if profile.signal_buttons else None
 
@@ -100,6 +107,10 @@ def main() -> None:
     screens: dict[str, dict] = {}
     with main_column:
         st.header(meta["title"])
+        if snapshot:
+            current = db.one("SELECT version FROM weekly_runs WHERE run_id = ?", (run_id,)) or {}
+            st.info(f"Showing the READY report from analysis version {snapshot['version']}, saved {snapshot['created_at'][:16].replace('T', ' ')} UTC. "
+                    + (f"The later analysis (version {current['version']}) is incomplete and is not shown." if current.get("version") not in (None, snapshot["version"]) else ""))
         st.caption(f"{meta['subtitle']} | Scan window {meta['window']} | Prepared for {meta['prepared_for']}" + (" | Draft for review, not approved" if meta.get("show_review_status", True) else ""))
         st.markdown(
             # The box is always light, so its text is set dark. In the dark theme the default text is near-white.
@@ -173,7 +184,9 @@ def main() -> None:
         with packs_tab:
             if st.toggle("Preview this week's brief", value=False):
                 st.markdown(render_markdown(brief))
-            if st.button("Write this week's pack and submit it for review"):
+            if snapshot:
+                st.caption("A new pack cannot be written while the current analysis is incomplete. The READY report's files are in the run's output folder.")
+            elif st.button("Write this week's pack and submit it for review"):
                 from grit.report.package import write_pack
 
                 st.json(write_pack(db, run_id, profile))

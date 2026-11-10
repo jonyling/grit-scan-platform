@@ -113,3 +113,26 @@ def test_the_dashboard_uses_the_open_tab_and_gates_approval() -> None:
     assert 'button("Approve"' in text
     assert '_apply_review(db, profile, row, "APPROVE")' in text
     assert "A reader cannot approve a pack." in text
+
+
+def test_an_incomplete_reasoned_run_is_listed_with_its_ready_report(tmp_path):
+    from types import SimpleNamespace
+
+    from grit.pool import Pool
+    from grit.ui.runs import listed_runs, ready_snapshot
+
+    pool = Pool(tmp_path / "pool.sqlite")
+    pool.start_run("W", run_date="2026-11-10", pack="ste", kind="READER_SCAN")
+    pool.start_run("X", run_date="2026-11-09", pack="ste", kind="READER_SCAN")
+    call = pool.insert("weekly_calls", {"run_id": "W", "version": 1, "role": "Critic", "task": "final-wilson", "prompt_version": "t",
+                                        "model": "m", "input_hash": "i", "input_json": {}, "output_json": {}, "status": "VALIDATED",
+                                        "created_at": "2026-11-10T07:47:00Z"})
+    for version, status in ((1, "READY"), (3, "INCOMPLETE")):
+        pool.insert("weekly_reports", {"run_id": "W", "version": version, "profile_id": "wilson", "content_hash": f"h{version}",
+                                       "selection_hash": "", "critique_call_id": call, "status": status,
+                                       "brief_json": {"v": version}, "routed_json": [], "created_at": "2026-11-10T07:47:01Z"})
+    reader = SimpleNamespace(profile_id="wilson", brief_for=lambda pack: pack == "ste")
+    assert [row["run_id"] for row in listed_runs(pool, reader)] == ["W"]
+    assert ready_snapshot(pool, "W", "wilson")["brief"] == {"v": 1}
+    other = SimpleNamespace(profile_id="mkteo", brief_for=lambda pack: True)
+    assert listed_runs(pool, other) == []
