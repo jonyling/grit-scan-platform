@@ -56,14 +56,19 @@ class _Doc:
         return f"[{name}]({url})" if self.md else f"{name}, {url}"
 
 
+EXTRACT_NOTE = "search-engine text; the page did not open from the scan server"
+
+
 def _sources(doc: _Doc, item: Mapping[str, Any]) -> None:
     refs = item.get("sources") or []
     if not refs:
         return
     first = refs[0]
-    doc.field("Source", doc.link(first["outlet"], first["url"]))
+    note = f" ({EXTRACT_NOTE})" if first.get("basis") == "SEARCH_EXTRACT" else ""
+    doc.field("Source", doc.link(first["outlet"], first["url"]) + note)
     for ref in refs[1:]:
-        doc.bullet(f"Also: {doc.link(ref['outlet'], ref['url'])} ({long_date(ref.get('published'))})")
+        note = f"; {EXTRACT_NOTE}" if ref.get("basis") == "SEARCH_EXTRACT" else ""
+        doc.bullet(f"Also: {doc.link(ref['outlet'], ref['url'])} ({long_date(ref.get('published'))}{note})")
 
 
 def _dates(doc: _Doc, item: Mapping[str, Any]) -> None:
@@ -186,7 +191,9 @@ def compose(report: Mapping[str, Any], *, markdown: bool = False) -> str:
              else "no previous completed scan was accessible, so the seven days to the report date")
     doc.field("Reporting period", f"{long_date(window['start'])} to {long_date(window['end'])} ({basis})")
     counts = report["counts"]
-    doc.field("Coverage", f"{counts['pages']} pages screened, {counts['verified_pages']} source pages opened and checked, "
+    extracts = counts.get("search_extracts") or 0
+    extract_text = f"{extracts} sources checked against search-engine text because the page did not open, " if extracts else ""
+    doc.field("Coverage", f"{counts['pages']} pages screened, {counts['verified_pages']} source pages opened and checked, {extract_text}"
                           f"{sum(len(v) for v in items.values())} items reported")
 
     doc.heading("Immediate Escalation Summary")
@@ -288,6 +295,10 @@ def worksheet(report: Mapping[str, Any]) -> str:
     lines += ["", "## Withheld", ""]
     withheld = report.get("withheld") or []
     lines += [f"- {w['headline']} ({w.get('section') or '-'}): {w['reason']}" + (f" {w['url']}" if w.get("url") else "") for w in withheld] or ["- None."]
+    lines += ["", "## Sources checked against search-engine text", ""]
+    lines += [f"- [{item.get('item_id')}] {item.get('headline')}: {ref['outlet']} {ref['url']}"
+              for section in ("A", "B", "C") for item in (report.get("items") or {}).get(section) or []
+              for ref in item.get("sources") or [] if ref.get("basis") == "SEARCH_EXTRACT"] or ["- None."]
     lines += ["", "## Repeats with no material update", ""]
     lines += [f"- {r['headline']} (reported {r.get('previous_date')})" for r in report.get("repeats") or []] or ["- None."]
     lines += ["", "## Rule decisions and Critic objections", ""]

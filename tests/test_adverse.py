@@ -122,6 +122,37 @@ def test_a_bot_check_page_does_not_count_as_verified() -> None:
     assert readable(PSC_TEXT * 3)
 
 
+def _member(url: str, text: str, score: float) -> Any:
+    from grit.adverse.screen import Candidate
+
+    return Candidate(f"sig-{score}", url, "Acme Airways data breach", text, "Outlet", "2026-11-01T00:00:00Z", "2026-11-01T01:00:00Z",
+                     "COUNTERPARTY", [], [], [], "T2", "A", score)
+
+
+def test_search_text_stands_in_for_a_page_that_does_not_open() -> None:
+    from grit.adverse.scan import MIN_EXTRACT_CHARS, verified_sources
+    from grit.adverse.screen import Item
+
+    long_text = ACME_TEXT + " The airline said it had notified regulators and affected passengers." * 3
+    assert len(long_text) >= MIN_EXTRACT_CHARS > len(ACME_TEXT)
+    item = Item("A", [_member("https://blocked.example.org/a", long_text, 9), _member("https://open.example.org/b", ACME_TEXT, 5),
+                      _member("https://blocked.example.org/short", ACME_TEXT, 7)])
+    table, refs, failures = verified_sources(item, verifier({"https://open.example.org/b": ACME_TEXT}), {}, {"T2": 0})
+    assert [(r["url"], r["basis"]) for r in refs] == [("https://open.example.org/b", "PAGE"), ("https://blocked.example.org/a", "SEARCH_EXTRACT")]
+    assert table["S2"]["text"] == long_text and table["S2"]["basis"] == "SEARCH_EXTRACT"
+    assert len(failures) == 2, "both pages that did not open are still reported, including the one with too little search text"
+
+
+def test_search_text_sources_are_labelled_in_the_email_and_listed_for_the_reviewer() -> None:
+    refs = [{"source_id": "S1", "outlet": "Blocked", "url": "https://blocked.example.org/a", "published": "2026-11-01", "basis": "SEARCH_EXTRACT"}]
+    doc = render._Doc(False)
+    render._sources(doc, {"sources": refs})
+    assert render.EXTRACT_NOTE in "\n".join(doc.lines)
+    report = {"run_date": "2026-11-09", "status": "READY", "window": {"start": "2026-11-03", "end": "2026-11-09"}, "counts": {},
+              "items": {"A": [{"item_id": "A-1", "headline": "Acme breach", "sources": refs}]}}
+    assert "- [A-1] Acme breach: Blocked https://blocked.example.org/a" in render.worksheet(report)
+
+
 @pytest.fixture
 def pool(tmp_path: Path) -> Pool:
     pool = Pool(tmp_path / "grit.sqlite")

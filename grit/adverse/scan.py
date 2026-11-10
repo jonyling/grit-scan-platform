@@ -29,6 +29,8 @@ PACK = "adverse"
 
 
 MIN_PAGE_CHARS = 400
+MIN_EXTRACT_CHARS = 300
+PAGE, SEARCH_EXTRACT = "PAGE", "SEARCH_EXTRACT"
 _CHALLENGE = ("client challenge", "verify you are human", "enable javascript", "checking your browser", "captcha", "access denied", "are you a robot")
 
 
@@ -171,12 +173,28 @@ def previous_items(pool: Pool, scan_id: str, run_date: date) -> list[dict[str, A
 # Assessment -------------------------------------------------------------------------------------------------------------
 
 
+def search_extract(text: Any) -> str | None:
+    """The search engine's text for a result (description and extra snippets), when it is long enough to check facts against."""
+    text = str(text or "").strip()
+    return text if len(text) >= MIN_EXTRACT_CHARS else None
+
+
 def verified_sources(item: Item, verify: Callable[[str], Mapping[str, Any]], cache: dict[str, Any], band_rank: Mapping[str, int]
                      ) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]], list[str]]:
-    """Up to MAX_SOURCES opened pages for an item: the model's source table, the rendered references, and the failures."""
+    """Up to MAX_SOURCES sources for an item: the model's source table, the rendered references, and the pages that did not open.
+    Opened pages come first. A page that does not open is replaced by the search engine's text for it, when that is long enough."""
     table: dict[str, dict[str, Any]] = {}
     refs: list[dict[str, Any]] = []
     failures: list[str] = []
+    fallbacks: list[tuple[Candidate, str]] = []
+
+    def add(member: Candidate, text: str, basis: str) -> None:
+        key = f"S{len(table) + 1}"
+        table[key] = {"title": member.title, "outlet": outlet_of(member), "publication_date": (member.published_at or "")[:10] or "not stated",
+                      "band": member.band, "basis": basis, "text": text[:MAX_SOURCE_CHARS]}
+        refs.append({"source_id": key, "outlet": outlet_of(member), "url": member.url, "published": (member.published_at or "")[:10] or None,
+                     "first_seen": member.first_seen_at[:10], "signal_id": member.signal_id, "band": member.band, "basis": basis})
+
     for member in sorted(item.members, key=lambda m: (band_rank.get(m.band, 9), -m.score)):
         if len(table) >= MAX_SOURCES:
             break
@@ -187,12 +205,13 @@ def verified_sources(item: Item, verify: Callable[[str], Mapping[str, Any]], cac
             result = {"status": "NOT_CHECKED", "reason": "The page returned a bot check or too little text to verify."}
         if result.get("status") != "SUCCEEDED":
             failures.append(f"{outlet_of(member)}: {result.get('reason') or result.get('status')}")
+            extract = search_extract(member.text)
+            if extract:
+                fallbacks.append((member, extract))
             continue
-        key = f"S{len(table) + 1}"
-        table[key] = {"title": member.title, "outlet": outlet_of(member), "publication_date": (member.published_at or "")[:10] or "not stated",
-                      "band": member.band, "text": str(result.get("text") or "")[:MAX_SOURCE_CHARS]}
-        refs.append({"source_id": key, "outlet": outlet_of(member), "url": member.url, "published": (member.published_at or "")[:10] or None,
-                     "first_seen": member.first_seen_at[:10], "signal_id": member.signal_id, "band": member.band})
+        add(member, str(result.get("text") or ""), PAGE)
+    for member, extract in fallbacks[:max(0, MAX_SOURCES - len(table))]:
+        add(member, extract, SEARCH_EXTRACT)
     return table, refs, failures
 
 
@@ -340,13 +359,15 @@ def run_scan(
             sources, refs, failures = verified_sources(item, verify, cache, band_rank)
             if not sources:
                 withheld.append({"section": section, "headline": item.lead.title, "url": item.lead.url,
-                                 "reason": "No source page could be opened, so nothing was verified: " + "; ".join(failures[:3])})
+                                 "reason": "No source page could be opened from the scan server and the search engine returned too little text, "
+                                           "so nothing was verified: " + "; ".join(failures[:3])})
                 continue
             jobs.append({"section": section, "item": item, "sources": sources, "refs": refs, "failures": failures, "previous": match_previous(item, earlier)})
     cache_path.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
-    counts["verified_pages"] = sum(len(job["refs"]) for job in jobs)
+    counts["verified_pages"] = sum(ref["basis"] == PAGE for job in jobs for ref in job["refs"])
+    counts["search_extracts"] = sum(ref["basis"] == SEARCH_EXTRACT for job in jobs for ref in job["refs"])
     counts["unverified_pages"] = sum(len(job["failures"]) for job in jobs)
-    log(f"Assessing {len(jobs)} items with {counts['verified_pages']} verified pages.")
+    log(f"Assessing {len(jobs)} items with {counts['verified_pages']} verified pages and {counts['search_extracts']} search-engine extracts.")
 
     period = {"start": window["start"].isoformat(), "end": window["end"].isoformat()}
     footprint = sorted(node.name for node in graph.of_class("Place") if graph.entities_in_place(node.id))
@@ -443,11 +464,13 @@ def run_scan(
                     continue
                 check = cache.get(row["url"]) or dict(verify(row["url"]))
                 cache[row["url"]] = check
-                if check.get("status") == "SUCCEEDED" and name and name.casefold() in str(check.get("text") or "").casefold():
+                text, basis = (str(check.get("text") or ""), PAGE) if check.get("status") == "SUCCEEDED" and readable(str(check.get("text") or "")) \
+                    else (search_extract(row.get("text")) or "", SEARCH_EXTRACT)
+                if text and name and name.casefold() in text.casefold():
                     entry["corroborated"] = True
                     entry["sources"].append({"source_id": f"S{len(entry['sources']) + 1}", "outlet": str(row.get("publisher") or host), "url": row["url"],
                                              "published": (row.get("published_at") or "")[:10] or None, "first_seen": str(row["first_seen_at"])[:10],
-                                             "signal_id": row["signal_id"], "band": band_of(row["url"], row.get("publisher"))})
+                                             "signal_id": row["signal_id"], "band": band_of(row["url"], row.get("publisher")), "basis": basis})
                     break
     cache_path.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
 

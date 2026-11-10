@@ -434,6 +434,54 @@ def test_only_a_redirect_to_the_same_page_is_followed(target, same_page):
     assert canonical_redirect("https://news.example/a", target) is same_page
 
 
+def _redirect_chain(monkeypatch, hops):
+    """Serve each URL path from `hops` (path -> Location or None for a 200 page) without network access."""
+    import contextlib
+    import email.message
+    monkeypatch.setattr("socket.getaddrinfo", lambda *a, **k: [(2, 1, 6, "", ("93.184.216.34", 443))])
+    monkeypatch.setattr("socket.create_connection", lambda *a, **k: contextlib.nullcontext())
+
+    class Secure(contextlib.nullcontext):
+        def sendall(self, data):
+            self.path = data.decode().split()[1]
+
+    class Context:
+        def wrap_socket(self, connection, server_hostname):
+            return Secure(Secure())
+
+    class Response:
+        def __init__(self, secure):
+            self.location = hops[secure.path]
+            self.status = 301 if self.location else 200
+            self.headers = email.message.Message()
+            self.headers["Content-Type"] = "text/html; charset=utf-8"
+
+        def begin(self):
+            pass
+
+        def getheader(self, name):
+            return self.location
+
+        def read(self, size):
+            return b"<p>Article text</p>"
+
+    monkeypatch.setattr("ssl.create_default_context", Context)
+    monkeypatch.setattr("http.client.HTTPResponse", Response)
+
+
+def test_up_to_three_same_page_redirects_are_followed(monkeypatch):
+    from grit.agents.weekly_evidence import verify_page
+    monkeypatch.setattr("grit.agents.weekly_evidence.canonical_redirect", lambda url, target: True)
+    hops = {"/a": "https://news.example/a/", "/a/": None}
+    _redirect_chain(monkeypatch, hops)
+    assert verify_page("https://news.example/a")["final_url"] == "https://news.example/a/"
+    hops.update({"/a": "https://news.example/b", "/b": "https://news.example/c", "/c": "https://news.example/d", "/d": None})
+    result = verify_page("https://news.example/a")
+    assert result["status"] == "SUCCEEDED" and result["final_url"] == "https://news.example/d"
+    hops.update({"/d": "https://news.example/e", "/e": None})
+    assert verify_page("https://news.example/a")["reason"] == "The source exceeded the limit of three redirects."
+
+
 def test_page_verification_never_connects_to_private_addresses(monkeypatch):
     from grit.agents.weekly_evidence import verify_page
     monkeypatch.setattr("socket.getaddrinfo", lambda *a, **k: [(2, 1, 6, "", ("127.0.0.1", 443))])

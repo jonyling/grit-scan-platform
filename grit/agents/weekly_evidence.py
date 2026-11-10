@@ -50,9 +50,9 @@ def canonical_redirect(url: str, target: str) -> bool:
         return False
 
 
-def verify_page(url: str, *, redirects: int = 1) -> dict[str, Any]:
-    """Fetch one public HTTPS response with a pinned validated IP and verified TLS hostname. One canonical redirect
-    (see canonical_redirect) is followed, and the target is validated like the original."""
+def verify_page(url: str, *, redirects: int = 3) -> dict[str, Any]:
+    """Fetch one public HTTPS response with a pinned validated IP and verified TLS hostname. Up to three canonical
+    redirects (see canonical_redirect) are followed, and each target is validated like the original."""
     try:
         parsed = urlsplit(url)
         valid = parsed.scheme == "https" and bool(parsed.hostname) and not parsed.username and not parsed.password and parsed.port in {None, 443}
@@ -78,10 +78,16 @@ def verify_page(url: str, *, redirects: int = 1) -> dict[str, Any]:
                 location = response.getheader("Location") if 300 <= response.status < 400 else None
                 redirect = urljoin(url, location) if location else None
                 if response.status != 200:
-                    if redirect and redirects > 0 and canonical_redirect(url, redirect):
+                    same_page = bool(redirect) and canonical_redirect(url, redirect)
+                    if same_page and redirects > 0:
                         raise _Redirect(redirect)
-                    return {"status": "NOT_CHECKED", "http_status": response.status,
-                            "reason": "Only a redirect to the same page is followed; the source needs an explicit new reference." if 300 <= response.status < 400 else "The source did not return HTTP 200."}
+                    if same_page:
+                        reason = "The source exceeded the limit of three redirects."
+                    elif 300 <= response.status < 400:
+                        reason = "Only a redirect to the same page is followed; the source needs an explicit new reference."
+                    else:
+                        reason = "The source did not return HTTP 200."
+                    return {"status": "NOT_CHECKED", "http_status": response.status, "reason": reason}
                 content_type = response.headers.get_content_type()
                 if content_type not in {"text/html", "text/plain"}:
                     return {"status": "NOT_CHECKED", "reason": f"Unsupported page type: {content_type}"}
@@ -95,7 +101,9 @@ def verify_page(url: str, *, redirects: int = 1) -> dict[str, Any]:
                     return {"status": "NOT_CHECKED", "reason": "The page character encoding could not be decoded."}
     except _Redirect as moved:
         result = verify_page(moved.target, redirects=redirects - 1)
-        return {**result, "url": url, "final_url": moved.target, "redirects_followed": True} if result["status"] == "SUCCEEDED" else result
+        if result["status"] != "SUCCEEDED":
+            return result
+        return {**result, "url": url, "final_url": result.get("final_url", moved.target), "redirects_followed": True}
     except (OSError, http.client.HTTPException, UnicodeError) as exc:
         return {"status": "FAILED", "reason": f"Public-page verification failed: {type(exc).__name__}"}
     if content_type == "text/html":

@@ -38,7 +38,8 @@ SCREENER = ROLE + (
 )
 
 _COMMON = (
-    " Read the verified source pages (S1, S2, ...) and the register facts. First answer the five tests in tests: "
+    " Read the verified sources (S1, S2, ...) and the register facts. A source with basis SEARCH_EXTRACT is the search engine's "
+    "text for a page that did not open; quote it the same way, but it may be partial. First answer the five tests in tests: "
     "adverse_consequence (the specific adverse consequence), affected_party (who is impacted), management_relevance (why STE "
     "management would care), impact_pathway (the credible, evidence-based pathway to impact), and materiality (why the impact "
     "is material enough for management attention). If any test cannot be answered clearly from facts in the sources, return "
