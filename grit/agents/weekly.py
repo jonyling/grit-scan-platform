@@ -272,29 +272,50 @@ def check_selections(raw: Any, sources: Mapping[str, Any], expected: set[str], *
         raise ContractError("Selection coverage does not match the candidate batch: return exactly one selection for each of "
                             f"the {len(expected)} candidates. Missing: {', '.join(missing) or 'none'}. "
                             f"Not in the batch: {', '.join(extra) or 'none'}. Repeated: {', '.join(repeated) or 'none'}.")
+    problems: list[str] = []
     for row in rows:
-        if not isinstance(row.get("decision"), str) or row["decision"] not in {"INCLUDE", "EXCLUDE", "WATCH", "DEFER"}:
-            raise ContractError("Invalid editorial decision.")
-        if not isinstance(row.get("reason"), str) or not row["reason"].strip():
-            raise ContractError("An editorial decision needs a reason.")
-        if row.get("source_ids") in (None, []) and isinstance(row, dict):
-            # The candidate's own record is the minimum evidence for a decision about it.
-            row["source_ids"], row["source_ids_defaulted"] = [row["signal_id"]], True
-        if not source_ids(row.get("source_ids"), sources):
-            raise ContractError("A selection must identify its evidence.")
-        if chain and row["decision"] in {"INCLUDE", "WATCH"}:
-            missing = [key for key in CHAIN_FIELDS if not isinstance(row.get(key), str) or not row[key].strip()]
-            if missing:
-                raise ContractError(f"{row['signal_id']}: an INCLUDE or WATCH decision needs {', '.join(missing)} "
-                                    "(fact, exposure, transmission and impact; write 'not established' when unknown).")
-        check_exposure_status(row, sources)
-        check_impact_status(row, sources)
-        check_risk_ids(row, sources, register)
-        if chain and row["decision"] in {"INCLUDE", "WATCH"}:
-            check_significance(row, sources)
-        check_hops(row, sources, register_names)
-        check_fact_support(row, sources, chain)
+        try:
+            _check_selection(row, sources, chain=chain, register=register, register_names=register_names)
+        except ContractError as exc:
+            text = str(exc)
+            label = str(row.get("signal_id"))
+            problems.append(text if text.startswith(label) else f"{label}: {text}")
+    if problems:
+        raise ContractError(joined_problems(problems, "selections"))
     return raw
+
+
+def joined_problems(problems: list[str], noun: str, shown: int = 8) -> str:
+    """Every problem in one message, so a repair can fix them together. A long list names how many were left out."""
+    text = "; ".join(problems[:shown])
+    if len(problems) > shown:
+        text += f"; and {len(problems) - shown} more {noun} with problems"
+    return text
+
+
+def _check_selection(row: Any, sources: Mapping[str, Any], *, chain: bool, register: Collection[str] | None,
+                     register_names: Collection[str] | None) -> None:
+    if not isinstance(row.get("decision"), str) or row["decision"] not in {"INCLUDE", "EXCLUDE", "WATCH", "DEFER"}:
+        raise ContractError("Invalid editorial decision: use INCLUDE, WATCH, EXCLUDE, or DEFER.")
+    if not isinstance(row.get("reason"), str) or not row["reason"].strip():
+        raise ContractError("An editorial decision needs a reason.")
+    if row.get("source_ids") in (None, []) and isinstance(row, dict):
+        # The candidate's own record is the minimum evidence for a decision about it.
+        row["source_ids"], row["source_ids_defaulted"] = [row["signal_id"]], True
+    if not source_ids(row.get("source_ids"), sources):
+        raise ContractError("A selection must identify its evidence.")
+    if chain and row["decision"] in {"INCLUDE", "WATCH"}:
+        missing = [key for key in CHAIN_FIELDS if not isinstance(row.get(key), str) or not row[key].strip()]
+        if missing:
+            raise ContractError(f"{row['signal_id']}: an INCLUDE or WATCH decision needs {', '.join(missing)} "
+                                "(fact, exposure, transmission and impact; write 'not established' when unknown).")
+    check_exposure_status(row, sources)
+    check_impact_status(row, sources)
+    check_risk_ids(row, sources, register)
+    if chain and row["decision"] in {"INCLUDE", "WATCH"}:
+        check_significance(row, sources)
+    check_hops(row, sources, register_names)
+    check_fact_support(row, sources, chain)
 
 
 def check_fact_support(row: Any, sources: Mapping[str, Any], chain: bool) -> None:

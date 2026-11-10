@@ -150,7 +150,7 @@ The compatibility path remains the default. To run the six-role path, pass `--re
 
 `N` is the nonnegative search budget for the run. You must pass it, including `0`. `0` turns countersearch off. The report then says the top findings were left unchallenged. Each of the top five findings needs a search that tries to contradict it. Set `N` to at least 5. `10` leaves room for other checks. Requested checks that cannot run stay visible and block ordinary readiness.
 
-To rank kept signals with DeepSeek, and to draft the report text with it, add `--reasoner deepseek`. Put `DEEPSEEK_API_KEY` in `.env`. Gemini still screens the pool. If a DeepSeek task fails, the Gemini selections remain.
+To rank kept signals with DeepSeek, and to draft the report text with it, add `--reasoner deepseek`. Put `DEEPSEEK_API_KEY` in `.env`. Gemini still screens the pool. DeepSeek's ranking orders the signals but keeps the significance scores from the review. A ranking applies only to the analysis version it ranked. If a DeepSeek task fails, the Gemini selections remain.
 
 ```bash
 .venv/bin/python -m grit weekly --pack PACK --date YYYY-MM-DD \

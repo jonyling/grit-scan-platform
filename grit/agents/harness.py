@@ -420,29 +420,96 @@ def _parse_object(text: str) -> dict[str, Any]:
     return parsed
 
 
-def _instruction(task: str) -> str:
+_CHAIN = ('"fact":"...","exposure":"...","transmission":"...","impact":"..."')
+_SCORE = ('"significance":{"exposure":0-3,"consequence":0-3,"immediacy":0-3,"evidence":0-3,"change":0-2}')
+
+
+def _report_rules(payload: Mapping[str, Any]) -> str:
+    """The checks a report draft must pass, stated with this task's own IDs and roles."""
+    rules = ["Every date, number, and distinctive name in a sentence must appear in the title or text of the page that "
+             "sentence cites (sources[ID]). Write a date as the page writes it, or leave it out."]
+    front = [str(row.get("signal_id")) for row in payload.get("front_page") or [] if isinstance(row, Mapping) and row.get("signal_id")]
+    if front:
+        rules.append(f"bottom_line.text cites only these front-page findings: {', '.join(front)}.")
+    authority = payload.get("authority") if isinstance(payload.get("authority"), Mapping) else {}
+    posture = authority.get("action_posture") if isinstance(authority.get("action_posture"), Mapping) else {}
+    forum, forum_date = str(posture.get("next_forum") or "").strip(), str(posture.get("next_forum_date") or "").strip()
+    if forum and forum_date:
+        triggers = [str(item) for item in payload.get("red_triggers") or [] if isinstance(item, str) and item.strip()]
+        rules.append(f"bottom_line.escalation makes one ask that names the meeting {forum} on {forum_date}"
+                     + (f" and one RED trigger from: {'; '.join(triggers)}." if triggers else "."))
+    else:
+        roles = [str(item) for item in payload.get("owner_roles") or [] if isinstance(item, str) and item.strip()]
+        rules.append("bottom_line.escalation makes one ask"
+                     + (f" that names one of these roles exactly as written: {'; '.join(roles)}," if roles else ",")
+                     + " uses the word confirm, reconfirm, or check, and gives a time with before, by, or the next cycle.")
+    if payload.get("settled_conflicts"):
+        rules.append("Quote only the chosen figure of each settled_conflicts row.")
+    return " ".join(rules)
+
+
+def _instruction(task: str, payload: Mapping[str, Any] | None = None) -> str:
+    payload = payload or {}
     if task.startswith("meaning-"):
         ask = ("Decide INCLUDE, WATCH, or EXCLUDE for every candidate by its meaning for the register descriptions. "
                "A keyword miss can still be relevant. "
                'Return {"selections":[{"signal_id":"...","decision":"INCLUDE|WATCH|EXCLUDE","reason":"one sentence","source_ids":["..."]}]}. '
                "selections is a list with one object per candidate.")
     elif task.startswith("cascade-"):
-        ask = ("Add hops, at most four. Each hop has from, to, and support cited or not established. "
-               "A cited hop needs source_ids. The last hop must name a register item. "
+        ask = ("Start from current_selections, which holds the reviewed selection for each candidate. "
+               "candidates[].decision is the keyword filter's verdict, not an editorial decision. "
+               'Return {"selections":[{"signal_id":"...","decision":"INCLUDE|WATCH|EXCLUDE|DEFER","reason":"...",'
+               f'"source_ids":["..."],{_CHAIN},"hops":[{{"from":"...","to":"...","support":"cited|not established","source_ids":["..."]}}]}}]}}. '
+               "One object per candidate. decision is never DROP or KEEP. "
+               "Add hops, at most four. A cited hop needs source_ids. The last hop must name a register item. "
                "An uncited hop is not an immediate threat and is not direct exposure. "
-               "Keep the same selections list, with one object per candidate.")
+               f"If you change an EXCLUDE to INCLUDE or WATCH, add {_SCORE}.")
     elif task.startswith("rank-"):
         ask = ("Revise these selections together for this business's week. "
                "A sector story with no path to a named entity, project, customer, or supplier is not INCLUDE. "
                'Return {"selections":[{"signal_id":"...","decision":"INCLUDE|WATCH|EXCLUDE","reason":"under 200 characters",'
-               '"source_ids":["..."],"fact":"...","exposure":"...","transmission":"...","impact":"..."}]}. '
-               "One object per candidate. Leave out the task packet and your private reasoning.")
+               f'"source_ids":["..."],{_CHAIN}}}]}}, in order of importance, most important first. '
+               "One object per candidate. The significance scores in current_selections are kept, so do not rescore. "
+               "Leave out the task packet and your private reasoning.")
     else:
         ask = ('Return {"edits":[{"path":"bottom_line.text","text":"One sentence [SIG-0123456789abcdef].","source_ids":["SIG-0123456789abcdef"]},'
                '{"path":"bottom_line.escalation","text":"One sentence [SIG-0123456789abcdef].","source_ids":["SIG-0123456789abcdef"]}]}. '
-               "Write each of those two paths once. Put the prose in text. Cite each sentence before its final punctuation.")
+               "Write each of those two paths once. Put the prose in text. Cite each sentence before its final punctuation. "
+               + _report_rules(payload))
     return (f"Read task.json in this directory. Write proposal.json as one JSON object for task {task}. "
-            f"{ask} Do not write a score, priority, RED status, or approval. Do not write your private reasoning.")
+            f"{ask} Do not add score, priority, severity, RED, or approval fields. Do not write your private reasoning.")
+
+
+# Fields a DeepSeek selection may leave out; the reviewed selection supplies them.
+CARRIED = ("fact", "exposure", "transmission", "impact", "exposure_status", "impact_status", "risk_ids", "uncertainty",
+           "immediate_threat")
+
+
+def carry_over_selections(raw: Mapping[str, Any], current: Mapping[str, Any] | None, *, keep_scores: bool) -> dict[str, Any]:
+    """Fill fields DeepSeek left out from the reviewed selection. keep_scores keeps the reviewed significance as well."""
+    value = dict(raw)
+    rows = value.get("selections")
+    if not isinstance(rows, list) or not isinstance(current, Mapping):
+        return value
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        before = current.get(row.get("signal_id"))
+        if not isinstance(before, Mapping):
+            continue
+        for key in CARRIED:
+            present = row.get(key)
+            if (present is None or (isinstance(present, str) and not present.strip())) and before.get(key) is not None:
+                row[key] = before[key]
+        score = before.get("significance")
+        if isinstance(score, Mapping) and (keep_scores or not isinstance(row.get("significance"), Mapping)):
+            row["significance"] = dict(score)
+    return value
+
+
+def deepseek_model() -> str:
+    load_local_env()
+    return os.environ.get("DEEPSEEK_MODEL", "").strip() or "deepseek-v4-flash"
 
 
 def deepseek_harness(task: str, payload: Mapping[str, Any]) -> dict[str, Any]:
@@ -454,7 +521,7 @@ def deepseek_harness(task: str, payload: Mapping[str, Any]) -> dict[str, Any]:
         from deepseek_harness import DeepSeekHarness
     except ImportError as exc:
         raise RuntimeError("Install deepseek-harness-sdk to use --reasoner deepseek.") from exc
-    model = os.environ.get("DEEPSEEK_MODEL", "").strip() or "deepseek-v4-flash"
+    model = deepseek_model()
     with tempfile.TemporaryDirectory(prefix="grit-dsh-") as root:
         workspace, home = Path(root) / "workspace", Path(root) / "dsh-home"
         workspace.mkdir()
@@ -462,7 +529,7 @@ def deepseek_harness(task: str, payload: Mapping[str, Any]) -> dict[str, Any]:
         (workspace / "task.json").write_text(json.dumps(payload, ensure_ascii=False, default=str), encoding="utf-8")
         with DeepSeekHarness(provider="deepseek-official", model=model, cwd=str(workspace), dsh_home=str(home),
                              reasoning_effort="high") as harness:
-            result = harness.run(_instruction(task), session_id="grit-" + task[:40].replace("/", "-"))
+            result = harness.run(_instruction(task, payload), session_id="grit-" + task[:40].replace("/", "-"))
         path = workspace / "proposal.json"
         text = path.read_text(encoding="utf-8") if path.is_file() else str(getattr(result, "final_response", "") or "")
     if not text.strip():

@@ -15,7 +15,7 @@ from grit.agents.loop.llm import LoopError, call_json
 from grit.agents.weekly import (
     significance_band,
     EXPOSURE_STATUSES, EXPOSURE_TYPES,
-    PROMPTS, VERSION, ContractError, check_critique, check_selections,
+    PROMPTS, VERSION, ContractError, check_critique, check_selections, joined_problems,
     no_controlled_fields, object_response, source_ids, time_scope,
 )
 from grit.core.canonical import canonical_hash
@@ -43,6 +43,10 @@ FULL_BATCH, FULL_BATCH_MAX = 16, 24
 SCREEN_BATCH, SCREEN_BATCH_MAX = 80, 120
 SCREEN_TEXT_CHARS = 400
 DEFAULT_WORKERS = 6
+# The model label for DeepSeek calls when the coordinator is not told the exact model.
+HARNESS_MODEL = "deepseek-harness"
+# A repair request carries every violation, so a retry can fix them together.
+ERROR_CHARS = 2000
 
 
 def stable_batches(keys: Sequence[str], target: int, limit: int) -> list[list[str]]:
@@ -443,7 +447,8 @@ class WeeklyStore:
 class WeeklyCoordinator:
     def __init__(self, store: WeeklyStore, *, client: Any, model: str, call: RoleCall = call_json,
                  fast: bool = False, workers: int = 1, progress: Callable[[str], Any] | None = None,
-                 reasoner: str | None = None, harness: Callable[[str, Mapping[str, Any]], Mapping[str, Any]] | None = None) -> None:
+                 reasoner: str | None = None, harness: Callable[[str, Mapping[str, Any]], Mapping[str, Any]] | None = None,
+                 harness_model: str | None = None) -> None:
         self.store, self.pool, self.run_id = store, store.pool, store.run_id
         self.client, self.model, self.call = client, model, call
         self.fast, self.workers = fast, max(1, int(workers))
@@ -451,6 +456,7 @@ class WeeklyCoordinator:
         self.progress = progress or (lambda _message: None)
         self.reasoner = reasoner if reasoner == "deepseek" else None
         self.harness = harness
+        self.harness_model = harness_model or HARNESS_MODEL
 
     @property
     def sources(self) -> dict[str, dict[str, Any]]:
@@ -515,7 +521,8 @@ class WeeklyCoordinator:
         """One harness proposal. A contract failure is retried once with the error text, then skipped. Gemini stands."""
         if self.harness is None:
             return None
-        from grit.agents.harness import ground_report_edits, ground_selection_ids, normalize_report_edits, prepare_output
+        from grit.agents.harness import (carry_over_selections, ground_report_edits, ground_selection_ids,
+                                         normalize_report_edits, prepare_output)
 
         run = self.pool.run(self.run_id)
         base = {"contract": VERSION, "run": run["run_date"], "pack": run["pack"], "task": task,
@@ -526,11 +533,11 @@ class WeeklyCoordinator:
         for attempt in range(2):
             envelope = dict(base)
             if last_error is not None:
-                envelope["repair"] = {"error": str(last_error)[:400], "attempt": attempt + 1}
-            digest = canonical_hash({"model": self.model, "system": PROMPTS[role], "payload": envelope, "reasoner": "deepseek"})
+                envelope["repair"] = {"error": str(last_error)[:ERROR_CHARS], "attempt": attempt + 1}
+            digest = canonical_hash({"model": self.harness_model, "system": PROMPTS[role], "payload": envelope, "reasoner": "deepseek"})
             record = self.pool.insert("weekly_calls", {
                 "run_id": self.run_id, "version": self.store.state["version"], "role": role, "task": task,
-                "prompt_version": VERSION, "model": self.model, "input_hash": digest, "input_json": envelope,
+                "prompt_version": VERSION, "model": self.harness_model, "input_hash": digest, "input_json": envelope,
                 "output_json": {}, "status": "STARTED", "created_at": utc_now(),
             })
             raw = {}
@@ -541,11 +548,12 @@ class WeeklyCoordinator:
                     raw = ground_report_edits(raw, self.sources)
                 elif role == "Assessment" and isinstance(raw, dict):
                     raw = ground_selection_ids(raw, self.sources, payload)
+                    raw = carry_over_selections(raw, payload.get("current_selections"), keep_scores=task.startswith("rank-"))
                 validate(raw)
             except Exception as exc:
                 with self.pool.transaction() as conn:
                     conn.execute("UPDATE weekly_calls SET status = 'FAILED', output_json = ?, error = ? WHERE call_id = ?",
-                                 (json.dumps(raw if isinstance(raw, dict) else {}), str(exc)[:500], record))
+                                 (json.dumps(raw if isinstance(raw, dict) else {}), str(exc)[:ERROR_CHARS], record))
                 last_error = exc
                 if attempt == 0:
                     self.progress(f"  DeepSeek {task} retrying after: {exc}")
@@ -630,9 +638,11 @@ class WeeklyCoordinator:
         if rescued:
             self.progress(f"  DeepSeek sent {len(rescued)} drops to full review")
             self.full_review(90, rescued, self.sources)
+            reviewed = {row["signal_id"]: row["editorial"] for row in self.pool.weekly_assessments(self.run_id, include_excluded=True)}
             self._save_harness_selections(
                 f"cascade-{rescued[0]}",
                 {"candidates": {key: index_view(self.sources[key], 800) for key in rescued}, "register_names": names,
+                 "current_selections": {key: reviewed[key] for key in rescued if key in reviewed},
                  "register_descriptions": self._register_descriptions()},
                 set(rescued), chain=True, names=names)
         rows = {row["signal_id"]: row for row in self.pool.weekly_assessments(self.run_id)}
@@ -651,7 +661,7 @@ class WeeklyCoordinator:
         if ranked and isinstance(ranked.get("selections"), list):
             order = [row["signal_id"] for row in ranked["selections"]
                      if isinstance(row, Mapping) and row.get("decision") in {"INCLUDE", "WATCH"} and row.get("signal_id")]
-            self.pool.update_run_config(self.run_id, deepseek_rank=order[:12])
+            self.pool.update_run_config(self.run_id, deepseek_rank=order[:12], deepseek_rank_version=self.store.state["version"])
 
     @property
     def register(self) -> frozenset[str]:
@@ -1019,6 +1029,9 @@ class WeeklyCoordinator:
         """Up to three in-window ranked findings with a material rung or a register id, for the status line and bottom line."""
         sources = sources if sources is not None else self.sources
         config = (self.pool.run(self.run_id) or {}).get("config") or {}
+        # A ranking from an earlier analysis version ranked different evidence, so it does not order this one.
+        if str(config.get("deepseek_rank_version")) != str(self.store.state["version"]):
+            return []
         order = [str(key) for key in (config.get("deepseek_rank") or []) if isinstance(key, str) and key in sources]
         if not order:
             return []
@@ -1511,51 +1524,53 @@ class WeeklyCoordinator:
                 triggers = payload.get("red_triggers") or []
                 owners = [str(role) for role in (payload.get("owner_roles") or []) if isinstance(role, str) and role.strip()]
                 front_ids = {str(item["signal_id"]) for item in (payload.get("front_page") or []) if isinstance(item, Mapping)}
+                problems: list[str] = []
                 for edit in edits:
                     if edit.get("path") not in editable or not isinstance(edit.get("text"), str) or not edit["text"].strip():
-                        raise ContractError("Reporting attempted an unknown narrative edit.")
+                        problems.append("Reporting attempted an unknown narrative edit.")
+                        continue
                     retired = retired_in(edit["text"], ledger)
                     if retired:
-                        raise ContractError("; ".join(f"{edit['path']} uses \"{row['phrase']}\", which correction {row['id']} retired: "
-                                                      f"write the corrected fact instead ({row['corrected']})" for row in retired) + ".")
+                        problems.extend(f"{edit['path']} uses \"{row['phrase']}\", which correction {row['id']} retired: "
+                                        f"write the corrected fact instead ({row['corrected']})" for row in retired)
                     refs = source_ids(edit.get("source_ids"), sources)
                     marks = {ref.strip() for group in CITE.findall(edit["text"]) for ref in group.split(",")}
                     if set(refs) != marks or (sources and not refs):
-                        raise ContractError("Every narrative edit needs matching evidence citations.")
+                        problems.append(f"{edit['path']}: every narrative edit needs matching evidence citations.")
+                        continue
                     if refs:
                         last = 0
                         for mark in CITE.finditer(edit["text"]):
                             claim = edit["text"][last:mark.start()].strip(" .!?")
                             fragment = sentence_break(claim)
                             if fragment:
-                                raise ContractError("Cite each factual sentence, not an entire paragraph: a sentence ends "
-                                                    f"inside '{fragment}' before its citation. Put a citation before each "
-                                                    "sentence's final punctuation.")
+                                problems.append("Cite each factual sentence, not an entire paragraph: a sentence ends "
+                                                f"inside '{fragment}' before its citation. Put a citation before each "
+                                                "sentence's final punctuation.")
+                                break
                             last = mark.end()
-                        if edit["text"][last:].strip(" .!?\n"):
-                            raise ContractError("Uncited narrative after the final reference.")
+                        else:
+                            if edit["text"][last:].strip(" .!?\n"):
+                                problems.append(f"{edit['path']}: uncited narrative after the final reference.")
                     # A cited source's title is part of its evidence, as it is for quotes.
                     cited = " ".join(f"{sources[ref].get('title') or ''} {sources[ref].get('text') or ''}" for ref in refs)
-                    problems = text_problems(CITE.sub("", edit["text"]), cited, "report edit")
-                    if problems:
-                        raise ContractError("; ".join(problems))
-                    cite_issues = sentence_cite_problems(edit["text"], sources, edit["path"])
-                    if cite_issues:
-                        raise ContractError("; ".join(cite_issues))
+                    problems.extend(text_problems(CITE.sub("", edit["text"]), cited, "report edit"))
+                    problems.extend(sentence_cite_problems(edit["text"], sources, edit["path"]))
                     if edit.get("path") == "bottom_line.text" and front_ids and set(refs) - front_ids:
-                        raise ContractError("bottom_line.text must cite only the front-page findings when a DeepSeek rank is stored.")
+                        problems.append("bottom_line.text must cite only the front-page findings when a DeepSeek rank is stored: "
+                                        f"cite only {', '.join(sorted(front_ids))}, not {', '.join(sorted(set(refs) - front_ids))}.")
                     if edit.get("path") == "bottom_line.escalation":
-                        ask_problems = escalation_problems(edit["text"], owners=owners, forum=forum, forum_date=forum_date,
-                                                           triggers=triggers)
-                        if ask_problems:
-                            raise ContractError("; ".join(ask_problems))
+                        problems.extend(escalation_problems(edit["text"], owners=owners, forum=forum, forum_date=forum_date,
+                                                            triggers=triggers))
                     for conflict in payload.get("settled_conflicts") or []:
                         if not isinstance(conflict, Mapping):
                             continue
                         for rejected in conflict.get("rejected") or []:
                             if isinstance(rejected, str) and rejected and rejected.casefold() in edit["text"].casefold():
-                                raise ContractError(
+                                problems.append(
                                     f"{edit['path']} quotes {rejected}; use the settled figure {conflict.get('chosen')} instead.")
+                if problems:
+                    raise ContractError(joined_problems(problems, "report problems"))
             response, _ = self._report_response(task, payload, validate_edits)
             for edit in response["edits"]:
                 apply_edit(brief, edit, sources)
@@ -1747,12 +1762,21 @@ def coordinator_for(store: WeeklyStore, *, client: Any, model: str, call: RoleCa
     """A coordinator for this run. A stored reasoner of deepseek attaches the harness. Gemini stays the default."""
     config = (store.pool.run(store.run_id) or {}).get("config") or {}
     reasoner = config.get("reasoner") if config.get("reasoner") == "deepseek" else None
-    harness = None
+    harness = harness_model = None
     if reasoner == "deepseek":
-        from grit.agents.harness import deepseek_harness
-        harness = deepseek_harness
+        from grit.agents.harness import deepseek_harness, deepseek_model
+        harness, harness_model = deepseek_harness, deepseek_model()
     return WeeklyCoordinator(store, client=client, model=model, call=call, fast=fast, workers=workers, progress=progress,
-                             reasoner=reasoner, harness=harness)
+                             reasoner=reasoner, harness=harness, harness_model=harness_model)
+
+
+def _gemini_model(pool: Pool, run_id: str, version: int, call: Mapping[str, Any]) -> str:
+    """The model of a saved call, for a Gemini resume. A DeepSeek call yields the latest Gemini model of the analysis."""
+    if not str(call["model"]).startswith("deepseek"):
+        return call["model"]
+    row = pool.one("SELECT model FROM weekly_calls WHERE run_id = ? AND version = ? AND model NOT LIKE 'deepseek%' "
+                   "ORDER BY call_id DESC LIMIT 1", (run_id, version))
+    return row["model"] if row else call["model"]
 
 
 def _selection_reviewed(row: Mapping[str, Any], checkpoint_id: int) -> bool:
@@ -1906,7 +1930,7 @@ def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | N
         store = WeeklyStore(pool, run.run_id, search_limit=state["search_limit"], refresh=False)
         config = saved_run.get("config") or {}
         fast = config.get("weekly_review") == "fast"
-        coordinator = coordinator_for(store, client=client, model=model or failed["model"], call=call, fast=fast,
+        coordinator = coordinator_for(store, client=client, model=model or _gemini_model(pool, run.run_id, state["version"], failed), call=call, fast=fast,
                                       workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
         coordinator.progress("Refreshing every report from the saved review; no search or signal review will run.")
         # Rule-based issue settlement that the review stage now applies, so a refresh uses the current rules.
@@ -1929,7 +1953,7 @@ def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | N
     store = WeeklyStore(pool, run.run_id, search_limit=state["search_limit"], refresh=False)
     config = saved_run.get("config") or {}
     fast = config.get("weekly_review") == "fast"
-    coordinator = coordinator_for(store, client=client, model=model or failed["model"], call=call, fast=fast,
+    coordinator = coordinator_for(store, client=client, model=model or _gemini_model(pool, run.run_id, state["version"], failed), call=call, fast=fast,
                                   workers=int(config.get("agent_workers") or DEFAULT_WORKERS) if fast else 1, progress=progress)
     from grit.report.brief import build_brief
     draft = build_brief(pool, run.run_id, anchor)

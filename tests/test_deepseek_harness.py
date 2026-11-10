@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from grit.agents.harness import (
-    assert_proposal_path, deepseek_harness, ground_report_edits, normalize_report_edits, prepare_output, propose_changes,
+    _instruction, assert_proposal_path, carry_over_selections, deepseek_harness, ground_report_edits, normalize_report_edits, prepare_output, propose_changes,
 )
 from grit.agents.weekly import REASON_CHARS, ContractError, check_selections
 from grit.pool import Pool
@@ -186,7 +186,8 @@ def test_a_ranking_proposal_replaces_only_the_editorial_selection(tmp_path):
     coordinator.reason_with_harness()
     editorial = pool.weekly_assessments("R")[0]["editorial"]
     assert editorial["decision"] == "WATCH"
-    assert editorial["significance"]["consequence"] == 0
+    # Ranking orders the week; the reviewed significance scores stay.
+    assert editorial["significance"]["consequence"] == CHAIN["significance"]["consequence"]
     assert pool.assessments("R")[0]["decision"] == "KEEP"
 
 
@@ -227,3 +228,56 @@ def test_the_live_runner_uses_a_temporary_directory(monkeypatch):
     assert result == {"selections": []}
     assert cwd != ROOT and ROOT not in cwd.parents
     assert Path(seen["dsh_home"]).resolve() != ROOT
+
+
+def test_every_bad_selection_is_reported_together():
+    rows = [{"signal_id": key, "decision": "WATCH", "reason": "Ranked.", "source_ids": [key], **{k: v for k, v in CHAIN.items() if k != "significance"}}
+            for key in ("A", "B")]
+    with pytest.raises(ContractError) as caught:
+        check_selections({"selections": rows}, {"A": {}, "B": {}}, {"A", "B"})
+    assert "A: significance" in str(caught.value) and "B: significance" in str(caught.value)
+
+
+def test_a_ranking_keeps_the_reviewed_scores_and_fills_missing_fields():
+    current = {"A": {**CHAIN, "risk_ids": ["R-1"]}}
+    raw = {"selections": [{"signal_id": "A", "decision": "WATCH", "reason": "Ranked.", "source_ids": ["A"], "fact": "",
+                           "significance": {"exposure": 0, "consequence": 0, "immediacy": 0, "evidence": 0, "change": 0}}]}
+    row = carry_over_selections(raw, current, keep_scores=True)["selections"][0]
+    assert row["significance"] == CHAIN["significance"]
+    assert row["fact"] == CHAIN["fact"] and row["risk_ids"] == ["R-1"]
+    assert row["decision"] == "WATCH"
+    kept = carry_over_selections({"selections": [{"signal_id": "A", "significance": {"exposure": 1}}]}, current, keep_scores=False)
+    assert kept["selections"][0]["significance"] == {"exposure": 1}
+
+
+def test_instructions_state_the_checks():
+    report = _instruction("report-x", {"front_page": [{"signal_id": "SIG-0123456789abcdef"}], "owner_roles": ["Group CRO"],
+                                       "authority": {"action_posture": {"next_forum": "", "next_forum_date": ""}}})
+    assert "SIG-0123456789abcdef" in report and "Group CRO" in report and "confirm" in report and "before" in report
+    forum = _instruction("report-x", {"red_triggers": ["Site attack"],
+                                      "authority": {"action_posture": {"next_forum": "ERC", "next_forum_date": "12 Nov"}}})
+    assert "ERC on 12 Nov" in forum and "Site attack" in forum
+    cascade = _instruction("cascade-x")
+    assert "current_selections" in cascade and "never DROP" in cascade
+    rank = _instruction("rank-x")
+    assert "do not rescore" in rank and "Do not write a score" not in rank
+
+
+def test_a_ranking_from_an_earlier_version_is_ignored(tmp_path):
+    pool, signal = _pool(tmp_path)
+    store, coordinator = _kept(pool, signal)
+    version = store.state["version"]
+    pool.update_run_config("R", deepseek_rank=[signal], deepseek_rank_version=int(version) - 1)
+    assert coordinator.front_page_findings({signal: {"rung": "DIRECT"}}) == []
+    pool.update_run_config("R", deepseek_rank_version=version)
+    assert [row["signal_id"] for row in coordinator.front_page_findings({signal: {"rung": "DIRECT"}})] == [signal]
+
+
+def test_harness_calls_are_recorded_under_the_deepseek_model(tmp_path):
+    pool, signal = _pool(tmp_path)
+    _store, coordinator = _kept(pool, signal)
+    coordinator.harness_model = "deepseek-v4-flash"
+    coordinator.harness = lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("down"))
+    coordinator.reason_with_harness()
+    models = {row["model"] for row in pool.rows("SELECT model FROM weekly_calls WHERE task LIKE 'rank-%'")}
+    assert models == {"deepseek-v4-flash"}

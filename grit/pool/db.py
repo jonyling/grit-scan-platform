@@ -97,7 +97,8 @@ class Pool:
         self.path = Path(path) if path is not None else db_path()
         if str(self.path) != ":memory:":
             self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.conn = sqlite3.connect(str(self.path), check_same_thread=False)
+        # The UI and a weekly run can share the file. Wait for the other connection's lock instead of failing after 5 s.
+        self.conn = sqlite3.connect(str(self.path), check_same_thread=False, timeout=120)
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.conn.executescript(SCHEMA.read_text(encoding="utf-8"))
