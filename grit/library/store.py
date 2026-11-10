@@ -2,7 +2,7 @@
 
 Each passage keeps its report and its page (a PDF page, a slide, or a part of a Word document), so every claim drawn from it
 can be cited to the page. The passages and their vectors stay under secrets/library/, because they are derived from reports
-that may be internal. Nothing here calls a language model; embedding is a deterministic lookup through the vector cache.
+that may be internal. Nothing here calls a language model. Embedding is a deterministic lookup through the vector cache.
 """
 
 from __future__ import annotations
@@ -119,7 +119,7 @@ def ingest(
     reports: Sequence[Report] = REPORTS, *, reports_dir: Path = REPORTS_DIR, library_dir: Path = LIBRARY_DIR, embedder: Any | None = None, log: Any = print
 ) -> dict[str, Any]:
     """Extract every report on file into passages, and embed them. A report whose file has not changed is not read again. A
-    report with no file is listed as missing; nothing is invented for it."""
+    report with no file is listed as missing. Nothing is invented for it."""
     from grit.retrieval.embedder import Embedder
     from grit.retrieval.store import VectorStore
 

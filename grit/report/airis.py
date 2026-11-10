@@ -2,7 +2,7 @@
 Intelligence System). Spec 39.
 
 The export is JSON plus an Excel sheet with the same rows. Every row names the approved package version and hash it came
-from, the register links, and the source. No score that GRIT-Scan does not compute is added.
+from, the register links, and the source. The export adds no score that GRIT-Scan does not compute.
 """
 
 from __future__ import annotations

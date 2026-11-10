@@ -7,14 +7,14 @@
 **State ledger:** `GRIT_WorkflowState`
 
 **Weekly extension:** In the opt-in path described by
-[spec 45](45_Weekly_Agent_Reasoning_and_Critique.md), a genuine Critic invocation
+[Spec 45: Weekly agent reasoning and critique](45_Weekly_Agent_Reasoning_and_Critique.md), a genuine Critic invocation
 references the recorded controlled assessment status and hash. Explicit
 `NOT_RUN`, `NOT_ASSESSED`, and `INSUFFICIENT_DATA` outcomes do not require an
-invented numeric score or `final_score_available` flag. Exact-report readiness
-is checked before submitting the transition. Legacy envelopes retain their
+invented numeric score or `final_score_available` flag. The Supervisor checks
+exact-report readiness before it submits the transition. Legacy envelopes retain their
 existing behavior.
 
-## 1. Function Purpose and Authority
+## 1. Function purpose and authority
 
 `TransitionGuard()` determines whether one requested GRIT signal workflow transition is legally permitted. It evaluates only the authoritative transition envelope supplied by the Supervisor and returns a deterministic `TransitionDecisionResult`.
 
@@ -25,13 +25,20 @@ Supervisor persists.
 WorkflowState records.
 ```
 
-The function is pure. It performs no Dataverse queries or hidden reads, writes no records, creates no `GRIT_WorkflowState` row, updates no `GRIT_Signals.CurrentWorkflowState` projection, invokes no agent, performs no publication or AIRIS delivery, and does not approve a package. It does not invent missing evidence or substitute reasoning for it.
+The function is pure. It has no side effects:
+
+- It performs no Dataverse queries or hidden reads.
+- It writes no records. It creates no `GRIT_WorkflowState` row and updates no `GRIT_Signals.CurrentWorkflowState` projection.
+- It invokes no agent.
+- It performs no publication or AIRIS delivery, and it does not approve a package.
+
+It does not invent missing evidence or substitute reasoning for it.
 
 `ReviewGate()` remains the sole business approval gate. `PublicationConcurrencyLock()` is technical mutual exclusion only and is never approval evidence.
 
-TransitionGuard applies only to the controlled signal workflow. Theme/event matching, versioning, and typed register writes are validated by `RegisterWriteGate()` and do not create or require a `GRIT_WorkflowState` transition.
+`TransitionGuard()` applies only to the controlled signal workflow. `RegisterWriteGate()` validates theme/event matching, versioning, and typed register writes. Those writes do not create or require a `GRIT_WorkflowState` transition.
 
-## 2. Input Contract
+## 2. Input contract
 
 ### 2.1 Authoritative transition envelope
 
@@ -97,9 +104,9 @@ TransitionGuard applies only to the controlled signal workflow. Theme/event matc
 
 ### 2.2 Invocation metadata excluded from decision inputs
 
-`invocation_id`, received/evaluated timestamps, retry attempt, duplicate/original invocation reference, retry information, signature, signature algorithm, signing key ID, and signed payload hash are recorded in `GRIT_FunctionExecutionLog`. They are not inputs to `TransitionDecisionResult` and cannot affect the decision or canonical result hash.
+`GRIT_FunctionExecutionLog` records invocation metadata: `invocation_id`, received/evaluated timestamps, retry attempt, duplicate/original invocation reference, retry information, signature, signature algorithm, signing key ID, and signed payload hash. These values are not inputs to `TransitionDecisionResult` and cannot affect the decision or canonical result hash.
 
-## 3. Controlled State Graph
+## 3. Controlled state graph
 
 | From state | Permitted destination | Required transition type |
 | --- | --- | --- |
@@ -115,13 +122,15 @@ TransitionGuard applies only to the controlled signal workflow. Theme/event matc
 | Any non-terminal state | `FAILED` | `FAIL` |
 | `FAILED` | Trusted restoration-source state | `RESTORE` |
 
-`PUBLICATION_CONFIRMED` and `AIRIS_HANDOFF_READY` are independent post-approval terminal branches. No workflow states exist for validation, function/agent execution, retries, waiting, package `HELD`, package `REJECTED`, publication in progress, or AIRIS delivery in progress.
+`PUBLICATION_CONFIRMED` and `AIRIS_HANDOFF_READY` are independent post-approval terminal branches.
+
+The graph has no workflow state for these activities: validation, function/agent execution, retries, waiting, package `HELD`, package `REJECTED`, publication in progress, or AIRIS delivery in progress.
 
 `REJECT` and `HOLD` are package status outcomes from `ReviewGate()`. They create no signal transition. `REJECT` sets package status `REJECTED` and requires a new package version for future review. `HOLD` sets package status `HELD` and requires human resolution and a new review submission against the unchanged package version.
 
-## 4. Transition Matrix and Evidence Rules
+## 4. Transition matrix and evidence rules
 
-All allowed transitions require `actor_type = SUPERVISOR`, a non-empty `actor_id`, and a matching signal/execution on the supporting evidence unless marked otherwise. Functions and connected agents are evidence providers, never transition actors.
+Unless the matrix states otherwise, every allowed transition requires `actor_type = SUPERVISOR` and a non-empty `actor_id`. It also requires a matching signal/execution on the supporting evidence. Functions and connected agents are evidence providers, never transition actors.
 
 | Requested transition | Required trigger type / target | Required evidence conditions |
 | --- | --- | --- |
@@ -139,7 +148,7 @@ All allowed transitions require `actor_type = SUPERVISOR`, a non-empty `actor_id
 
 Any non-enumerated transition is denied.
 
-## 5. Actor and Trigger Rules
+## 5. Actor and trigger rules
 
 ### 5.1 Controlled values
 
@@ -147,18 +156,18 @@ Any non-enumerated transition is denied.
 
 **Trigger types:** `FUNCTION_EXECUTION`, `AGENT_EXECUTION`, `HUMAN_APPROVAL`, `OUTPUT_PACKAGE`, `SYSTEM_EVENT`, `PUBLICATION_CONFIRMATION`.
 
-The accepted ledger actor is always `SUPERVISOR`: it owns the persisted transition. `HUMAN`, `SYSTEM_INTEGRATION`, and `PUBLISHER_CONFIRMATION` identities are represented through the authoritative trigger record, not as substitutes for the Supervisor writer. A transition request with an agent or function as actor is denied.
+The accepted ledger actor is always `SUPERVISOR`, because the Supervisor owns the persisted transition. The authoritative trigger record represents `HUMAN`, `SYSTEM_INTEGRATION`, and `PUBLISHER_CONFIRMATION` identities. These identities never replace the Supervisor as writer. A transition request with an agent or function as actor is denied.
 
-`SYSTEM_EVENT` may omit `trigger_record_id` only for a `FAILED -> RESTORE` transition using reason code `SUPERVISOR_RECONCILIATION_COMPLETE`. All other legal transitions require the trigger type and target table shown in the transition matrix. Target, status, signal, execution, package, approval, and hash mismatches are denied.
+`SYSTEM_EVENT` can omit `trigger_record_id` only for a `FAILED -> RESTORE` transition using reason code `SUPERVISOR_RECONCILIATION_COMPLETE`. All other legal transitions require the trigger type and target table shown in the transition matrix. The guard denies any mismatch in target, status, signal, execution, package, approval, or hash.
 
-## 6. Sequence, Parent, and Concurrency Rules
+## 6. Sequence, parent, and concurrency rules
 
 1. `expected_transition_sequence` must equal `authoritative_latest_transition_sequence + 1`.
-2. `supplied_parent_transition_row_id` must equal `authoritative_current_state_row_id`; both are required except the initial `NEW` ledger event, which precedes this guard's `NEW -> FETCHED` transition.
-3. `current_state` must equal the authoritative latest accepted state, and `current_state_projection_matches_ledger` must be true.
+2. `supplied_parent_transition_row_id` must equal `authoritative_current_state_row_id`. Both are required. The exception is the initial `NEW` ledger event, which precedes this guard's `NEW -> FETCHED` transition.
+3. `current_state` must equal the authoritative latest accepted state. `current_state_projection_matches_ledger` must be true.
 4. The requested transition and all mandatory evidence must match the same `signal_id` and `execution_id`.
-5. Stale state, stale sequence, missing parent, or optimistic-concurrency disagreement is denied with `STOP_AND_RECONCILE`; it is never overwritten.
-6. The ledger is append-only. TransitionGuard never permits modification or deletion of a historical transition.
+5. The guard denies a stale state, stale sequence, missing parent, or optimistic-concurrency disagreement with `STOP_AND_RECONCILE`. The ledger is never overwritten.
+6. The ledger is append-only. `TransitionGuard()` never permits modification or deletion of a historical transition.
 
 ## 7. Idempotency
 
@@ -169,7 +178,7 @@ The canonical transition identity includes `signal_id`, `execution_id`, `executi
 - A conflicting transition at the same sequence -> `DENY` and `STOP_AND_RECONCILE`.
 - Invocation attempts remain separately auditable in `GRIT_FunctionExecutionLog`.
 
-## 8. Output Contract
+## 8. Output contract
 
 `TransitionDecisionResult` is deterministic and contains no generated timestamp, random identifier, retry count, or invocation-specific signature.
 
@@ -188,9 +197,9 @@ The canonical transition identity includes `signal_id`, `execution_id`, `executi
 | `input_hash`, `canonical_result_hash` | Hashes of canonical input and result. |
 | `function_name`, `function_version`, `state_graph_version`, `correlation_id` | Traceability values. |
 
-## 9. Outcome Precedence
+## 9. Outcome precedence
 
-Evaluate in this order. A failure at a higher level cannot be overridden by a later passing check.
+Evaluate in this order. A later passing check cannot override a failure at a higher level.
 
 1. `INVALID_CONTRACT`
 2. authorization or `INVALID_ACTOR`
@@ -203,7 +212,7 @@ Evaluate in this order. A failure at a higher level cannot be overridden by a la
 9. `ALREADY_APPLIED`
 10. `ALLOW`
 
-## 10. Pseudo-Code
+## 10. Pseudo-code
 
 ```text
 function TransitionGuard(envelope):
@@ -257,7 +266,7 @@ function TransitionGuard(envelope):
 
 `validateEvidenceForRule` implements the complete transition matrix in Section 4 and uses only fields supplied in the envelope.
 
-## 11. Error and Reconciliation Rules
+## 11. Error and reconciliation rules
 
 | Error code | Required result |
 | --- | --- |
@@ -274,18 +283,18 @@ function TransitionGuard(envelope):
 
 All ambiguous, missing, or contradictory authoritative inputs fail closed.
 
-## 12. Acceptance Criteria and Test Matrix
+## 12. Acceptance criteria and test matrix
 
 Acceptance criteria:
 
 - Identical canonical input produces an identical `TransitionDecisionResult` and result hash.
 - No connected agent or deterministic function can authorize or persist workflow state.
-- Every allowed transition has the evidence in Section 4; every other transition is denied.
+- Every allowed transition has the evidence in Section 4. The guard denies every other transition.
 - `HOLD` and `REJECT` create no signal transition.
 - `RETURN_FOR_REWORK` requires package-wide transition of every member signal and a new package version.
 - Publication and AIRIS transitions are independent.
 - `PublicationConcurrencyLock()` cannot authorize publication.
-- Stale and concurrent requests do not overwrite the ledger; exact duplicates are reusable.
+- Stale and concurrent requests do not overwrite the ledger. Exact duplicates are reusable.
 - Historical ledger rows remain immutable.
 
 | Test case | Expected decision | Key assertion |

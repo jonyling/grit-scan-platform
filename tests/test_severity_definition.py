@@ -11,8 +11,8 @@ EBIT_SGD_MILLIONS = 136.2
 
 # 15_Severity_Definition.md is a live, human-editable governed document. Its
 # Minor row previously read S$6.1M and was corrected to S$6.8M, the confirmed
-# correct figure. Boundary-conflict *detection logic* must not be tied to
-# whatever that document currently says; it is proven here against a fixed,
+# correct figure. Boundary-conflict *detection logic* must not depend on
+# whatever that document currently says. This test proves it against a fixed,
 # self-contained fixture that deliberately reproduces the original (now-fixed)
 # discrepancy.
 _FIXTURE_WITH_ONE_CONFLICT = """

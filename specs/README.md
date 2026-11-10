@@ -1,6 +1,6 @@
 # Specifications
 
-Specs 13–33 state the rules. Spec 34 states the rebuild order. Spec 35 describes the proof of concept as built, and it is the baseline for MVP specifications. Read the spec before you change the behavior it names.
+Specs 13–33 state the rules. Spec 34 states the rebuild order. Spec 35 describes the proof of concept as built. It is the baseline for MVP specifications. Read the spec before you change the behavior it names.
 
 | Spec | Subject |
 |---|---|
@@ -15,7 +15,7 @@ Specs 13–33 state the rules. Spec 34 states the rebuild order. Spec 35 describ
 | [28](28_MVP_Build_Plan_for_Wilson_Demo.md) | The Wilson demo plan. |
 | [29](29_News_Priority_and_Management_Request_Model.md), [30](30_Source_Taxonomy_and_Credibility_Model.md) | News priority, management requests, and source credibility. |
 | [32](32_GRIT_Cascade_Design_Global_to_Entity.md), [33](33_URS_TW_Global_Conditions_Scanner_Agent_Specification.md) | The cascade from global conditions to an entity, and the Taiwan condition scanner. |
-| [34](34_GRIT_Scan_Rebuild_Specification.md) | The rebuild order and invariants. Section 5 is a gap list; spec 35 records what later work closed. |
+| [34](34_GRIT_Scan_Rebuild_Specification.md) | The rebuild order and invariants. Section 5 is a gap list. Spec 35 records what later work closed. |
 | [35](35_GRIT_Scan_POC_Architecture.md) | The proof of concept as built: six roles, the signal pool, and the interfaces. |
 | [36](36_Key_Risks_Implications_and_Proposer.md) | Key risk focus, the implication for the business area, and the Proposer's response options. |
 | [37](37_STE_Group_Pack.md) | The STE Group pack: 13 standing conditions, the footprint rung, baseline drafting, scenarios, the monthly radar, and the Currents fallback. |
@@ -25,9 +25,9 @@ Specs 13–33 state the rules. Spec 34 states the rebuild order. Spec 35 describ
 | [41](41_Profiler_Fit_Report_and_Web_Search.md) | The Profiler's checked profile proposals, the fit report, the Co-Pilot's web search and budget, and Add to pool. |
 | [42](42_Daily_Lane_and_Nightly_Index.md) | The daily feed register and lane, events, daily digests, retention, and the Co-Pilot's `whats_new`. |
 | [43](43_Best_Medium_Worst_Scenarios.md) | The best, medium and worst case for STE under each strategic shift: grounding, checks, and the steps to sign-off, tracking and the radar. |
-| [44](44_Brief_Format_v2.md) | Brief format v2, in Wilson's BA-wide layout: events and the escalating-items table, what changed, look-ahead, prioritisation, coverage, jurisdictions, quality gate, the source register, and scenarios for every business area. |
+| [44](44_Brief_Format_v2.md) | Brief format v2, in Wilson's BA-wide layout: events and the escalating-items table, what changed, look-ahead, prioritization, coverage, jurisdictions, quality gate, the source register, and scenarios for every business area. |
 | [45](45_Weekly_Agent_Reasoning_and_Critique.md) | Opt-in weekly reasoning: whole-pool selection, independent critique, bounded research and reconciliation, frozen report snapshots, and post-decision Memory proposals. |
 | [46](46_Adverse_News_and_Lessons_Learnt_Scan.md) | Wilson's weekly Adverse News & Lessons Learnt Scan: the watchlist, the screen, verified sources, the five tests, the rules that decide each field, duplicates and material updates, and the email. |
 | [47](47_WSH_Digest_and_Alerts.md) | Workplace Safety & Health functional pack: monthly discussion digest for James Lek, five sections, Council Alert/Advisory/Insights line, Assessment→Critic notes, Singapore-then-DPS geography, serious-incident and regulatory alerts. |
 
-`archive/` holds an early draft of spec 17 for reference. It does not govern.
+The `archive/` folder holds an early draft of spec 17 for reference. It does not govern.

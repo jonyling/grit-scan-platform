@@ -1,8 +1,8 @@
 """Build the model input, validate the model's draft, and render the document.
 
 The model proposes an overview, one theme per LOB, and one summary per signal. It does not choose the
-signals, the order, the links, the dates, or the reason a signal is linked. A draft that cites an unknown
-signal, skips one, adds a number the source text lacks, includes a URL, or rates severity or likelihood is rejected.
+signals, the order, the links, the dates, or the reason a signal is linked. Validation rejects a draft that cites an unknown
+signal, skips one, adds a number the source text lacks, includes a URL, or rates severity or likelihood.
 """
 
 from __future__ import annotations

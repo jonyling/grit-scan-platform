@@ -160,8 +160,8 @@ def cited_outlets(row: Mapping[str, Any], sources: Mapping[str, Any]) -> list[di
 
 
 def check_significance(row: Any, sources: Mapping[str, Any]) -> None:
-    """Scores outside the evidence are capped and flagged rather than failing the batch: exposure 3 needs CONFIRMED
-    exposure; evidence is capped by source confidence."""
+    """Caps and flags a score that the evidence does not support, instead of failing the batch. Exposure 3 needs
+    CONFIRMED exposure. Source confidence caps evidence."""
     score = row.get("significance")
     if not isinstance(score, Mapping) or set(score) != set(SIGNIFICANCE) or not all(
             isinstance(score[key], int) and not isinstance(score[key], bool) and 0 <= score[key] <= top for key, top in SIGNIFICANCE.items()):
@@ -183,8 +183,8 @@ def check_significance(row: Any, sources: Mapping[str, Any]) -> None:
 
 
 def check_impact_status(row: Any, sources: Mapping[str, Any]) -> None:
-    """Confirmed impact needs approved internal evidence among the selection's sources; otherwise it is PLAUSIBLE.
-    An unrecognised value is recorded as NOT_ESTABLISHED. One bad label does not fail the batch."""
+    """Confirmed impact needs approved internal evidence among the selection's sources. Without it, the impact is
+    PLAUSIBLE. An unrecognized value is recorded as NOT_ESTABLISHED. One bad label does not fail the batch."""
     status = row.get("impact_status")
     if status is None or not isinstance(row, dict):
         return
@@ -257,7 +257,7 @@ def check_hops(row: Any, sources: Mapping[str, Any], names: Collection[str] | No
 
 def check_selections(raw: Any, sources: Mapping[str, Any], expected: set[str], *, chain: bool = True,
                      register: Collection[str] | None = None, register_names: Collection[str] | None = None) -> Mapping[str, Any]:
-    """chain: an INCLUDE or WATCH must state the reasoning chain. The compact drop screen is exempt; anything it does not
+    """chain: an INCLUDE or WATCH must state the reasoning chain. The compact drop screen is exempt. Anything it does not
     EXCLUDE goes to full review, where the chain is required."""
     raw = object_response(raw)
     no_controlled_fields(raw)
@@ -299,7 +299,7 @@ def check_selections(raw: Any, sources: Mapping[str, Any], expected: set[str], *
 
 def check_fact_support(row: Any, sources: Mapping[str, Any], chain: bool) -> None:
     """An included fact needs a T1 to T3 source, internal evidence, or two independent unrated outlets (methodology 11).
-    Otherwise the finding is watched, labelled for verification, rather than failing the batch."""
+    Otherwise the finding is watched and labeled for verification, instead of failing the batch."""
     if not chain or row.get("decision") != "INCLUDE" or not isinstance(row, dict):
         return
     outlets = cited_outlets(row, sources)
@@ -310,9 +310,9 @@ def check_fact_support(row: Any, sources: Mapping[str, Any], chain: bool) -> Non
 
 def check_risk_ids(row: Any, sources: Mapping[str, Any], register: Collection[str] | None = None) -> None:
     """risk_ids are the standing items the evidence supports (URS methodology, section 3: every item maps to the register).
-    A role keeps or removes the candidate's keyword-matched items, and may add another item from the register, which is
-    recorded in risk_ids_added for the Critic to challenge. An ID outside the register is dropped and flagged rather than
-    failing the batch. Without a register only keyword-matched items can be kept."""
+    A role keeps or removes the candidate's keyword-matched items. It can also add another item from the register.
+    An added item is recorded in risk_ids_added for the Critic to challenge. An ID outside the register is dropped and
+    flagged, instead of failing the batch. Without a register only keyword-matched items can be kept."""
     if "risk_ids" not in row:
         return
     value = row["risk_ids"]
@@ -331,8 +331,8 @@ def check_risk_ids(row: Any, sources: Mapping[str, Any], register: Collection[st
 
 
 def check_exposure_status(row: Any, sources: Mapping[str, Any]) -> None:
-    """CONFIRMED or NOT_EXPOSED needs approved internal evidence with that status among the selection's sources; without it
-    the claim is recorded as POSSIBLE (or NOT_ESTABLISHED), with a flag, rather than failing the whole batch."""
+    """CONFIRMED or NOT_EXPOSED needs approved internal evidence with that status among the selection's sources. Without it,
+    the claim is recorded as POSSIBLE (or NOT_ESTABLISHED) with a flag, instead of failing the whole batch."""
     status = row.get("exposure_status")
     if status is None:
         return
@@ -405,8 +405,8 @@ def check_critique(raw: Any, expected: set[str], sources: Mapping[str, Any], ope
         if problem and issue["material"]:
             raise ContractError(problem)
         if problem:
-            # A non-material issue blocks nothing, so one without valid evidence is withheld, kept for audit, and the
-            # rest of the critique stands.
+            # A non-material issue blocks nothing. One without valid evidence is withheld and kept for audit.
+            # The rest of the critique stands.
             withheld.append({**issue, "withheld_because": problem})
             continue
         kept.append(issue)

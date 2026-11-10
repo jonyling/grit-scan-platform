@@ -5,7 +5,7 @@
    signal vectors for paraphrase. Reciprocal rank fusion combines them, with no weights to tune.
 3. Event collapse: pages that tell the same story (cosine 0.90 or more within 8 days, or the same title) become one event
    that keeps all its outlets.
-4. The reader's aperture decides what is shown; matches outside it are counted, not hidden silently. The reader's profile
+4. The reader's aperture decides what is shown. Matches outside it are counted, not hidden silently. The reader's profile
    then orders the events within a tier, as on the dashboard.
 """
 

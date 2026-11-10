@@ -170,7 +170,7 @@ def _refresh_view(context: Context) -> None:
 
 
 def _register_details(graph: OntologyGraph, node_id: str) -> dict[str, Any]:
-    """What the register states about a named party, so the model can judge whether the story is about the same organisation."""
+    """What the register states about a named party, so the model can judge whether the story is about the same organization."""
     node = graph.nodes[node_id]
     details: dict[str, Any] = {"register_name": node.name}
     if node.cls == "STE" and node.attrs.get("country"):

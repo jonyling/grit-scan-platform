@@ -205,8 +205,8 @@ def _fit_trace(value: dict[str, Any]) -> None:
             "impact": "not established", "rank_trimmed": True,
         }
 
-    # A full-week ranking can still overrun: keep the decision fields and replace chain prose with placeholders the
-    # selection contract accepts (INCLUDE/WATCH always need fact, exposure, transmission, impact).
+    # A full-week ranking can still overrun. Keep the decision fields, and replace chain prose with placeholders that
+    # the selection contract accepts. INCLUDE and WATCH always need fact, exposure, transmission, and impact.
     value["selections"] = [_compact_row(row) for row in rows if isinstance(row, dict)]
     value["rank_compact"] = True
     if _stored_size(value) > TRACE_BYTES:

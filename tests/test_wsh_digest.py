@@ -200,7 +200,7 @@ def test_wide_prefilter_admits_more_than_hard_gate() -> None:
     hard, _ = in_scope(classification, section_id="SERIOUS", title=title, body=text)
     assert soft and soft_reason.startswith("CANDIDATE_"), soft_reason
     assert hard
-    # Method paper with no Singapore place: soft admits for reasoning; hard gate also keeps methods.
+    # Method paper with no Singapore place: the soft gate admits it for reasoning. The hard gate also keeps methods.
     method_title = "CSRA Construction Safety Research Alliance Energy Wheel field study"
     method_text = "Matthew Hallowell and the Construction Safety Research Alliance published Energy Wheel results."
     method = classify(method_title, method_text, scope=pack.scope)

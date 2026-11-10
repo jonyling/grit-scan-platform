@@ -1,7 +1,7 @@
 """Supervisor: call the guards, then persist only on ALLOW.
 
-The ledger lives in memory. A sink, such as the signal pool, receives each row as it is appended, and earlier rows can
-be reloaded, so the append-only rule stays in this one class. Dataverse remains the system of record. This service does
+The ledger lives in memory. A sink, such as the signal pool, receives each row as it is appended. Earlier rows can be
+reloaded from the sink. The append-only rule therefore stays in this one class. Dataverse remains the system of record. This service does
 not open a connection or hold a credential.
 """
 
@@ -869,7 +869,7 @@ class Supervisor:
         configuration_version: str = "urs-weekly-1",
     ) -> dict[str, Any]:
         """Write ``weekly_pipeline.rank()`` output: Trend, Risk Level, and Basis of
-        Relevance to Business Area, generalised for any reader pack.
+        Relevance to Business Area, generalized for any reader pack.
 
         A repeated content hash refreshes those three fields (the finding may
         have moved since the last cycle) but never creates a second workflow

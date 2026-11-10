@@ -72,7 +72,7 @@ def red_check(
     jurisdictions: Sequence[str] = (),
 ) -> RedResult:
     """jurisdictions: the countries where the pack has entities. A rule with requiresJurisdiction needs one of them named in
-    the title or lead, so an event elsewhere is not a RED candidate for this business."""
+    the title or lead. An event elsewhere is then not a RED candidate for this business."""
     title = str(record.get("title") or "")
     lead = f"{title}\n{str(record.get('text') or '')[:LEAD_CHARS]}"
     whole = f"{title}\n{record.get('text') or ''}"

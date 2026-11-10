@@ -6,16 +6,18 @@
 **Workflow authority:** Supervisor Agent only
 **Publication authority:** Human approver only
 
-**Weekly implementation:** [Spec 45](45_Weekly_Agent_Reasoning_and_Critique.md)
-defines the opt-in six-role coordinator. Its model Supervisor chooses permitted
-next work; deterministic services retain workflow and release authority.
+**Weekly implementation:** [Spec 45: Weekly agent reasoning and critique](45_Weekly_Agent_Reasoning_and_Critique.md)
+defines the opt-in six-role coordinator. Its model Supervisor chooses the next
+permitted work. Deterministic services keep workflow and release authority.
 Editorial inclusion is an agent decision, separate from controlled scores.
 
 ## 1. Mission
 
-The Supervisor Agent is the authoritative workflow orchestrator for GRIT-Scan Phase 1. It receives a scan request, coordinates the Phase 1 deterministic function set and connected reasoning agents, persists every state transition and execution event to Dataverse, and produces an approval-ready risk-monitoring package.
+The Supervisor Agent turns a scan request into an approval-ready risk-monitoring package. It is the authoritative workflow orchestrator for GRIT-Scan Phase 1.
 
-The Supervisor Agent may sequence work, validate preconditions, invoke approved capabilities, aggregate returned results, request human decisions, and recover retryable failures. It must not publish, approve its own output, change a controlled risk score by reasoning alone, or allow a connected agent to control workflow state.
+For each scan request, the Supervisor Agent coordinates the Phase 1 deterministic function set and the connected reasoning agents. It persists every state transition and execution event to Dataverse.
+
+The Supervisor Agent can sequence work, validate preconditions, and invoke approved capabilities. It can also aggregate returned results, request human decisions, and recover retryable failures. It must not publish or approve its own output. It must not change a controlled risk score by reasoning alone. It must not allow a connected agent to control workflow state.
 
 ## 2. Responsibilities
 
@@ -26,14 +28,14 @@ The Supervisor Agent shall:
 3. Validate request completeness, authorization, source scope, configuration version, and required Dataverse records before execution.
 4. Plan and sequence work using the Phase 1 workflow defined in Section 5.
 5. Invoke only functions listed in the Phase 1 Function Catalog for controlled operations.
-6. Invoke connected agents for bounded reasoning tasks. The Assessment Agent may propose category, rationale, likelihood, and impact; it must not generate the final score or final risk band.
-7. Treat agent responses as untrusted proposals: validate their schema, provenance, confidence, and permitted action before accepting them.
+6. Invoke connected agents for bounded reasoning tasks. The Assessment Agent can propose category, rationale, likelihood, and impact. It must not generate the final score or final risk band.
+7. Treat agent responses as untrusted proposals. Validate their schema, provenance, confidence, and permitted action before accepting them.
 8. Persist the request, current state, transition history, `TransitionGuard()` decision, function calls, agent calls, decisions, errors, evidence references, and output versions to Dataverse.
 9. Enforce human approval before any publication request can be released to a publishing process.
 10. Support resume, retry, rejection, cancellation, and controlled failure without losing the audit trail.
 11. Return a traceable execution result containing the scan identifier, current state, output version, approval status, and unresolved exceptions.
-12. Select the governed `GRIT_ReaderProfile`, invoke `ApertureRouting()`, and coordinate shared theme/event register searches with reader-specific impact assessment without overwriting shared facts.
-13. Accept governed `GRIT_ManagementRequest` intake and post-publication `GRIT_TrackingFeedback` as inputs only; neither approves, publishes, nor mutates a shared signal, event, or theme.
+12. Select the governed `GRIT_ReaderProfile` and invoke `ApertureRouting()`. Coordinate shared theme/event register searches with reader-specific impact assessment, without overwriting shared facts.
+13. Accept governed `GRIT_ManagementRequest` intake and post-publication `GRIT_TrackingFeedback` as inputs only. Neither input approves, publishes, or mutates a shared signal, event, or theme.
 
 The Supervisor Agent shall not:
 
@@ -81,8 +83,8 @@ Every connected-agent response must include:
 - evidence references for each material claim;
 - confidence and uncertainty indicators;
 - model/agent version and completion timestamp;
-- a statement that the response is a proposal and not a workflow transition.
-- explicit theme/event relationship proposals and reader-specific impact proposals where applicable; these are not authoritative register writes.
+- a statement that the response is a proposal and not a workflow transition;
+- explicit theme/event relationship proposals and reader-specific impact proposals where applicable. These proposals are not authoritative register writes.
 
 ## 4. Outputs
 
@@ -102,11 +104,11 @@ The Supervisor Agent returns an execution envelope containing:
 
 ### 4.2 Non-success output
 
-For a stopped or incomplete execution, return the current business state, stop reason, safe remediation guidance, and the relevant function or agent execution identifiers. Partial outputs must be explicitly marked `DRAFT` or `INCOMPLETE` and must never be represented as published.
+For a stopped or incomplete execution, the Supervisor Agent returns the current business state and stop reason. It also returns safe remediation guidance and the relevant function or agent execution identifiers. The Supervisor Agent must mark a partial output `DRAFT` or `INCOMPLETE`. A partial output must never be represented as published.
 
-## 5. State Transition Rules
+## 5. State transition rules
 
-The state machine represents the business flow. Technical activity such as validation, retries, function execution, and agent execution is recorded in the execution logs and does not create additional workflow states.
+The state machine represents the business flow. The execution logs record technical activity such as validation, retries, function execution, and agent execution. Technical activity does not create additional workflow states.
 
 ### 5.1 Controlled states
 
@@ -118,22 +120,22 @@ The state machine represents the business flow. Technical activity such as valid
 | `ASSESSED` | The Assessment Agent has produced proposals and the Supervisor has validated their structure and evidence references. | Assessment complete -> `CRITIQUED`. |
 | `CRITIQUED` | Critic Agent execution or deterministic critique-validation is complete; deterministic scores and risk bands are available but `ScoreRisk()` alone is insufficient. | Critique complete -> `PENDING_REVIEW`. |
 | `PENDING_REVIEW` | An immutable output package is awaiting human review. | Approve -> `APPROVED`; return for rework -> `ASSESSED` with a new package version; reject -> no signal transition, package status `REJECTED`, new package version required for future review; hold -> no signal transition, package status `HELD`. |
-| `APPROVED` | A human has approved the exact output package version through `ReviewGate()`. | May independently proceed to `PUBLICATION_CONFIRMED` and `AIRIS_HANDOFF_READY` through controlled integrations. |
+| `APPROVED` | A human has approved the exact output package version through `ReviewGate()`. | Can independently proceed to `PUBLICATION_CONFIRMED` and `AIRIS_HANDOFF_READY` through controlled integrations. |
 | `PUBLICATION_CONFIRMED` | Controlled publication integration has confirmed delivery of an approved package. | Post-approval branch terminal. |
 | `AIRIS_HANDOFF_READY` | The approved package is ready for controlled downstream AIRIS handoff. | Post-approval branch terminal. |
-| `FAILED` | A blocking, durably recorded error prevents continuation. | May restore only through a trusted source and `TransitionType = RESTORE`. |
+| `FAILED` | A blocking, durably recorded error prevents continuation. | Can restore only through a trusted source and `TransitionType = RESTORE`. |
 
 ### 5.2 Transition invariants
 
 1. A transition must be issued by the Supervisor Agent, receive `ALLOW` from `TransitionGuard()`, and be persisted before the next business action begins.
 2. Every transition records `from_state`, `to_state`, reason, actor, timestamp, correlation ID, configuration version, execution version, and outcome.
 3. Transitions are append-only. The current state is a projection of the latest successful transition, not a replacement for history.
-4. Only enumerated transitions are valid. No component may write an arbitrary state value.
+4. Only enumerated transitions are valid. No component can write an arbitrary state value.
 5. A transition and its required audit event must succeed together. If persistence is uncertain, the Supervisor must stop and reconcile before continuing.
 6. `PUBLICATION_CONFIRMED` requires human approval through `ReviewGate()` for the exact immutable output version and verified controlled-publication confirmation.
-7. `PublicationConcurrencyLock()` may prevent duplicate technical delivery after approval; it is not an approval gate. No agent can publish or mark an output as published.
+7. `PublicationConcurrencyLock()` can prevent duplicate technical delivery after approval. It is not an approval gate. No agent can publish or mark an output as published.
 8. Any material change to evidence, assessment proposals, scoring configuration, or output after approval invalidates that approval and returns the execution to `ASSESSED` with a new output package version.
-9. Reprocessing is a new execution version linked to the original; historical state transitions and output packages remain unchanged.
+9. Reprocessing creates a new execution version linked to the original. Historical state transitions and output packages remain unchanged.
 
 ### 5.3 Required execution sequence
 
@@ -141,9 +143,9 @@ The state machine represents the business flow. Technical activity such as valid
 
 From `APPROVED`, controlled publication and controlled AIRIS handoff are independent branches to `PUBLICATION_CONFIRMED` and `AIRIS_HANDOFF_READY`.
 
-`FAILED` may be entered from any non-terminal state only for a blocking durably recorded error and may be restored only under the `TransitionGuard()` trusted-restoration rule.
+An execution can enter `FAILED` from any non-terminal state, but only for a blocking, durably recorded error. A `FAILED` execution can be restored only under the `TransitionGuard()` trusted-restoration rule.
 
-The sequence may pause while a retryable operation is handled, but the business state does not change solely because a retry occurs. A non-retryable error is recorded in the execution log and stops the execution. `PUBLICATION_CONFIRMED` is only recorded after a verified controlled-publication confirmation and is never set by an agent's reasoning response.
+The sequence can pause while the Supervisor handles a retryable operation. The business state does not change only because a retry occurs. A non-retryable error stops the execution, and the Supervisor records it in the execution log. The Supervisor records `PUBLICATION_CONFIRMED` only after a verified controlled-publication confirmation. An agent's reasoning response never sets `PUBLICATION_CONFIRMED`.
 
 ### 5.4 Assessment and scoring boundary
 
@@ -154,7 +156,7 @@ The Assessment Agent is a reasoning component. It generates only:
 - proposed likelihood;
 - proposed impact.
 
-The Supervisor validates the Assessment Agent response, records it in `GRIT_AgentExecutionLog`, and passes the approved proposal and required configuration to `ScoreRisk()`.
+The Supervisor validates the Assessment Agent response and records it in `GRIT_AgentExecutionLog`. The Supervisor then passes the approved proposal and required configuration to `ScoreRisk()`.
 
 `ScoreRisk()` is deterministic and generates only:
 
@@ -163,7 +165,7 @@ The Supervisor validates the Assessment Agent response, records it in `GRIT_Agen
 
 The final score and final risk band used in the output package must come from `ScoreRisk()`. The Assessment Agent, Supervisor prompt, or any other connected agent cannot replace or edit those values.
 
-### 5.5 Phase 1 Function Catalog and Deterministic Function Set
+### 5.5 Phase 1 Function Catalog and deterministic function set
 
 These services are first-class deterministic services in Phase 1. Each service has a versioned catalog entry, a defined input/output contract, an idempotency key, and an execution record.
 
@@ -174,7 +176,7 @@ These services are first-class deterministic services in Phase 1. Each service h
 | `KRICalculation` | Calculate configured key risk indicator values from validated inputs. |
 | `QueueRouting` | Select the configured processing or review queue from scope, category, priority, and routing rules. |
 | `PublicationConcurrencyLock` | Atomically prevent duplicate technical delivery of an approved output version; this is not an approval gate. |
-| `RetryBudget` | Return whether an operation may retry and record consumption of the configured retry budget. |
+| `RetryBudget` | Return whether an operation can retry and record consumption of the configured retry budget. |
 | `ScoreRisk` | Calculate the final risk score and final risk band from validated inputs and the approved scoring configuration. |
 | `TransitionGuard` | Purely validate requested workflow transitions, including graph, actor, trigger, evidence, sequence, parent, restoration, and idempotency rules; it never writes state. |
 | `EventMatch` | Compare a validated signal against the governed event register and return candidate matches only. |
@@ -185,20 +187,22 @@ These services are first-class deterministic services in Phase 1. Each service h
 | `ThemeEscalationAssessment` | Purely evaluate controlled theme metrics and return direction, velocity, escalation recommendation, and lifecycle-state proposal; it never writes or changes signal workflow state. |
 | `PackAssembly` | Assemble policy-permitted strategic and operational package sections while preserving citations and drill-down links. |
 
-`FingerprintArticle` provides the Phase 1 fingerprint/wire-merge service capability. `CredibilityLookup`, `QueueRouting`, `PublicationConcurrencyLock`, `RetryBudget`, `TransitionGuard`, `EventMatch`, `ThemeMatch`, `RegisterWriteGate`, `ApertureRouting`, `ThemeMetricCalculation`, `ThemeEscalationAssessment`, and `PackAssembly` are independently callable and auditable. No agent may implement or emulate these functions through reasoning.
+`FingerprintArticle` provides the Phase 1 fingerprint/wire-merge service capability.
 
-## 6. Retry Rules
+The following functions are independently callable and auditable: `CredibilityLookup`, `QueueRouting`, `PublicationConcurrencyLock`, `RetryBudget`, `TransitionGuard`, `EventMatch`, `ThemeMatch`, `RegisterWriteGate`, `ApertureRouting`, `ThemeMetricCalculation`, `ThemeEscalationAssessment`, and `PackAssembly`. No agent can implement or emulate these functions through reasoning.
+
+## 6. Retry rules
 
 1. Retry only transient failures: throttling, temporary network failure, service unavailability, optimistic-concurrency conflict, or an explicitly classified timeout.
 2. Do not retry authorization failures, invalid input, schema violations, missing mandatory evidence, policy violations, human rejection, or deterministic function errors until the input/configuration is corrected.
-3. Use bounded exponential backoff with jitter. Phase 1 default: maximum 3 attempts per operation, with delays of 30 seconds, 2 minutes, and 10 minutes; configuration may lower these limits.
+3. Use bounded exponential backoff with jitter. The Phase 1 default is a maximum of 3 attempts per operation, with delays of 30 seconds, 2 minutes, and 10 minutes. Configuration can lower these limits.
 4. Persist each attempt before retrying, including attempt number, operation key, error category, delay, and next-attempt time.
 5. All function and agent operations must be idempotent using `execution_id`, operation name, input hash, and configuration version. A repeated request must return or reuse the existing result.
 6. Never retry a connected agent by silently changing the task, evidence set, or prompt. Any changed request is a new invocation and must be audited.
-7. After retry exhaustion, persist the failure in `GRIT_FunctionExecutionLog` or `GRIT_AgentExecutionLog`, stop the current operation, and require Supervisor-controlled remediation or a new execution.
+7. After retry exhaustion, persist the failure in `GRIT_FunctionExecutionLog` or `GRIT_AgentExecutionLog`. Stop the current operation. Require Supervisor-controlled remediation or a new execution.
 8. Human approval and publication confirmation are never automatically retried or synthesized.
 
-## 7. Error Handling Rules
+## 7. Error handling rules
 
 ### 7.1 Classification
 
@@ -210,7 +214,7 @@ These services are first-class deterministic services in Phase 1. Each service h
 | `SCHEMA_ERROR` | Reject the response, record the offending invocation, and retry only with the same contract if transient infrastructure caused it. |
 | `DETERMINISTIC_FUNCTION_ERROR` | Fail closed, persist function version and input hash, and never substitute model judgment. |
 | `AGENT_ERROR` | Record invocation failure; retry if transient, otherwise stop the current operation. |
-| `PERSISTENCE_ERROR` | Stop all business actions immediately and attempt reconciliation. No state may advance without durable audit records. |
+| `PERSISTENCE_ERROR` | Stop all business actions immediately and attempt reconciliation. No state can advance without durable audit records. |
 | `APPROVAL_ERROR` | Do not advance; require a valid human approval for the exact output version. |
 | `PUBLICATION_ERROR` | Do not advance to `PUBLICATION_CONFIRMED`; preserve the approved package and record the publication failure. |
 | `POLICY_VIOLATION` | Fail closed, alert the designated owner, and block publication. |
@@ -218,15 +222,15 @@ These services are first-class deterministic services in Phase 1. Each service h
 ### 7.2 General rules
 
 - Errors are structured, severity-classified, correlation-linked, and append-only.
-- Logs must not contain secrets or unnecessary personal data; sensitive payloads are referenced by secured Dataverse records.
+- Logs must not contain secrets or unnecessary personal data. Logs reference sensitive payloads through secured Dataverse records.
 - Partial work is retained with explicit completeness and validity flags.
 - The Supervisor emits an operator-visible exception containing the action required, owner, deadline, and affected execution.
-- Any unhandled error is treated as blocking: persist what is known, stop, and require reconciliation before resumption or reprocessing.
-- Alerts are raised for repeated failures, policy violations, stuck executions, approval timeout, and any attempted unauthorized transition or publication.
+- The Supervisor treats any unhandled error as blocking. It persists what is known, stops, and requires reconciliation before resumption or reprocessing.
+- The Supervisor raises alerts for repeated failures, policy violations, stuck executions, approval timeout, and any attempted unauthorized transition or publication.
 
-## 8. Dataverse Tables Required
+## 8. Dataverse tables required
 
-The Phase 1 Dataverse model starts with the following tables. Logical names are shown as requested and should be implemented with the solution publisher prefix where required. Each table must have Dataverse auditing enabled, created/modified metadata, and row-level security appropriate to its contents.
+The Phase 1 Dataverse model starts with the following tables. The table shows logical names as requested. Implement them with the solution publisher prefix where required. Each table must have Dataverse auditing enabled, created/modified metadata, and row-level security appropriate to its contents.
 
 | Table | Purpose | Minimum required columns |
 | --- | --- | --- |
@@ -250,9 +254,9 @@ The Phase 1 Dataverse model starts with the following tables. Logical names are 
 ### 8.1 Dataverse persistence requirements
 
 - Use alternate keys for scan/execution identifiers and operation idempotency keys where appropriate.
-- Use optimistic concurrency and reject stale updates; reconcile the current `GRIT_WorkflowState` against its append-only transition history.
+- Use optimistic concurrency and reject stale updates. Reconcile the current `GRIT_WorkflowState` against its append-only transition history.
 - Relate function and agent logs, output packages, and approvals to the relevant scan/execution identifier.
-- Enable auditing for create, update, delete, and state/status changes. Restrict delete rights; historical records must not be deleted by the Supervisor.
+- Enable auditing for create, update, delete, and state/status changes. Restrict delete rights. The Supervisor must not delete historical records.
 - Store large prompts, responses, and documents in secured Dataverse file columns or an approved linked store, with hashes and references in the Phase 1 tables.
 - The Dataverse transaction boundary must cover each state transition and its mandatory `TransitionGuard()` execution evidence. If cross-service atomicity is unavailable, use an outbox/reconciliation pattern and block further workflow progress until the write is confirmed.
 

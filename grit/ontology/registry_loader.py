@@ -133,8 +133,8 @@ def _seed_entries(workbook_path: Path) -> tuple[RegistryEntry, ...]:
     seen_ids: dict[str, str] = {}
 
     entity_rows = entity_sheet_rows(workbook_path, "2. Entity Address")
-    # Some rows leave NameOfEntity blank and put the legal name in LOB1 instead;
-    # only treat LOB1 as a name when it never appears as a real LOB alongside a filled NameOfEntity.
+    # Some rows leave NameOfEntity blank and put the legal name in LOB1 instead.
+    # Treat LOB1 as a name only when it never appears as a real LOB alongside a filled NameOfEntity.
     lob_names = {keyword.lob for keyword in load_lob_keywords(workbook_path)}
     lob_names.update(_value(row, "LOB1") for row in entity_rows if _value(row, "NameOfEntity") and _value(row, "LOB1"))
     for row in entity_rows:

@@ -22,7 +22,7 @@ _OPENERS = frozenset("bugs bug attacks attack issues issue concerns concern news
 
 def title_terms(title: str) -> list[str]:
     """The distinctive terms of a title, each one the keep rule can match: acronyms of three or more capitals (PHP), names
-    with a digit, dot or inner capital (Node.js, GitLab, CVE-2026-109618), and capitalised words (a first word too, unless
+    with a digit, dot or inner capital (Node.js, GitLab, CVE-2026-109618), and capitalized words (a first word too, unless
     it is a common opener such as 'Bugs'). 'Bugs in PHP, Node.js and GitLab.' gives PHP, Node.js, GitLab."""
     from grit.core.routing import _usable
 
@@ -39,9 +39,11 @@ def title_terms(title: str) -> list[str]:
 
 
 def parse_command(text: str) -> dict[str, Any] | None:
-    """'/concern Taiwan blockade: blockade, quarantine' -> a request draft with those keywords. Without a colon, or with
-    nothing after it, the keywords are the title's distinctive terms, else the title itself: a page is kept only when its
-    title or lead names a keyword exactly, so a sentence fragment such as 'Bugs in PHP' would never match a headline."""
+    """'/concern Taiwan blockade: blockade, quarantine' -> a request draft with those keywords.
+
+    Without a colon, or with nothing after it, the keywords are the title's distinctive terms, else the title itself.
+    A page is kept only when its title or lead names a keyword exactly. The distinctive terms come first because a
+    sentence fragment such as 'Bugs in PHP' would never match a headline."""
     match = COMMAND.match(text.strip())
     if not match:
         return None

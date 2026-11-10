@@ -1,8 +1,8 @@
 """WSH Assessment and Critic loop, borrowed from the main reasoned weekly chain (spec 45 / 46).
 
 Deterministic scope only nominates candidates. Assessment must state fact → STE exposure → transmission →
-impact/lesson for every candidate. The Critic challenges the weakest link. Editorial INCLUDE/WATCH/DROP only;
-nothing is published by code.
+impact/lesson for every candidate. The Critic challenges the weakest link. The loop makes editorial INCLUDE, WATCH, or DROP decisions only.
+Code publishes nothing.
 """
 
 from __future__ import annotations
@@ -321,7 +321,7 @@ def nominate(pool: Any, run_id: str, pack: Any, *, limit: int | None = 80) -> li
 
     for row in pool.assessments(run_id, kept_only=True):
         consider(row)
-    # Method / regulator / Council bulletins sometimes fail the generic event assessor; recover them for reasoning.
+    # Method, regulator, and Council bulletins sometimes fail the generic event assessor. Recover them for reasoning.
     for row in pool.assessments(run_id, kept_only=False):
         if row.get("decision") == "KEEP":
             continue

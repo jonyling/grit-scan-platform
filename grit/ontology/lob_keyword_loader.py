@@ -4,8 +4,8 @@ Sheet '6. LOB_Keywords' is a merged-cell layout: the LOB name appears once
 per block (blank cells below it belong to the same LOB), and each row after
 that carries at most one Key/Tier-2 keyword and/or one Emerging keyword,
 some prefixed with a "1." or "(1)" style number. This module unpacks that
-block layout into flat, typed records; it invents no keyword and no LOB
-name of its own -- anything that cannot be attributed to a LOB block is
+block layout into flat, typed records. It invents no keyword and no LOB
+name of its own. Anything that cannot be attributed to a LOB block is
 dropped, not guessed.
 
 The DS&C workbook uses a simpler layout: one row per LOB, with its keywords

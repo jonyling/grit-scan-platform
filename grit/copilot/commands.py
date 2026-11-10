@@ -36,7 +36,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--profile", required=True)
     parser.add_argument("--window", choices=("run", "90d", "all"), default="90d")
     parser.add_argument("--pack", help="Narrow the search to one pack in the reader's reach.")
-    parser.add_argument("--run", help="The run on screen; with --window run, search only it.")
+    parser.add_argument("--run", help="The run on screen. With --window run, search only this run.")
     parser.add_argument("--focus", help="A condition or theme id to focus on.")
     parser.add_argument("--no-save", action="store_true", help="Do not save the turn to the reader's chat (it is still logged).")
     parser.add_argument("--no-web", action="store_true", help="Keep the web off for this question.")

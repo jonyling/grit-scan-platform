@@ -48,18 +48,18 @@ The draft goes to `output/runs/RUN/scenarios/`, as JSON and as a Word document f
 
 ## 4. Checks
 
-A draft that fails is redrafted with its violations listed, up to three attempts, then withheld.
+The Strategist redrafts a failing draft with its violations listed, up to three attempts. If the last attempt fails, the Strategist withholds the draft.
 
 | Check | Rule |
 |---|---|
 | Cases | Exactly three: Best, Medium and Worst, in that order, with distinct names |
 | Grounding | `builds_on` names key uncertainties copied from the State of the Situation |
-| Evidence | Each line cites supplied ids; every number is in a cited source; a forecast (will, expected to, projected, forecast) names its source or begins "According to" |
+| Evidence | Each line cites supplied ids. Every number is in a cited source. A forecast (will, expected to, projected, forecast) names its source or begins "According to". |
 | Possibility | Narratives and impacts use could, may or might, and no word of certainty |
-| Signposts | Three or four per case, never shared between cases; one or two counter-indicators |
+| Signposts | Three or four per case, never shared between cases. One or two counter-indicators. |
 | Anchors | Every impact names a business area, line of business, entity or country from the registers. A gain sentence, when present, does the same and stays conditional. |
 | Responses | A known owner role, and a trigger that points to one of the case's signposts |
-| Text | No `[S#]` or `[P#]` mark outside evidence; no number outside the cited sources; no URL or governed score word |
+| Text | No `[S#]` or `[P#]` mark outside evidence. No number outside the cited sources. No URL or governed score word. |
 
 The Strategist's reasoning goes to the execution log, never to the draft.
 
@@ -87,18 +87,18 @@ The reviewer can edit any keyword in the register. Shifts whose draft was withhe
 
 `grit scenarios-track --pack ste --date DATE` shows where each shift is heading for a run. The Group brief computes the same reading.
 
-| Rule | Behaviour |
+| Rule | Behavior |
 |---|---|
 | Period | The pack's kept signals from the run and every run since the previous weekly or monthly run, daily runs included |
 | Relevance | A signal must touch the shift: a strong hit on the shift, or a hit on a Group condition the shift covers |
 | Match | The signal's title and first 800 characters name at least two of an item's keywords, or its only keyword |
-| Distinctive | At least one matched keyword is used by no other item of the shift, and by no more than 8% (at least 5) of the period's shift signals. A place or programme every headline names does not show which case is unfolding. An item without a distinctive keyword needs all its keywords. |
-| Lean | The case with the most signposts seen. A tie reads "mixed"; none reads "no signpost seen". The previous run's lean is shown beside it. In a reasoned weekly run, a signal the reviewed selection excluded is not a signpost (spec 45). |
+| Distinctive | At least one matched keyword is used by no other item of the shift, and by no more than 8% (at least 5) of the period's shift signals. A place or program every headline names does not show which case is unfolding. An item without a distinctive keyword needs all its keywords. |
+| Lean | The case with the most signposts seen. A tie reads "mixed". With no signpost seen, it reads "no signpost seen". The previous run's lean is shown beside it. In a reasoned weekly run, a signal the reviewed selection excluded is not a signpost (spec 45). |
 | Responses | A planned response is "now triggered" when its trigger signpost is seen. The brief marks each triggered response "Suggestion for the business area to consider." |
 | Where STE could gain | Copied from the reviewed case. The brief marks it "Hypothesis: to validate with BAs". |
 | Leading indicators | PLA activity, shipping and insurance, export controls and sanctions, cross-strait politics, and overseas fab ramp-up. A kept signal counts when its title or lead contains one of the indicator's phrases. Each indicator has proposed green, amber and red bounds, printed as "proposed bounds, for Wilson to confirm" until he confirms them (`BOUNDS_STATUS` in `grit/pipeline/indicators.py`). PLA activity reads the most PLA aircraft sorties in one day from Taiwan MND's daily reports: green up to 20, amber up to 45, red above. The others count kept signals in the window. A week with no reading has no band. Red names what the BAs do. |
 
-Leans are counts of signposts seen, never odds. The tracker writes nothing; every brief recomputes it from the pool.
+Leans are counts of signposts seen, never odds. The tracker writes nothing. Every brief recomputes the reading from the pool.
 
 ## 8. Scenario outlook in briefs and the Co-Pilot
 

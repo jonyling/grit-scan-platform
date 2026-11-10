@@ -2,8 +2,8 @@
 
 Every query names the register row it serves: a standing condition or theme, a management request, a named project,
 entity, supplier, customer or competitor, a hazard, or a watchpoint. Standing items, requests, projects and hazards run
-every week. A name lane can rotate: its cadence in weeks is set in the scan plan, and each query is due on a fixed week
-inside its cadence, derived from its id, so the selection for a date is the same every time it is computed.
+every week. A name lane can rotate. Its cadence in weeks is set in the scan plan. Each query is due on a fixed week inside
+its cadence, derived from its id. The selection for a date is then the same every time it is computed.
 """
 
 from __future__ import annotations
@@ -86,7 +86,7 @@ def _name_lanes(add: Any, pack: Any, lanes: Mapping[str, Any], reviewed_aliases:
             continue
         for row in exposure.get(key) or []:
             if row.get("anonymised") or row.get("counterpartyClass"):
-                continue  # 'Thailand NPE Programme Customer' or 'Marine equipment vendors' names no organisation that news would print
+                continue  # 'Thailand NPE Programme Customer' or 'Marine equipment vendors' names no organization that news would print
             query, _basis = search_name(row[name_key], str(row.get(id_key) or ""), reviewed, countries)
             add(lane, query, str(row.get(id_key)), key, exact=True, cadence=lanes[lane].get("cadenceWeeks", 1))
     if "COMPETITOR" in lanes:

@@ -12,7 +12,7 @@ TRIGGER_SYSTEM = 100000304
 # Live grit_logstatus choice. Formatted label is SUCCEEDED. It means the call finished, not that the proposal was accepted.
 AGENT_LOG_SUCCEEDED = 100000800
 
-# grit_trend on grit_signals. Deployed once for the URS-TW cascade; the same
+# grit_trend on grit_signals. Deployed once for the URS-TW cascade. The same
 # choice column is reused for any reader pack, Urban Solutions included.
 TREND_ESCALATING = 100002100
 TREND_EASING = 100002101

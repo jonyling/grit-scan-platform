@@ -7,7 +7,7 @@ from typing import Any, Mapping, Sequence
 
 NOT_ESTABLISHED = "not established"
 _ABSENCE = {"NOT_ASSESSED", "INSUFFICIENT_DATA", "NOT_ESTABLISHED"}
-# The word is the meaning. The colour only repeats it, so a reader who cannot see the colour still has the label.
+# The word is the meaning. The color only repeats it, so a reader who cannot see the color still has the label.
 TREND_COLOURS = {
     "Escalating": ("#8A1C13", "#F8D0D0"),
     "Easing": ("#146C43", "#D8F3DC"),
@@ -66,7 +66,7 @@ def profile_in_force(profile: Any) -> list[str]:
 
 
 def signal_rows(routed: Sequence[Mapping[str, Any]], decisions: Mapping[str, str] | None = None) -> list[dict[str, Any]]:
-    """decisions is None unless the reader's profile turns on the signal buttons; then a "Your decision" column appears."""
+    """decisions is None unless the reader's profile turns on the signal buttons. Then a "Your decision" column appears."""
     return [
         {
             "Priority": row["route"]["priority"] or "", "Tier": row.get("tier"), "RED": {"CONFIRMED": "RED", "CANDIDATE": "Candidate", "NOT_CONFIRMED": "Not confirmed"}.get(row.get("red_status") or "", ""), "Title": row["title"],
@@ -99,7 +99,7 @@ def signal_detail(row: Mapping[str, Any]) -> list[tuple[str, str]]:
 
 
 def table_html(rows: Sequence[Mapping[str, Any]], columns: Sequence[str] | None = None) -> str:
-    """An HTML table. Short columns stay on one line. A narrative column wraps on spaces inside a fixed width. A trend cell keeps its word and adds a colour that matches that word."""
+    """An HTML table. Short columns stay on one line. A narrative column wraps on spaces inside a fixed width. A trend cell keeps its word and adds a color that matches that word."""
     if not rows:
         return ""
     chosen = list(columns) if columns is not None else [key for key in rows[0] if key != "signal_id"]

@@ -13,7 +13,7 @@
 
 ## 2. Files
 
-Notes and profiles hold what named people said. They live in `secrets/readers/`, which git ignores. Set `GRIT_READERS_DIR` to use another folder; the tests point it at an empty one.
+Notes and profiles hold what named people said. They live in `secrets/readers/`, which git ignores. Set `GRIT_READERS_DIR` to use another folder. The tests point it at an empty one.
 
 ```text
 secrets/readers/
@@ -34,7 +34,7 @@ A key the profile leaves out keeps the value in the JSON profile.
 | `profile`, `version`, `updated`, `based_on` | The folder name; a whole number from 1; a date; filed note ids | Named in every reason the reader sees, such as "profile v1, from N1". |
 | `packs` | Pack ids, or `[all]` | Which packs the reader is routed. A brief still needs an entry in the JSON profile. |
 | `aperture` | `WIDE` or `MATERIAL` | Spec 24 aperture. |
-| `brief`, `briefs.<pack>` | `sections`, `add_sections`, `remove_sections`, `formats`, `length` (`short` 5, `standard` 8, `full` 15 findings), `show_review_status` | `brief` applies to every pack; `briefs.<pack>` then applies to one. For a pack the JSON profile has no brief for, `briefs.<pack>` adds the pack's default brief; today only the Group radar has one. |
+| `brief`, `briefs.<pack>` | `sections`, `add_sections`, `remove_sections`, `formats`, `length` (`short` 5, `standard` 8, `full` 15 findings), `show_review_status` | `brief` applies to every pack. `briefs.<pack>` then applies to one. For a pack the JSON profile has no brief for, `briefs.<pack>` adds the pack's default brief. Today only the Group radar has one. |
 | `emphasis`, `de_emphasis` | `conditions` (condition or theme ids), `topics`, `countries` | See section 4. A topic has four or more letters, or is an acronym in capitals. |
 | `sources` | `trust`, `distrust` (web domains) | See section 4. |
 | `signal_buttons` | `true` or `false` (default) | Shows Approve, Reject and Watch on single signals. |
@@ -57,7 +57,7 @@ The body must cite a note on every line, for example `(N1)`. Lines under a headi
 
 A condition or theme matches when the signal carries its id, or hits the theme strongly. A topic or country matches whole words in the title and the first 400 characters, in any case, with a plural. An acronym in capitals matches only in capitals.
 
-When `signal_buttons` is on, the reader's Approve, Reject and Watch decisions also count, as the old memory did. A rejection moves a signal down; it does not hide it.
+When `signal_buttons` is on, the reader's Approve, Reject and Watch decisions also count, as the old memory did. A rejection moves a signal down. It never hides the signal.
 
 ## 5. What changed
 

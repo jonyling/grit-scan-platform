@@ -61,7 +61,7 @@ class Scope:
 
 def scope_for(profile: Any, *, window: str = DEFAULT_WINDOW, run_id: str | None = None, pack: str | None = None, focus: str | None = None,
               today: date | None = None, labels: dict[str, dict[str, str]] | None = None, screen: dict[str, Any] | None = None) -> Scope:
-    """pack narrows the search to one pack inside the reader's reach; a pack outside it is refused."""
+    """pack narrows the search to one pack inside the reader's reach. A pack outside it is refused."""
     labels = labels if labels is not None else pack_labels()
     packs = reach(profile, labels)
     if pack:

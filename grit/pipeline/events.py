@@ -77,7 +77,7 @@ def _group(pool: Pool, rows: Sequence[Mapping[str, Any]]) -> dict[str, list[Mapp
     for row in rows:
         editorial = row.get("editorial") if isinstance(row.get("editorial"), Mapping) else {}
         for cited in editorial.get("source_ids") or []:
-            # A selection may cite context about another event; only a citation whose headline shares a word joins events.
+            # A selection may cite context about another event. Only a citation whose headline shares a word joins events.
             if cited in mapping and cited != row["signal_id"] and titles[row["signal_id"]] & titles.get(cited, frozenset()):
                 first, second = sorted((root(mapping[row["signal_id"]]), root(mapping[cited])))
                 parent[second] = first
@@ -341,10 +341,13 @@ def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], place
 
 
 def label_merges(events: Sequence[Mapping[str, Any]], rows: Mapping[str, Mapping[str, Any]]) -> dict[str, str]:
-    """After the EventAssessor drafts the rows: a drafted event whose item label shares two or more distinctive words, or
-    one identifier such as "PHP2Shell", with the label of a higher-ranked drafted event, within a week, joins that event's row, because a vague headline such as
-    "US Orders Evacuations As Major Ally Is Attacked" does not name its story but its label does. events: in report order.
-    rows: event id -> drafted row. Returns event id -> the event it joins; no chains."""
+    """Join drafted events by their item labels, after the EventAssessor drafts the rows.
+
+    A drafted event joins the row of a higher-ranked drafted event within a week when their labels share two or more
+    distinctive words, or one identifier such as "PHP2Shell". A vague headline such as "US Orders Evacuations As Major
+    Ally Is Attacked" does not name its story, but its label does.
+
+    events: in report order. rows: event id -> drafted row. Returns event id -> the event it joins, with no chains."""
     from grit.core.headlines import distinctive_terms, identifiers
 
     seeds: list[tuple[Mapping[str, Any], frozenset[str], frozenset[str]]] = []
@@ -402,7 +405,7 @@ def draft_rows(pool: Pool, run: Any, *, client: Any, model: str, log: Callable[[
 
     try:
         cluster_events(pool)
-    except Exception as exc:  # events need embeddings; without them each signal stands alone
+    except Exception as exc:  # events need embeddings, and without them each signal stands alone
         log(f"  Events: clustering skipped ({type(exc).__name__}).")
     pack = _load_pack(run.pack)
     names = risk_names(pack)

@@ -321,7 +321,7 @@ def fixed_values(brief: Mapping[str, Any]) -> dict[str, Any]:
 class WeeklyStore:
     def __init__(self, pool: Pool, run_id: str, *, search_limit: int, refresh: bool = True) -> None:
         if type(search_limit) is not int or search_limit < 0:
-            raise ValueError("An explicit nonnegative countersearch limit is required; use 0 to disable.")
+            raise ValueError("An explicit nonnegative countersearch limit is required. Use 0 to disable.")
         if pool.run(run_id) is None:
             raise KeyError(run_id)
         self.pool, self.run_id = pool, run_id
@@ -346,10 +346,11 @@ class WeeklyStore:
         return self.pool.one("SELECT * FROM weekly_runs WHERE run_id = ?", (self.run_id,)) or {}
 
     def reserve(self, kind: str) -> bool:
-        """kind "contradiction": a contradiction search for a top finding that has none may go up to TOP_FINDINGS past an
-        enabled search limit for each evidence version, because review can change the top findings after the budget is
-        spent and every top finding needs one before release (URS methodology, section 18). The search count carries
-        across versions, so a later version would otherwise inherit an allowance an earlier one spent."""
+        """kind "contradiction": a contradiction search for a top finding that has none can go up to TOP_FINDINGS past
+        an enabled search limit for each evidence version. Review can change the top findings after the budget is spent,
+        and every top finding needs one before release (URS methodology, section 18). The allowance is per version
+        because the search count carries across versions. Without it, a later version would inherit an allowance that an
+        earlier one spent."""
         column, ceiling = {"search": ("searches_used", "search_limit"), "revision": ("revisions_used", "2"),
                            "contradiction": ("searches_used", f"search_limit + {TOP_FINDINGS} * version")}.get(kind, (None, None))
         if column is None:
@@ -471,7 +472,7 @@ class WeeklyCoordinator:
         return sources
 
     def included_ids(self, sources: Mapping[str, Mapping[str, Any]], before_round: int | None = None) -> list[str]:
-        """Latest editorial INCLUDE/WATCH selections; deterministic keeps before any selection exists.
+        """Latest editorial INCLUDE/WATCH selections. Before any selection exists, it returns the deterministic keeps.
         before_round ignores that round's own full-review selections, so its inputs survive a resume."""
         exclude = "" if before_round is None else f"pool-{before_round}-%"
         latest = {row["signal_id"]: row["selection"] for row in self.pool.rows(
@@ -696,7 +697,7 @@ class WeeklyCoordinator:
 
     def invoke_many(self, jobs: Sequence[tuple[str, str, dict[str, Any], Callable[[Any], Any], str | None]],
                     label: str | None = None) -> list[tuple[dict[str, Any], int]]:
-        """Independent calls run on worker threads; recording happens here, in job order, so replay is deterministic."""
+        """Independent calls run on worker threads. Recording happens here, in job order, so replay is deterministic."""
         prepared = [self._prepare(*job) for job in jobs]
         pending = [index for index, job in enumerate(prepared) if "done" not in job]
         finished = len(jobs) - len(pending)
@@ -783,7 +784,7 @@ class WeeklyCoordinator:
         return {"role": role, "task": task, "system": system, "envelope": envelope, "digest": digest, "record": record}
 
     def _execute(self, job: Mapping[str, Any], validate: Callable[[Any], Any]) -> tuple[Any, list[dict[str, Any]], Exception | None]:
-        """The model call and contract check only; no database access, so it is safe on a worker thread."""
+        """The model call and contract check only. It has no database access, so it is safe on a worker thread."""
         raw: Any = {}
         rejected: list[dict[str, Any]] = []
         try:
@@ -1101,7 +1102,7 @@ class WeeklyCoordinator:
 
     def require_decisions(self) -> None:
         """A DEFER is a question the review has not answered. It opens a material issue, so a revision round revisits the
-        candidate; one still deferred when the revision budget is spent keeps the reports INCOMPLETE, visibly."""
+        candidate. A candidate still deferred when the revision budget is spent keeps the reports INCOMPLETE, visibly."""
         issues = self.store.issues()
         latest = self.pool.rows(
             """SELECT s.signal_id, s.call_id, s.selection_json FROM weekly_selections s
@@ -1150,8 +1151,8 @@ class WeeklyCoordinator:
                     "so the report relies on the retrieved text.")})
 
     def check_contradiction(self) -> None:
-        """Review can change which findings rank top after the last research pass; each current top finding still needs
-        its contradiction search, and an issue for a finding that left the top set is resolved. Settled false-positive
+        """Review can change which findings rank top after the last research pass. Each current top finding still needs
+        its contradiction search. An issue for a finding that left the top set is resolved. Settled false-positive
         objections are resolved first."""
         self.settle_false_positives()
         latest = self.pool.one(
@@ -1308,16 +1309,16 @@ class WeeklyCoordinator:
     def scoped(self, members: set[str], sources: Mapping[str, Any], open_issues: Mapping[str, Any],
                selections: bool = True, chain: bool = True) -> Callable[[Any], Any]:
         """A thread-safe critique check against a snapshot of the open issues."""
-        register = self.register  # read on the caller thread; workers must not touch the pool
+        register = self.register  # read on the caller thread, because workers must not touch the pool
         def validate(raw: Any) -> None:
             if not selections and isinstance(raw, dict) and "selections" in raw:
-                # Selections are not this task's output; an unrequested list is set aside rather than failing the run.
+                # Selections are not this task's output. An unrequested list is set aside instead of failing the run.
                 extra = raw.pop("selections")
                 raw["ignored_selections"] = len(extra) if isinstance(extra, list) else 1
             check_critique(raw, members, sources, set(open_issues))
             outside = [key for key in raw["resolved_issue_ids"] if str(open_issues[key]["issue"].get("target")) not in members]
             if outside and isinstance(raw, dict):
-                # Only a batch that reviewed an issue's target may resolve it; the attempt is kept for audit.
+                # Only a batch that reviewed an issue's target can resolve it. The attempt is kept for audit.
                 raw["resolved_issue_ids"] = [key for key in raw["resolved_issue_ids"] if key not in outside]
                 raw["resolutions"] = [item for item in raw.get("resolutions", []) if item.get("issue_id") not in outside]
                 raw["ignored_resolutions"] = outside
@@ -1386,11 +1387,11 @@ class WeeklyCoordinator:
         if action != "ASSESS":
             self.review(1)
         elif added:
-            # Fast review re-examines only signals whose evidence changed; full review repeats the pass.
+            # Fast review re-examines only signals whose evidence changed. Full review repeats the pass.
             self.review(1, self.changed(before) if self.fast else None)
         sources = self.sources
         if set(self.top_findings(sources, self.included_ids(sources))) - self.contradicted():
-            # Review scores can change which findings rank top; each new top finding still needs its contradiction search.
+            # Review scores can change which findings rank top. Each new top finding still needs its contradiction search.
             before = self.digests() if self.fast else {}
             if self.research("contradiction", search, reassess):
                 self.review(2, self.changed(before) if self.fast else None)
@@ -1817,7 +1818,7 @@ def resume_weekly_research(pool: Pool, run: Any, *, client: Any, model: str | No
     if state["status"] != "INCOMPLETE":
         raise ValueError("Research recovery requires an incomplete weekly analysis.")
     if state["evidence_hash"] != analysis_hash(pool, run.run_id):
-        raise ValueError("Weekly evidence changed after the saved review; run the weekly again instead.")
+        raise ValueError("Weekly evidence changed after the saved review. Run the weekly again instead.")
     last = pool.one("SELECT * FROM weekly_calls WHERE run_id = ? AND version = ? ORDER BY call_id DESC LIMIT 1", (run.run_id, state["version"]))
     if not last or last["role"] != "Critic" or last["status"] != "VALIDATED" or not last["task"].startswith("final-"):
         raise ValueError("Research recovery requires a review whose report stage finished.")
@@ -1870,7 +1871,7 @@ def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | N
         raise ValueError("Report refresh requires a finished weekly analysis." if refresh
                          else "Report recovery requires an incomplete weekly analysis.")
     if state["evidence_hash"] != analysis_hash(pool, run.run_id):
-        raise ValueError("Weekly evidence changed after the saved review; report recovery cannot skip reassessment.")
+        raise ValueError("Weekly evidence changed after the saved review. Report recovery cannot skip reassessment.")
     failed = pool.one("SELECT * FROM weekly_calls WHERE run_id = ? AND version = ? ORDER BY call_id DESC LIMIT 1",
                       (run.run_id, state["version"]))
     final_critic_failed = bool(failed) and failed["role"] == "Critic" and failed["status"] == "FAILED" and failed["task"].startswith("final-")
@@ -2029,7 +2030,7 @@ def admit_memory(pool: Pool, memory_id: int, reviewer: Any, intent: str) -> dict
     if existing:
         if existing["intent"] == intent and existing["reviewer_id"] == reviewer.profile_id:
             return existing
-        raise ValueError("A memory admission is immutable; propose a new correction instead.")
+        raise ValueError("A memory admission is immutable. Propose a new correction instead.")
     record = {"memory_id": memory_id, "reviewer_id": reviewer.profile_id, "intent": intent, "created_at": utc_now()}
     pool.insert("weekly_memory_admissions", record)
     pool.log(actor_type="FUNCTION", actor="MemoryAdmissionGate", subject=str(memory_id), status=intent, detail=record)
@@ -2070,7 +2071,7 @@ def add_internal_evidence(pool: Pool, run_id: str, records: Any, approver: Any) 
 
 
 def countersearch(query: str) -> dict[str, Any]:
-    """One budgeted Brave call; unlike the legacy helper, preserve failures and empty results separately."""
+    """One budgeted Brave call. Unlike the legacy helper, it keeps failures and empty results separate."""
     from types import SimpleNamespace
     from grit.acquisition.brave import BraveFetchError
     from grit.acquisition.brave_plan import collect_plan

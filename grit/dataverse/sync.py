@@ -1,8 +1,8 @@
 """Push kept pool signals to Dataverse grit_signals. Dataverse stays the system of record.
 
 The body uses only columns and choice codes that already exist (grit.dataverse.choices). A signal whose content hash is
-already in Dataverse is patched with the refreshed labels; approval fields are never touched. Vectors stay in the pool:
-grit_signals has no vector column, and none is invented here.
+already in Dataverse is patched with the refreshed labels. Approval fields are never touched. Vectors stay in the pool.
+grit_signals has no vector column, and this module does not add one.
 """
 
 from __future__ import annotations

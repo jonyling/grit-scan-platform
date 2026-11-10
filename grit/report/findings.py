@@ -1,6 +1,6 @@
 """Render the priority finding cards as Markdown. Pure: it reads findings.json and writes text.
 
-Every sentence that comes from the model sits under one of the six questions, and the label says it is the model's. Everything else is
+Every sentence that comes from the model sits under one of the six questions. Its label says it is the model's. Everything else is
 computed: the ranking reasons, the paths and their sources, the evidence flags, and the confidence.
 """
 

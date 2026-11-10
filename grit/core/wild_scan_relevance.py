@@ -15,7 +15,7 @@ never a repeat of the signal's own headline:
   everywhere else).
 * Each of the 10 URS-TW baseline conditions already declares which of those
   14 themes it belongs to (``condition["steThemes"]``, authored data, not
-  invented here). The condition with the most overlapping themes wins; a
+  invented here). The condition with the most overlapping themes wins. A
   candidate that matches no theme gets no condition.
 * Basis of Relevance to Business is the matched condition's own governed
   ``taiwanTransmission`` sentence -- real authored content already stored in
@@ -69,8 +69,8 @@ def match_wild_scan_condition(
     A condition's ``steThemes`` entries are the risk owner's own short label
     for a theme (e.g. "Cybersecurity risks"), not always the register's full
     themeName (e.g. "Cybersecurity risks leading to major IT outage/data
-    exfiltration (N2 & IBUs)") -- so this compares normalised word sets, not
-    an exact string. A tie is broken by baseline order (the condition
+    exfiltration (N2 & IBUs)"). This function therefore compares normalized
+    word sets, not an exact string. A tie is broken by baseline order (the condition
     register's own sequence), never by picking an arbitrary one. No theme
     matched at all means no condition is returned -- nothing is guessed.
     """
@@ -102,7 +102,7 @@ def _theme_label_matches(short_label: str, theme_name: str) -> bool:
 
 
 def classify_wild_scan_risk_level(matched_themes: list[dict[str, str]]) -> str:
-    """Highest tier among the themes matched wins; no match is LOW."""
+    """Highest tier among the themes matched wins. No match is LOW."""
     tiers = {str(theme.get("tier") or "") for theme in matched_themes}
     for tier in _TIER_RANK:
         if tier in tiers:

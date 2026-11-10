@@ -1,8 +1,12 @@
 """Build State of the Situation documents from the report library (spec 38).
 
-For each topic and section: retrieve the best passages from the topic's reports, number them P1, P2, ... across the whole
-document so one passage keeps one id, and have the Situation Analyst draft the section. The STE exposure section is written
-by code from the business-area registers, never by the model. The output is a draft for Wilson to edit and sign off.
+For each topic and section, the module does three things:
+1. Retrieve the best passages from the topic's reports.
+2. Number them P1, P2, ... across the whole document, so one passage keeps one id.
+3. Have the Situation Analyst draft the section.
+
+Code writes the STE exposure section from the business-area registers. The model never writes it. The output is a draft
+for Wilson to edit and sign off.
 """
 
 from __future__ import annotations

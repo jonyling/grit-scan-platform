@@ -1,6 +1,6 @@
 """grit scorecard: measure a weekly report against the URS methodology, so a change is judged by numbers, not impressions.
 
-Each metric comes from the frozen brief alone. A metric with a target passes or fails; the others describe the report.
+Each metric comes from the frozen brief alone. A metric with a target passes or fails. The other metrics describe the report.
 """
 
 from __future__ import annotations

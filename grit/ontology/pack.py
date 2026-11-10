@@ -103,7 +103,7 @@ def load_ontology_pack(config_dir: Path, pack: str = "urs-tw") -> OntologyPack:
 
 
 def scanned_packs(config_dir: Path = CONFIG_DIR) -> list[str]:
-    """Packs with a scan plan, entity packs first, so a business-area brief can summarise its entity packs' runs."""
+    """Packs with a scan plan, entity packs first, so a business-area brief can summarize its entity packs' runs."""
     found = [name for name, manifest in manifests(config_dir).items() if (Path(config_dir) / name / (manifest.get("optional") or {}).get("scan_plan", "-")).is_file()]
     return sorted(found, key=lambda name: (LEVELS.index(manifests(config_dir)[name]["level"]), name))
 

@@ -5,7 +5,9 @@
 
 ## 1. Purpose
 
-The Strategic Horizon Agent identifies possible broad themes, organizes related events, detects movement over time and cross-LOB relevance, and produces concise management-level proposals with uncertainty and citations. It is a reasoning capability within the Wilson Researcher role, not a new autonomous pipeline or governance authority.
+The Strategic Horizon Agent produces concise management-level proposals with uncertainty and citations. To build them, it identifies possible broad themes and organizes related events. It also detects movement over time and cross-LOB relevance.
+
+The agent is a reasoning capability within the Wilson Researcher role. It is not a new autonomous pipeline or governance authority.
 
 ## 2. Inputs
 
@@ -22,9 +24,9 @@ The Strategic Horizon Agent identifies possible broad themes, organizes related 
 
 Each output is a proposal and includes: `proposedThemeName`, `proposedThemeSummary`, `proposedThemeType`, `supportingEventIds`, `supportingSignalIds`, `conflictingEvidence`, `sourceDiversity`, `geographicBreadth`, `sectorBreadth`, `directionOfTravelProposal`, `confidence`, `strategicSignificanceProposal`, `uncertainty`, `rationale`, `citations`, `recommendedNextAction`, configuration version, and the explicit statement `proposal_only = true`.
 
-Numeric counts and authoritative IDs are supplied from deterministic functions or register search results. The agent may not manufacture them.
+Deterministic functions or register search results supply numeric counts and authoritative IDs. The agent must not manufacture them.
 
-## 4. Reasoning Criteria
+## 4. Reasoning criteria
 
 | Classification | Governed criterion |
 | --- | --- |
@@ -35,18 +37,18 @@ Numeric counts and authoritative IDs are supplied from deterministic functions o
 | Theme escalation / decline | `ThemeMetricCalculation()` result and governed lifecycle policy support the proposed movement. |
 | Insufficient evidence | Evidence coverage, corroboration, credibility, or conflict policy is not met. |
 
-The criteria reference governed configuration and deterministic metric outputs; no prompt-only threshold is authoritative.
+The criteria reference governed configuration and deterministic metric outputs. No prompt-only threshold is authoritative.
 
-## 5. Prohibited Behavior
+## 5. Prohibited behavior
 
-The agent must not invent sources, source hashes, event/theme IDs, numeric counts, controlled scores, credibility values, source classes, news priority, routing results, or publication status. It must not write Dataverse, change workflow state, approve/release a package, suppress contradictory evidence, or assert an established theme from one weak signal without labelling it an early hypothesis.
+The agent must not invent sources, source hashes, event/theme IDs, numeric counts, controlled scores, credibility values, source classes, news priority, routing results, or publication status. It must not write Dataverse, change workflow state, or approve/release a package. It must not suppress contradictory evidence. It must not assert an established theme from one weak signal unless it labels the theme an early hypothesis.
 
-Where a scan originates from a management request, the agent may propose how evidence relates to that request. It may not assign the resulting `P1` priority, which is a deterministic `ApertureRouting()` output.
+Where a scan originates from a management request, the agent can propose how evidence relates to that request. It must not assign the resulting `P1` priority. That priority is a deterministic `ApertureRouting()` output.
 
-## 6. Interaction Contract
+## 6. Interaction contract
 
-The Supervisor invokes this capability under an approved source policy. The agent may propose event/theme relationship writes and reader-specific impact hypotheses. Memory proposes typed mutations; `RegisterWriteGate()` validates the proposals; the Supervisor persists accepted records. Critic challenges the proposal before management-facing package assembly.
+The Supervisor invokes this capability under an approved source policy. The agent can propose event/theme relationship writes and reader-specific impact hypotheses. Memory proposes typed mutations. `RegisterWriteGate()` validates the proposals. The Supervisor persists accepted records. Critic challenges the proposal before management-facing package assembly.
 
-## 7. Audit and Acceptance
+## 7. Audit and acceptance
 
-Record input signal/event/theme references, citations, agent/model version, prompt contract version, response hash, uncertainty, and critic outcome in `GRIT_AgentExecutionLog`. The proposal must be traceable to signals and must never overwrite shared facts or reader-specific assessments from another profile.
+Record input signal/event/theme references, citations, agent/model version, prompt contract version, response hash, uncertainty, and critic outcome in `GRIT_AgentExecutionLog`. The proposal must be traceable to signals. It must never overwrite shared facts or reader-specific assessments from another profile.

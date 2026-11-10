@@ -1271,7 +1271,7 @@ def test_an_unchallenged_top_finding_opens_a_contradiction_issue(weekly):
     coordinator.research("countercheck", None, lambda: None)
     issue = store.issues()[f"CONTRA-{ids[0]}"]
     assert issue["issue"]["target"] == "RESEARCH" and issue["issue"]["source_ids"] == [ids[0]]
-    # Material only when the operator allowed searches; a zero budget is a disclosed limitation.
+    # Material only when the operator allowed searches. A zero budget is a disclosed limitation.
     assert issue["issue"]["material"] is (store.state["search_limit"] > 0)
     brief = {"v2": {"gate": [], "completeness": {"blocking": [], "limitations": []}}}
     coordinator.disclose_contradiction(brief, coordinator.sources)
@@ -1751,7 +1751,7 @@ def test_reports_are_decided_after_every_final_critic_so_order_does_not_matter(w
         profile.brief_for = lambda pack: {"formats": ["docx"]}
     monkeypatch.setattr("grit.report.brief.build_brief", lambda *args: _draft(ids[0]))
     monkeypatch.setattr("grit.report.brief.routed_signals", lambda *args: [])
-    # write_report supersedes prior REPORT:second issues at the start; re-seed after that so the second Critic can clear it.
+    # write_report supersedes prior REPORT:second issues at the start. Re-seed after that so the second Critic can clear it.
     reports = []
     def resolving(*args, system, payload, **kwargs):
         response = original(*args, system=system, payload=payload, **kwargs)

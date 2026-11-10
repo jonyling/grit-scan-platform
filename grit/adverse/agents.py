@@ -1,4 +1,4 @@
-"""The adverse news scan's agents (spec 46): Screener, Assessor and Critic. They propose; grit.adverse.checks decides.
+"""The adverse news scan's agents (spec 46): Screener, Assessor and Critic. They propose. `grit.adverse.checks` decides.
 
 Each agent sees sources by id (S1, S2, ...) and never a URL. Every call is logged to the pool's execution log.
 """
@@ -136,7 +136,7 @@ def _call(client: Any, model: str, system: str, payload: dict[str, Any], record:
 def screen_batch(client: Any, model: str, batch: Sequence[Mapping[str, Any]], *, allowed_a: set[str], thinking: str | None = "LOW"
                  ) -> tuple[dict[str, dict[str, str]] | None, CallRecord]:
     """Decisions for one batch, or None when the model fails twice or leaves ids out. A Section A decision needs a DIRECT or
-    COUNTERPARTY link (allowed_a); otherwise it is dropped and recorded."""
+    COUNTERPARTY link (`allowed_a`). Any other Section A decision is dropped and recorded."""
     record = CallRecord("Screener", ",".join(str(item["id"]) for item in batch[:1]) + f"+{len(batch) - 1}")
     ids = [str(item["id"]) for item in batch]
     payload: dict[str, Any] = {"candidates": list(batch)}
@@ -203,7 +203,7 @@ def assess_item(client: Any, model: str, section: str, task: Mapping[str, Any], 
 
 def critique(client: Any, model: str, items: Sequence[Mapping[str, Any]], period: Mapping[str, str], *, thinking: str | None = "LOW"
              ) -> tuple[dict[str, dict[str, Any]] | None, list[list[str]], list[CallRecord]]:
-    """Verdicts by item id, and groups of ids that report the same event. Verdicts are None when any batch fails, so the scan
+    """Verdicts by item id, and groups of ids that report the same event. Verdicts are None when any batch fails. The scan then
     records that the Critic did not finish."""
     verdicts: dict[str, dict[str, Any]] = {}
     groups: list[list[str]] = []

@@ -61,7 +61,7 @@ def relevance_task(signal: Mapping[str, Any], classification: Mapping[str, Any],
 def _parse_decision(raw: Mapping[str, Any]) -> dict[str, Any]:
     decision = str(raw.get("decision") or "").strip().upper()
     if decision not in {"KEEP", "DROP"}:
-        # Some models bury the decision under claims; refuse malformed answers as DROP with reason.
+        # Some models bury the decision under claims. Treat a malformed answer as DROP, with a reason.
         return {"decision": "DROP", "reason": "Relevance draft withheld: decision was not KEEP or DROP.", "ste_industry": None}
     industry = raw.get("ste_industry")
     if industry is not None:

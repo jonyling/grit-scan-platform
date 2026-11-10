@@ -6,15 +6,17 @@
 **Workflow authority:** Supervisor Agent only  
 **Review scope:** Review Package, never an individual signal
 
-## 1. Functional Specification
+## 1. Functional specification
 
-`ReviewGate()` evaluates a human review submission for one immutable `GRIT_OutputPackage` version. It determines the package review outcome, but does not approve, release, publish, write Dataverse records, or write workflow state. The Supervisor records the invocation and is the only component that creates `GRIT_Approval`, changes package status, or writes `GRIT_WorkflowState` transitions.
+`ReviewGate()` evaluates a human review submission for one immutable `GRIT_OutputPackage` version. It determines the package review outcome. It does not approve, release, or publish a package. It does not write Dataverse records or workflow state.
 
-`ReviewGate()` is the sole business approval gate. It replaces `PublishLock()`. A technical `PublicationConcurrencyLock()` may be used by the publication integration to prevent concurrent delivery of the same approved package; it is not an approval gate, cannot approve a package, and does not affect review outcomes.
+The Supervisor records the invocation. The Supervisor is the only component that creates `GRIT_Approval`, changes package status, or writes `GRIT_WorkflowState` transitions.
 
-The function follows Architecture A: the Supervisor supplies all authoritative values from Dataverse. `ReviewGate()` performs no Dataverse queries, hidden reads, or time-dependent evaluation.
+`ReviewGate()` is the sole business approval gate. It replaces `PublishLock()`. The publication integration can use a technical `PublicationConcurrencyLock()` to prevent concurrent delivery of the same approved package. That lock is not an approval gate. It cannot approve a package, and it does not affect review outcomes.
 
-A Review Package may contain independently identifiable Strategic Horizon and Operational Risk sections when both use the same approved evidence population. ReviewGate evaluates the immutable package version and its membership as a whole; a theme, event, or assessment proposal is not publishable merely because it appears in a package.
+The function follows Architecture A. The Supervisor supplies all authoritative values from Dataverse. `ReviewGate()` performs no Dataverse queries, hidden reads, or time-dependent evaluation.
+
+A Review Package can contain independently identifiable Strategic Horizon and Operational Risk sections when both use the same approved evidence population. `ReviewGate()` evaluates the immutable package version and its membership as a whole. A theme, event, or assessment proposal does not become publishable only because it appears in a package.
 
 ## 2. Inputs
 
@@ -83,7 +85,7 @@ The deterministic result contains no runtime timestamp, random identifier, retry
 
 Invocation data is execution metadata, not part of the deterministic decision result. `GRIT_FunctionExecutionLog` records `invocation_id`, first evaluation timestamp, attempt number, duplicate/original invocation reference, retry metadata, `signed_payload_hash`, `signature`, `signature_algorithm`, and `signing_key_id`.
 
-The signed payload is the canonical `ReviewDecisionResult`; `signed_payload_hash` equals `canonical_result_hash`. Signing occurs after deterministic evaluation and does not change the result hash.
+The signed payload is the canonical `ReviewDecisionResult`. `signed_payload_hash` equals `canonical_result_hash`. Signing occurs after deterministic evaluation and does not change the result hash.
 
 ### 3.3 Outcome precedence
 
@@ -94,9 +96,9 @@ The signed payload is the canonical `ReviewDecisionResult`; `signed_payload_hash
 5. `APPROVE` intent with all checks passing -> `APPROVE` / `APPROVED` / `APPROVED` / `PERSIST_APPROVAL`.
 6. Any remaining contradictory input -> `HOLD` / `HELD` / `NONE` / `STOP_AND_RECONCILE`.
 
-## 4. Review Package Data Model
+## 4. Review package data model
 
-`GRIT_OutputPackage` is the immutable review subject and approval anchor. It has a one-to-many relationship with `GRIT_OutputPackageSignal`; `GRIT_Signals` has a one-to-many relationship with `GRIT_OutputPackageSignal`. This membership entity preserves exact version membership, signal version, signal content hash, and ordering.
+`GRIT_OutputPackage` is the immutable review subject and approval anchor. `GRIT_OutputPackage` and `GRIT_Signals` each have a one-to-many relationship with `GRIT_OutputPackageSignal`. This membership entity preserves exact version membership, signal version, signal content hash, and ordering.
 
 ### 4.1 GRIT_OutputPackageSignal
 
@@ -110,38 +112,38 @@ The signed payload is the canonical `ReviewDecisionResult`; `signed_payload_hash
 | `IncludedAtUtc` | Date/time, time zone independent, UTC | Required. |
 | `InclusionReason` | Controlled text/choice | Required. |
 
-The package content and membership become immutable at `PENDING_REVIEW`. A package version may be reused as historical evidence but cannot be altered or approved after it is superseded, rejected, or returned for rework.
+The package content and membership become immutable at `PENDING_REVIEW`. A package version can be reused as historical evidence. It cannot be altered or approved after it is superseded, rejected, or returned for rework.
 
-## 5. Package Versioning Rules
+## 5. Package versioning rules
 
 1. A package version is immutable once submitted to `PENDING_REVIEW`.
 2. The package ID, version, content hash, and membership hash identify the review subject.
 3. `APPROVE` applies only to the exact immutable package version.
-4. `HOLD` changes package status to `HELD`; no signal transitions occur, no new version is required, and a subsequent review submission against the unchanged version requires a new human review decision.
-5. `REJECT` changes package status to `REJECTED`; no signal transitions occur, the version is permanently ineligible for release, and any future review requires a new package version.
-6. `RETURN_FOR_REWORK` changes package status to `RETURNED_FOR_REWORK`; the entire package version becomes invalid for release and a new package version is mandatory.
-7. The replacement package must have a new version, content hash, and membership hash, and must link to the old package through `supersedes`.
+4. `HOLD` changes package status to `HELD`. No signal transitions occur, and no new version is required. A later review submission against the unchanged version requires a new human review decision.
+5. `REJECT` changes package status to `REJECTED`. No signal transitions occur. The version is permanently ineligible for release. Any future review requires a new package version.
+6. `RETURN_FOR_REWORK` changes package status to `RETURNED_FOR_REWORK`. The entire package version becomes invalid for release. A new package version is mandatory.
+7. The replacement package must have a new version, content hash, and membership hash. It must link to the old package through `supersedes`.
 8. A material change to membership, signal content, classification, evidence, scoring result, or configuration requires a new package version.
 9. Identical canonical inputs for the same idempotency key return the original result. A different input for the same key is a `HOLD` idempotency violation.
 
-## 6. Approval Rules
+## 6. Approval rules
 
 1. Only an eligible human reviewer with passed separation of duties can request approval.
 2. `ReviewGate()` is the only approval gate. Agents, functions, automated flows, and the Supervisor cannot approve or release a package.
 3. The Supervisor creates `GRIT_Approval` only after an `APPROVE` result. It must look up the exact `GRIT_OutputPackage` version and store the approved package and membership hashes.
 4. The Supervisor invokes `TransitionGuard()` for each `PENDING_REVIEW -> APPROVED` request and writes the transition only after `ALLOW`. Each transition references the same `GRIT_Approval` record.
 5. Approval permits controlled publication integration and controlled AIRIS handoff. It does not itself deliver either branch.
-6. `PublicationConcurrencyLock()` may prevent duplicate technical delivery after approval; it cannot provide approval, override ReviewGate, or write workflow state.
+6. `PublicationConcurrencyLock()` can prevent duplicate technical delivery after approval. It cannot provide approval, override `ReviewGate()`, or write workflow state.
 
-## 7. ReturnForRework Rules
+## 7. ReturnForRework rules
 
 `RETURN_FOR_REWORK` is mandatory for missing signals, incorrect classification, missing evidence, material omissions, material other findings, or `REQUEST_REWORK` intent.
 
-The scope is package-wide: the current package version is invalidated for release, all member signals leave `PENDING_REVIEW`, and the Supervisor invokes `TransitionGuard()` then writes `PENDING_REVIEW -> ASSESSED` with `TransitionType = REWORK` for every member signal. `affected_signal_id` identifies remediation scope only; it must never leave other signals active in the old review package.
+Rework applies to the whole package. The current package version becomes invalid for release, and all member signals leave `PENDING_REVIEW`. For every member signal, the Supervisor invokes `TransitionGuard()`. It then writes `PENDING_REVIEW -> ASSESSED` with `TransitionType = REWORK`. `affected_signal_id` identifies remediation scope only. It must never leave other signals active in the old review package.
 
-The Supervisor records the `ReviewGate()` execution, marks the package `RETURNED_FOR_REWORK`, creates no approval, then creates a new package version after assessment and critique remediation. The replacement version requires a complete new review cycle.
+The Supervisor records the `ReviewGate()` execution and marks the package `RETURNED_FOR_REWORK`. It creates no approval. After assessment and critique remediation, it creates a new package version. The replacement version requires a complete new review cycle.
 
-## 8. Workflow State Transitions
+## 8. Workflow state transitions
 
 ```text
 PENDING_REVIEW -- ReviewGate APPROVE --> APPROVED
@@ -152,11 +154,11 @@ APPROVED --> CONTROLLED_PUBLICATION_INTEGRATION --> PUBLICATION_CONFIRMED
 APPROVED --> CONTROLLED_AIRIS_HANDOFF -----------> AIRIS_HANDOFF_READY
 ```
 
-`REJECT` and `HOLD` do not create signal transitions, so `TransitionGuard()` is not invoked. They update package status only. `REJECT` requires a new package for any future review. `HOLD` retains the same immutable package version pending human resolution and a new review submission.
+`REJECT` and `HOLD` do not create signal transitions. The Supervisor does not invoke `TransitionGuard()` for them. They update package status only. `REJECT` requires a new package for any future review. `HOLD` retains the same immutable package version pending human resolution and a new review submission.
 
 `CRITIQUED` requires a completed `GRIT_AgentExecutionLog` record for the Critic Agent or a completed deterministic critique-validation package. `ScoreRisk()` completion alone is insufficient evidence for the `ASSESSED -> CRITIQUED` transition.
 
-## 9. Dataverse Tables & Relationships
+## 9. Dataverse tables and relationships
 
 | Table | Use |
 | --- | --- |
@@ -164,17 +166,25 @@ APPROVED --> CONTROLLED_AIRIS_HANDOFF -----------> AIRIS_HANDOFF_READY
 | `GRIT_OutputPackageSignal` | Immutable package-to-signal membership snapshot. |
 | `GRIT_Signals` | Signal records and `CurrentWorkflowState` projection. |
 | `GRIT_Approval` | Human decision tied to exactly one output package version. |
-| `GRIT_WorkflowState` | Append-only transition ledger; Supervisor only writes it after `TransitionGuard()` returns `ALLOW`. |
+| `GRIT_WorkflowState` | Append-only transition ledger. Only the Supervisor writes it, after `TransitionGuard()` returns `ALLOW`. |
 | `GRIT_FunctionExecutionLog` | `ReviewGate()` and `TransitionGuard()` invocation metadata, deterministic result, signature, retries, and idempotency record. |
 | `GRIT_AgentExecutionLog` | Critic/other reasoning evidence only; never approval or release authority. |
 
-## 10. Audit Trail Requirements
+## 10. Audit trail requirements
 
-For every invocation, record the canonical input, `ReviewDecisionResult`, input/result hashes, package and membership hashes, function/policy/configuration versions, reviewer identity, package lookups, findings, invocation metadata, and signature fields in Dataverse. Preserve duplicate, held, rejected, and returned decisions; do not overwrite them.
+For every invocation, record these values in Dataverse:
 
-For an approval, the `GRIT_Approval` lookup must prove the exact package version/hashes. For rework, every package-member signal transition must reference the `ReviewGate()` function execution and an auditable `TransitionGuard()` decision of `ALLOW`. All timestamps are UTC; decision determinism is based on canonical payloads that exclude invocation timestamps.
+- the canonical input and `ReviewDecisionResult`;
+- input/result hashes, and package and membership hashes;
+- function/policy/configuration versions;
+- reviewer identity, package lookups, and findings;
+- invocation metadata and signature fields.
 
-## 11. Error Handling
+Preserve duplicate, held, rejected, and returned decisions. Do not overwrite them.
+
+For an approval, the `GRIT_Approval` lookup must prove the exact package version/hashes. For rework, every package-member signal transition must reference the `ReviewGate()` function execution. It must also reference an auditable `TransitionGuard()` decision of `ALLOW`. All timestamps are UTC. Decision determinism depends on canonical payloads that exclude invocation timestamps.
+
+## 11. Error handling
 
 | Condition | Outcome / instruction |
 | --- | --- |
@@ -187,23 +197,23 @@ For an approval, the `GRIT_Approval` lookup must prove the exact package version
 | Function timeout or throttling | Retry under `RetryBudget`; log attempts. No decision is synthesized. |
 | Approval write succeeds but transitions fail | Preserve approval, block all release branches, and reconcile. |
 
-## 12. Example Approve Flow
+## 12. Example approve flow
 
-1. Supervisor reads `RP-2026-00041-V1`, its immutable membership, package hash, membership hash, reviewer eligibility, and active policy; it builds the canonical input.
+1. The Supervisor reads `RP-2026-00041-V1` with its immutable membership, package hash, and membership hash. It also reads reviewer eligibility and the active policy. It builds the canonical input.
 2. The eligible human reviewer submits `APPROVE` with no rework-causing findings.
 3. `ReviewGate()` returns `APPROVE`, `package_status_instruction = APPROVED`, `signal_transition_instruction = APPROVED`, and `PERSIST_APPROVAL`.
-4. Supervisor logs the signed result, creates one `GRIT_Approval` for the exact package version, marks the package `APPROVED`, invokes `TransitionGuard()` for every `GRIT_OutputPackageSignal` member, and writes a `PENDING_REVIEW -> APPROVED` transition only after each `ALLOW` result.
-5. The independently controlled publication and AIRIS handoff integrations may now operate. `PublicationConcurrencyLock()` only prevents duplicate delivery.
+4. The Supervisor logs the signed result. It creates one `GRIT_Approval` for the exact package version and marks the package `APPROVED`. It invokes `TransitionGuard()` for every `GRIT_OutputPackageSignal` member. It writes a `PENDING_REVIEW -> APPROVED` transition only after each `ALLOW` result.
+5. The independently controlled publication and AIRIS handoff integrations can now operate. `PublicationConcurrencyLock()` only prevents duplicate delivery.
 
-## 13. Example ReturnForRework Flow
+## 13. Example ReturnForRework flow
 
 1. `RP-2026-00041-V2` contains signals A and B. The reviewer submits `REQUEST_REWORK` with `MISSING_EVIDENCE` for A and `MISSING_SIGNAL` for B.
-2. Supervisor supplies the authoritative package and membership hashes plus the canonical findings to `ReviewGate()`.
+2. The Supervisor supplies the authoritative package and membership hashes plus the canonical findings to `ReviewGate()`.
 3. `ReviewGate()` returns `RETURN_FOR_REWORK`, `package_status_instruction = RETURNED_FOR_REWORK`, `signal_transition_instruction = ASSESSED`, and `CREATE_NEW_PACKAGE_VERSION`.
-4. Supervisor logs the signed result, invalidates V2 for release, invokes `TransitionGuard()` for both A and B, writes `PENDING_REVIEW -> ASSESSED` only after each `ALLOW` result, and creates no approval.
+4. The Supervisor logs the signed result and invalidates V2 for release. It invokes `TransitionGuard()` for both A and B. It writes `PENDING_REVIEW -> ASSESSED` only after each `ALLOW` result. It creates no approval.
 5. Remediation produces V3 with a new immutable membership snapshot and hashes. V3 must repeat critique and package-level review.
 
-## 14. Pseudo-Code
+## 14. Pseudo-code
 
 ```text
 function ReviewGate(input):

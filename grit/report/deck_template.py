@@ -1,8 +1,8 @@
 """The executive-summary deck template, trimmed from the reference deck.
 
 The reference deck (docs/reference/GRIT-Scan_Executive_Summary.pptx) carries the ST Engineering master and 249 layouts. The
-brief uses two: the cover layout and the content layout. build_template() keeps those two and drops every slide, so each
-weekly deck stays small. Rebuild the template when the reference deck changes:
+brief uses two: the cover layout and the content layout. `build_template()` keeps those two and drops every slide. Each
+weekly deck then stays small. Rebuild the template when the reference deck changes:
 
     .venv/bin/python -m grit.report.deck_template
 """

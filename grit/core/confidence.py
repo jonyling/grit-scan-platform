@@ -1,6 +1,6 @@
 """Evidence confidence for a drafted condition or item, by rule. Pure.
 
-The model cites sources. This rule grades them; the model never reports a confidence.
+The model cites sources. This rule grades them. The model never reports a confidence.
   HIGH    two or more independent outlets (a wire service counts once), at least one rated HIGH in the reader's register.
   MEDIUM  two or more independent outlets, or one HIGH-rated outlet.
   LOW     one outlet that is not rated HIGH.

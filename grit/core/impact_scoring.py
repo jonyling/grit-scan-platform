@@ -3,12 +3,12 @@
 Rules are governed by ``15_Severity_Definition.md``. Scoring bodies are added
 one at a time and reviewed before the next is written.
 
-``SeverityBand`` is an ``IntEnum`` and ``INSIGNIFICANT == 0``. Never truth-test
-an instance; compare it explicitly with another ``SeverityBand`` instead.
+``SeverityBand`` is an ``IntEnum`` and ``INSIGNIFICANT == 0``. Compare an
+instance explicitly with another ``SeverityBand``. Never truth-test it.
 
 Absence of a rating is expressed with exactly one sentinel per cause, never
-both: ``ValueAtRiskBasis.INSUFFICIENT_DATA`` is reserved for the FINANCIAL
-dimension only (it names *why* value-at-risk could not be computed).
+both. ``ValueAtRiskBasis.INSUFFICIENT_DATA`` is reserved for the FINANCIAL
+dimension only. It names *why* value-at-risk could not be computed.
 ``DimensionAssessment.NOT_ASSESSED`` is used for HEALTH_SAFETY,
 REGULATORY_COMPLIANCE, and REPUTATION, and for ``SeverityResult.max_band``
 in the degenerate case where every dimension is absent.
@@ -124,7 +124,7 @@ class SourceTier(str, Enum):
     @property
     def rank(self) -> int:
         """Lower is more credible. TIER_3/TIER_4 exist to carry the SOP's
-        mandatory caveat rule; see grade_evidence."""
+        mandatory caveat rule. See grade_evidence."""
         return {
             SourceTier.TIER_0: 0,
             SourceTier.TIER_1: 1,
@@ -173,13 +173,13 @@ class ProjectStatus(str, Enum):
 
 @dataclass(frozen=True)
 class SourceEvidence:
-    """Acquisition-supplied facts; deterministic scoring performs no I/O.
+    """Acquisition-supplied facts. Deterministic scoring performs no I/O.
 
     Known limitation, not fixed here: ``independent_outlet`` can be inflated
     by wire syndication (one wire story carried by three papers counts as
     three distinct outlets and alone clears grade_evidence's >=2 bar).
     Acquisition must tag syndicated pickups against their originating wire
-    before this reaches scoring; this module has no way to detect syndication
+    before this reaches scoring. This module has no way to detect syndication
     on its own.
     """
 
@@ -457,7 +457,7 @@ def _earliest_match(
     candidates = [match for match in matches if match[0].registry_kind in kinds]
     if not candidates:
         return None
-    # Earliest mention wins; entity_id breaks ties for determinism.
+    # Earliest mention wins. entity_id breaks ties for determinism.
     return min(candidates, key=lambda match: (match[2], match[0].entity_id))
 
 
@@ -483,8 +483,8 @@ def resolve_transmission(signal: Signal, registry: TransmissionRegistry) -> Tran
     Below that, PERIMETER and SECTOR are proposed only, never auto-resolved:
     a human must confirm before either is acted on. Both are driven by the
     governed LOB keyword taxonomy ('6. LOB_Keywords'), not by a generic
-    business-area/country guess: a keyword match alone is SECTOR (a provable
-    link to one of our industry segments, unconfirmed); a keyword match
+    business-area/country guess. A keyword match alone is SECTOR (a provable
+    link to one of our industry segments, unconfirmed). A keyword match
     combined with the signal's country matching a registered entity's
     country is PERIMETER (same segment, same footprint). No keyword match at
     all -- even where the country matches -- is AMBIENT, resolved
@@ -685,8 +685,8 @@ def score_severity(signal: Signal, definition: SeverityDefinition) -> SeverityRe
     each (HEALTH_SAFETY: fatalities/permanent_incapacity; REGULATORY_COMPLIANCE:
     debarment_months/work_suspension_days/criminal_offence_or_censure;
     REPUTATION: media_reach). A dimension is ``NOT_ASSESSED`` only when every
-    one of its fields is ``None``; an explicit ``0``/``False`` is a real fact
-    (no harm occurred) and scores INSIGNIFICANT, never NOT_ASSESSED.
+    one of its fields is ``None``. An explicit ``0``/``False`` is a real fact
+    (no harm occurred). It scores INSIGNIFICANT, never NOT_ASSESSED.
 
     FINANCIAL never falls back to any other figure: absence of
     ``value_at_risk`` (or its basis being INSUFFICIENT_DATA) always yields
@@ -756,8 +756,8 @@ def grade_evidence(signal: Signal) -> EvidenceResult:
     ``weak_source_present`` but can never drag a qualifying signal down --
     only a failure *within* the TIER_0/TIER_1 set caps the result at LOW.
     When no TIER_0/TIER_1 source exists at all, the full source set becomes
-    the gating set by necessity, since there is no stronger subset to prefer;
-    such a signal cannot reach HIGH regardless.
+    the gating set by necessity, since there is no stronger subset to prefer.
+    Such a signal cannot reach HIGH regardless.
 
     Any signal whose best available tier is TIER_3 or TIER_4 carries the SOP's
     mandatory caveat, independent of the confidence grade itself.
@@ -780,7 +780,7 @@ def grade_evidence(signal: Signal) -> EvidenceResult:
     caveat_text = _TIER_4_CAVEAT_TEXT if caveat_required else None
 
     # Known limitation (not fixed here): wire syndication can inflate this
-    # count; see SourceEvidence.independent_outlet.
+    # count. See SourceEvidence.independent_outlet.
     corroborating_outlet_count = len({source.independent_outlet for source in sources if source.independent_outlet})
     weak_source_present = any(source.source_tier.rank > SourceTier.TIER_1.rank for source in sources)
 
@@ -860,8 +860,8 @@ def is_high_negative_impact(severity: SeverityResult, transmission: Transmission
     HIGH_NEGATIVE_IMPACT requires severity >= MAJOR, transmission in
     (DIRECT, COUNTERPARTY), and HIGH evidence, all three at once. The same
     severity/transmission gate with MEDIUM or LOW evidence yields
-    POTENTIAL_HIGH, never HIGH_NEGATIVE_IMPACT -- evidence only gates the
-    verdict down, it never substitutes for severity or transmission. An
+    POTENTIAL_HIGH, never HIGH_NEGATIVE_IMPACT. Evidence only gates the
+    verdict down. It never substitutes for severity or transmission. An
     absent severity (NOT_ASSESSED or INSUFFICIENT_DATA) never satisfies the
     severity gate, since it is not a SeverityBand at all.
     """
@@ -902,14 +902,14 @@ def classify_horizon(signal: Signal) -> Horizon:
     News signals almost always report events that have already occurred, so
     ``event_date`` alone carries no information about what to do next: a
     debarment announced yesterday but taking effect in six months is a
-    materialised *event* with a developing *impact*. This function reads only
+    materialized *event* with a developing *impact*. This function reads only
     the acquisition-supplied ``expected_impact_date`` -- when the impact
     lands, not when the event occurred.
 
     Does not read severity, transmission, or evidence, and is not read by
     them in return -- the horizon must never influence the impact score.
 
-    The source spec numerically defines only IMMINENT (<90 days); the
+    The source spec numerically defines only IMMINENT (<90 days). The
     remaining mapping is this module's explicit, documented interpretation:
 
     - ``expected_impact_date`` is ``None``: LATENT -- a background/standing
@@ -920,7 +920,7 @@ def classify_horizon(signal: Signal) -> Horizon:
     - days until ``expected_impact_date >= 90``: DEVELOPING -- a known future
       date, not yet near-term.
 
-    ``event_date`` and ``published_date`` are intentionally not read here;
+    ``event_date`` and ``published_date`` are intentionally not read here.
     ``event_date`` feeds the SOP's separate recency filter, not the horizon.
     """
     if signal.expected_impact_date is None:
@@ -955,7 +955,7 @@ def classify_opportunity_cost(signal: Signal, registry: TransmissionRegistry) ->
     A market opening is never inferred from prose. Acquisition must set
     ``participation_question``. The ontology then decides whether a governed
     line of business is linked and whether we are already present. Absence of
-    a value-at-risk figure stays ``INSUFFICIENT_DATA``; it is not estimated.
+    a value-at-risk figure stays ``INSUFFICIENT_DATA``. It is not estimated.
     """
     country = signal.country.strip() or None
     financial_basis = signal.value_at_risk_basis
@@ -1041,7 +1041,7 @@ def classify_opportunity_cost(signal: Signal, registry: TransmissionRegistry) ->
 
 
 def assess_impact(signal: Signal, transmission_registry: TransmissionRegistry, severity_definition: SeverityDefinition) -> ImpactAssessment:
-    """Thin orchestrator: calls the pure functions, makes no judgement itself."""
+    """Thin orchestrator: calls the pure functions, makes no judgment itself."""
     evidence = grade_evidence(signal)
     horizon = classify_horizon(signal)
     severity = score_severity(signal, severity_definition)

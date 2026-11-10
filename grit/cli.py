@@ -69,7 +69,7 @@ def _run(pool: Any, args: argparse.Namespace, pack: str) -> Any:
         if state and state["search_limit"] != limit:
             raise SystemExit("A resumed weekly run must retain its recorded countersearch limit.")
         if getattr(args, "follow_ups", False):
-            raise SystemExit("Reasoned weekly runs share one countersearch budget; do not pass --follow-ups.")
+            raise SystemExit("Reasoned weekly runs share one countersearch budget. Do not pass --follow-ups.")
         pool.update_run_config(run.run_id, weekly_mode="reasoned", countersearch_limit=limit)
         reasoner = getattr(args, "reasoner", None)
         if reasoner == "deepseek":
@@ -276,7 +276,7 @@ def report_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
 
             try:
                 print(f"Fit report: {write_fit_report(pool, run.run_id, profile)}")
-            except Exception as exc:  # the fit report is for Jony; it never stops a brief
+            except Exception as exc:  # The fit report is for Jony. It never stops a brief.
                 print(f"Fit report for {profile.profile_id} not written: {type(exc).__name__}: {exc}")
     if ontology.report_kind == "wsh-digest":
         from grit.wsh.alerts import draft_wsh_alerts
@@ -337,8 +337,8 @@ cmd_report = _for_each_pack(report_step)
 
 
 def cmd_weekly(args: argparse.Namespace) -> int:
-    """Everything for each reader pack and one week: scan, agents, findings, packs, and RED drafts. Entity packs run first,
-    so a business-area brief can summarise them."""
+    """Everything for each reader pack and one week: scan, agents, findings, packs, and RED drafts. Entity packs run first.
+    A business-area brief can then summarize them."""
     if args.dry_run:
         return cmd_scan(args)
     pool = _pool()
@@ -362,7 +362,7 @@ def cmd_digest(args: argparse.Namespace) -> int:
         args.pack = ["wsh"]
     if args.dry_run:
         return cmd_scan(args)
-    # report_step expects a completed run; WSH digest writing runs Assessment → Critic (spec 45 pattern).
+    # report_step expects a completed run. WSH digest writing runs Assessment → Critic (spec 45 pattern).
     if not hasattr(args, "profile") or args.profile is None:
         args.profile = ["james"]
     if not hasattr(args, "no_submit"):
@@ -523,7 +523,7 @@ def cmd_red(args: argparse.Namespace) -> int:
 
 
 def cmd_misses(args: argparse.Namespace) -> int:
-    """Accepted review misses. The next reasoned run can read them. propose writes a file and does not change the rules."""
+    """Accepted review misses. The next reasoned run can read them. The propose action writes a file. It does not change the rules."""
     pool = _pool()
     if args.action == "list":
         rows = pool.misses(args.pack)
@@ -754,10 +754,10 @@ def build_parser() -> argparse.ArgumentParser:
         if name == "weekly":
             sub.add_argument("--reasoned", action="store_true", help="Use whole-pool reasoning and exact-report critique (opt-in).")
             sub.add_argument("--reasoner", choices=("gemini", "deepseek"), help="With --reasoned: deepseek ranks kept signals and drafts the report. Default: gemini.")
-            sub.add_argument("--countersearch-limit", type=int, help="Required for --reasoned: explicit maximum searches for the run, including 0.")
-            sub.add_argument("--fast", action="store_true", help="With --reasoned: Critic screens dropped signals from compact records and calls run in parallel.")
+            sub.add_argument("--countersearch-limit", type=int, help="Required with --reasoned. The maximum number of searches for the run. 0 is allowed.")
+            sub.add_argument("--fast", action="store_true", help="With --reasoned: the Critic screens dropped signals from compact records. Model calls run in parallel.")
             sub.add_argument("--workers", type=int, help="With --reasoned --fast: model calls in flight at once. Default 6.")
-            sub.add_argument("--internal-evidence", help="Explicit JSON file of approved human-supplied evidence; no folder scanning.")
+            sub.add_argument("--internal-evidence", help="A JSON file of approved human-supplied evidence. Only this file is read. No folder is scanned.")
             sub.add_argument("--evidence-approved-by", help="Reviewer profile admitting the supplied evidence.")
             sub.add_argument("--model")
             sub.add_argument("--findings", type=int, default=6, help="Finding cards to write. 0 skips the loop.")
@@ -769,7 +769,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--currents", nargs="*", help="Up to two Currents queries to add to the pool.")
     sub.add_argument("--no-embed", action="store_true", help="Skip embeddings. Duplicates then merge by identical title only.")
     sub.add_argument("--dry-run", action="store_true", help="Print the queries and stop. Spends nothing.")
-    sub.add_argument("--sweep", type=int, default=0, help="Unused for WSH; kept for scan_step compatibility.")
+    sub.add_argument("--sweep", type=int, default=0, help="Unused for WSH. It exists because scan_step reads it.")
     sub.add_argument("--profile", nargs="*", default=["james"])
     sub.add_argument("--no-submit", action="store_true", help="Write the digest without putting it into review.")
     reader("assess", cmd_assess, "Rerun the deterministic assessment on a scanned run. No network.")
@@ -797,18 +797,18 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--refresh", action="store_true",
                      help="Rebuild every report from a finished review whose evidence has not changed, for example after an R&A RED decision.")
     sub.add_argument("--research", action="store_true",
-                     help="Finish an analysis blocked only by research issues, such as a top finding without a contradiction search: "
-                          "one research pass, a review of the new evidence, then the reports. The drafted sections are kept.")
+                     help="Finish an analysis that only research issues block, such as a top finding without a contradiction search. "
+                          "The command runs one research pass, reviews the new evidence, then writes the reports. It keeps the drafted sections.")
     sub.add_argument("--model", help="Model for reporting. Default: the model used by the failed call.")
     sub.add_argument("--profile", nargs="*", default=["all"])
-    sub.add_argument("--no-submit", action="store_true", help="Render the resulting reports or incomplete previews without submission.")
+    sub.add_argument("--no-submit", action="store_true", help="Render the resulting reports or incomplete previews without submitting them for review.")
 
     sub = commands.add_parser("weekly-memory", help="Resume typed Memory proposals after a named human package decision.")
     sub.add_argument("--package", required=True)
     sub.add_argument("--version", required=True, type=int)
     sub.add_argument("--model")
     sub.set_defaults(handler=cmd_weekly_memory)
-    sub = commands.add_parser("memory-admit", help="A named human admits or rejects a typed Memory proposal.")
+    sub = commands.add_parser("memory-admit", help="Admit or reject a typed Memory proposal, as a named human.")
     sub.add_argument("--id", type=int, required=True)
     sub.add_argument("--profile", required=True)
     sub.add_argument("--intent", choices=("ADMIT", "REJECT"), required=True)
@@ -857,7 +857,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--rationale")
     sub.set_defaults(handler=cmd_feedback)
 
-    sub = commands.add_parser("review", help="A named reviewer's decision on a package, through ReviewGate. Package ids look like PKG-2026-11-02-urs-wilson; the PKG- prefix may be left out.")
+    sub = commands.add_parser("review", help="Record a named reviewer's decision on a package, through ReviewGate. Package IDs look like PKG-2026-11-02-urs-wilson. You can leave out the PKG- prefix.")
     sub.add_argument("--package", required=True)
     sub.add_argument("--version", type=int, required=True)
     sub.add_argument("--profile", required=True)
@@ -873,7 +873,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--description")
     sub.add_argument("--keywords", default="", help="Comma-separated. Each needs 6 or more characters or two words to match.")
     sub.add_argument("--kind", default="CONCERN", choices=("CONCERN", "TOPIC", "TREND", "KEYWORD"))
-    sub.add_argument("--by", help="Who asked, e.g. Wilson.")
+    sub.add_argument("--by", help="Who asked, for example Wilson.")
     sub.add_argument("--country")
     sub.add_argument("--lob")
     sub.add_argument("--profile", default="wilson", help="The reviewer who activates or closes.")

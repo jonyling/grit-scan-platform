@@ -47,19 +47,25 @@ The Word brief puts this table on a landscape page. The Markdown copy and the Ex
 
 ### Executive-summary deck
 
-The PowerPoint deck follows `docs/reference/GRIT-Scan_Executive_Summary.pptx`. It is built on a template trimmed from that deck (`grit/report/templates/executive_summary.pptx`, rebuilt with `python -m grit.report.deck_template`), so it carries the ST Engineering master and branding.
+The PowerPoint deck follows `docs/reference/GRIT-Scan_Executive_Summary.pptx`. It is built on a template trimmed from that deck, so it carries the ST Engineering master and branding. The template is `grit/report/templates/executive_summary.pptx`. Rebuild it with `python -m grit.report.deck_template`.
 
 1. **Cover.** The business area, the scan window, the reader, the report owner, and the AI-generated content statement.
 2. **Executive summary.** One to three slides. One slide covers up to two critical items, two slides cover three or four, and three slides cover five or more. A critical item is a key risk or an escalating theme. On a Group pack it is a condition with evidence this period. Each slide shows at most two full cards. Items past the sixth are named in full on the last slide. The first slide carries the status badge and the bottom line.
 3. **Appendix, one slide per item.** What it means for the business area, what happened, and, when the profile includes `RESPONSE_OPTIONS`, the options. A side panel gives the risk linkage, the owners of the options, and up to three sources.
 
-Each card states what the point means for the pack, using the pack's short label, for example "What it means for DS&C". A summary card keeps whole sentences and does not use a truncation mark. When the first sentence is longer than the box, the box wraps that sentence. An appendix box may still shorten text with an ellipsis. Each summary card links to its appendix slide, and each appendix slide links back to the first summary slide. The Word brief keeps the full text.
+Each card states what the point means for the pack, using the pack's short label, for example "What it means for DS&C". A summary card keeps whole sentences and does not use a truncation mark. When the first sentence is longer than the box, the box wraps that sentence. An appendix box can still shorten text with an ellipsis. Each summary card links to its appendix slide. Each appendix slide links back to the first summary slide. The Word brief keeps the full text.
 
 Every Word brief, Markdown preview, and slide carries this statement, on the cover and again in the footer:
 
 > GRIT-Scan AI-generated suggestions for consideration. The scan can miss a source, misread a page, or leave out context. A named person reviews this before anyone acts on it.
 
-A later sentence is dropped when it repeats an earlier sentence, or when it restates an earlier point: every figure in it was used before, in one sentence that shares at least half of its content words. A sentence that only shares a figure with an unrelated sentence is a different fact and stays. Appendix slides keep their full text, because the summary links to them. A table cell stays as written. The statement above can repeat. A finding shows a suggestion only when a Proposer option or a triggered scenario response already cites that signal. The line starts with "Suggestion for the business area to consider." A signal with no such action has no suggestion.
+The brief drops a later sentence when it repeats or restates an earlier one. A sentence restates an earlier point when every figure in it was already used in one sentence that shares at least half of its content words. A sentence that only shares a figure with an unrelated sentence is a different fact, and it stays. The following are exempt:
+
+- Appendix slides keep their full text, because the summary links to them.
+- A table cell stays as written.
+- The AI-generated content statement can repeat.
+
+A finding shows a suggestion only when a Proposer option or a triggered scenario response already cites that signal. The line starts with "Suggestion for the business area to consider." A signal with no such action has no suggestion.
 
 ## 2. Implication
 
@@ -80,9 +86,9 @@ The Proposer is a seventh agent role. It proposes options for management to cons
 
 ### When it runs
 
-It runs for a Key Risk whose assessment is validated and cites at least one source this week, so every key risk with a development gets response options. A business area has at most six Proposer calls a week. The report's action posture adds one principal ask (spec 45).
+It runs for a Key Risk whose assessment is validated and cites at least one source this week. As a result, every key risk with a development gets response options. A business area has at most six Proposer calls a week. The report's action posture adds one principal ask (spec 45).
 
-Until 4 November 2026 it ran only for a Key Risk that was escalating or cited a material source (a `DIRECT`, `PERIMETER`, or `COUNTERPARTY` rung, a P1 or P2 priority, or briefing tier 1 or 2). On the 2 November URS week that left four of six key risks without options.
+Until 4 November 2026, it ran only for a Key Risk that was escalating or cited a material source. A material source had a `DIRECT`, `PERIMETER`, or `COUNTERPARTY` rung, a P1 or P2 priority, or briefing tier 1 or 2. On the 2 November URS week, that rule left four of six key risks without options.
 
 ### Input
 
@@ -115,21 +121,21 @@ The checks withhold the options that fail any of these rules. One retry with the
 
 ### Chain of thought
 
-The prompt asks the Proposer to reason before it answers, in the `reasoning` field. The reasoning is stored in the execution log entry for the call, with the prompt version and the response hash. It is never stored with the options, and the brief never shows it. A reviewer can read it to see why an option was proposed. It is not evidence: the cited controls and sources are.
+The prompt asks the Proposer to reason before it answers, in the `reasoning` field. The reasoning is stored in the execution log entry for the call, with the prompt version and the response hash. It is never stored with the options. The brief never shows it. A reviewer can read it to see why an option was proposed. The cited controls and sources are the evidence. The reasoning is not.
 
 ### Governance
 
-The brief labels the options "Proposed by GRIT-Scan for management consideration. Not reviewed advice." They are part of the reader's package, so they pass `ReviewGate()` with the rest of the brief. A reader sees them only when the profile's brief sections include `RESPONSE_OPTIONS`.
+The brief labels the options "Proposed by GRIT-Scan for management consideration. Not reviewed advice." They are part of the reader's package. They pass `ReviewGate()` with the rest of the brief. A reader sees them only when the profile's brief sections include `RESPONSE_OPTIONS`.
 
 ## 4. Data
 
 - `condition_assessments` gains `implication` (text) and `options_json` (the checked options, without the reasoning).
-- The themes register gains `sheetActionPlans` when the pack's `build.themeActionPlans` is `true`. It is opt-in, so an existing pack's registers stay unchanged until it is rebuilt with the flag.
+- The themes register gains `sheetActionPlans` when the pack's `build.themeActionPlans` is `true`. It is opt-in. An existing pack's registers stay unchanged until the pack is rebuilt with the flag.
 
 ## 5. Acceptance
 
 - A Key Risk's sources are ordered by the materiality rule, not by date.
-- An implication that names no anchor, or reads as a forecast, is withheld, and the assessment stands.
+- An implication that names no anchor, or reads as a forecast, is withheld. The assessment stands.
 - The Proposer is not called for a theme that is not a Key Risk, or for a Key Risk with no validated, escalating, or material evidence.
 - An option with an unknown owner, an unquoted control, or an uncited source is withheld.
 - The reasoning is in the execution log and nowhere in the brief.

@@ -2,8 +2,8 @@
 
 The query is built from governed ontology keywords: the active LOBs in a named
 pack and their keyword lists. It is never a customer name, a placeholder, or a
-site: filter. A keyword only widens what is pulled. It is not an STE link, and
-every row still goes through the bind unchanged.
+site: filter. A keyword only widens what is pulled. It is not an STE link. Every row
+still goes through the bind unchanged.
 
 This module emits candidates. It does not score, and it does not read a rank.
 """

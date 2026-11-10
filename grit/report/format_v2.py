@@ -1,7 +1,7 @@
-"""Brief format v2 (spec 44): the tables of Wilson's BA-wide report, built by rule from the run. No model is called here;
-the escalating-items rows were drafted and checked in the agents step (grit.pipeline.events).
+"""Brief format v2 (spec 44): the tables of Wilson's BA-wide report, built by rule from the run. This module calls no model.
+The agents step (`grit.pipeline.events`) drafted and checked the escalating-items rows.
 
-Every table states its basis. A cell with no finding says whether its area was searched this week, so a nil is never
+Every table states its basis. A cell with no finding says whether its area was searched this week. A nil is never
 claimed without a search.
 """
 
@@ -171,7 +171,7 @@ def _query_category(row: Mapping[str, Any], names: Mapping[str, str], requests: 
 
 def _searched(pool: Any, run_id: str, names: Mapping[str, str], lookup: Mapping[str, str] | None = None) -> dict[str, Any]:
     """Answered planned searches, by category and by line of business. An answered search that returned nothing still
-    counts; a search the engine did not answer does not. A line of business counts only for a query aimed at it. A
+    counts. A search the engine did not answer does not count. A line of business counts only for a query aimed at it. A
     management request's search takes its category from the request's title."""
     lookup = lookup or {}
     requests = {str(row["request_id"]): str(row.get("title") or "") for row in pool.management_requests()} if hasattr(pool, "management_requests") else {}
@@ -436,7 +436,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
             if best is None or found.get("credibilityRating") in {"HIGH", "MEDIUM", "LOW"}:
                 best = found
         tiers[row["signal_id"]] = source_tier(row.get("url"), (best or {}).get("credibilityRating"), row.get("publisher"), (best or {}).get("sourceClass"))
-    # Outlets R&A has not banded, so a reader knows which reports need verification and R&A knows what to band next.
+    # Outlets R&A has not banded. A reader sees which reports need verification. R&A sees what to band next.
     from collections import Counter
 
     from grit.core.source_bands import host_of

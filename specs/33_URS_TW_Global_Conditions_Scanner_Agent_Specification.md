@@ -4,45 +4,54 @@
 **Role in pipeline:** Source collection layer (Layer 1 input), feeding `Invoke-URSTWWeeklyRevision.ps1`
 **Pattern reused from:** Chuan Sern Wong's existing `GRIT Risk Officer – Wildcard Scan` agent (Web Search + Current News API custom connector, proven working in this tenant)
 
-## 1. Why This Agent Exists
+## 1. Why this agent exists
 
-The weekly revision engine (`Invoke-URSTWWeeklyRevision.ps1`) is deterministic: it validates developments, detects condition movement, maps to STE themes, and gates entity-level descent on evidence. It was never meant to be fed by a human typing JSON by hand — that step defeats the purpose of an agentic process.
+This agent supplies the weekly revision engine with real developments, so a human no longer types them in as JSON. Typing JSON by hand defeats the purpose of an agentic process.
 
-This agent is the missing layer: it searches for real developments against the ten Taiwan-relevant baseline conditions and proposes candidate development records in the exact schema the revision engine already validates. A human reviews the agent's output before it is processed — the agent proposes, it does not publish.
+The weekly revision engine is deterministic. It does the following:
+
+- Validates developments.
+- Detects condition movement.
+- Maps developments to STE themes.
+- Gates entity-level descent on evidence.
+
+The engine script is `Invoke-URSTWWeeklyRevision.ps1`.
+
+This agent is the missing layer. It searches for real developments against the ten Taiwan-relevant baseline conditions. It proposes candidate development records in the exact schema that the revision engine already validates. A human reviews the agent's output before it is processed. The agent proposes. It does not publish.
 
 This mirrors the project's standing governance rule: **agents propose; deterministic functions decide; humans sign off.**
 
-## 2. Why It Cannot Be a PowerShell Script
+## 2. Why it cannot be a PowerShell script
 
-Confirmed in this workspace:
+The collection step must run as a Copilot Studio agent, because only that path has working live search in this tenant. The following was confirmed in this workspace:
 
-- `fetch_webpage`-equivalent live web access is not available from a coding/PowerShell session here (blocked/forbidden for every external source tested).
+- A coding or PowerShell session here has no `fetch_webpage`-equivalent live web access. Every external source tested was blocked or forbidden.
 - PowerShell in this environment has no search API key and no Azure access.
-- The only proven working live-search capability in this tenant is a Copilot Studio agent using the **Web Search** tool and the **Current News API** custom connector — exactly as Chuan's Wildcard Scan agent already does successfully in production.
+- The only proven live-search capability in this tenant is a Copilot Studio agent. That agent uses the **Web Search** tool and the **Current News API** custom connector. Chuan's Wildcard Scan agent already does this in production.
 
-So the collection step must run as a Copilot Studio agent, not a script.
+## 3. Input configuration
 
-## 3. Input Configuration
+The agent is grounded on the following inputs:
 
-The agent is grounded on:
-
-- `config/URS-TW-Global-Baseline.json` — the ten standing conditions, their names, domains, and `watchIndicators` (used as the search cue list)
-- `config/URS-TW-Source-Register.json` — the governed credibility register (mirrors `GRIT_SourceRegister`/`CredibilityLookup()` from `30_Source_Taxonomy_and_Credibility_Model.md`). This is the single place source credibility is decided; the agent's own opinion of a source is never authoritative. Includes the SOP §3 list plus sources approved 2026-09-06: ISW, AEI (curated Taiwan/China analysis, both HIGH), China Daily (state media, HIGH — see the attribution rule in §5), Bloomberg, NYT, DigiTimes (HIGH), and several MEDIUM-rated national outlets.
+- `config/URS-TW-Global-Baseline.json` — the ten standing conditions, with their names, domains, and `watchIndicators`. The agent uses `watchIndicators` as the search cue list.
+- `config/URS-TW-Source-Register.json` — the governed credibility register. It mirrors `GRIT_SourceRegister` and `CredibilityLookup()` from `30_Source_Taxonomy_and_Credibility_Model.md`. This register is the single place where source credibility is decided. The agent's own opinion of a source is never authoritative. The register includes the SOP §3 list. It also includes sources approved 2026-09-06: ISW, AEI (curated Taiwan/China analysis, both HIGH), China Daily (state media, HIGH — see the attribution rule in §5), Bloomberg, NYT, DigiTimes (HIGH), and several MEDIUM-rated national outlets.
 - The approved URS Taiwan source list (SOP §3): Reuters, CNA/Focus Taiwan, Taipei Times, Straits Times, Taiwan MND; Taiwan Central Weather Administration; Taiwan rail/metro authority notices; BIS/MOFCOM; Fed/central-bank sources; Taiwan MOJ/Agency Against Corruption; CISA/rail OT-cyber advisories
 
-## 4. Search Task
+## 4. Search task
 
-For **each of the ten conditions**, the agent searches for developments in the prior 7-day window using the condition's `watchIndicators` as query seeds. This is a per-condition task, not one combined search — a single combined pass is what produced the unevidenced, funnel-shaped Wilson URS-TW draft previously reviewed in this project.
+For **each of the ten conditions**, the agent searches for developments in the prior 7-day window. It uses the condition's `watchIndicators` as query seeds. The agent runs one search per condition. A single combined pass produced the unevidenced, funnel-shaped Wilson URS-TW draft that this project reviewed earlier.
 
-If nothing material is found for a condition, the agent must say so explicitly rather than omit the condition.
+If the agent finds nothing material for a condition, it must say so explicitly. It must not omit the condition.
 
-For conditions 1–3 (US-China strategic competition, China's political trajectory, Taiwan Strait pressure), also check ISW's and AEI's recurring "China & Taiwan Update" briefs — a structured recurring analyst synthesis is often better evidence than a raw news search for these conditions.
+Conditions 1–3 are US-China strategic competition, China's political trajectory, and Taiwan Strait pressure. For these, the agent also checks ISW's and AEI's recurring "China & Taiwan Update" briefs. A structured, recurring analyst synthesis is often better evidence than a raw news search for these conditions.
 
-## 5. Output Contract
+## 5. Output contract
 
-The agent must return **only** a JSON array — no prose preamble, no markdown fencing. Because agents in this tenant have repeatedly violated JSON-only instructions in the past (documented for both the Analyst and Auditor branches of the existing wildcard flow), the import script defensively extracts the JSON object regardless.
+The agent must return **only** a JSON array, with no prose preamble and no markdown fencing. Agents in this tenant have repeatedly broken JSON-only instructions before. This is documented for both the Analyst and Auditor branches of the existing wildcard flow. The import script therefore extracts the JSON object defensively.
 
-**State-media attribution rule.** Sources classified as state-controlled media in the register (e.g. China Daily) are rated HIGH for their value as a signal of official positioning and intent — never as independently verified fact. Any development sourced from one must be phrased as `"Beijing state messaging states..."` / `"China Daily (state media) reports..."`, not presented as a neutral fact. This applies at both the scanner and the downstream Briefing Composer stage.
+**State-media attribution rule.** The register classifies some sources as state-controlled media, for example China Daily. These are rated HIGH for their value as a signal of official positioning and intent. They are never rated as independently verified fact. A development sourced from one must be phrased as `"Beijing state messaging states..."` or `"China Daily (state media) reports..."`. It must not be presented as a neutral fact. This rule applies at the scanner and at the downstream Briefing Composer stage.
+
+The following example shows one record in the output array:
 
 ```json
 [
@@ -66,13 +75,15 @@ The agent must return **only** a JSON array — no prose preamble, no markdown f
 
 Rules enforced in the prompt:
 
-- `conditionHint` must be the condition **name** or **domain**, not an invented category. The import script matches it against the baseline; if it cannot match confidently, the record is rejected rather than guessed into the wrong condition.
-- A `NO_MATERIAL_CHANGE` record is valid and expected — every condition should produce one record per run, either a finding or an explicit no-change statement with the sources actually checked.
+- `conditionHint` must be the condition **name** or **domain**. It must not be an invented category. The import script matches it against the baseline. If the script cannot match it confidently, it rejects the record instead of guessing the condition.
+- A `NO_MATERIAL_CHANGE` record is valid and expected. Every condition must produce one record per run. The record is either a finding or an explicit no-change statement that lists the sources actually checked.
 - `sources` must be specific articles, never a homepage or search-results page.
-- `descentCandidate` is optional and should only be included when the agent has a genuine two-hop transmission path to a named URS Taiwan asset, supplier, or cash line. Guessing a plausible-sounding BA/LOB is worse than omitting it, because the deterministic gate downstream depends on this being genuine.
-- No `auditStatus`, no severity scores, no `overallRiskRating`. Those are downstream governed functions, not this agent's job.
+- `descentCandidate` is optional. Include it only when the agent has a genuine two-hop transmission path to a named URS Taiwan asset, supplier, or cash line. Guessing a plausible-sounding BA or LOB is worse than omitting it. The deterministic gate downstream depends on this field being genuine.
+- The output has no `auditStatus`, no severity scores, and no `overallRiskRating`. Downstream governed functions produce those.
 
-## 6. Agent Instructions (Copilot Studio system prompt)
+## 6. Agent instructions (Copilot Studio system prompt)
+
+Use the following text as the agent's system prompt:
 
 ```text
 You are the URS TW Global Conditions Scanner.
@@ -106,13 +117,16 @@ Rules:
 - Never output prose, headers, or markdown before or after the JSON array.
 ```
 
-## 7. Tools Required
+## 7. Tools required
 
-- Web Search (as used by the existing Wildcard Scan agent)
-- Current News API custom connector (same connector already deployed in this tenant)
-- No Dataverse connector needed for this agent — it only proposes candidate JSON, consumed by `Import-URSTWScanToRevisionInput.ps1`
+- Web Search, as used by the existing Wildcard Scan agent.
+- The Current News API custom connector, already deployed in this tenant.
 
-## 8. Downstream Processing
+This agent needs no Dataverse connector. It only proposes candidate JSON, which `Import-URSTWScanToRevisionInput.ps1` consumes.
+
+## 8. Downstream processing
+
+The agent's output passes through the following steps:
 
 ```text
 Copilot Studio agent output (raw JSON, possibly with prose)
@@ -137,12 +151,13 @@ New-URSTWWeeklyDelta.ps1
 Human review before circulation
 ```
 
-The human review step remains, but its job changes: reviewing a small set of AI-collected, evidence-tagged candidates for accuracy — not typing developments from scratch.
+The human review step remains, but its job changes. The reviewer checks a small set of AI-collected, evidence-tagged candidates for accuracy. The reviewer no longer types developments from scratch.
 
-## 9. Build Sequence
+## 9. Build sequence
 
 1. Create the agent in Copilot Studio with the instructions in §6, grounded on the baseline JSON and source list.
 2. Run it manually once against the current week and capture the raw output.
-3. Feed that raw output through `Import-URSTWScanToRevisionInput.ps1` (built alongside this spec) and confirm it produces a valid `URS-TW-Weekly-Revision-Input.json`.
-4. Run the existing revision engine and delta composer against that output.
-5. Only once steps 2–4 succeed on a real run should the agent be scheduled (Recurrence trigger, per the platform constraints already established for this tenant).
+3. Feed that raw output through `Import-URSTWScanToRevisionInput.ps1`, which was built alongside this spec.
+4. Confirm that the script produces a valid `URS-TW-Weekly-Revision-Input.json`.
+5. Run the existing revision engine and delta composer against that output.
+6. Schedule the agent with a Recurrence trigger, per the platform constraints already established for this tenant. Do this only after steps 2–5 succeed on a real run.

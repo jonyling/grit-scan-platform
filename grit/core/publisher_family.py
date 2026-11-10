@@ -6,7 +6,7 @@ page on yahoo.com or msn.com usually reposts another outlet's story, so an aggre
 family(publisher):
 1. A press-release wire (PR Newswire, GlobeNewswire, ...) is one family, "wire services".
 2. The host is cut to its registrable domain: news.yahoo.co.jp -> yahoo.co.jp, edition.cnn.com -> cnn.com.
-3. A registrable domain listed under FAMILIES takes that family's name; any other domain is its own family.
+3. A registrable domain listed under FAMILIES takes that family's name. Any other domain is its own family.
 
 FAMILIES is a starting list, not a complete ownership register. Add an owner when two of its titles show up as separate
 corroboration.

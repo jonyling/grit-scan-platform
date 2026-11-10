@@ -214,7 +214,7 @@ def check_implication(
 
 
 def check_counter_indicator(text: Any, cited_ids: Sequence[str], sources: Mapping[str, Mapping[str, Any]]) -> list[str]:
-    """What would show the assessment is wrong. It looks forward, so it needs no citation, but it adds no number and no score word."""
+    """What would show the assessment is wrong. It looks forward, so it needs no citation. It adds no number and no score word."""
     if not isinstance(text, str) or not text.strip():
         return ["COUNTER_MISSING: counter_indicator: name the development that would show this assessment is wrong."]
     found: list[str] = []
@@ -276,7 +276,7 @@ def assess_condition(
 ) -> tuple[dict[str, Any], CallLog]:
     """Returns {status, movement, summary, source_ids, change_from_prior, implication, violations}. status is VALIDATED,
     NO_EVIDENCE, or WITHHELD. With business_area (a key risk), the draft also carries an implication. An implication that
-    fails its checks is dropped and its violations returned; the assessment stands (spec 36)."""
+    fails its checks is dropped, and its violations are returned. The assessment stands (spec 36)."""
     payload: dict[str, Any] = {
         "item": {key: condition.get(key) for key in ("id", "name", "kind", "domain", "tier", "currentAssessment", "transmission", "watchIndicators") if condition.get(key) is not None},
         "last_week": dict(prior) if prior else "No prior weekly assessment is recorded.",
@@ -461,7 +461,7 @@ def check_issue(issue: Any, item_ids: set[str], sources: Mapping[str, Mapping[st
 
 
 def critique(client: Any, model: str, *, drafts: Sequence[Mapping[str, Any]], priors: Mapping[str, str], sources: Mapping[str, Mapping[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], CallLog]:
-    """Return accepted and rejected objections; missing support does not need a proving quote."""
+    """Return accepted and rejected objections. An objection about missing support does not need a proving quote."""
     payload = {"drafts": [dict(item) for item in drafts], "last_week": dict(priors), "sources": sources}
     log = CallLog("Critic", CRITIC_VERSION, model, "reader-drafts", canonical_hash(payload))
     raw = _call(client, model, CRITIC_SYSTEM, payload, log)
@@ -642,9 +642,15 @@ def _strings(value: Any) -> list[str] | None:
 
 
 def check_scenarios(draft: Any, sources: Mapping[str, Mapping[str, Any]], anchors: Sequence[str], owners: Sequence[str], uncertainties: Sequence[str]) -> list[str]:
-    """Best, medium and worst cases for STE (spec 43): one of each; cited evidence with attributed forecasts and grounded
-    numbers; observable signposts no two cases share; impacts that name STE's own anchors and read as possibility; and
-    responses with a known owner and a trigger among the case's signposts. sources holds signals (S#) and passages (P#)."""
+    """Best, medium and worst cases for STE (spec 43). A valid draft has:
+
+    - one case of each kind;
+    - cited evidence, with attributed forecasts and grounded numbers;
+    - observable signposts that no two cases share;
+    - impacts that name STE's own anchors and read as a possibility;
+    - responses with a known owner and a trigger among the case's signposts.
+
+    sources holds signals (S#) and passages (P#)."""
     from grit.agents.situation import FORECAST, sentences
 
     if not isinstance(draft, Mapping):

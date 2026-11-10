@@ -23,7 +23,7 @@ NAVY = RGBColor(0x1F, 0x38, 0x64)
 GREY = RGBColor(0x55, 0x55, 0x55)
 LIGHT = RGBColor(0x77, 0x77, 0x77)
 BOX_FILL = {"WATCHPOINT": "FFF2CC", "ELEVATED": "FFF2CC", "STABLE": "E2EFDA", "NORMAL": "E2EFDA", "RED": "F8CBAD"}
-# Format v2 (spec 44): while a brief renders, every cited source gets a number, [S1], [S2], ..., and its link goes to the
+# Format v2 (spec 44): while a brief renders, every cited source gets a number: [S1], [S2], and so on. Its link goes to the
 # source register at the end. None when a renderer is not inside render_docx.
 _REGISTER: dict[str, Any] | None = None
 # Defaults. A pack's scan plan can rename any section through sectionTitles.
@@ -58,7 +58,7 @@ def section_title(meta: Mapping[str, Any], key: str) -> str:
 NOTHING = "No new item found this week in the checked sources."
 
 # Format v2 report layout (URS methodology, sections 15, 22 and 24) -------------------------------------------------------
-# The scan is wide and the report narrow: audit material goes to an appendix after the source register.
+# The scan is wide, but the report is narrow. Audit material goes to an appendix after the source register.
 V2_APPENDIX = frozenset({"QA_LOG", "ENTITIES", "OTHER_SIGNALS"})
 APPENDIX_LETTERS = "ABCDEFGH"
 POSTURE_TITLE = "Recommended action posture"

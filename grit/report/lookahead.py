@@ -1,7 +1,7 @@
 """Look-ahead for brief format v2 (spec 44): dated events in the next LOOK_AHEAD_DAYS, taken by rule from the week's kept
 sources. A date is kept only when a source states it, as a day and a month, such as "3 November" or "Nov 3". The row is
-the source's own sentence, so nothing is inferred and nothing is predicted. A wire dateline, such as "Riyadh,
-November 3 (ANI):", dates the report, not an event, so its date is never read as one.
+the source's own sentence. Nothing is inferred or predicted. A wire dateline, such as "Riyadh,
+November 3 (ANI):", dates the report, not an event. Its date is never read as an event date.
 """
 
 from __future__ import annotations

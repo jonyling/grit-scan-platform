@@ -1,7 +1,7 @@
 # GRIT-Scan Co-Pilot: architecture proposal
 
 **Status:** Phases 1 to 3 built, 20 October 2026 ([spec 40](../../specs/40_Copilot_Core.md), [spec 41](../../specs/41_Profiler_Fit_Report_and_Web_Search.md), [spec 42](../../specs/42_Daily_Lane_and_Nightly_Index.md)). Decisions of 19 October 2026 are in section 12. Phase 4 is the MVP.
-**Purpose:** Design a chat assistant beside the GRIT-Scan dashboard that answers from the signals the program collects, searches the web when the pool is not enough, and reasons to a clear, cited answer. It must keep working as the signal pool grows every day.
+**Purpose:** Design a chat assistant beside the GRIT-Scan dashboard. It answers from the signals the program collects. It searches the web when the pool is not enough. It reasons to a clear, cited answer. It must keep working as the signal pool grows every day.
 **Read with:** Gemini's proposal (`Gem_GRIT-Scan_Co-Pilot_Architecture & UI_Spec.md`), and specs 35 to 38.
 
 ## 1. What the Co-Pilot must do
@@ -9,7 +9,7 @@
 | Requirement | What it means in practice |
 |---|---|
 | Answer from the collected signals | Search every run in the reader's packs, not only the run on screen. Use the labels GRIT-Scan already computed: rung, tier, priority, conditions, named items, and trend. |
-| Search the internet as a tool | When the pool is stale or silent, search the web, and show web results as unvetted, apart from pool evidence. |
+| Search the internet as a tool | When the pool is stale or silent, search the web. Show web results as unvetted, apart from pool evidence. |
 | Reason, and reply cogently | Plan the question, gather evidence from the right store, then answer in a fixed shape: the answer first, then the evidence, then what it means for STE, then what is uncertain. |
 | Handle a growing pool | Retrieval quality and speed must hold as signals arrive daily, for years. |
 | Stay governed | Agents propose and deterministic checks decide. The chat never edits a shared fact. Every answer is cited and logged. |
@@ -80,7 +80,7 @@ Gemini proposes a `condition_state_history` table. GRIT-Scan already has it. `co
 
 The runs table holds each bottom line. Together they are the compacted, reviewed state that Gemini's two-tier design asks for.
 
-Executive questions are mostly about state: "what is escalating", "why", "since when", and "what should we do". For these, the agent reads the state store first, and goes to raw signals only for the evidence behind a claim. This is the main defence against dilution. It is cheap, it is the governed view, and it is already checked.
+Executive questions are mostly about state: "what is escalating", "why", "since when", and "what should we do". For these, the agent reads the state store first. It goes to raw signals only for the evidence behind a claim. This is the main defense against dilution. It is cheap, it is the governed view, and it is already checked.
 
 **Addition: a condition timeline view.** This is one function, `condition_history(condition, since)`. It returns the trend and summary at each run, the run where the trend changed, and the signals that drove each change. It answers "how has China–Taiwan evolved this quarter" from about 12 compact rows instead of thousands of pages.
 
@@ -93,7 +93,7 @@ Daily Brave scans would spend the 2,000-query monthly limit in about a week. I w
 - **Primary-source feeds (RSS or Atom):** BIS, OFAC, CISA, NIST, ISW, CSIS, RUSI, the UK AI Security Institute, TrendForce, and the World Bank and IMF news pages. Wilson's email names most of these as Tier 1 sources. They are free, and their provenance is better than search results.
 - **Currents, daily:** one query a day for each Group standing condition and each active management request.
 
-Every new item goes through the same deterministic assessment as a scanned page: link ladder, keep rule, tier, conditions, and RED. No model is needed, apart from one embedding per page. A daily item joins a rolling daily run per pack, such as `2026-10-18-ste-daily`. Every signal therefore keeps its run, and the existing tables and rules apply unchanged.
+Every new item goes through the same deterministic assessment as a scanned page: link ladder, keep rule, tier, conditions, and RED. No model is needed, apart from one embedding per page. A daily item joins a rolling daily run per pack, such as `2026-10-18-ste-daily`. Every signal therefore keeps its run. The existing tables and rules apply unchanged.
 
 ### The nightly index job
 
@@ -103,7 +103,7 @@ The job runs once a night, after the daily feed lane. Each step is deterministic
 |---|---|---|
 | Embed | Embeds new pages through the existing vector cache. | Semantic search |
 | Full-text index | Adds title and text to an SQLite FTS5 index (BM25). | Exact names, acronyms and figures, which embeddings handle poorly: "HBM3E", "Entity List", "RKC02" |
-| Cluster into events | Joins a new kept signal to an existing event when it is the same story (cosine 0.90 or higher within 8 days, the rule the reader filter uses now), else starts a new event. An event keeps all its outlets, its earliest and latest dates, and its best-labelled signal. | Removes duplication: retrieval returns events, not pages |
+| Cluster into events | Joins a new kept signal to an existing event when it is the same story (cosine 0.90 or higher within 8 days, the rule the reader filter uses now), else starts a new event. An event keeps all its outlets, its earliest and latest dates, and its best-labeled signal. | Removes duplication: retrieval returns events, not pages |
 | Daily digest | Per pack, records the new tier 1 and tier 2 events, new RED drafts, moved conditions, and watchpoint updates. | Answers "what's new since Monday" directly |
 | Retention | Keeps kept signals and all vectors. Cuts the stored text of dropped pages to the title and first 500 characters after 90 days. | Bounds storage, and keeps the audit trail |
 
@@ -118,14 +118,14 @@ Every search is filtered before it is ranked.
 1. **The reader's packs.** A reader searches only their own packs. Wilson and the Group readers search all packs. Within that, the drawer can narrow the search to one pack.
 2. **A time window.** It is taken from the question ("this week", "since June", "last quarter"). Without one, the default is the selected run plus the last 90 days.
 3. **Kept signals only.** Dropped pages need an explicit request.
-4. **The aperture.** A material-aperture reader searches what their brief would show. The answer states how many more matches lie outside their aperture, and offers to include them. The aperture shapes a brief; it is not an access control, because every reader is internal.
-5. **The reader's profile.** The profile's emphasis reorders results within a tier; it hides nothing. P1 and RED are never pushed down. Readers write notes rather than approving signals, so the profile replaces per-signal memory ([reader-notes.md](reader-notes.md)).
+4. **The aperture.** A material-aperture reader searches what their brief would show. The answer states how many more matches lie outside their aperture, and offers to include them. The aperture shapes a brief. It does not control access, because every reader is internal.
+5. **The reader's profile.** The profile's emphasis reorders results within a tier. It hides nothing. P1 and RED are never pushed down. Readers write notes rather than approving signals. The profile therefore replaces per-signal memory ([reader-notes.md](reader-notes.md)).
 
 ### Then rank
 
-- **Hybrid search.** BM25 (FTS5) and vector similarity each produce a ranked list, combined by reciprocal rank fusion. Fusion needs no weights to tune, and it handles exact names and paraphrases alike.
-- **Event collapse.** Only the best signal of each event is kept; the event's outlet count goes in the evidence.
-- **Recency and priority.** These break ties, rather than being weights in a formula. Within the fused order, newer events and higher tiers rank first. Gemini's time-decay formula needs three weights and a half-life per item type, and nobody can verify that they are right. Use it only if the simple order fails in testing.
+- **Hybrid search.** BM25 (FTS5) and vector similarity each produce a ranked list. Reciprocal rank fusion combines the two lists. Fusion needs no weights to tune, and it handles exact names and paraphrases alike.
+- **Event collapse.** Only the best signal of each event is kept. The event's outlet count goes in the evidence.
+- **Recency and priority.** These break ties. They are not weights in a formula. Within the fused order, newer events and higher tiers rank first. Gemini's time-decay formula needs three weights and a half-life per item type, and nobody can verify that they are right. Use it only if the simple order fails in testing.
 - **Budget.** At most 12 events and 6 state rows reach the model per tool call.
 
 ## 7. The Co-Pilot agent
@@ -142,7 +142,7 @@ I would use Gemini function calling directly, not LangGraph. The loop is short, 
 | `whats_new(pack, since)` | The daily digests since a date | None |
 | `search_library(query, topic)` | Signed-off State of the Situation sections and report passages, with pages | One query embedding |
 | `lookup_register(kind, filters)` | Entities, customers or suppliers by country, LOB or name; a graph path to STE | None |
-| `web_search(query)` | Up to 8 results, each marked unvetted. Brave answers first; Currents answers first when Brave is within 10% of its monthly limit, and when Brave fails. | One search; at most 2 a question, and 17 a day per reader |
+| `web_search(query)` | Up to 8 results, each marked unvetted. Brave answers first. Currents answers first when Brave is within 10% of its monthly limit, or when Brave fails. | One search; at most 2 a question, and 17 a day per reader |
 | `propose_request(kind, title, keywords)` | A proposed management request (the existing `/concern` command) | None |
 | `save_note(text)` | Saves the reader's `/note` as a dated note for their profile ([reader-notes.md](reader-notes.md)) | None |
 
@@ -152,23 +152,23 @@ I would use Gemini function calling directly, not LangGraph. The loop is short, 
 2. Plan: the model picks tools, at most 4 rounds and 2 web searches.
 3. Draft the answer from the tool results.
 4. Run the checks.
-5. If a check fails, redraft once with the violations. If it fails again, the answer is withheld.
+5. If a check fails, redraft once with the violations. If it fails again, the agent withholds the answer.
 
 A question takes about 3 to 6 model calls.
 
 ### When to search the web
 
-The model may call `web_search` whenever it judges the pool insufficient. Three deterministic triggers also make it offer a search:
+The model can call `web_search` whenever it judges the pool insufficient. Three deterministic triggers also make it offer a search:
 
 - the question asks about anything after the newest signal in scope;
 - the internal tools return no event;
-- the question names an organisation that is in no register and no signal.
+- the question names an organization that is in no register and no signal.
 
-Gemini proposes a separate "sufficiency grader" model call. These triggers do the same job at no cost, and a person can predict them.
+Gemini proposes a separate "sufficiency grader" model call. These triggers do the same job at no cost. A person can also predict them.
 
 ### What makes the answer cogent
 
-Every answer has this shape, and the checks enforce it:
+Every answer has this shape. The checks enforce it:
 
 1. **Answer.** One to three sentences that answer the question directly.
 2. **Evidence.** The facts behind it, each cited with its badge.
@@ -183,9 +183,9 @@ Every answer has this shape, and the checks enforce it:
 - A forecast names the source that makes it.
 - No governed score word appears ("severity", "likelihood", "probability", "risk score", "risk rating"), and no bare URL.
 - A sentence that cites only web results is marked unvetted.
-- An internal report (Co-Confidential), such as the DS&C risk refresh, may be quoted to any reader of its packs, including the CEO and the Chairman, always with its access note.
+- An internal report (Co-Confidential), such as the DS&C risk refresh, can be quoted to any reader of its packs, including the CEO and the Chairman. The quote always carries its access note.
 
-The drawer shows the steps taken, such as "Searched 3 runs, 41 events; read 2 conditions; 1 web search", but not the model's private reasoning. As for the Proposer, the reasoning is stored in the execution log.
+The drawer shows the steps taken, such as "Searched 3 runs, 41 events; read 2 conditions; 1 web search". It does not show the model's private reasoning. As with the Proposer, the execution log stores that reasoning.
 
 ### Governance
 
@@ -193,16 +193,16 @@ The drawer shows the steps taken, such as "Searched 3 runs, 41 events; read 2 co
 - **Web results never enter a brief directly.** Each web citation has an "Add to pool" button. A web page added this way enters the pool as a CHAT lane signal and goes through the deterministic assessment like any other page. It reaches a brief only if the rules keep it and a reviewer approves the package.
 - **Proposals start as proposals.** A management request proposed in chat starts as PROPOSED. A reviewer activates it.
 - **Every turn is logged.** The question, the context, the tool calls, the source ids, the prompt version, the hashes and the checks go to the execution log.
-- **Conversations are private.** A reader's conversation is visible only to that reader. Wilson does not see the Chairman's questions, in the dashboard or in a fit report. The audit log keeps them, and nobody browses it for content.
+- **Conversations are private.** A reader's conversation is visible only to that reader. Wilson does not see the Chairman's questions, in the dashboard or in a fit report. The audit log keeps them. Nobody browses it for content.
 - **Review labels follow the profile.** Whether an answer shows a "not reviewed" label is a profile setting, inferred from the reader's notes. It is not a fixed rule.
 
 ## 8. User interface
 
-Streamlit 1.58 is installed. It supports a chat input inside a column, so I agree with Gemini's Option A: a right-hand drawer.
+Streamlit 1.58 is installed. It supports a chat input inside a column. I therefore agree with Gemini's Option A: a right-hand drawer.
 
-- **Layout.** The dashboard takes about two-thirds of the width. The Co-Pilot drawer takes the rest, with a chat history of fixed height and its own input, so the KPIs and the conditions table stay visible.
+- **Layout.** The dashboard takes about two-thirds of the width. The Co-Pilot drawer takes the rest, with a chat history of fixed height and its own input. The KPIs and the conditions table stay visible.
 - **Scope chips.** The chips show the reader, the packs, and the time window, for example "This run / Last 90 days / All". Selecting a row of the standing-conditions table (`on_select`) sets the chat's focus to that condition and adds three starter questions: "Why did this move?", "What changed since last month?", and "What should we consider?".
-- **Citation badges.** A badge for a Signal, Brief or Report opens its detail; a Web badge shows "unvetted" and "Add to pool".
+- **Citation badges.** A badge for a Signal, Brief or Report opens its detail. A Web badge shows "unvetted" and "Add to pool".
 - **Progress.** An `st.status` line shows the steps while the answer is prepared.
 - **Fallback.** On a narrow screen, the drawer moves below the dashboard into a container of fixed height (Gemini's Option B).
 
@@ -213,11 +213,11 @@ Streamlit 1.58 is installed. It supports a chat input inside a column, so I agre
 | Signals and state | SQLite pool (`output/grit.sqlite`) | Dataverse as the system of record (spec 35), plus a search index |
 | Full-text search | SQLite FTS5, which is already available | The search service's BM25 |
 | Vector search | Exact search over a memory-mapped float32 matrix of kept-signal vectors, or the `sqlite-vec` extension | Azure AI Search (hybrid BM25 and vector, filters, security trimming, and it fits the M365 and Copilot estate), or PostgreSQL with pgvector |
-| Embeddings | Gemini `gemini-embedding-001`, 768 dimensions, cached by text hash | The same, or Azure OpenAI if STE standardises on it |
+| Embeddings | Gemini `gemini-embedding-001`, 768 dimensions, cached by text hash | The same, or Azure OpenAI if STE standardizes on it |
 | Agent model | Gemini 3.8 Flash on Vertex | The same, with a stronger model for the final answer if review shows a need |
 | Scheduling | `cron` on the VM for the daily feed lane and the nightly index job | A managed scheduler |
 
-The proof of concept stays on SQLite because Section 2 shows it is fast enough for the first one to two years of data. Its limits are concurrency (one Streamlit process; one writer at a time) and operations, not search speed. Moving to Azure AI Search or PostgreSQL is an MVP decision, taken alongside the Dataverse ledger. It should not be taken now.
+The proof of concept stays on SQLite because section 2 shows it is fast enough for the first one to two years of data. Its limits are concurrency (one Streamlit process; one writer at a time) and operations, not search speed. Moving to Azure AI Search or PostgreSQL is an MVP decision, taken alongside the Dataverse ledger. It should not be taken now.
 
 ## 10. Where this differs from Gemini's proposal
 
@@ -253,10 +253,10 @@ Phase 1 alone gives the Chairman and Wilson a useful Co-Pilot, because the state
 | # | Question | Decision | Where it applies |
 |---|---|---|---|
 | 1 | Reach | A reader searches only their own packs. Wilson and the Group readers search all packs. | Section 6 |
-| 2 | Internal reports | May be quoted to the CEO and the Chairman, with the access note. | Section 7, checks |
+| 2 | Internal reports | Can be quoted to the CEO and the Chairman, with the access note. | Section 7, checks |
 | 3 | Web budget | 17 searches a day for each reader. Currents goes first when Brave is near its monthly limit. | Section 7, tools |
 | 4 | Daily feeds | Not put to Wilson for approval yet. Readers' notes come first: they decide what each reader needs. | Section 5; [reader-notes.md](reader-notes.md) |
 | 5 | Chat records | Wilson does not see the Chairman's questions. | Section 7, governance |
 | 6 | "Not reviewed" label | No fixed rule. Each reader's profile sets it, inferred from their notes. | Section 7, governance |
 
-Decision 4 changes a basic assumption. Readers will not approve or reject signals; they will write general notes, which become a Markdown profile for each reader. [reader-notes.md](reader-notes.md) proposes how that works, and its section 11 merges the Co-Pilot phases in section 11 of this document with the profile work into one plan.
+Decision 4 changes a basic assumption. Readers will not approve or reject signals. They will write general notes, which become a Markdown profile for each reader. [reader-notes.md](reader-notes.md) proposes how that works. Its section 11 merges the Co-Pilot phases in section 11 of this document with the profile work into one plan.

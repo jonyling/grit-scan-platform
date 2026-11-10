@@ -6,13 +6,13 @@
 **Opt-in weekly extension:** [Spec 45](45_Weekly_Agent_Reasoning_and_Critique.md)
 documents the independently invoked six-role path, effective editorial
 selection, genuine invocation references, and frozen final-report critique.
-The generic proposal harness is compatibility/test scaffolding, not evidence
+The generic proposal harness is compatibility and test scaffolding. It is not evidence
 that a live weekly role executed. The legacy package path is labeled
-`LEGACY_RECONSTRUCTED`; it does not satisfy the new assurance contract.
+`LEGACY_RECONSTRUCTED`. It does not satisfy the new assurance contract.
 
 ## 1. Purpose
 
-GRIT-Scan scans the external environment for risks that could affect ST Engineering's business performance, and briefs each executive in the form they need. The proof of concept serves the Group Head of Risk & Assurance (Wilson) and the Urban Solutions (URS) business partner (Hwaimay). It runs two reader packs: Urban Solutions, the first business-area (BA) pack, and URS Taiwan, an entity pack under it. The other six business areas follow the Urban Solutions pattern ([Add a business area](../docs/add-a-business-area.md)).
+GRIT-Scan scans the external environment for risks that could affect ST Engineering's business performance. It briefs each executive in the form they need. The proof of concept serves the Group Head of Risk & Assurance (Wilson) and the Urban Solutions (URS) business partner (Hwaimay). It runs two reader packs: Urban Solutions, the first business-area (BA) pack, and URS Taiwan, an entity pack under it. The other six business areas follow the Urban Solutions pattern ([Add a business area](../docs/add-a-business-area.md)).
 
 The method follows the M365 Copilot ontology pattern, inverted. Copilot asks, then retrieves from a graph. GRIT-Scan pulls the web with keywords, then binds what it pulled to the STE register. Keywords decide what is fetched. The register decides what belongs to STE.
 
@@ -31,7 +31,7 @@ A deterministic layer sits under nine agent roles. [Spec 36](36_Key_Risks_Implic
 | Role | What it proposes | What decides | Code |
 |---|---|---|---|
 | Supervisor | The order of steps for a reader and week. | `TransitionGuard()` on every workflow advance; `ReviewGate()` on every package. | `grit/pipeline/reader_scan.py`, `grit/workflow/` |
-| Researcher | Search results for each query, and one follow-up search per thin finding. | The query plan, the monthly search guard, URL canonicalisation, and the dedupe rule. | `grit/ontology/reader_plan.py`, `grit/acquisition/` |
+| Researcher | Search results for each query, and one follow-up search per thin finding. | The query plan, the monthly search guard, URL canonicalization, and the dedupe rule. | `grit/ontology/reader_plan.py`, `grit/acquisition/` |
 | Assessor | A draft for each standing condition: movement and a cited summary. For a key risk, the implication for the business area. The finding card's answers. | Quote, number, citation, and banned-word checks. The anchor check on an implication. The confidence rule. | `grit/agents/reader.py`, `grit/agents/loop/` |
 | Critic | Issues with a draft: stale, unsupported, or contradictory claims. | An issue counts only with a verbatim quote from a supplied source. | `grit/agents/reader.py` |
 | Profiler | The reader's preferences, from their notes, in a `profile.md` that cites them (spec 39). | `check()` on the profile, then a bounded emphasis rule that reorders within a tier, hides nothing, and never moves a P1 or RED signal down. | `grit/profiles/reader.py`, `grit/profiles/emphasis.py` |
@@ -47,7 +47,7 @@ A deterministic layer sits under nine agent roles. [Spec 36](36_Key_Risks_Implic
 3. **Acquire.** Brave News returns pages. Currents can add two pulls. Each page becomes one signal in the pool, keyed by its canonical URL, with a sighting per query.
 4. **Embed.** Gemini embeddings go into the pool, through a text-hash cache.
 5. **Assess.** Deterministic functions run on every signal: document type, the business-area link ladder, reader-pack hits, management-request matches, the keep rule, briefing priority, the risk cascade, the harm scorer, relevance labels, and the RED rule. Results are stored per signal, run, and pack.
-6. **Agents.** The Assessor drafts each standing condition or theme. A theme an entity pack covers draws on that pack's signals for the same date. The Critic reviews all drafts. Accepted issues go back to the Assessor once and are logged as QA corrections. Each theme's sources reach the Assessor most material first, and a key risk gets an implication. The Proposer writes options for a key risk that is escalating or cites a material source. The Reporter writes item entries and the bottom line; a BA bottom line also reads its entity packs' bottom lines. Watchpoints update by rule. The finding loop writes six-question cards, taking management-request matches first, then theme-bound signals.
+6. **Agents.** The Assessor drafts each standing condition or theme. A theme an entity pack covers draws on that pack's signals for the same date. The Critic reviews all drafts. Accepted issues go back to the Assessor once and are logged as QA corrections. Each theme's sources reach the Assessor most material first, and a key risk gets an implication. The Proposer writes options for a key risk that is escalating or cites a material source. The Reporter writes item entries and the bottom line. A BA bottom line also reads its entity packs' bottom lines. Watchpoints update by rule. The finding loop writes six-question cards, taking management-request matches first, then theme-bound signals.
 7. **Route.** For each reader, `ApertureRouting()` assigns P1 to P4 and includes or suppresses each signal. The reader's profile reorders within a tier (spec 39).
 8. **Report.** One brief model per reader renders to Word, PowerPoint, Excel, and Markdown. RED patterns write draft emails. Nothing is sent.
 9. **Review.** Each reader's package runs `NEW` to `PENDING_REVIEW` through the guard. A reviewer's decision goes through `ReviewGate()`. Signals the BA head approved, inside an approved package, move to `AIRIS_HANDOFF_READY` and are exported.
@@ -55,7 +55,7 @@ A deterministic layer sits under nine agent roles. [Spec 36](36_Key_Risks_Implic
 
 ## 5. Signal pool
 
-The pool is one SQLite file (`output/grit.sqlite`, or `GRIT_DB`). Its schema is `grit/pool/schema.sql`. Shared facts and reader-scoped judgements are separate tables, as spec 22 requires.
+The pool is one SQLite file (`output/grit.sqlite`, or `GRIT_DB`). Its schema is `grit/pool/schema.sql`. Shared facts and reader-scoped judgments are separate tables, as spec 22 requires.
 
 | Table | Holds | Spec |
 |---|---|---|
@@ -89,16 +89,20 @@ These hold on 2026-10-07 and are covered by `tests/`:
 - A RED pattern in a forecast sentence is not RED. One unrated outlet is not enough.
 - A draft with an unquoted claim, a number not in its source, or a score word is withheld.
 - A BA run binds names through the typed graph, assesses 14 themes, lists every entity, customer, and supplier, and carries its entity pack's bottom line. The entity head receives no BA brief.
-- Each package version can be returned for rework and replaced; a guard refusal is reported, not hidden.
+- Each package version can be returned for rework and replaced.
+- A guard refusal is reported, not hidden.
 
-The live run `2026-10-07-urs-tw` searched 60 queries, kept 240 of 793 pages, validated all ten conditions, and produced a brief whose structure matches the 2 Oct 2026 reference. The live run `2026-10-07-urs` searched 118 queries, kept 324 of 1,096 pages, assessed all 14 themes (10 with evidence, 4 with nothing found), and listed P1 matches for eight of nine active management requests.
+Two live runs confirmed this on real data:
+
+- `2026-10-07-urs-tw` searched 60 queries and kept 240 of 793 pages. It validated all ten conditions. Its brief's structure matches the 2 Oct 2026 reference.
+- `2026-10-07-urs` searched 118 queries and kept 324 of 1,096 pages. It assessed all 14 themes: 10 with evidence and 4 with nothing found. It listed P1 matches for eight of nine active management requests.
 
 ## 8. Open for the MVP
 
 Write each item as trigger, deterministic decision, who signs off, and what is logged (spec 34 section 7).
 
 1. GDELT's artlist feeds the daily lane (spec 42) and is not part of the weekly Brave scan. Sphera event messages join that daily lane from `secrets/sphera.env`. Sphera's own scores are not read. The weekly scan does not call Sphera.
-2. The harm scorer's severity stays not established: acquisition supplies prose, not structured observations, and no value-at-risk register exists.
+2. The harm scorer's severity stays not established. Acquisition supplies prose, not structured observations. No value-at-risk register exists.
 3. Source ratings cover 26 Taiwan outlets. Most business-area sources are unrated.
 4. Order-book anchors are copied from the reference brief and need a named BA owner's confirmation.
 5. The BA relationship gaps (spec 34 section 5 and the README) still limit entity-level reasoning.

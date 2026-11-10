@@ -44,7 +44,7 @@ def test_entity_ids_are_slug_derived_not_row_position_derived() -> None:
 
 def test_snapshot_hash_is_content_derived_and_order_independent() -> None:
     """Same fix as the severity-definition version: hash content, not file
-    bytes -- an .xlsx no-op re-save changes zip-embedded timestamps without
+    bytes. A no-op re-save of an .xlsx file changes zip-embedded timestamps without
     changing content."""
     from grit.core.impact_scoring import AliasRecord, RegistryEntry
     from grit.ontology.registry_loader import _canonical_snapshot_hash

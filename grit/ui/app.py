@@ -4,9 +4,9 @@ Run from the repository root:
 
     .venv/bin/python -m grit ui
 
-The screen reads the signal pool. Its buttons call governed functions: the reader's profile.md shapes the order (spec 39), a package
-decision goes through ReviewGate(), and a management request waits for a reviewer to activate it. The screen never writes
-a workflow row itself.
+The screen reads the signal pool. Its buttons call governed functions. The reader's `profile.md` shapes the order (spec 39).
+A package decision goes through `ReviewGate()`. A management request waits for a reviewer to activate it. The screen never
+writes a workflow row itself.
 """
 
 from __future__ import annotations
@@ -102,7 +102,7 @@ def main() -> None:
         st.header(meta["title"])
         st.caption(f"{meta['subtitle']} | Scan window {meta['window']} | Prepared for {meta['prepared_for']}" + (" | Draft for review, not approved" if meta.get("show_review_status", True) else ""))
         st.markdown(
-            # The box is always light, so its text is set dark: in the dark theme the default text is near-white.
+            # The box is always light, so its text is set dark. In the dark theme the default text is near-white.
             f"<div style='background:{BOX.get(bottom['label'], '#FFF2CC')};color:#1A1A1A;padding:14px 18px;border-radius:6px;border:1px solid #1F3864'>"
             f"<b style='color:#1F3864'>{html.escape(str(bottom['label']))} — Bottom line</b><br>"
             f"<span style='color:#1A1A1A'>{html.escape(str(bottom['text']))} {html.escape(str(bottom.get('escalation') or ''))}</span></div>",

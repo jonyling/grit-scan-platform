@@ -1,5 +1,5 @@
 """Source bands by rule (URS methodology, section 11). R&A owns the outlet ratings and the contested list in
-config/source-ratings.json; the model never picks a band.
+config/source-ratings.json. The model never picks a band.
 
 | Band | Rule |
 |---|---|
@@ -8,7 +8,7 @@ config/source-ratings.json; the model never picks a band.
 | T3 | An outlet rated MEDIUM or LOW. |
 | UNRATED | An outlet R&A has not banded yet. Verify before relying on it. |
 | T4 | An aggregator, tracker or prediction market. |
-| CONTESTED | An outlet R&A lists as contested. A labelled signal, never support for a fact. |
+| CONTESTED | An outlet R&A lists as contested. A labeled signal, never support for a fact. |
 """
 
 from __future__ import annotations

@@ -1,7 +1,7 @@
 # 38. Report library and State of the Situation
 
 **Status:** Draft for review, 2026-10-15. Extends spec 37.
-**Trigger:** The R&A team's decision of 14 October 2026. Forecasts and recommended options need a deeper base than a month of news: a State of the Situation (SotS) for each of the 12 Group themes and 8 strategic shifts, built from the thought-leadership reports in Wilson's email of 9 October 2026.
+**Trigger:** The R&A team's decision of 14 October 2026. Forecasts and recommended options need a deeper base than a month of news. That base is a State of the Situation (SotS) for each of the 12 Group themes and 8 strategic shifts. Each SotS is built from the thought-leadership reports in Wilson's email of 9 October 2026.
 
 ## 1. Layers
 
@@ -36,15 +36,15 @@ There are 11 documents, not 20. Nine of the 12 dashboard themes sit under a stra
 
 ## 3. Report library
 
-`catalogue.REPORTS` registers each report: its file under `secrets/reports/`, title, publisher, edition, and whether it is public or internal. An internal report, such as the DS&C risk refresh, is cited inside STE only. A report written by another tool is not a source: Copilot's URS brief is kept for comparison and never read.
+`catalogue.REPORTS` registers each report: its file under `secrets/reports/`, title, publisher, edition, and whether it is public or internal. An internal report, such as the DS&C risk refresh, is cited inside STE only. A report written by another tool is not a source. For example, Copilot's URS brief is kept for comparison and never read.
 
-`grit library-ingest` reads each report page by page (a PDF page, a slide, or a part of a Word document). It packs whole sentences into passages of about 1,200 characters and embeds them. The passages and vectors stay under `secrets/library/`, because some reports are internal. A report whose file has not changed is not read again. A registered report with no file is listed as missing.
+`grit library-ingest` reads each report page by page. A page is a PDF page, a slide, or a part of a Word document. It packs whole sentences into passages of about 1,200 characters and embeds them. The passages and vectors stay under `secrets/library/`, because some reports are internal. A report whose file has not changed is not read again. A registered report with no file is listed as missing.
 
-For each section, retrieval takes the passages that best answer the topic question with the section's angle. It reads only the topic's reports. Each report gives its two best passages first, so a two-page country brief is not crowded out by a 150-page global report. The rest go by score, at most five from one report.
+For each section, retrieval takes the passages that best answer the topic question with the section's angle. It reads only the topic's reports. Each report gives its two best passages first. This keeps a 150-page global report from crowding out a two-page country brief. The rest go by score, with at most five from one report.
 
 ## 4. Situation Analyst
 
-The Situation Analyst drafts each section from at most 12 passages, numbered P1, P2, and so on across the document, so a passage keeps one id. The checks withhold a section that fails three times:
+The Situation Analyst drafts each section from at most 12 passages. Passages are numbered P1, P2, and so on across the document, so each passage keeps one ID. The checks withhold a section that fails the following rules three times:
 
 - Every sentence cites a supplied passage.
 - Every number in a sentence appears in the passages that sentence cites.
@@ -55,7 +55,7 @@ The Situation Analyst drafts each section from at most 12 passages, numbered P1,
 
 `not_covered` is required wherever the passages cannot support what the section needs. The library's gaps stay visible and are never filled from the model's memory.
 
-The history section retrieves a second set of passages from the same reports, aimed at earlier turning points, and may use up to 20 passages. Under that section, the document lists the topic's proposed sources that are not in the library yet. A sentence cannot cite one of those sources until a named person adds the file.
+The history section retrieves a second set of passages from the same reports, aimed at earlier turning points. It can use up to 20 passages. Under that section, the document lists the topic's proposed sources that are not in the library yet. A sentence cannot cite one of those sources until a named person adds the file.
 
 The "In brief" is written last, from the validated sections and only the passages they cite.
 
@@ -82,7 +82,7 @@ The same section adds one row for every business area:
 
 A filled cell is marked `proposed` or `BA-confirmed`. An empty cell stays empty.
 
-Where STE could gain is not drafted here. When a reviewed scenario for a shift this topic covers already has `where_ste_could_gain`, the document copies that sentence and marks it "Hypothesis: to validate with BAs".
+This section copies a gain line from a reviewed scenario. It never drafts one. When a reviewed scenario for a shift this topic covers already has `where_ste_could_gain`, the document copies that sentence. It marks the sentence "Hypothesis: to validate with BAs".
 
 ## 6. Output and sign-off
 
@@ -98,10 +98,10 @@ In-text citations name the report, the edition, and the pages, such as "(PwC Sem
 ## 7. Acceptance
 
 - A sentence without a citation, a number not in its cited passages, or an unattributed forecast withholds the section.
-- A topic with no report makes no model call, and states that the library does not cover it.
+- A topic with no report makes no model call. It states that the library does not cover it.
 - An unchanged report is not read or embedded again.
 - The exposure section names only what the registers hold. A missing staff count, dependence, concentration, or scenario rating stays blank.
 - A source listed beyond the library is marked proposed and is not cited.
 - A gain line appears only when a reviewed scenario already states it, and it keeps the hypothesis mark.
 
-The pilot of 15 October 2026 drafted all four pilot topics. All 28 sections passed their checks; two needed a third attempt.
+The pilot of 15 October 2026 drafted all four pilot topics. All 28 sections passed their checks. Two needed a third attempt.

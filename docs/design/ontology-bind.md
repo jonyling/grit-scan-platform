@@ -1,6 +1,6 @@
 # Ontology bind
 
-This page records how GRIT-Scan decides whether a news page belongs to ST Engineering (STE), and where each rule lives in the code. It began on 2026-10-01 as a build brief for a `bind_candidate()` function. That function was built, then replaced by the link ladder, so this page now describes what the code does and what was never built.
+This page records how GRIT-Scan decides whether a news page belongs to ST Engineering (STE), and where each rule lives in the code. It began on 2026-10-01 as a build brief for a `bind_candidate()` function. That function was built, then replaced by the link ladder. This page now describes what the code does and what was never built.
 
 ## The question
 
@@ -10,10 +10,10 @@ The bind answers one question about each page: does it name something on the STE
 
 ## Rules
 
-These rules came from the original brief, and the code keeps them:
+The code keeps these rules from the original brief:
 
 - **A named pack.** Every run names its reader pack, such as `urs` or `urs-tw`. No run falls back to Taiwan.
-- **A register id.** A link needs a register row from the pack: an entity, customer, supplier, competitor, project, site, or LOB. A country alone is never a link, and a theme alone is never a link.
+- **A register id.** A link needs a register row from the pack: an entity, customer, supplier, competitor, project, site, or LOB. A country alone is never a link. A theme alone is never a link.
 - **Country of incorporation is not a site.** A country counts only together with a LOB keyword, and only where an entity of that LOB is registered.
 - **One LOB.** A LOB link needs exactly one active LOB to match. A page that matches two LOBs is not linked.
 - **Recorded basis.** Each link records the matched text, where it matched (title, lead, or body), and the alias basis.
@@ -36,9 +36,9 @@ A name counts only when it is strong: in the title, in the first part of the tex
 
 ## What changed from the brief
 
-The brief asked for a pure `bind_candidate()` in `grit_scan/bind.py`, called first by the Dataverse wild scan and then by the weekly `revise()`. That function shipped with its tests, but no command called it. The link ladder in `grit/ontology/link.py` replaced it: the ladder grades how close a page sits to STE, where the bind returned only bound or unbound. `bind.py` was removed on 2026-10-07.
+The brief asked for a pure `bind_candidate()` in `grit_scan/bind.py`, called first by the Dataverse wild scan and then by the weekly `revise()`. That function shipped with its tests, but no command called it. The link ladder in `grit/ontology/link.py` replaced it. The ladder grades how close a page sits to STE. The bind returned only bound or unbound. `bind.py` was removed on 2026-10-07.
 
-The brief's YAML files were drafts, and no code loads them:
+The brief's YAML files were drafts. No code loads them.
 
 | File | Status |
 |---|---|

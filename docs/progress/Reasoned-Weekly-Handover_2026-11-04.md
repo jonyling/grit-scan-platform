@@ -16,7 +16,7 @@ GRIT-Scan's weekly business-area reports should match two references:
 
 The original design is in
 [GRIT-Scan_Wilson_Discussion_2026-08-24.pptx](../GRIT-Scan_Wilson_Discussion_2026-08-24.pptx).
-The deterministic layer finds and screens pages, and the agents argue over the
+The deterministic layer finds and screens pages. The agents argue over the
 pool: Assessment, Critic, Researcher, Reporting, Memory, and a Supervisor.
 Scores, status and RED stay rule-owned or human-owned.
 
@@ -71,8 +71,8 @@ judges the report to be about 20–30% short of Wilson's M365 Copilot report.
   labels (`event_merges` in the run config). A same-event report that a
   selection cites can lead the row if its band is better.
 - Exposure, not confirmed impact, decides relevance. Agents receive the
-  business area's jurisdictions and may add risk links from the closed
-  register; the Critic challenges missing and unsupported links.
+  business area's jurisdictions and can add risk links from the closed
+  register. The Critic challenges missing and unsupported links.
 - The Proposer drafts options for every key risk with a development.
 
 ### Report
@@ -105,7 +105,8 @@ judges the report to be about 20–30% short of Wilson's M365 Copilot report.
   `config/urs/URS-Scan-Plan.json` (Federal Reserve, MAS, State Department,
   MOFCOM and others).
 - Searches logged in `output/runs/<run>/searches.jsonl` are replayed into a
-  database that lacks their pages, so a fresh database needs no new search.
+  database that lacks their pages. A fresh database therefore needs no new
+  search.
 
 ## Known weaknesses
 
@@ -115,7 +116,7 @@ These are the main sources of the remaining gap with Wilson's report.
    distances and Taiwan cash figures. GRIT-Scan needs R&A's weekly snapshot.
 2. **Unrated sources.** 66 of the 88 sources cited in validation 15 have no
    rating. R&A must rate the most-used outlets.
-3. **Row judgement.** The Saudi story still takes two rows: their item
+3. **Row judgment.** The Saudi story still takes two rows: their item
    labels share only one distinctive word. Two minor industry items
    (Singapore Rail Academy, Hitachi's Chennai Metro section) scored 8 and
    appear as escalating.
@@ -125,8 +126,8 @@ These are the main sources of the remaining gap with Wilson's report.
    should add conflict and staff-safety signposts to
    `config/urs/URS-Scenarios.json`.
 6. **Model.** Every call uses `gemini-3.8-flash`. `gemini-3.8-pro` returns
-   404 in the GCP project, so the planned A/B test on Reporting and the final
-   Critic has not run.
+   404 in the GCP project. The planned A/B test on Reporting and the final
+   Critic has therefore not run.
 
 ## Suggested next work
 
@@ -136,7 +137,7 @@ These are the main sources of the remaining gap with Wilson's report.
   escalated at significance 8.
 - Build an offline replay harness that reruns recorded model replies against
   new code. Today, a report-stage change is checked with
-  `grit resume-report --refresh` (about 4 minutes) and a pool change needs a
+  `grit resume-report --refresh` (about 4 minutes). A pool change needs a
   full run (about 20 minutes).
 - Drop junk pages with broken titles, such as "Aa".
 
@@ -165,7 +166,7 @@ GRIT_DB=/tmp/grit-urs-validation-N.sqlite .venv/bin/python -m grit scorecard --p
 Keep these in mind:
 
 - Every run writes to `output/runs/2026-11-02-urs/`, whichever database it
-  uses, so a validation overwrites the reports there.
+  uses. A validation therefore overwrites the reports there.
 - Do not edit report modules while a run is live: they are imported late and
   pick up the edits.
 - `output/grit.sqlite` has no reasoned run for 2 November. The latest

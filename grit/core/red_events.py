@@ -17,7 +17,7 @@ EXCLUDE = [
     "unlikely", "forecast", "assessment", "drill", "exercise", "scenario", "hypothetical", "could", "may be", "might be",
     "expected to", "predicts", "predicted", "estimate", "estimated", "fears", "fear of", "risk of", "warns", "warning",
 ]
-# Magnitude 8.0 or greater. The request said "above 8.0"; an 8.0 quake is the event that phrase names.
+# Magnitude 8.0 or greater. The request said "above 8.0". An 8.0 quake is the event that phrase names.
 EARTHQUAKE_8 = (
     r"(?<![\d.])(?:magnitude[\s-]*(?:8(?:\.\d+)?|9(?:\.\d+)?)|(?:8(?:\.\d+)?|9(?:\.\d+)?)[\s-]*magnitude)"
     r"[\s-]*(?:earthquake|quake)\b"
@@ -78,7 +78,7 @@ RED_EVENTS: tuple[dict[str, Any], ...] = (
 
 
 # RED triggers (URS methodology, section 14): what must have happened to the business for R&A to confirm RED. A pattern hit
-# above is only a RED candidate, a prompt to check; R&A confirms RED by naming the trigger that happened.
+# above is only a RED candidate, a prompt to check. R&A confirms RED by naming the trigger that happened.
 RED_TRIGGERS: tuple[dict[str, str], ...] = (
     {"triggerId": "STAFF_HARMED", "label": "An employee or contractor injured, killed or unaccounted for"},
     {"triggerId": "STAFF_STRANDED", "label": "Staff stranded or unable to leave"},

@@ -1,8 +1,8 @@
 """Run the harm scorer, assess_impact(), on a pool signal.
 
 The adapter supplies only what acquisition knows. A search result was not fetched, so its URL, dates and figures are not
-cross-checked. No structured observation (fatalities, debarment, suspension) and no value-at-risk exists yet, so severity
-stays NOT_ASSESSED and the financial dimension stays INSUFFICIENT_DATA. The scorer, not this adapter, decides every result.
+cross-checked. No structured observation (fatalities, debarment, suspension) and no value-at-risk exists yet. Severity
+stays NOT_ASSESSED, and the financial dimension stays INSUFFICIENT_DATA. The scorer, not this adapter, decides every result.
 """
 
 from __future__ import annotations

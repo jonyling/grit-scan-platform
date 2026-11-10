@@ -1,9 +1,9 @@
 """Write one reader's weekly pack and put it into review.
 
 For each format in the profile (docx, pptx, xlsx), plus Markdown and the JSON brief model, the files go to
-output/runs/RUN_ID/PROFILE_ID/vN/, one folder per package version, so an approved version's files never change. The
+`output/runs/RUN_ID/PROFILE_ID/vN/`. Each package version has its own folder, so an approved version's files never change. The
 package then enters the governed workflow as PENDING_REVIEW. An unchanged brief reuses the version already pending.
-A changed brief needs the pending version returned for rework first; ReviewGate() is the only way to do that.
+A changed brief needs the pending version returned for rework first. `ReviewGate()` is the only way to return it.
 """
 
 from __future__ import annotations

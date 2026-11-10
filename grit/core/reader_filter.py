@@ -5,11 +5,11 @@
 2. A page is relevant when it links to the business-area register, names a reader-pack item strongly, bears on a standing
    condition or hazard strongly, or hits a KEY theme in its title or lead. Anything else is NOT_RELEVANT.
 3. Pages with the same headline, or at cosine 0.95 or above, are one story (NEAR_DUPLICATE). A relevant page absorbs pages from other outlets at 0.90 or
-   above (SAME_EVENT), so one event is one signal. Merged outlets count as corroboration, by publisher family. Two reports of
+   above (SAME_EVENT). One event is then one signal. Merged outlets count as corroboration, by publisher family. Two reports of
    an official daily series (SERIES_PUBLISHERS, such as Taiwan MND's PLA activity reports) dated on different days are
    separate observations and are never merged, however alike their text.
-4. Each survivor gets a briefing priority from grit.core.priority. A reader-pack project is a DIRECT link and a named supplier
-   or customer is a COUNTERPARTY link, as the link ladder defines them.
+4. Each survivor gets a briefing priority from grit.core.priority. A reader-pack project is a DIRECT link. A named supplier
+   or customer is a COUNTERPARTY link. The link ladder defines both.
 No cap applies here. The brief caps what it prints.
 """
 

@@ -1,7 +1,7 @@
 # Reader notes: profiles written from what readers say
 
-**Status:** Steps 1 to 4 built, 20 October 2026 (specs 39 to 42). Decisions of 19 October are in section 10; the merged delivery plan is in section 11.
-**Purpose:** Replace the assumption that readers approve or reject individual signals. Readers write general notes in their own words. GRIT-Scan distils the notes into a reader profile written in Markdown, and the profile shapes each reader's brief and Co-Pilot answers.
+**Status:** Steps 1 to 4 built, 20 October 2026 (specs 39 to 42). Decisions of 19 October are in section 10. The merged delivery plan is in section 11.
+**Purpose:** Replace the assumption that readers approve or reject individual signals. Readers write general notes in their own words. GRIT-Scan distills the notes into a reader profile written in Markdown. The profile shapes each reader's brief and Co-Pilot answers.
 **Read with:** [copilot-architecture.md](copilot-architecture.md), spec 24 (reader profiles and aperture), and `grit/profiles/memory.py`.
 
 ## 1. Why the current model has to change
@@ -20,7 +20,7 @@ The new model starts from that kind of note.
 ```text
    Reader                     Jony (R&A)                    GRIT-Scan
    ──────                     ──────────                    ─────────
-   writes a note  ─────────►  saves it as a dated note  ─►  1. Distil: proposes profile changes, each citing its note
+   writes a note  ─────────►  saves it as a dated note  ─►  1. Distill: proposes profile changes, each citing its note
    (email, Teams, chat                                        │
     /note, meeting)                                           ▼
                               2. Reviews and edits     ◄──  draft profile.md (a diff against the current version)
@@ -39,7 +39,7 @@ The new model starts from that kind of note.
    writes the next note ◄──────────┘
 ```
 
-Jony stays in the loop at steps 2 and 5. That is deliberate. You said you need to stay close to what works and what does not for each reader, and the fit report gives you something concrete to take into each conversation with a reader.
+Jony stays in the loop at steps 2 and 5. That is deliberate. You said you need to stay close to what works and what does not for each reader. The fit report gives you something concrete to take into each conversation with a reader.
 
 ## 3. Notes
 
@@ -116,9 +116,9 @@ The body is prose, with fixed headings:
 - **Standing questions:** things they ask every month.
 - **Open questions for the reader:** what the notes leave unclear, for Jony to raise next time.
 
-Every line in the body cites the note it came from, such as "(N2, 21 Oct)". A line with no note is a guess, and the distiller is not allowed to write one.
+Every line in the body cites the note it came from, such as "(N2, 21 Oct)". A line with no note is a guess. The distiller must not write one.
 
-### What a profile may and may not do
+### What a profile can and cannot do
 
 The front matter can only express what code knows how to apply. It cannot express an instruction to drop evidence. The body reaches only the model writers (the Reporter and the Co-Pilot), and only for emphasis, depth and tone.
 
@@ -132,7 +132,7 @@ These hold whatever a profile says:
 | Ask for options, forecasts or a short form | Remove the citations, or switch off the answer checks |
 | Tell the writers what to lead with | Change what another reader sees |
 
-So a note like "don't bother me with Taiwan" becomes Taiwan in `de-emphasis`, not hidden. A RED alert on Taiwan still reaches that reader. If a reader really wants a topic gone, Jony raises it with them as an open question; the profile does not remove it silently.
+So a note like "don't bother me with Taiwan" puts Taiwan under `de-emphasis`. Taiwan items stay visible, and a RED alert on Taiwan still reaches that reader. If a reader really wants a topic gone, Jony raises it with them as an open question. The profile does not remove it silently.
 
 ## 5. Distilling notes into a profile
 
@@ -153,8 +153,8 @@ The Profiler runs only when a new note arrives. It costs one or two model calls.
 
 The compiler is deterministic. It reads `profile.md` and produces two things.
 
-- **Settings.** The front matter becomes the `Profile` object that the brief, routing and Co-Pilot already use. It covers packs, aperture, sections, formats, cadence and the web budget, plus a new `emphasis` mapping. A missing key keeps today's default, so existing profiles go on working.
-- **Guidance.** The body becomes a short block added to the Reporter's bottom-line prompt and to the Co-Pilot's system prompt, headed "This reader's stated preferences". The model treats it as guidance on emphasis and form, and the checks still apply to everything it writes.
+- **Settings.** The front matter becomes the `Profile` object that the brief, routing and Co-Pilot already use. It covers packs, aperture, sections, formats, cadence and the web budget, plus a new `emphasis` mapping. A missing key keeps today's default. Existing profiles therefore go on working.
+- **Guidance.** The body becomes a short block added to the Reporter's bottom-line prompt and to the Co-Pilot's system prompt, headed "This reader's stated preferences". The model treats it as guidance on emphasis and form. The checks still apply to everything it writes.
 
 ### Emphasis replaces approve and reject
 
@@ -164,9 +164,9 @@ Ordering still works within tiers, as memory does today. The difference is where
 |---|---|
 | +1 per approval of a signal with the feature, −1 per rejection, capped at ±3 | +2 for a feature listed under `emphasis`, −2 under `de-emphasis`, +1 for a trusted source |
 | Hides a rejected signal, and an outlet rejected three times | Hides nothing. `distrust` puts an outlet's items last within their tier and marks them in the brief. |
-| Reason: "you rejected 3 signals from this outlet" | Reason: "emphasised in your profile (N2): semiconductor prices" |
+| Reason: "you rejected 3 signals from this outlet" | Reason: "emphasized in your profile (N2): semiconductor prices" |
 
-Every reorder carries its reason and the note behind it, so a reader can see why an item sits where it does, and you can trace any surprise back to a note.
+Every reorder carries its reason and the note behind it. A reader can see why an item sits where it does. You can trace any surprise back to a note.
 
 The Approve, Reject and Watch buttons and the `feedback` table stay in the code, switched off by default. A reader who likes them can have them back by a profile setting.
 
@@ -179,7 +179,7 @@ This is the part that keeps you close to each reader. After each brief, GRIT-Sca
 | Profile in force | The version and the notes it follows |
 | What the profile changed | Which items emphasis moved up or down, and by which line. The items that would have led the brief without the profile. |
 | Lines that never fired | Emphasis on a condition with no signal this period, or a trusted source that published nothing. These are candidates to drop, or to fill with new sources. |
-| What the reader asked | The topics of the reader's Co-Pilot questions since the last brief, as counts, not the questions themselves. A topic they ask about often but that the profile does not emphasise is a candidate to add. |
+| What the reader asked | The topics of the reader's Co-Pilot questions since the last brief, as counts, not the questions themselves. A topic they ask about often but that the profile does not emphasize is a candidate to add. |
 | Gaps | Sections that came out thin, and standing questions the brief did not answer |
 | Questions to raise | The profile's open questions, and anything above worth asking the reader |
 
@@ -224,7 +224,7 @@ The Chairman and the CEO have no notes yet, so their profiles keep today's defau
 
 ## 11. Merged delivery plan with the Co-Pilot
 
-The profile work and the Co-Pilot ([copilot-architecture.md](copilot-architecture.md)) share their foundations, so they are delivered as one plan, profile first.
+The profile work and the Co-Pilot ([copilot-architecture.md](copilot-architecture.md)) share their foundations. They are delivered as one plan, profile first.
 
 - **The Co-Pilot reads the profile.** Its scope, emphasis, web budget and review label all come from the compiled profile. Building the Co-Pilot first would mean building those settings twice.
 - **The profile needs the Co-Pilot to close its loop.** `/note` is a Co-Pilot command. The fit report counts the topics a reader asks the Co-Pilot about.
@@ -240,5 +240,6 @@ The profile work and the Co-Pilot ([copilot-architecture.md](copilot-architectur
 Step 4 waits until the readers' notes show which daily sources they need (Co-Pilot decision 4). The other steps do not depend on it.
 
 Before step 1 starts:
+
 - the notes, profiles and fit reports go under `secrets/readers/`, which I can read and write, unlike `config/`;
 - you save Wilson's 9 October email as his first note.

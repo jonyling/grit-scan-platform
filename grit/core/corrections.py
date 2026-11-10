@@ -1,8 +1,10 @@
 """The corrections ledger (URS methodology, section 22), as reports and agents use it.
 
 R&A records a material correction once, with `grit corrections add`. Every later report of the pack carries it in its
-quality check, and every agent receives it with the admitted Memory corrections, until R&A closes it. A correction can
-retire an exact phrase, such as "S$600m": Reporting may not write it, and the scorecard flags a report that does.
+quality check until R&A closes it. Until then, every agent also receives it with the admitted Memory corrections.
+
+A correction can retire an exact phrase, such as "S$600m". Reporting must not write a retired phrase. The scorecard flags
+a report that does.
 """
 
 from __future__ import annotations

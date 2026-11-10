@@ -3,7 +3,7 @@
 **Status:** Draft for review, 2026-10-13. Extends specs 35 and 36.
 **Trigger:** Wilson's email of 9 October 2026 and the R&A team's decisions of 13 October 2026.
 
-The Group pack (`ste`) gives the CEO and the Chairman the geopolitical and technology picture facing ST Engineering as a whole. It sits above the business-area packs and does not replace them. It is a condition pack, like URS Taiwan: Wilson's 12 dashboard themes are its standing conditions, measured each month against a baseline that Wilson signs off.
+The Group pack (`ste`) gives the CEO and the Chairman the geopolitical and technology picture facing ST Engineering as a whole. It sits above the business-area packs and does not replace them. It is a condition pack, like URS Taiwan. Wilson's 12 dashboard themes are its standing conditions. Each month, the pack measures them against a baseline that Wilson signs off.
 
 ## 1. Decisions
 
@@ -40,31 +40,31 @@ A Group pack builds one graph from its children's graphs. The footprint is every
 - it names a footprint country in the title or lead;
 - it strongly hits one of the 13 standing conditions.
 
-Example: "Saudi–Houthi war reaches Riyadh" is on the footprint rung when Saudi Arabia is in the footprint and the signal hits the Middle East security condition. A country alone is still not a link. The rung applies only to Group packs, so the business-area briefs keep their strict link.
+Example: "Saudi–Houthi war reaches Riyadh" is on the footprint rung when Saudi Arabia is in the footprint and the signal hits the Middle East security condition. A country alone is still not a link. The rung applies only to Group packs. The business-area briefs keep their strict link.
 
 A footprint signal has news priority P3.
 
 ## 4. What the Assessor writes for a Group condition
 
-For each condition with validated evidence, the Assessor writes these fields. Each one is checked and dropped if it fails; the assessment stands.
+For each condition with validated evidence, the Assessor writes these fields. The checks drop a field that fails. The assessment still stands.
 
 | Field | Rule |
 |---|---|
-| `implication` | The risk pathway: what the development could mean for STE. It names a business area, line of business, entity, or footprint country, uses could, may or might, and cites its sources. |
+| `implication` | The risk pathway: what the development could mean for STE. It names a business area, line of business, entity, or footprint country. It uses `could`, `may`, or `might`. It cites its sources. |
 | `opportunity` | The opportunity pathway, under the same rules. It can be empty when the sources show none. |
-| `counter_indicator` | One sentence on what development would show the assessment is wrong. No citation is needed, but no number may be added and no score word used. |
+| `counter_indicator` | One sentence on what development would show the assessment is wrong. No citation is needed. It must not add a number or use a score word. |
 
 The business areas each condition touches come from the scan plan (`businessAreas`). They are proposed until Wilson confirms them. The Proposer runs for a Group condition that is escalating or cites a material source.
 
 ## 5. Baseline draft
 
-`grit baseline-draft --pack ste --date DATE` reads a completed run. For each condition, the Baseliner writes the current position from that run's sources: three to five cited sentences, with quotes and grounded numbers, under the same checks as the Assessor. A condition with no evidence says so; nothing is invented.
+`grit baseline-draft --pack ste --date DATE` reads a completed run. For each condition, the Baseliner writes the current position from that run's sources. The position is three to five cited sentences, with quotes and grounded numbers. The same checks as the Assessor apply. A condition with no evidence says so. Nothing is invented.
 
-The output goes to `output/runs/RUN/baseline-draft/`. It holds a Word document for Wilson and a JSON file with each condition's drafted `currentAssessment` and sources. After Wilson edits and signs off, copy the text into `STE-Global-Baseline.json`, and set `status` to `SIGNED_OFF` with his name and the date.
+The output goes to `output/runs/RUN/baseline-draft/`. It holds a Word document for Wilson and a JSON file with each condition's drafted `currentAssessment` and sources. After Wilson edits and signs off, copy the text into `STE-Global-Baseline.json`. Then set `status` to `SIGNED_OFF` with his name and the date.
 
 ## 6. Scenarios
 
-Spec 43 replaces this section. For each strategic shift, the Strategist now proposes a best, a medium and a worst case for STE, built on the shift's State of the Situation. `grit scenarios --pack ste --date DATE` drafts them for Wilson's review.
+Spec 43 replaces this section. For each strategic shift, the Strategist now proposes a best, a medium, and a worst case for STE. Each case builds on the shift's State of the Situation. `grit scenarios --pack ste --date DATE` drafts them for Wilson's review.
 
 ## 7. Monthly Group Strategic Radar
 
@@ -82,7 +82,7 @@ The deck follows the reference format. Its appendix has one slide per condition 
 
 ## 8. Currents fallback
 
-After Brave, the Researcher sends to Currents every query that Brave did not answer, and every query that returned nothing. That covers a query left unsent by the monthly limit, a rate limit, or a Brave error. The fallback is capped per run by `CURRENTS_FALLBACK_MAX`, which defaults to 40. Each Currents search is logged like a Brave search and marks its query answered, so a resumed run does not repeat it. Without `CURRENTS_API_KEY`, the fallback is skipped and the log says so.
+After Brave, the Researcher sends two kinds of query to Currents: every query that Brave did not answer, and every query that returned nothing. That covers a query left unsent by the monthly limit, a rate limit, or a Brave error. The fallback is capped per run by `CURRENTS_FALLBACK_MAX`, which defaults to 40. Each Currents search is logged like a Brave search. It marks its query answered, so a resumed run does not repeat it. Without `CURRENTS_API_KEY`, the Researcher skips the fallback. The log records the skip.
 
 ## 9. Limits
 

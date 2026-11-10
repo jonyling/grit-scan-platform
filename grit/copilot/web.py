@@ -1,14 +1,15 @@
 """The Co-Pilot's web search, and adding a web page to the pool (spec 41).
 
 Web search:
-- Currents answers first, to keep Brave's monthly queries for the weekly scans; Brave answers when Currents fails or
-  returns nothing. Set COPILOT_WEB_ORDER=brave to put Brave first; Currents then still goes first when Brave is within 10%
-  of its monthly limit.
+- Currents answers first, to keep Brave's monthly queries for the weekly scans. Brave answers when Currents fails or
+  returns nothing.
+- Set COPILOT_WEB_ORDER=brave to put Brave first. Currents still goes first when Brave is within 10% of its monthly
+  limit.
 - Each reader has a daily budget: copilot.web_searches_per_day in their profile, else 17. A question may use at most 2.
 - Results are sources of kind WEB, marked unvetted: GRIT-Scan's rules have not assessed them.
 
-Add to pool: a web page a reader adds goes into the pool as a CHAT-lane signal and is queued for each pack in the answer's
-scope. The next scan of that pack gives it a sighting, so the deterministic assessment keeps or drops it like any other
+Add to pool: a web page that a reader adds goes into the pool as a CHAT-lane signal. It is queued for each pack in the
+answer's scope. The next scan of that pack gives it a sighting, so the deterministic assessment keeps or drops it like any other
 page. It reaches a brief only if the rules keep it and a reviewer approves the package.
 """
 

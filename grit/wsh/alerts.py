@@ -1,4 +1,4 @@
-"""Pack-local WSH alerts (spec 47). Drafts only; does not set business-report RED status."""
+"""Pack-local WSH alerts (spec 47). This module only drafts alerts. It does not set business-report RED status."""
 
 from __future__ import annotations
 

@@ -594,9 +594,14 @@ def business_terms(business: Any) -> tuple[str, ...]:
 
 
 def public_body_rule(link: Any, text: str, graph: Any, terms: Sequence[str]) -> Any:
-    """A public body named as a customer or supplier is a link only when the page does not place it in another country (the
-    page names a country, but not the body's own from the register) and uses the business area's own vocabulary. 'Building and Construction Authority' in a Malta report is Malta's;
-    food poisoning at 'MOE' kindergartens is not DS&C business. The mention stays recorded; the rung falls back."""
+    """A public body named as a customer or supplier is a link only when the page meets two conditions:
+
+    - It does not place the body in another country. A page places it elsewhere when it names a country, but not the
+      body's own country from the register.
+    - It uses the business area's own vocabulary.
+
+    'Building and Construction Authority' in a Malta report is Malta's. Food poisoning at 'MOE' kindergartens is not DS&C
+    business. The mention stays recorded, and the rung falls back."""
     from grit.core.countries import canonical, named
 
     folded = text.casefold()
@@ -679,7 +684,7 @@ def _recent_first(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
 
 def material_order(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
     """Briefing order for findings: a management-request match first, then a signal bound to a standing item, then the
-    rest, each by tier, outlets and recency. Deterministic; it decides what the reader sees first, never a fact."""
+    rest, each by tier, outlets and recency. It is deterministic. It decides what the reader sees first, never a fact."""
     rows = list(rows)
     rows.sort(key=lambda row: str(row.get("published_at") or ""), reverse=True)
     rows.sort(key=lambda row: (
@@ -700,7 +705,7 @@ def _request_hit(row: Mapping[str, Any]) -> bool:
 
 def materiality_order(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
     """The evidence order for a standing item (spec 36): RED or a high-negative-impact harm verdict, then the link rung,
-    a management-request match, briefing tier, outlets, and recency. Deterministic; no model judges materiality."""
+    a management-request match, briefing tier, outlets, and recency. It is deterministic: no model judges materiality."""
     rows = list(rows)
     rows.sort(key=lambda row: str(row.get("published_at") or ""), reverse=True)
     rows.sort(key=lambda row: (
@@ -970,7 +975,7 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
 
     try:
         signposts = judge_run(pool, run.run_id, pack, client=client, model=model, log=log)
-    except Exception as exc:  # embeddings or the model may be unavailable; keyword matching still stands
+    except Exception as exc:  # embeddings or the model might be unavailable, and keyword matching still stands
         signposts = {"skipped": f"{type(exc).__name__}: {str(exc)[:80]}"}
         log(f"  SignpostJudge skipped: {signposts['skipped']}")
     return {
@@ -1196,7 +1201,7 @@ def _bottom_line(pool: Pool, run: ReaderRun, *, client: Any, model: str, write_l
 
 def findings(pool: Pool, run: ReaderRun, *, client: Any, model: str, top: int = 6, max_tier: int = 2, search: Callable[..., Any] | None = None, log: Callable[[str], None] = print, max_iterations: int = 3) -> dict[str, Any]:
     """The six-question card for the strongest register-linked signals. Signals linked only through the reader pack have no
-    business-area graph path, so the loop is not run on them; their reader-pack entries carry them instead."""
+    business-area graph path, so the loop is not run on them. Their reader-pack entries carry them instead."""
     from grit.agents.loop.engine import FindingLoop, LoopConfig
     from grit.agents.loop.tools import FollowUpTool
 

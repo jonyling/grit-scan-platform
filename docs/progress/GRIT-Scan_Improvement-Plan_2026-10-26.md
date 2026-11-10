@@ -8,8 +8,8 @@ Status as of 28 October 2026: Batches A, B, C, D, and E are done. Batches F and 
 
 Every agent working on this repository must follow these rules:
 
-- Do not read or print anything in `config/`, `output/` or `.env`. Organisation content policy blocks them. Code can write to `config/` without reading it, as scenario approval does.
-- Do not stage `config/`, `output/` or `secrets/` in a commit. One exception: `config/red-patterns.json` is tracked in git on purpose (Jony Ling, commit `c37a015`, approved 29 October 2026), so the RED rule register has a reviewed history. Commit a change to it only when Jony asks. Agents still must not read or print it, and every other file in `config/` stays out of git.
+- Do not read or print anything in `config/`, `output/` or `.env`. Organization content policy blocks them. Code can write to `config/` without reading it, as scenario approval does.
+- Do not stage `config/`, `output/` or `secrets/` in a commit. One exception: `config/red-patterns.json` is tracked in git on purpose (Jony Ling, commit `c37a015`, approved 29 October 2026). This gives the RED rule register a reviewed history. Commit a change to it only when Jony asks. Agents still must not read or print it. Every other file in `config/` stays out of git.
 - Agents propose, deterministic checks decide, and named humans approve. A fact that is missing stays absent. Do not invent it.
 - Run the tests before each commit. They make no network call.
 
@@ -25,8 +25,8 @@ Every agent working on this repository must follow these rules:
   Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
   ```
 
-- Update `README.md` and the matching spec in `specs/` when behaviour changes.
-- Keep Brave Search use within its free credit of about 1,000 queries a month. After the 29 October workbooks added customers and suppliers, the `grit scheduled` timetable uses about 1,000 queries in a four-Monday month and 1,150 in a five-Monday month; the guard stops Brave at 1,000 and falls back to Currents. Brave's credit renews on 1 November.
+- Update `README.md` and the matching spec in `specs/` when behavior changes.
+- Keep Brave Search use within its free credit of about 1,000 queries a month. After the 29 October workbooks added customers and suppliers, the `grit scheduled` timetable uses about 1,000 queries in a four-Monday month and 1,150 in a five-Monday month. The guard stops Brave at 1,000 and falls back to Currents. Brave's credit renews on 1 November.
 
 ## Points of improvement
 
@@ -34,15 +34,15 @@ Every agent working on this repository must follow these rules:
 |---|---|---|---|
 | 1 | Add more URS and DS&C entity information to the ontology, and update it before upload to Google and each pack run. | F | Done for URS and DS&C, 29 Oct. Customer and supplier sheets are read by their headers: short names become aliases, and country, sector, LOB, contracting entity, linked risk codes and confidence are kept. Every URS customer now links to a LOB or its contracting entity. Renamed workbooks are found by their tag. Uploading to Google is still to do. |
 | 2 | Get entity information from the six BAs that have not sent it: Commercial Aerospace, Satcom, Defence Aerospace, Marine, Land and Homeland. | None | CA received 29 Oct and wired up as pack `ca` (registers, graph, Group footprint, SotS exposure). Five BAs still to send. |
-| 3 | Add RED events: pandemic, China attacks Taiwan, earthquake above 8.0, financial meltdown, major corruption cases, workplace accidents, Middle East attacks needing evacuation, AI and quantum cyber attacks, sanctions on linked entities, bankruptcy of key customers, suppliers or projects, trade barriers and tariffs, sudden loss of key personnel, EHS incidents causing the death of STE staff, labour incidents and strikes, disruption of basic services, legal disputes affecting STE entities, and major riots where STE entities or projects are. | B | Done. Patterns are in `grit/core/red_events.py` and merge at assessment. Magnitude 8.0 or greater. Linked events need a direct or counterparty link. `RED-PANDEMIC` was already in the register and was left as written. `grit daily`, `grit scan`, and `grit assess` append missing ids to `config/red-patterns.json` without replacing an existing rule. The file is tracked in git as an intended exception (commit `c37a015`). |
+| 3 | Add RED events: pandemic, China attacks Taiwan, earthquake above 8.0, financial meltdown, major corruption cases, workplace accidents, Middle East attacks needing evacuation, AI and quantum cyber attacks, sanctions on linked entities, bankruptcy of key customers, suppliers or projects, trade barriers and tariffs, sudden loss of key personnel, EHS incidents causing the death of STE staff, labor incidents and strikes, disruption of basic services, legal disputes affecting STE entities, and major riots where STE entities or projects are. | B | Done. Patterns are in `grit/core/red_events.py` and merge at assessment. Magnitude 8.0 or greater. Linked events need a direct or counterparty link. `RED-PANDEMIC` was already in the register and was left as written. `grit daily`, `grit scan`, and `grit assess` append missing ids to `config/red-patterns.json` without replacing an existing rule. The file is tracked in git as an intended exception (commit `c37a015`). |
 | 4 | Email RED alerts from daily scans to the relevant people at once, for example the PHP vulnerabilities. | B | Built. A daily draft is sent to `GRIT_RED_MAIL_TO` when Graph mail is configured. No address is invented. Until those settings exist, the draft stays unsent. Wilson still chooses who is on the duty list. |
-| 5 | Add GDELT and Sphera acquisition lanes. | B | GDELT artlist is on the daily lane, with a timeout and the keep rule. Sphera stays closed: `secrets/sphera.env` is the placeholder, and nothing is fetched until an API contract exists. |
-| 6 | Make table rows tall enough to show all text. Colour trend labels: Escalating red, Easing green, Unchanged neutral. | C | Done. Short columns stay on one line. A long basis, title, or keyword list wraps on spaces, and a wide table scrolls sideways. Escalating is red, Easing is green, and Unchanged is neutral. The word stays the label. |
+| 5 | Add GDELT and Sphera acquisition lanes. | B | GDELT artlist is on the daily lane, with a timeout and the keep rule. Sphera stays closed. `secrets/sphera.env` is the placeholder. Nothing is fetched until an API contract exists. |
+| 6 | Make table rows tall enough to show all text. Color trend labels: Escalating red, Easing green, Unchanged neutral. | C | Done. Short columns stay on one line. A long basis, title, or keyword list wraps on spaces. A wide table scrolls sideways. Escalating is red, Easing is green, and Unchanged is neutral. The word stays the label. |
 | 7 | Let the reader open and close the Co-Pilot panel, as in Microsoft 365 Copilot, and resize its width. | C | Done. Show Co-Pilot and a width control are in the sidebar. A closed panel leaves the dashboard full width. |
 | 8 | Make the Co-Pilot read the tab the reader has open, such as Signals, and not always the Dashboard. | C | Done. The open tab and its records are the Co-Pilot context. Dashboard focus is sent only on the Dashboard tab. |
 | 9 | Write a CSV of signals for each daily pack. | B | Done, commit `fa9e79b` |
 | 10 | In `docs/design/schema.yaml`, list BA right after STE, then LOB. | A | Done, commit `7140799` |
-| 11 | Add an Approve button for packages in the UI. | C | Done. Approve calls ReviewGate with intent APPROVE. A reader is refused. |
+| 11 | Add an Approve button for packages in the UI. | C | Done. Approve calls `ReviewGate()` with intent `APPROVE`. A reader is refused. |
 | 12 | Keep a weekly run strictly to its 7 days ending on the run date. | A | Done, commit `7140799` |
 | 13 | Count corroboration by publisher family, not by number of sources. | A | Done, commit `7140799` |
 | 14 | Add official hazard and cross-strait sources for URS Taiwan: USGS, NASA FIRMS, Taiwan MND and the Taiwan weather service. | B | Done, commit `fa9e79b`. FIRMS needs a key. |
@@ -71,7 +71,7 @@ Batches are ordered by value. Do one batch per session.
 
 Commit `7140799`.
 
-- **Point 12.** The keep rule drops pages dated after the run date (`AFTER_RUN_DATE`), and a weekly run keeps its run date and the 6 days before it. Brave is asked for the run's own date range, not "past week". The 16 October URS and URS Taiwan runs had kept 245 and 229 pages from after their date. Rebuild them after Brave's credit renews on 1 November.
+- **Point 12.** The keep rule drops pages dated after the run date (`AFTER_RUN_DATE`). A weekly run keeps its run date and the 6 days before it. Brave is asked for the run's own date range, not "past week". The 16 October URS and URS Taiwan runs had kept 245 and 229 pages from after their date. Rebuild them after Brave's credit renews on 1 November.
 - **Point 13.** `grit/core/publisher_family.py` maps domains to owners. Press-release wires count once. Aggregators count only when nothing else carries the story. Corroboration counts can fall, so some items drop below the RED threshold.
 - **Point 18.** Every HTTP and Gemini call already had a timeout. Microsoft sign-in (MSAL) now has a 60-second timeout.
 - **Point 30.** Stored history was already per profile. The Co-Pilot widgets shared one key across readers. Every widget key now includes the profile, and the panel names whose conversation it shows.
@@ -89,18 +89,18 @@ Commit `fa9e79b` delivered points 9 and 14. Commit `cfddaf6` delivered points 3,
   - NASA FIRMS fire detections, which need a free `FIRMS_MAP_KEY` in `.env`.
 
   The Central Weather Administration is registered as blocked, because its RSS terms forbid derived products. Reports from an official daily series are never merged with each other across days.
-- **Point 3 (done).** The new events are in `grit/core/red_events.py`. Assessment merges them after the rules already in `config/red-patterns.json`. A rule id that is already there is not replaced, so an edited rule stays. `grit daily`, `grit scan`, and `grit assess` append any missing ids. The file is tracked in git as an intended exception (commit `c37a015`), so a run that appends ids leaves it modified until Jony commits it. Each pattern has a test. An earthquake is magnitude 8.0 or greater. A sanction, bankruptcy, tariff, strike, corruption case, workplace accident, or loss of key personnel needs a direct or counterparty link. Death of STE staff, a legal dispute, and a riot need a direct link.
+- **Point 3 (done).** The new events are in `grit/core/red_events.py`. Assessment merges them after the rules already in `config/red-patterns.json`. A rule id that is already there is not replaced. An edited rule therefore stays. `grit daily`, `grit scan`, and `grit assess` append any missing ids. The file is tracked in git as an intended exception (commit `c37a015`). A run that appends ids leaves it modified until Jony commits it. Each pattern has a test. An earthquake is magnitude 8.0 or greater. A sanction, bankruptcy, tariff, strike, corruption case, workplace accident, or loss of key personnel needs a direct or counterparty link. Death of STE staff, a legal dispute, and a riot need a direct link.
 - **Point 4 (done as far as code can go).** A daily run sends each new RED draft through Microsoft Graph to the mailboxes in `GRIT_RED_MAIL_TO`, and to nobody else. The status becomes `SENT_TO_DUTY`. A named person forwards it. If the Graph settings or the duty list are missing, or an address is not a mailbox, nothing is sent. This still needs a mail-enabled app registration and Wilson's list of duty mailboxes.
-- **Point 5 (done for GDELT).** The daily lane asks GDELT's artlist, with a timeout and the same keep rule. The page date is GDELT's seen time. Sphera is not called. `secrets/sphera.env` is created when missing, and a filled file still fetches nothing until an API contract exists.
+- **Point 5 (done for GDELT).** The daily lane asks GDELT's artlist, with a timeout and the same keep rule. The page date is GDELT's seen time. Sphera is not called. `secrets/sphera.env` is created when missing. A filled file still fetches nothing until an API contract exists.
 
 ### Batch C: user interface (done)
 
 Commit `0381af6`.
 
-- **Point 6.** Tables are HTML. Short columns stay on one line. A long basis, title, or keyword list wraps on spaces, and a wide table scrolls sideways. Escalating is red, Easing is green, and Unchanged is neutral. The word remains in the cell.
+- **Point 6.** Tables are HTML. Short columns stay on one line. A long basis, title, or keyword list wraps on spaces. A wide table scrolls sideways. Escalating is red, Easing is green, and Unchanged is neutral. The word remains in the cell.
 - **Point 7.** **Show Co-Pilot** and **Co-Pilot width** are in the sidebar. The width is 24 to 50 percent. A closed panel leaves the dashboard full width.
 - **Point 8.** The Co-Pilot receives the open tab and up to 40 of its records. A condition chosen on the Dashboard is sent only while that tab is open.
-- **Point 11.** **Approve** calls `ReviewGate()` with intent `APPROVE`. A reader sees a refusal instead of the button, and `review_package` raises `PermissionError` if a reader reaches it.
+- **Point 11.** **Approve** calls `ReviewGate()` with intent `APPROVE`. A reader sees a refusal instead of the button. `review_package` raises `PermissionError` if a reader reaches it.
 
 ### Batch D: reports (done)
 
@@ -124,21 +124,21 @@ Commit `24a4dc8`.
 
 ### Batch F: data and governance
 
-- **Point 1 (done for URS and DS&C, 29 Oct).** Rebuild with `grit pack-build --pack PACK` whenever a workbook changes. Commercial Aerospace (`ca`) has a proposed scan plan (`config/ca/CA-Scan-Plan.json`, about 94 Brave queries a run) for its R&A business partner to review. It is not in the `grit scheduled` timetable, so it runs only with `grit weekly --pack ca`.
-- **Point 26.** Re-base profiles on BA business partners. Needs `config/` access or Jony's edits.
+- **Point 1 (done for URS and DS&C, 29 Oct).** Rebuild with `grit pack-build --pack PACK` whenever a workbook changes. Commercial Aerospace (`ca`) has a proposed scan plan (`config/ca/CA-Scan-Plan.json`, about 94 Brave queries a run) for its R&A business partner to review. It is not in the `grit scheduled` timetable. It runs only with `grit weekly --pack ca`.
+- **Point 26.** Re-base profiles on BA business partners. This needs `config/` access or Jony's edits.
 - **Point 27 (done, 5 Nov).** Wilson's prompt arrived as `docs/Adverse_News_Lessons_Learnt_Scan_Prompt.docx`. It runs weekly as `grit adverse`, whose agents' proposals pass deterministic checks (spec 46).
 - **Point 28.** Record all four feedback routes in one feedback table, with the route, the person and the date.
 
 ### Batch G: model
 
-- **Point 17.** Check which newer Gemini models the Vertex AI project can use, then make the model a setting and test it on one pack before switching. The current model is `gemini-3.8-flash`. Gemini 4 Argon availability is not yet confirmed.
+- **Point 17.** Check which newer Gemini models the Vertex AI project can use. Then make the model a setting, and test it on one pack before switching. The current model is `gemini-3.8-flash`. Gemini 4 Argon availability is not yet confirmed.
 
 ## Decisions and inputs needed
 
 | Input | Needed for | From |
 |---|---|---|
 | Microsoft 365 mail app credentials and the R&A duty mailboxes (`GRIT_RED_MAIL_TO`) | Point 4, so mail leaves the draft | Jony, Wilson |
-| Sphera licence and API access | Point 5 | R&A |
+| Sphera license and API access | Point 5 | R&A |
 | Free NASA FIRMS key in `.env` | Point 14 | Jony |
 | Business-partner profile edits | Point 26 | Jony |
 | Entity information from six BAs | Point 2 | Wilson or higher authority |

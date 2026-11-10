@@ -172,7 +172,7 @@ def ranked_finding_content_hash(item: dict[str, Any]) -> str:
 
     A finding with no source at all still needs a stable identity across
     re-runs, so it falls back to the deterministic ``developmentId`` the
-    weekly pipeline assigned; two distinct findings never collapse into one
+    weekly pipeline assigned. Two distinct findings never collapse into one
     signal because of a shared or missing URL.
     """
     sources = list(item.get("sources") or [])

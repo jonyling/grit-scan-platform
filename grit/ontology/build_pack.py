@@ -24,7 +24,7 @@ differs per business area sits in the pack's pack.json under "build":
     themeClassificationRequire  with "classified": only rows whose classification contains this text become themes, such as
                              "BA Annual Risk Refresh". The others are listed under draftThemes, not scanned.
     classRows                {"customers": regex, "suppliers": regex}. A row whose cells match names a class of counterparty,
-                             such as "Marine equipment vendors", not an organisation. It stays in the register, marked
+                             such as "Marine equipment vendors", not an organization. It stays in the register, marked
                              counterpartyClass, and is not searched by name.
 
 Customer and supplier sheets are read by their header row. Beyond the name, a column the sheet has is copied: short name
@@ -110,7 +110,7 @@ _SOURCE_SHEETS = {
     "9. Specific Industry News": {"name_col": 0, "heading_col": None},
 }
 _SOURCE_HEADERS = {"source", "organisation", "organization", "link", "focus", "keyreports"}
-# A customer the workbook names only by country and programme, with no organisation name.
+# A customer the workbook names only by country and program, with no organization name.
 _ANONYMISED = re.compile(r"\bCustomer$")
 
 

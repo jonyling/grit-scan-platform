@@ -6,7 +6,7 @@ Run:  pip install requests beautifulsoup4 lxml
       python dsc_scraper.py
 Output: dsc_pages.csv (page-level), dsc_mentions.csv (customer/project hits)
 
-Polite: honours robots.txt, 1.5s delay, identifies itself. Check STE's
+Polite: honors robots.txt, 1.5s delay, identifies itself. Check STE's
 website terms of use before running this at scale.
 """
 import csv, re, time, urllib.robotparser

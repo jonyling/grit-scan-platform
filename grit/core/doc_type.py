@@ -2,7 +2,7 @@
 
 MARKET_RESEARCH is a paid market-report advertisement ("Smart Water Meters Market worth $10 billion by 2031"). LISTICLE is a ranked
 list of vendors ("Top 10: Smart Grid Providers"). EXPLAINER is a how-to, a guide, a sponsored post, or an opinion piece. FINANCE_COMMENTARY is an investment note about a listed company: a price target, a
-rating, a technical signal ("Amtech Gains 79% in the Past Year: Should It Be in Your Portfolio?"). None of these reports an event. PRESS_RELEASE is text the issuer wrote and a wire carried, so a second wire copy is not independent evidence. NEWS is the rest.
+rating, a technical signal ("Amtech Gains 79% in the Past Year: Should It Be in Your Portfolio?"). None of these reports an event. PRESS_RELEASE is text the issuer wrote and a wire carried. A second wire copy of it is not independent evidence. NEWS is the rest.
 """
 
 from __future__ import annotations

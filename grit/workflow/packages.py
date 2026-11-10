@@ -6,7 +6,7 @@
            approval against the exact package version and hash. RETURN_FOR_REWORK moves every member back to ASSESSED.
   airis    signals the BA head approved, inside an approved package, move to AIRIS_HANDOFF_READY and are exported.
 
-The Supervisor is rebuilt from the pool for each action, so the ledger survives between sessions, and the pool table
+The Supervisor is rebuilt from the pool for each action, so the ledger survives between sessions. The pool table
 refuses UPDATE and DELETE on workflow rows.
 """
 
@@ -158,8 +158,8 @@ def _advance_reasoned(pool: Pool, supervisor: Supervisor, snapshot: Mapping[str,
 
 
 def review_package(pool: Pool, *, package_id: str, version: int, reviewer: Profile, intent: str, findings: Sequence[Mapping[str, Any]] = ()) -> dict[str, Any]:
-    """intent is APPROVE, REJECT, HOLD, or REQUEST_REWORK. A READER profile cannot review: refusing it here keeps a stray
-    attempt from putting the package on hold, which is what ReviewGate() does with an ineligible reviewer."""
+    """intent is APPROVE, REJECT, HOLD, or REQUEST_REWORK. A READER profile cannot review. This function refuses it
+    before the gate, because `ReviewGate()` puts the package on hold when an ineligible reviewer tries."""
     if reviewer.review_role not in {"REVIEWER", "BA_HEAD"}:
         raise PermissionError(f"{reviewer.label} is a reader, not a reviewer.")
     row = pool.one("SELECT * FROM packages WHERE package_id = ? AND version = ?", (package_id, version))
@@ -201,7 +201,7 @@ REGISTER_RUNGS = {"DIRECT", "PERIMETER", "COUNTERPARTY"}
 
 def airis_ready(pool: Pool, ba_head: Profile) -> list[dict[str, Any]]:
     """Members of a package the BA head approved that are tier 1 or 2 and linked to a register (a named entity, site,
-    customer or supplier), not yet handed off. The approval of the package is the decision; no signal-by-signal approval
+    customer or supplier), not yet handed off. The approval of the package is the decision. No signal-by-signal approval
     is needed (spec 39)."""
     if ba_head.review_role != "BA_HEAD":
         raise PermissionError(f"{ba_head.label} is not a BA head. Only packages a BA head approved go to AIRIS.")

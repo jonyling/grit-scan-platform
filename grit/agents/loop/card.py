@@ -74,7 +74,7 @@ def _haystack(context: Context) -> str:
 
 
 def check(card: Any, context: Context) -> list[str]:
-    """The violations of a draft against the ontology context. An empty list means it may be finalised."""
+    """The violations of a draft against the ontology context. An empty list means it can be finalized."""
     if not isinstance(card, dict):
         return ["BAD_SHAPE: shape: the card is not an object"]
     shape = {"what_happened": str, "event_quotes": list, "affected": dict, "connection": dict, "evidence": list, "hypothesis": dict}
@@ -221,8 +221,9 @@ def default_follow_up(context: Context) -> str:
 def confidence(context: Context, register_count: int | None = None, identity: Mapping[str, Any] | None = None, identity_failed: bool = False) -> dict[str, Any]:
     """Confidence in the link between the event and the STE register, by rule. It says nothing about outcomes.
 
-    identity is the model's same_party answer after it passed the checks. It can only lower the result: a NO with a verified quote ends the link,
-    an UNSURE with a verified quote caps the level at LOW, and an UNSURE without one, or an answer that failed its checks, keeps the level below HIGH.
+    identity is the model's same_party answer after it passed the checks. It can only lower the result.
+    A NO with a verified quote ends the link. An UNSURE with a verified quote caps the level at LOW.
+    An UNSURE without a verified quote, or an answer that failed its checks, keeps the level below HIGH.
     """
     link = context.signal["link"]
     rung = context.signal.get("rung")

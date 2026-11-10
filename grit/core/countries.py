@@ -37,7 +37,7 @@ def canonical(country: str) -> str | None:
 
 
 def named(text: str) -> set[str]:
-    """The countries a text names, by common name or alias. 'US' is matched in capitals only, so 'us' the word is not a country."""
+    """The countries a text names, by common name or alias. 'US' is matched in capitals only. The word 'us' is not a country."""
     found = {name for name, pattern in _PATTERNS.items() if pattern.search(text)}
     if re.search(r"(?<![\w])US(?![\w])", text):
         found.add("United States")

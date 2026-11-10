@@ -139,7 +139,7 @@ def test_reader_pack_review_and_airis_handoff(tmp_path: Path, monkeypatch) -> No
     from grit.report.package import write_pack
     from grit.workflow.packages import review_package
 
-    with pool.transaction() as conn:  # the fixture's Blue Line tender is tier 3; as tier 2 it is a priority finding
+    with pool.transaction() as conn:  # The fixture's Blue Line tender is tier 3. As tier 2 it is a priority finding.
         conn.execute("UPDATE assessments SET tier = 2 WHERE run_id = ? AND rung = 'DIRECT'", (run.run_id,))
     profiles = load_profiles()
     wilson, gareth, ksyong = profiles["wilson"], profiles["gareth"], profiles["ksyong"]
@@ -222,7 +222,7 @@ def test_a_signal_goes_to_airis_once_under_its_own_approval(tmp_path: Path, monk
     from grit.workflow.packages import review_package
 
     pool, run = _scanned(tmp_path, monkeypatch)
-    with pool.transaction() as conn:  # the fixture's Blue Line tender is tier 3; as tier 2 it is a priority finding
+    with pool.transaction() as conn:  # The fixture's Blue Line tender is tier 3. As tier 2 it is a priority finding.
         conn.execute("UPDATE assessments SET tier = 2 WHERE run_id = ? AND rung = 'DIRECT'", (run.run_id,))
     profiles = load_profiles()
     wilson = write_pack(pool, run.run_id, profiles["wilson"], folder=tmp_path / "w")["package"]

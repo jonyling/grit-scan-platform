@@ -1,4 +1,4 @@
-"""The STE Group pack seed (spec 37). `grit pack-init --pack ste` writes it once; after that, config/ste/ is the source.
+"""The STE Group pack seed (spec 37). `grit pack-init --pack ste` writes it once. After that, config/ste/ is the source.
 
 The content comes from Wilson Yeo's email of 9 October 2026: his 12 dashboard themes become the standing conditions, his
 eight strategic shifts the themes, and his tier 1 to 7 sources the source register. Every judgement here is proposed: the

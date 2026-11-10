@@ -1,12 +1,16 @@
 """Emphasis: the reader profile's preferences applied to one signal (spec 39). Pure: no I/O, no model.
 
-Emphasis moves a signal within its priority tier and hides nothing. A condition, theme, topic or country the profile
-emphasises moves it up; one the profile plays down moves it down; a trusted source breaks ties upward; a distrusted source
-puts it last within its tier and says so. A P1 or RED signal is never moved down. Every effect carries a reason that names
-the profile version and its notes, so a reader can see why an item sits where it does.
+Emphasis moves a signal within its priority tier and hides nothing:
+- A condition, theme, topic or country that the profile emphasizes moves it up.
+- One that the profile plays down moves it down.
+- A trusted source breaks ties upward.
+- A distrusted source puts it last within its tier and says so.
+
+A P1 or RED signal is never moved down. Every effect carries a reason that names the profile version and its notes, so a
+reader can see why an item sits where it does.
 
 A reader whose profile turns on the signal buttons also has their Approve, Reject and Watch decisions counted, as the
-earlier memory did, but a rejection now moves a signal down instead of hiding it.
+earlier memory did. A rejection now moves a signal down instead of hiding it.
 """
 
 from __future__ import annotations

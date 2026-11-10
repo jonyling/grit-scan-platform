@@ -4,9 +4,9 @@
 **Authority:** Wilson-based GRIT-Scan architecture  
 **System of record:** Microsoft Dataverse
 
-## 1. Purpose and Scope
+## 1. Purpose and scope
 
-Strategic Horizon extends GRIT-Scan Phase 1 from individual, auditable signals to a governed intelligence model that connects shared external facts to both Group-level horizon awareness and LOB-level operational materiality.
+Strategic Horizon extends GRIT-Scan Phase 1 from individual, auditable signals to a governed intelligence model. The model connects shared external facts to Group-level horizon awareness. It also connects those facts to LOB-level operational materiality.
 
 It introduces four layers:
 
@@ -16,7 +16,7 @@ Strategic Theme -> Event -> Signal -> LOB Impact Assessment
 
 A Strategic Theme is a broad, persistent or emerging external development. An Event is a distinct development or continuing incident. A Signal is an individual source item. A LOB Impact Assessment is a reader-specific assessment of possible effect on governed business context.
 
-The model supports multiple active LOBs without producing separate factual realities. Themes, events, and signals are shared facts. Reader profiles and impact assessments determine what is surfaced and how it is explained to a reader; they do not overwrite shared facts.
+The model supports multiple active LOBs without producing separate factual realities. Themes, events, and signals are shared facts. Reader profiles and impact assessments determine what a reader sees and how it is explained. They do not overwrite shared facts.
 
 ## 2. Boundaries
 
@@ -28,21 +28,21 @@ APPROVED -> PUBLICATION_CONFIRMED
 APPROVED -> AIRIS_HANDOFF_READY
 ```
 
-`PENDING_REVIEW -> ASSESSED` is permitted only for package-wide `ReviewGate() = RETURN_FOR_REWORK`. `REJECT` and `HOLD` are package-only outcomes and create no signal transition. Every actual signal transition requires `TransitionGuard() = ALLOW` before the Supervisor persists it.
+`PENDING_REVIEW -> ASSESSED` is permitted only for package-wide `ReviewGate() = RETURN_FOR_REWORK`. `REJECT` and `HOLD` are package-only outcomes. They create no signal transition. Every actual signal transition requires `TransitionGuard() = ALLOW` before the Supervisor persists it.
 
-Theme discovery, event matching, theme matching, clustering, reader routing, and impact assessment are processing activities recorded in proposal, relationship, function, and agent execution records. They are not workflow states.
+Theme discovery, event matching, theme matching, clustering, reader routing, and impact assessment are processing activities. Proposal, relationship, function, and agent execution records hold them. They are not workflow states.
 
-## 3. Use Cases
+## 3. Use cases
 
 ### 3.1 Group strategic horizon
 
-A `WIDE_APERTURE` reader receives cross-sector and cross-geography awareness, including early or weak signals where evidence and uncertainty are visible. The strategic use case identifies evolving themes, changes in direction, cross-LOB relevance, contradictory evidence, and matters requiring human attention.
+A `WIDE_APERTURE` reader receives cross-sector and cross-geography awareness. This view includes early or weak signals where evidence and uncertainty are visible. The strategic use case identifies evolving themes, changes in direction, cross-LOB relevance, contradictory evidence, and matters requiring human attention.
 
 ### 3.2 LOB operational intelligence
 
-A `MATERIAL_APERTURE` reader receives detailed assessment only where a governed exposure path or defensible material relevance exists. It uses entity, country, customer, supplier, product, programme, technology, annual-risk, KRI, watchpoint, and management-focus configuration without deleting weak shared signals from the Group view.
+A `MATERIAL_APERTURE` reader receives detailed assessment only where a governed exposure path or defensible material relevance exists. The assessment uses governed configuration such as entity, country, customer, supplier, product, programme, technology, annual risk, KRI, watchpoint, and management focus. It does not delete weak shared signals from the Group view.
 
-## 4. Processing Sequence
+## 4. Processing sequence
 
 ```text
 Approved source policy
@@ -71,10 +71,10 @@ The stages are distinct:
 - Theme matching compares an event with the governed theme register.
 - A new theme is a proposal, not a published Group fact.
 - Assessment proposes strategic significance or operational materiality.
-- ReviewGate approves an immutable package; it does not approve a theme/event record outside the package policy.
+- `ReviewGate()` approves an immutable package. It does not approve a theme/event record outside the package policy.
 - Controlled publication integration records publication confirmation only after a named human commitment and verified delivery.
 
-## 5. Wilson Role Mapping
+## 5. Wilson role mapping
 
 | Role | Strategic Horizon responsibility | Prohibited responsibility |
 | --- | --- | --- |
@@ -85,7 +85,7 @@ The stages are distinct:
 | Memory | Propose typed theme/event/relationship/assessment writes. | Writing directly to Dataverse. |
 | Reporting | Assemble strategic and operational views with citations and drill-down. | Representing a draft/proposal as a published fact. |
 
-## 6. Deterministic and Reasoning Responsibilities
+## 6. Deterministic and reasoning responsibilities
 
 | Operation | Authority |
 | --- | --- |
@@ -95,28 +95,28 @@ The stages are distinct:
 | Approval | Named human through ReviewGate package flow. |
 | Publication confirmation | Controlled integration, after human commitment; never agent assertion. |
 
-## 7. Governance and Human Interrupt
+## 7. Governance and human interrupt
 
-All record mutations are typed, validated, versioned, audited, and retained. `RegisterWriteGate()` validates theme/event/relationship/impact proposals; it is not a workflow-state writer. Human review is required where the active policy requires promotion, escalation, merge, split, closure, or management-facing package approval.
+All record mutations are typed, validated, versioned, audited, and retained. `RegisterWriteGate()` validates theme/event/relationship/impact proposals. It is not a workflow-state writer. Human review is required where the active policy requires promotion, escalation, merge, split, closure, or management-facing package approval.
 
-Draft, proposed, held, rejected, and returned content must retain visible status. Reporting may treat only policy-permitted approved and publication-confirmed records as published facts. Every management-facing assertion must retain citations to supporting events and signals.
+Draft, proposed, held, rejected, and returned content must retain visible status. Reporting can treat only policy-permitted approved and publication-confirmed records as published facts. Every management-facing assertion must retain citations to supporting events and signals.
 
 ## 8. Outputs
 
-A single immutable output package may contain independently identifiable Strategic Horizon and Operational Risk sections when both derive from the same approved evidence population. Separate packages are permitted where audience, approval policy, or evidence population differs.
+A single immutable output package can contain independently identifiable Strategic Horizon and Operational Risk sections when both derive from the same approved evidence population. Use separate packages where audience, approval policy, or evidence population differs.
 
 - Strategic Horizon Pack: Group themes, events, movement, uncertainty, cross-LOB relevance, and drill-down.
 - Operational Risk Pack: audited signal and LOB impact detail, controlled ratings, actions, and sign-off.
 
-## 9. Failure and Reconciliation
+## 9. Failure and reconciliation
 
-Missing references, conflicting hashes, unverified source/evidence, register-write validation failure, stale version, or cross-table persistence uncertainty fails closed. The Supervisor logs the failure, stops the affected action, and reconciles before retry or reprocessing. Replays use retained versioned records, relationship snapshots, configuration versions, input/output hashes, and execution logs.
+The system fails closed on any of these conditions: missing references, conflicting hashes, unverified source/evidence, register-write validation failure, stale version, or cross-table persistence uncertainty. The Supervisor logs the failure and stops the affected action. It reconciles before retry or reprocessing. Replays use retained versioned records, relationship snapshots, configuration versions, input/output hashes, and execution logs.
 
-## 10. Audit Requirements
+## 10. Audit requirements
 
-Every candidate relationship, deterministic match, routing result, proposal, critic challenge, register write, package inclusion, review decision, transition guard result, and publication/AIRIS handoff is correlated to a Dataverse execution and configuration version. Shared facts and reader-specific assessments must remain traceable to the signals and evidence from which they were derived.
+Every recorded action is correlated to a Dataverse execution and configuration version. These actions include candidate relationships, deterministic matches, routing results, proposals, critic challenges, register writes, package inclusions, review decisions, transition guard results, and publication/AIRIS handoffs. Shared facts and reader-specific assessments must remain traceable to the signals and evidence from which they were derived.
 
-## 11. Acceptance Criteria
+## 11. Acceptance criteria
 
 - A shared signal or event can appear in both wide and material views without duplication or mutation of shared facts.
 - Different apertures can produce different outputs from the same evidence population.
@@ -125,5 +125,5 @@ Every candidate relationship, deterministic match, routing result, proposal, cri
 - Themes/events remain proposals until validated, versioned, and approved where policy requires.
 - No theme/event processing activity becomes a signal workflow state.
 - Every actual signal transition retains `TransitionGuard() = ALLOW` evidence.
-- ReviewGate remains the sole business approval gate; PublicationConcurrencyLock is technical only.
+- `ReviewGate()` remains the sole business approval gate. `PublicationConcurrencyLock()` is technical only.
 - A named human commitment and verified controlled publication are required before reporting calls content published.

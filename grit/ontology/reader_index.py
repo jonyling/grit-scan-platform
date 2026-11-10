@@ -4,7 +4,7 @@ The reader pack names what one reader watches: projects, suppliers, customers, s
 and open watchpoints. This index finds those names in a signal with the link ladder's discipline:
 
 - a name counts when it is strong: in the title, in the lead, or named twice;
-- a name followed by another capitalised word is a different, longer name: ``Chan Chun Sing`` is not the supplier ``Chan Chun``,
+- a name followed by another capitalized word is a different, longer name: ``Chan Chun Sing`` is not the supplier ``Chan Chun``,
   and ``Leonardo DiCaprio`` is not ``Leonardo``. A corporate word (``Corp``, ``Electric``) or an acronym (``Leonardo DRS``) continues it;
 - a supplier, customer, or site counts only when the text also has one of the scan plan's context cues (for URS Taiwan, a
   Taiwan place or a rail word). Without one, global news about the company is recorded as a passing mention, so the brief
@@ -75,7 +75,7 @@ def _aliases(row: Mapping[str, Any], name_field: str) -> list[str]:
 
 
 def _longer_name(text: str, end: int) -> bool:
-    """True when the match runs straight into another capitalised word that is not a corporate word or an acronym."""
+    """True when the match runs straight into another capitalized word that is not a corporate word or an acronym."""
     following = re.match(r"\s+([A-Z][\w.&'-]*)", text[end:])
     if following is None:
         return False
@@ -123,7 +123,7 @@ class ReaderIndex:
         self._patterns: dict[str, re.Pattern[str]] = {}
 
     def _find(self, alias: str, whole: str, title_end: int, *, transit: bool = False, exact_case: bool = False, name: bool = True) -> tuple[str, int] | None:
-        """name: the alias is a proper name, so a match that runs into another capitalised word ("Leonardo DiCaprio") is a
+        """name: the alias is a proper name, so a match that runs into another capitalized word ("Leonardo DiCaprio") is a
         different name. A topic keyword is not a name: "Houthi" counts in the Title Case headline "Houthi Attacks in ..."."""
         key = f"{transit}|{exact_case}|{alias}"
         pattern = self._patterns.get(key)

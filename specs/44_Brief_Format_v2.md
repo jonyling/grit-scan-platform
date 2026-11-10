@@ -3,8 +3,8 @@
 Status: built on 30 October 2026. This spec records requests 1 to 5 of 30 October 2026 and the plan in [Wilson-Format-Gap-and-Plan_2026-10-30.md](../docs/progress/Wilson-Format-Gap-and-Plan_2026-10-30.md). Request 6, internal facts from a business partner's notes, is not built.
 
 The opt-in [weekly reasoning extension](45_Weekly_Agent_Reasoning_and_Critique.md)
-retains this layout. A named reviewer can supply specific internal evidence;
-there is no automatic notes, mailbox, Teams, or travel ingestion. Reporting
+retains this layout. A named reviewer can supply specific internal evidence.
+Nothing ingests notes, mailboxes, Teams, or travel automatically. Reporting
 and the final Critic operate on the complete report model. Rendering uses the
 frozen snapshot and makes no provider call. Earlier-context and hindsight
 citations retain their real source dates and display the exception.
@@ -35,18 +35,18 @@ The prose supplier, customer and competitor sections are replaced by the named w
 
 The scan is wide and the report narrow (URS methodology, section 24), so audit material goes to the appendix. The action
 posture follows the methodology's "one major ask, followed by limited follow-ups": the principal ask is the Reporter's
-validated escalation text, and the follow-ups list each owner with the escalating items and standing items whose rows suggest
+validated escalation text. The follow-ups list each owner with the escalating items and standing items whose rows suggest
 them a response. A watchpoints section appears only when a watchpoint is open.
 
 The corrections ledger (URS methodology, section 22) holds material corrections that R&A records with `grit corrections add`:
 the earlier statement, why it was wrong or incomplete, the corrected fact, its source, and the earlier reports to update.
-Every later report of the pack carries the open corrections until R&A closes them, and every agent receives them with the
-admitted Memory corrections. A correction can retire an exact phrase, such as "S$600m": a Reporting edit that uses it fails
-its contract and is repaired, and `grit scorecard` flags a report whose narrative uses it.
+Every later report of the pack carries the open corrections until R&A closes them. Every agent receives them with the
+admitted Memory corrections. A correction can retire an exact phrase, such as "S$600m". A Reporting edit that uses the phrase fails
+its contract and is repaired. `grit scorecard` flags a report whose narrative uses it.
 
 ## 2. Events and bands
 
-The week's kept signals are grouped by the nightly index's events (spec 42); `grit agents` runs the clustering first. A RED event needs a member signal whose impact the Risk & Assurance operator confirmed (spec 45). A RED candidate that awaits that decision counts as material but not RED; a candidate the operator rejected counts as neither. An event is **material** when it is RED or an undecided RED candidate, tier 1, or tier 2 with a risk linkage and either two or more independent publishers or a direct or counterparty link.
+The week's kept signals are grouped by the nightly index's events (spec 42). `grit agents` runs the clustering first. A RED event needs a member signal whose impact the Risk & Assurance operator confirmed (spec 45). A RED candidate that awaits that decision counts as material but not RED. A candidate the operator rejected counts as neither. An event is **material** when it is RED or an undecided RED candidate, tier 1, or tier 2 with a risk linkage and either two or more independent publishers or a direct or counterparty link.
 
 | Band | Rule |
 |---|---|
@@ -62,7 +62,7 @@ within each band, and the best-sourced report leads. A selection that cites anot
 but only when the two headlines share a distinctive word. Within a week, each elevated event joins the highest-scored story
 it matches directly: two or more shared distinctive headline words (`grit.core.headlines`, where "Saudi Arabia" counts as
 one word), or the same jurisdiction where the business has entities together with a shared risk. A page whose headline is
-too poor to compare is read by its opening. Matches never chain, the best-sourced matching report leads, and the story
+too poor to compare is read by its opening. Matches never chain. The best-sourced matching report leads. The story
 keeps its three most common risks. Words common in headlines, including "critical", "security" and "vulnerability", do
 not count.
 
@@ -71,23 +71,23 @@ EventAssessor's item label does. After the rows are drafted, a drafted event who
 words, or one identifier that mixes letters and digits such as "PHP2Shell" or "CVE-2026-1096", with the label of a
 higher-ranked drafted event, within a week, joins that event's row. The report repeats this check on the drafted rows. The run records these
 merges (`event_merges`) and the report applies them, so the drafting stage and the report agree. The run also records the
-events the EventAssessor withheld, and only drafted or withheld events are rows, so a slot that merging frees stays empty.
+events the EventAssessor withheld. Only drafted or withheld events are rows, so a slot that merging frees stays empty.
 
 An event's reports include the other reports of it that a member's selection cites, such as duplicates the review set
 aside, when the two headlines share a distinctive word. A cited report leads only when its band is better than every
-member's, and the row lists up to two T1 to T3 reports beside the drafted row's own sources. The row's score is its
+member's. The row lists up to two T1 to T3 reports beside the drafted row's own sources. The row's score is its
 event's score, so `grit scorecard` does not read a cited report's own score. The score, band and risks
 come from the members alone.
-"No report this week" is not easing: the changes table says "No new report" without an arrow, and the status line names only ▲
+The brief does not read "No report this week" as easing. The changes table says "No new report" without an arrow. The status line names only ▲
 events and standing risks whose trend eased. Status-line text ends at a sentence, or at a word with an ellipsis.
 
 A management request that this pack's signals do not answer is matched against the kept signals of the child packs it covers
-for the same date, such as URS Taiwan; each match names the pack it came from. The named-item watch leaves out items with only
-a passing mention, and the item Reporter reports only news that touches the item's role for the business area. Risk linkage uses the register's numbering: `URS-KEY-05` is "Key Risk 5", `URS-TIER_2-07` is "Tier-2 Risk 7".
+for the same date, such as URS Taiwan. Each match names the pack it came from. The named-item watch leaves out items with only
+a passing mention. The item Reporter reports only news that touches the item's role for the business area. Risk linkage uses the register's numbering: `URS-KEY-05` is "Key Risk 5", `URS-TIER_2-07` is "Tier-2 Risk 7".
 
 ## 3. The EventAssessor
 
-For each elevated event, `grit agents` asks the EventAssessor (prompt `event-row-1`) for an item label, a summary, implications for the business area, and a suggested response with an owner. The row is kept only when it passes these checks; otherwise it is withheld and logged in the QA log, and the table shows the event without a draft.
+For each elevated event, `grit agents` asks the EventAssessor (prompt `event-row-1`) for an item label, a summary, implications for the business area, and a suggested response with an owner. The row is kept only when it passes these checks. Otherwise the row is withheld and logged in the QA log. The table then shows the event without a draft.
 
 - Every figure appears in a cited source, or in a source's publication date.
 - The summary states a date, and a figure when its sources give one (specificity).
@@ -103,21 +103,21 @@ The Assessor's prompt (`reader-assessor-6`) also asks for dates, actors, places 
 
 A date is kept only when a source linked to the business area states it as a day and a month within the next 30 days. The row is the source's own sentence. Two sentences on the same date are one row when they share most words or come from the same event. Nothing is forecast.
 
-A wire dateline, such as "Riyadh, November 3 (ANI):" or "WASHINGTON, Nov 3 (Reuters) -", dates the report, not an event. Its date is never read as an event date, here or in the event dates the agents receive, and the row drops the dateline from the sentence.
+A wire dateline, such as "Riyadh, November 3 (ANI):" or "WASHINGTON, Nov 3 (Reuters) -", dates the report, not an event. Its date is never read as an event date, here or in the event dates the agents receive. The row drops the dateline from the sentence.
 
 ## 5. Coverage, jurisdictions and the quality gate
 
-- Every planned search that Brave or Currents answers is written to the `searches` ledger, including a search that returned no pages. A search that failed (any status other than 200) is not recorded, because it is not evidence of a nil. Runs from before the ledger fall back to their sightings, and `acquire` backfills the ledger from `searches.jsonl` when a run resumes. Countersearches by the reasoned Critic are not part of the ledger.
+- Every planned search that Brave or Currents answers is written to the `searches` ledger, including a search that returned no pages. A search that failed (any status other than 200) is not recorded, because it is not evidence of a nil. Runs from before the ledger fall back to their sightings. `acquire` backfills the ledger from `searches.jsonl` when a run resumes. Countersearches by the reasoned Critic are not part of the ledger.
 - A coverage cell is one of these:
   - A finding (up to two titles).
   - "No item kept (searched)" when an answered search of that category was aimed at that line of business, or the row is the business-area-wide row.
   - "No item kept (business-area-wide search only)" when searches of that category ran, but none was aimed at that line of business.
   - "Not searched this week" when no search of that category was answered.
 - A search is aimed at a line of business when its plan row states one (`canonical_lob`), or when its target is an entity, customer, supplier or competitor row with a stated line of business.
-- A signal's line of business comes from its LOB link, a strongly named entity, customer or supplier with a stated LOB, or a competitor row; otherwise it is business-area wide. Its category comes from its rung, a named supplier, or the name of the risk it hits.
+- A signal's line of business comes from its LOB link, a strongly named entity, customer or supplier with a stated LOB, or a competitor row. Otherwise it is business-area wide. Its category comes from its rung, a named supplier, or the name of the risk it hits.
 - A jurisdiction is any country where the register holds an entity (country of incorporation or asset country). Its finding is the best kept signal that names the country in its title or place links. A jurisdiction with no finding shows "No item found in the checked sources." only when an answered search targeted one of its entities or named the country or an alias. Otherwise it shows "No item found; no country-specific search ran this week."
 - The completeness gate answers eight questions by rule. Five are critical: macro and financial items checked, every line of business searched, competitors checked, export controls and the supply chain checked, and every jurisdiction searched. Three are not critical: every nil backed by a search of its own scope, named suppliers and customers searched, and sources in conflict.
-- A critical question answered "No" blocks release. The brief records the blocking questions and every other limitation under `method.weekly.completeness`, and a reasoned weekly report with a blocker is `INCOMPLETE` even when the Critic raises no issue. The rendered gate marks each critical question and states when the brief is not ready for release.
+- A critical question answered "No" blocks release. The brief records the blocking questions and every other limitation under `method.weekly.completeness`. A reasoned weekly report with a blocker is `INCOMPLETE` even when the Critic raises no issue. The rendered gate marks each critical question and states when the brief is not ready for release.
 - A risk's category comes from words in its name. "Economic slowdown" and "recession" count as financial and macro, so a macro risk named that way satisfies the financial check.
 - A conflict is two members of one event that give different counts for the same thing (killed, injured, flights, missiles and similar).
 
@@ -138,9 +138,9 @@ so R&A knows what to band next.
 
 ## 7. Scenarios for every business area
 
-`grit scenarios` now drafts best, medium and worst cases for a business-area pack's key risks, as it does for the Group pack's shifts. `grit scenarios-approve` makes the reviewed draft the pack's register, and every brief whose pack has a register shows its outlook and the leading indicators.
+`grit scenarios` now drafts best, medium and worst cases for a business-area pack's key risks, as it does for the Group pack's shifts. `grit scenarios-approve` makes the reviewed draft the pack's register. Every brief whose pack has a register shows its outlook and the leading indicators.
 
-On 30 October 2026 the URS (5 key risks) and DS&C (6) registers were recorded as approved by Jony Ling on instruction, for the POC, with BA review pending. CA's 29 October run fell back to Currents and gave evidence for one key risk only. CA was scanned again with Brave for 30 October (131 queries, 369 pages kept); its register covers 6 of its 8 key risks, recorded in the same way. Key risks 4 and 5 had no evidence that week.
+On 30 October 2026 the URS (5 key risks) and DS&C (6) registers were recorded as approved by Jony Ling on instruction, for the POC, with BA review pending. CA's 29 October run fell back to Currents and gave evidence for one key risk only. CA was scanned again with Brave for 30 October (131 queries, 369 pages kept). Its register covers 6 of its 8 key risks, recorded in the same way. Key risks 4 and 5 had no evidence that week.
 
 A package already pending review is not replaced by a new layout: a reviewer returns it for rework first. Previews in format v2 for Wilson are in `output/runs/RUN/preview-format-v2/`.
 

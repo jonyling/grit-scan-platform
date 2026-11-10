@@ -1,13 +1,13 @@
 # Prepare the weekly exposure snapshot with M365 Copilot
 
 GRIT-Scan cannot read internal email, GRIT and ISOS alerts, the travel tracker,
-or project papers. Each week, use M365 Copilot, which can, to prepare the
-exposure snapshot. Then a named reviewer or BA head approves it, and
-`grit weekly` admits it.
+or project papers. M365 Copilot can read them. Each week, use M365 Copilot to
+prepare the exposure snapshot. A named reviewer or business-area (BA) head then
+approves the snapshot. `grit weekly` admits it.
 
 ## Prepare the snapshot
 
-1. Open M365 Copilot and paste the prompt from the next section. Replace
+1. Open M365 Copilot and paste the text from [Prompt](#prompt). Replace
    `BUSINESS_AREA` and `DATE`.
 2. Check each entry against its source. Delete any entry you cannot verify.
 3. Save the JSON as `secrets/internal/PACK/DATE.json`, for example

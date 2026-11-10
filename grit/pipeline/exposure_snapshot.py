@@ -1,9 +1,9 @@
 """The weekly exposure snapshot: approved internal facts about where the business is exposed (URS methodology, sections 2
 and 4). R&A prepares it each week from internal sources the platform cannot read, such as GRIT and ISOS alerts, the travel
-tracker and project papers, and a named reviewer or BA head approves it. It records counts, never people's names.
+tracker and project papers. A named reviewer or BA head approves it. It records counts, never people's names.
 
-The snapshot becomes approved internal evidence records, the only basis on which an agent may call exposure confirmed, and
-it is shown whole in the report's exposure section.
+The snapshot becomes approved internal evidence records. These records are the only basis on which an agent may call
+exposure confirmed. The report shows the whole snapshot in its exposure section.
 
     {"pack": "urs", "asOf": "2026-11-02", "preparedBy": "...", "sources": ["..."],
      "sites":     [{"entity", "city", "country", "headcount", "safetyConfirmed", "reference"}],
@@ -27,7 +27,7 @@ REQUIRED = {
     "alerts": ("date", "location", "country", "summary", "reference"),
 }
 DATES = ("safetyConfirmed", "until", "date")
-# A site within this distance of an alert's location is exposed; further away, possibly exposed.
+# A site within this distance of an alert's location is exposed. A site farther away is possibly exposed.
 NEAR_KM = 10.0
 
 

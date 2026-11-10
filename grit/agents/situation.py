@@ -21,7 +21,7 @@ MARK = re.compile(r"\[(P\d{1,3}(?:\s*,\s*P\d{1,3})*)\]")
 FORECAST = re.compile(r"\b(will|projected|projects|projection|projections|forecasts?|forecasted|expected to|expects|is set to|are set to|anticipated|anticipates)\b", re.I)
 NARRATIVE, UNCERTAINTIES, INDICATORS, IN_BRIEF = "NARRATIVE", "UNCERTAINTIES", "INDICATORS", "IN_BRIEF"
 MIN_WORDS = {NARRATIVE: 150, IN_BRIEF: 50}
-ATTEMPTS = 3  # a section is long and every sentence is checked, so it gets two redrafts with the violations
+ATTEMPTS = 3  # a section is long, and every sentence is checked: it gets two redrafts with the violations
 
 
 @dataclass(frozen=True)

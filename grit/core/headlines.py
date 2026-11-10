@@ -1,6 +1,6 @@
-"""Distinctive headline words, so two reports of one story can be recognised. Pure.
+"""Distinctive headline words, so two reports of one story can be recognized. Pure.
 
-A word counts when it has five or more letters and is not common in headlines. Plurals fold to the singular, and a
+A word counts when it has five or more letters and is not common in headlines. Plurals fold to the singular. A
 multi-word place counts once, so "Saudi Arabia" does not make two unrelated Saudi stories look alike.
 """
 
@@ -31,5 +31,5 @@ _IDENTIFIER = re.compile(r"\b(?=[a-z0-9-]*[a-z])(?=[a-z0-9-]*\d)[a-z0-9][a-z0-9-
 
 def identifiers(text: str) -> frozenset[str]:
     """Names that mix letters and digits, such as "PHP2Shell", "CVE-2026-1096" or "A320neo". One shared identifier names
-    the same story; a plain number, such as a year, is not one."""
+    the same story. A plain number, such as a year, is not an identifier."""
     return frozenset(_IDENTIFIER.findall(str(text or "").casefold())) - COMMON_IDENTIFIERS

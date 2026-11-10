@@ -124,7 +124,7 @@ class RiskCascade:
 def load_risk_cascade(config_dir: Path = CONFIG_DIR, pack: Any | None = None) -> RiskCascade:
     """Risk-Cascade.json names one entity and one business-area theme register (URS Taiwan and URS today). With a reader
     pack, a level's register is kept only when it belongs to the pack, its parent, or its children. Otherwise the pack's
-    own themes fill its own level, and the other level is empty, so a DS&C signal is never placed in a URS theme."""
+    own themes fill its own level, and the other level is empty. A DS&C signal is then never placed in a URS theme."""
     cascade = json.loads((config_dir / "risk" / "Risk-Cascade.json").read_text(encoding="utf-8"))
     files = {level["level"]: config_dir / level["register"] for level in cascade["levels"]}
     load = lambda path: json.loads(path.read_text(encoding="utf-8-sig")) if path.is_file() else None  # noqa: E731

@@ -1,5 +1,5 @@
 """The brief model: one reader's weekly brief as plain data, built from the pool. Renderers turn it into Word, PowerPoint,
-Excel, or Markdown, so every format says the same thing.
+Excel, or Markdown. Every format says the same thing.
 
 The model applies the reader's routing (spec 24 aperture and spec 29 priority) and reader profile (spec 39) to the shared
 signals. The profile orders signals within a priority tier and hides none. It never changes a shared fact. Citations stay as signal ids until a renderer prints the outlet, the date, and the link.
@@ -125,7 +125,7 @@ def _cited_ids(*texts: str | None) -> set[str]:
 
 def routed_signals(pool: Pool, run_id: str, profile: Profile) -> list[dict[str, Any]]:
     """Every kept signal with this reader's route and profile effect. Signals outside the aperture stay in the list with the
-    reason; the profile only reorders."""
+    reason. The profile only reorders."""
     rows = pool.weekly_assessments(run_id, include_excluded=True)
     memory = None
     if profile.signal_buttons:
@@ -497,7 +497,7 @@ def red_trigger_labels() -> dict[str, str]:
 
 
 def red_items(routed: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
-    """The report's RED list. A candidate the reviewed selection excluded is not listed; the status basis counts it
+    """The report's RED list. A candidate the reviewed selection excluded is not listed. The status basis still counts it
     (spec 45)."""
     return [{"signal_id": row["signal_id"], "title": row["title"], "url": row["url"], "rule": row.get("red_rule") or {},
              "status": row["red_status"], "decision": row.get("red_decision")} for row in routed

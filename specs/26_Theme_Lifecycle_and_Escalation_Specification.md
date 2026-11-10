@@ -3,13 +3,13 @@
 **Function:** `ThemeEscalationAssessment()`  
 **Function type:** Pure deterministic theme-metric evaluation service  
 **System of record:** Microsoft Dataverse  
-**Scope:** `GRIT_Theme` lifecycle only; not a signal workflow mechanism
+**Scope:** `GRIT_Theme` lifecycle only. This function is not a signal workflow mechanism.
 
 ## 1. Purpose
 
-This specification formalises how a strategic theme evolves as governed event evidence changes over time. It separates an agent's interpretation of why a theme matters from deterministic measurement of whether its evidence footprint is expanding, stable, or declining.
+This specification formalizes how a strategic theme evolves as governed event evidence changes over time. It separates an agent's interpretation of why a theme matters from deterministic measurement of whether its evidence footprint is expanding, stable, or declining.
 
-`ThemeEscalationAssessment()` evaluates a canonical, Supervisor-supplied metric snapshot for one theme version. It returns direction, velocity, escalation recommendation, and a lifecycle-state proposal. It performs no Dataverse reads or writes, invokes no agent, creates no theme/event relationship, does not approve or publish, and does not change `GRIT_WorkflowState`.
+`ThemeEscalationAssessment()` evaluates a canonical, Supervisor-supplied metric snapshot for one theme version. It returns direction, velocity, escalation recommendation, and a lifecycle-state proposal. It performs no Dataverse reads or writes and invokes no agent. It creates no theme/event relationship. It does not approve or publish, and it does not change `GRIT_WorkflowState`.
 
 ```text
 Supervisor supplies authoritative metrics.
@@ -18,7 +18,7 @@ RegisterWriteGate validates typed theme mutation.
 Supervisor persists accepted versioned record.
 ```
 
-## 2. Theme Lifecycle States
+## 2. Theme lifecycle states
 
 | State | Meaning | Permitted lifecycle movement |
 | --- | --- | --- |
@@ -30,15 +30,15 @@ Supervisor persists accepted versioned record.
 | `CLOSED` | Theme is no longer actively monitored under the current lifecycle policy; historical versions remain available. | `REOPENED` only. |
 | `REOPENED` | Previously closed theme has new governed evidence requiring renewed assessment. | `ACTIVE`, `ESCALATING`, `STABLE`, `DECLINING`, or `CLOSED`. |
 
-`PROPOSED` and `REOPENED` describe lifecycle status, not publication status. A lifecycle transition is a versioned `GRIT_Theme` mutation; it is not a `GRIT_WorkflowState` transition.
+`PROPOSED` and `REOPENED` describe lifecycle status, not publication status. A lifecycle transition is a versioned `GRIT_Theme` mutation. It is not a `GRIT_WorkflowState` transition.
 
-## 3. ThemeEscalationAssessment() Functional Specification
+## 3. ThemeEscalationAssessment functional specification
 
 ### 3.1 Deterministic contract
 
-The same canonical metric snapshot and configuration version must always produce the same result. Thresholds, weighting, minimum evidence requirements, and recommendation mapping are defined in governed configuration, never in an agent prompt.
+The same canonical metric snapshot and configuration version must always produce the same result. Governed configuration defines thresholds, weighting, minimum evidence requirements, and recommendation mapping. An agent prompt never defines them.
 
-The Supervisor obtains metrics from `ThemeMetricCalculation()`, validates the configuration version, and supplies them to this function. `ThemeEscalationAssessment()` must not retrieve a newer theme row, calculate missing values, infer evidence, or replace configured thresholds.
+The Supervisor obtains metrics from `ThemeMetricCalculation()` and validates the configuration version. It then supplies the metrics to this function. `ThemeEscalationAssessment()` must not retrieve a newer theme row or calculate missing values. It must not infer evidence or replace configured thresholds.
 
 ### 3.2 Inputs
 
@@ -77,35 +77,42 @@ Invocation ID, runtime timestamps, retry attempt, signature, signing key, and ex
 | `input_hash` / `canonical_result_hash` | Deterministic integrity hashes. |
 | `theme_id`, `theme_version`, `configuration_version`, `function_version` | Traceability values. |
 
-The result is a proposal until `RegisterWriteGate()` validates the typed lifecycle mutation and the Supervisor persists a new version. Policy may require named human approval for escalation, closure, or reopening before the version becomes active for management reporting.
+The result stays a proposal until two steps complete. First, `RegisterWriteGate()` validates the typed lifecycle mutation. Then the Supervisor persists a new version. Policy can require named human approval for escalation, closure, or reopening before the version becomes active for management reporting.
 
-## 4. Decision Rules
+## 4. Decision rules
 
 1. Validate the complete metric contract, numeric ranges, period ordering, configuration version, and allowed current lifecycle state. Invalid or missing input returns `INSUFFICIENT_EVIDENCE` with no lifecycle promotion.
 2. Apply the configured minimum evidence gate. A theme without sufficient event coverage or source diversity cannot receive `ESCALATE`, even where the raw growth rate is high.
 3. Calculate the controlled movement score from event growth, affected LOB breadth, geography breadth, source diversity, and regulatory activity using the weights in the exact configuration version.
 4. Map the movement score and current state to direction, velocity, recommendation, and lifecycle proposal using configured thresholds.
-5. A closed theme may only receive `REOPEN_CANDIDATE`/`REOPENED` when configured reopening evidence is satisfied. A theme cannot be silently reopened because an agent text suggests renewed relevance.
-6. A proposed theme may become `ACTIVE` only when configured evidence and lifecycle promotion policy are satisfied.
-7. A `STANDING_RISK` never returns `CLOSE_CANDIDATE`. Sustained decline returns `DE_ESCALATE` with a `DECLINING` proposal; closure requires Annual Report governance. See spec 31.
-8. `ESCALATE` tracking feedback from an LOB is a configured input contributor only. It cannot by itself escalate a theme, and never bypasses the evidence gates or required approval.
+5. A closed theme can receive `REOPEN_CANDIDATE`/`REOPENED` only when configured reopening evidence is satisfied. Agent text that suggests renewed relevance cannot silently reopen a theme.
+6. A proposed theme can become `ACTIVE` only when configured evidence and lifecycle promotion policy are satisfied.
+7. A `STANDING_RISK` never returns `CLOSE_CANDIDATE`. Sustained decline returns `DE_ESCALATE` with a `DECLINING` proposal. Closure requires Annual Report governance. See spec 31.
+8. `ESCALATE` tracking feedback from an LOB is a configured input contributor only. It cannot escalate a theme by itself. It never bypasses the evidence gates or required approval.
 9. The function does not publish a theme, alter a package, or infer that a lifecycle proposal is approved.
 
-## 5. Lifecycle Actions and Governance
+## 5. Lifecycle actions and governance
 
 | Action | Agent role | Deterministic control | Persistence rule |
 | --- | --- | --- | --- |
-| Proposal | May propose a theme and rationale. | EventMatch, ThemeMatch, ThemeMetricCalculation, RegisterWriteGate. | Persist a versioned `PROPOSED` record only after validated typed write. |
-| Activation | May propose strategic significance. | ThemeEscalationAssessment and lifecycle policy. | Supervisor writes new version; human approval where policy requires. |
-| Escalation | May explain drivers and uncertainty. | ThemeEscalationAssessment returns `ESCALATE`; RegisterWriteGate validates lineage/policy. | New `ESCALATING` version; human approval where policy requires. |
-| Stabilisation / decline | May explain observed movement. | ThemeEscalationAssessment deterministic result. | New version; retain prior version unchanged. |
-| Closure | May recommend closure. | ThemeEscalationAssessment returns `CLOSE_CANDIDATE`; RegisterWriteGate confirms policy and evidence. | New `CLOSED` version; human approval where policy requires. |
-| Reopening | May propose renewed monitoring. | ThemeEscalationAssessment returns `REOPEN_CANDIDATE`; RegisterWriteGate validates closed lineage and evidence. | New `REOPENED` version; human approval where policy requires. |
-| Merge / split / correction | May propose. | RegisterWriteGate validates references, hashes, policy, and version lineage. | Append-only/superseding records; never merge solely on title similarity. |
+| Proposal | Can propose a theme and rationale. | EventMatch, ThemeMatch, ThemeMetricCalculation, RegisterWriteGate. | Persist a versioned `PROPOSED` record only after validated typed write. |
+| Activation | Can propose strategic significance. | ThemeEscalationAssessment and lifecycle policy. | Supervisor writes new version; human approval where policy requires. |
+| Escalation | Can explain drivers and uncertainty. | ThemeEscalationAssessment returns `ESCALATE`; RegisterWriteGate validates lineage/policy. | New `ESCALATING` version; human approval where policy requires. |
+| Stabilization / decline | Can explain observed movement. | ThemeEscalationAssessment deterministic result. | New version; retain prior version unchanged. |
+| Closure | Can recommend closure. | ThemeEscalationAssessment returns `CLOSE_CANDIDATE`; RegisterWriteGate confirms policy and evidence. | New `CLOSED` version; human approval where policy requires. |
+| Reopening | Can propose renewed monitoring. | ThemeEscalationAssessment returns `REOPEN_CANDIDATE`; RegisterWriteGate validates closed lineage and evidence. | New `REOPENED` version; human approval where policy requires. |
+| Merge / split / correction | Can propose. | RegisterWriteGate validates references, hashes, policy, and version lineage. | Append-only/superseding records; never merge solely on title similarity. |
 
-## 6. Audit, Replay, and Error Handling
+## 6. Audit, replay, and error handling
 
-Log every call in `GRIT_FunctionExecutionLog`: function/version, theme/version references, supplied metrics, configuration/metric-function versions, canonical input/result hashes, idempotency key, invocation metadata, and result signature. Store source event and signal references in the metric snapshot or secured linked payload so results are replayable.
+Log every call in `GRIT_FunctionExecutionLog` with these values:
+
+- function/version and theme/version references;
+- supplied metrics and configuration/metric-function versions;
+- canonical input/result hashes and idempotency key;
+- invocation metadata and result signature.
+
+Store source event and signal references in the metric snapshot or a secured linked payload. Results are then replayable.
 
 `RegisterWriteGate()` logs the typed mutation decision separately. The resulting `GRIT_Theme` version stores lifecycle state, direction, content hash, configuration version, source execution, and version lineage.
 
@@ -119,19 +126,19 @@ Log every call in `GRIT_FunctionExecutionLog`: function/version, theme/version r
 | Function timeout/throttling | Retry through `RetryBudget()`; do not synthesize a result. |
 | RegisterWriteGate denial/persistence failure | Preserve function result, stop mutation, reconcile before retry. |
 
-## 7. Reporting Requirements
+## 7. Reporting requirements
 
 The Strategic Horizon Pack must include independently identifiable sections for:
 
-1. **Top Emerging Themes:** `PROPOSED`, newly `ACTIVE`, and policy-permitted early themes, visibly labelled with evidence confidence and uncertainty.
+1. **Top Emerging Themes:** `PROPOSED`, newly `ACTIVE`, and policy-permitted early themes, visibly labeled with evidence confidence and uncertainty.
 2. **Fastest Escalating Themes:** `ESCALATING` themes ordered by governed velocity/movement result, not article count alone.
 3. **Themes Requiring Management Attention:** policy-configured combination of escalation recommendation, strategic significance, cross-LOB exposure, regulatory activity, and evidence confidence.
 4. **Declining Themes:** `DECLINING` themes with direction and rationale.
 5. **Closed Themes:** `CLOSED` themes, closure rationale, date/version, and reopening watchpoint where applicable.
 
-Reports may state lifecycle results as facts only when the relevant theme version and output package have the approval/publication status required by policy. Proposed results remain visibly labelled and retain citations to events and signals.
+Reports can state lifecycle results as facts only when the relevant theme version and output package have the approval/publication status required by policy. Proposed results remain visibly labeled and retain citations to events and signals.
 
-## 8. Acceptance Criteria
+## 8. Acceptance criteria
 
 - Theme lifecycle values are limited to the seven controlled states in Section 2.
 - No theme lifecycle action creates a new `GRIT_WorkflowState` value or signal transition.

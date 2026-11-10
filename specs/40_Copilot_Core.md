@@ -1,15 +1,15 @@
 # 40. Co-Pilot core
 
 **Status:** Built (Step 2 of the merged plan), 2026-10-19. Replaces the single-run chat under the dashboard.
-**Trigger:** The R&A team's request of 18 October 2026 for a chat beside the dashboard, and the decisions of 19 October 2026. The design is [docs/design/copilot-architecture.md](../docs/design/copilot-architecture.md); this spec records what was built from its phase 1.
+**Trigger:** The R&A team's request of 18 October 2026 for a chat beside the dashboard, and the decisions of 19 October 2026. The design is [docs/design/copilot-architecture.md](../docs/design/copilot-architecture.md). This spec records what was built from its phase 1.
 
 ## 1. What it does
 
-The Co-Pilot answers a reader's question from GRIT-Scan's own records: the briefs' assessed state, every run's signals, the report library, and the business-area registers. It answers in a fixed shape, cites every claim, and withholds an answer that fails its checks. It never writes a shared fact.
+The Co-Pilot answers a reader's question from GRIT-Scan's own records: the briefs' assessed state, every run's signals, the report library, and the business-area registers. Each answer has a fixed shape and cites every claim. The Co-Pilot withholds an answer that fails its checks. It never writes a shared fact.
 
 ## 2. Scope
 
-| Rule | Behaviour |
+| Rule | Behavior |
 |---|---|
 | Reach | A reader searches their own packs. A reader who receives a Group-level brief, or whose profile scope is `GROUP`, searches every pack. Wilson, the CEO and the Chairman therefore search all packs. |
 | Narrowing | The drawer can narrow the search to one pack inside the reach. A pack outside it is refused. |
@@ -47,11 +47,11 @@ An internal report carries the note "Internal report (Co-Confidential): quoted f
 `grit/copilot/agent.py` runs the loop:
 
 1. The model receives the question, the reader's name, role and profile body, the scope, and the reader's last three turns as plain text.
-2. Each round, the model asks for up to 4 lookups, or returns its answer. There are at most 4 rounds; after the last, the model must answer.
-3. The checks run. A failing answer is redrafted once with the violations listed. If it fails again, it is withheld.
-4. Each model call is retried twice. The model sometimes returns broken JSON or an empty function call.
+2. Each round, the model asks for up to 4 lookups, or returns its answer. There are at most 4 rounds. After the last round, the model must answer.
+3. The checks run. The model redrafts a failing answer once, with the violations listed. If the redraft fails too, the Co-Pilot withholds it.
+4. The loop retries each model call twice, because the model sometimes returns broken JSON or an empty function call.
 
-Lookups are requested as JSON, not as native function calls. A stub model can then drive the loop in tests, and every request is logged as data.
+The model requests lookups as JSON instead of native function calls. A stub model can then drive the loop in tests. Every request is also logged as data.
 
 The answer has five parts: `answer` (one to three sentences; two for `answer_length: short`), `evidence`, `implications`, `uncertain` and `next_step`. `grit/copilot/checks.py` requires:
 
@@ -88,11 +88,11 @@ To ask a question from the command line as a named reader:
 .venv/bin/python -m grit ask --profile wilson "What is driving the risk to our GPU and HBM access?"
 ```
 
-Add `--no-save` to keep the turn out of the reader's chat; it is still logged. `--window`, `--pack`, `--run` and `--focus` set the scope.
+Add `--no-save` to keep the turn out of the reader's chat. The turn is still logged. `--window`, `--pack`, `--run` and `--focus` set the scope.
 
 ## 8. Dashboard
 
-The dashboard fills the screen. **Show Co-Pilot** in the sidebar opens the drawer, and **Co-Pilot width** sets its share of the screen from 24 to 50 percent. With the drawer closed, the dashboard uses the full width. The drawer has:
+The dashboard fills the screen. **Show Co-Pilot** in the sidebar opens the drawer. **Co-Pilot width** sets its share of the screen, from 24 to 50 percent. With the drawer closed, the dashboard uses the full width. The drawer has:
 
 - a window control and a pack filter;
 - a fixed-height conversation;

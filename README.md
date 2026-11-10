@@ -13,7 +13,7 @@ The weekly command uses the compatibility path. `--reasoned` is the opt-in path 
 - Scoring stays in rules. Confidence, news priority, trend labels, RED status, and the harm verdict are functions in `grit/core/`.
 - A missing fact stays missing. The brief prints "not established" or "nothing found".
 - A draft with no source, an inexact quote, or a number the source lacks is withheld.
-- A weekly pack waits for `ReviewGate()` before it counts as approved. A RED alert is a draft email. When Microsoft Graph mail is configured, a daily run sends that draft to the R&A duty team, and a named person forwards it. With no mail settings, the draft stays unsent.
+- A weekly pack waits for `ReviewGate()` before it counts as approved. A RED alert is a draft email. When Microsoft Graph mail is configured, a daily run sends that draft to the R&A duty team. A named person forwards it. With no mail settings, the draft stays unsent.
 
 ## Repository layout
 
@@ -69,7 +69,7 @@ Use the project virtual environment. Install packages there. Leave system Python
    .venv/bin/python -m pytest -q
    ```
 
-   As of 8 November 2026, 888 tests pass. They make no network call. Set `GRIT_TEST_ROOT` to a disposable directory when a fixture run must leave this checkout's `config/`, `output/`, and `secrets/` unread. That switch also skips `.env`.
+   As of 10 November 2026, 909 tests pass. They make no network call. Set `GRIT_TEST_ROOT` to a disposable directory when a fixture run must leave this checkout's `config/`, `output/`, and `secrets/` unread. That switch also skips `.env`.
 
    ```bash
    GRIT_TEST_ROOT=/tmp/grit-weekly-fixtures .venv/bin/python -m pytest \
@@ -81,7 +81,7 @@ Use the project virtual environment. Install packages there. Leave system Python
 
 The scan reads workbooks from `secrets/` and keys from `.env`. Git ignores `secrets/`, `output/`, `.env`, and every `.xlsx` file. The Urban Solutions pack is built from the confidential URS Entity Info workbook.
 
-1. Copy each workbook to `secrets/`. A file whose name carries the business area's tag is used when the manifest's own file name is missing. Examples are `02_URS_Entity_Info.xlsx`, `04_DSC_Entity_Info.xlsx`, `01_CA_Entity_Info.xlsx`, and `06_Marine_Entity_Info.xlsx`. The newest matching file wins. Set `GRIT_WORKBOOK` to choose another URS path. Set `GRIT_WORKBOOK_DSC` (and the same pattern for another area) to choose that area's path.
+1. Copy each workbook to `secrets/`. When the manifest's own file name is missing, the builder uses a file whose name carries the business area's tag. Examples are `02_URS_Entity_Info.xlsx`, `04_DSC_Entity_Info.xlsx`, `01_CA_Entity_Info.xlsx`, and `06_Marine_Entity_Info.xlsx`. The newest matching file wins. Set `GRIT_WORKBOOK` to choose another URS path. Set `GRIT_WORKBOOK_DSC` (and the same pattern for another area) to choose that area's path.
 
 2. Copy `.env.example` to `.env` and fill in the values you use.
 
@@ -104,7 +104,7 @@ Keep `.env`, `secrets/`, and any service-account file out of git. Keep those val
 
 Run these commands from the repository root. `DATE` is the run date, `YYYY-MM-DD`. It defaults to today.
 
-`grit weekly` with no `--pack` runs every pack that has a scan plan and a window of 10 days or less. That set includes Commercial Aerospace and Marine. The Group pack is monthly, so it runs only when you name `--pack ste`. `grit scheduled` runs only the packs in `SCHEDULE`.
+`grit weekly` with no `--pack` runs every pack that has a scan plan and a window of 10 days or less. That set includes Commercial Aerospace and Marine. The Group pack is monthly. It runs only when you name `--pack ste`. `grit scheduled` runs only the packs in `SCHEDULE`.
 
 > **Warning:** A scan spends Brave queries. The Thursday budget in [Run the Thursday schedule](#run-the-thursday-schedule) covers DS&C, Urban Solutions, URS Taiwan, the Group pack, Commercial Aerospace, and Marine. Urban Solutions runs every Thursday. The other five run on the first Thursday. An unnamed `grit weekly` searches every pack with a scan plan and a window of 10 days or less, including named customers and suppliers. A search already stored for that run date is reused. `BRAVE_MONTHLY_LIMIT` stops the local counter. The default is 2000. Brave's free credit is about 1,000 queries. Past that credit, Brave refuses with HTTP 402. The scan then falls back to Currents for at most `CURRENTS_FALLBACK_MAX` queries a run (default 40). The counter in `output/brave-usage.json` counts queries from this repository. To rewrite a brief, rerun `grit agents` and `grit report`. Those commands call the model and the renderers. `--sweep N` adds up to N queries from the 12-week business-area digest plan.
 
@@ -126,18 +126,18 @@ Run these commands from the repository root. `DATE` is the run date, `YYYY-MM-DD
 
 A business-area brief follows Wilson's layout in [spec 44](specs/44_Brief_Format_v2.md). It has a status line, the bottom line, escalating and elevated items, what changed, a 30-day look-ahead, a priority table, coverage, jurisdictions, and the named supplier, customer, and competitor watch. A quality check and a numbered source register close it. The body cites sources as [S1], [S2]. Approved scenarios appear after `grit scenarios` and `grit scenarios-approve` for that pack.
 
-Each Word brief, Markdown preview, and slide says the content is GRIT-Scan AI-generated suggestions for consideration, and that a named person reviews it before anyone acts on it. A suggestion appears only when a proposed option or a triggered scenario response already cites that signal. It is marked "Suggestion for the business area to consider."
+Each Word brief, Markdown preview, and slide says the content is GRIT-Scan AI-generated suggestions for consideration. It also says that a named person reviews the content before anyone acts on it. A suggestion appears only when a proposed option or a triggered scenario response already cites that signal. It is marked "Suggestion for the business area to consider."
 
 The URS Taiwan brief follows the 2 October 2026 reference in `docs/reference/`. The Urban Solutions brief uses the same style at business-area level, including the URS Taiwan summary when that entity pack ran on the same date. Each reader's profile chooses the sections.
 
-One weekly run has six stages. Each stage reads and writes the signal pool, so you can rerun one stage alone.
+One weekly run has six stages. Each stage reads and writes the signal pool. You can rerun one stage alone.
 
 1. **Plan.** The scan plan becomes queries for standing conditions, active management requests, named projects, entities, suppliers, customers, hazards, and watchpoints.
 2. **Acquire.** Brave News answers each query once per run. A query Brave leaves empty goes to Currents, up to the fallback cap. Each page becomes one signal, keyed by its canonical URL.
 3. **Embed.** Gemini embeds each page once. Vectors are cached by text hash.
 4. **Assess.** The deterministic rules in `grit/core/` and the ontology linkers score each page. This stage calls no model.
 5. **Agents.** The Assessor drafts each standing condition or theme. The Critic reviews the drafts. The Reporter writes the named-item entries and the bottom line. The finding loop writes cards for the strongest register-linked signals.
-6. **Report.** Each reader's routing picks the signals. The reader profile orders them. The brief renders to Word, PowerPoint, Excel, and Markdown, and enters review.
+6. **Report.** Each reader's routing picks the signals. The reader profile orders them. The brief renders to Word, PowerPoint, Excel, and Markdown. Then it enters review.
 
 ## Use weekly reasoning
 
@@ -148,7 +148,7 @@ The compatibility path remains the default. To run the six-role path, pass `--re
   --reasoned --countersearch-limit N --profile PROFILE
 ```
 
-`N` is the nonnegative search budget for the run. You must pass it, including `0`. `0` turns countersearch off and the report says the top findings were left unchallenged. Each of the top five findings needs a search that tries to contradict it, so set `N` to at least 5. `10` leaves room for other checks. Requested checks that cannot run stay visible and block ordinary readiness.
+`N` is the nonnegative search budget for the run. You must pass it, including `0`. `0` turns countersearch off. The report then says the top findings were left unchallenged. Each of the top five findings needs a search that tries to contradict it. Set `N` to at least 5. `10` leaves room for other checks. Requested checks that cannot run stay visible and block ordinary readiness.
 
 To rank kept signals with DeepSeek, and to draft the report text with it, add `--reasoner deepseek`. Put `DEEPSEEK_API_KEY` in `.env`. Gemini still screens the pool. If a DeepSeek task fails, the Gemini selections remain.
 
@@ -170,7 +170,7 @@ To shorten the review, add `--fast`.
 
 With `--fast`, the Critic screens deterministic drops from compact records, about 80 per call. Only the drops it doubts receive the full Assessment and Critic review. Up to six calls run at once. `--workers N` changes that number. Batches whose input has not changed reuse their earlier answers. A pool of about 2,000 candidates takes about 120 calls, roughly 10 to 15 minutes. Compare a fast review with a full reasoned run on the same date before you rely on it. Switching modes starts a new analysis version.
 
-Assessment and an independent Critic account for deterministic keeps and drops, including acquired counterevidence. The Critic can rescue or exclude candidates. Reporting revises the existing sections. A final Critic checks the exact per-reader snapshot. Up to two reconciliation rounds are shared across the run and survive resume. Each report also gets one rewrite when the final Critic raises a material objection, even if the pool used both rounds. The Critic treats a missing internal check as material only when the report claims confirmed exposure or impact. An unresolved material objection blocks submission. A critical completeness-gate answer of "No" also blocks submission. The report is then `INCOMPLETE`, and the rendered gate names the blocker.
+Assessment and an independent Critic account for deterministic keeps and drops, including acquired counterevidence. The Critic can rescue or exclude candidates. Reporting revises the existing sections. A final Critic checks the exact per-reader snapshot. Up to two reconciliation rounds are shared across the run and survive resume. Each report also gets one rewrite when the final Critic raises a material objection, even if the pool used both rounds. The Critic treats a missing internal check as material only when the report claims confirmed exposure or impact. An unresolved material objection blocks submission. A critical completeness-gate answer of "No" also blocks submission. The report is then `INCOMPLETE`. The rendered gate names the blocker.
 
 `grit report --pack PACK --date YYYY-MM-DD --no-submit` can render an incomplete preview. Word, PowerPoint, Excel, Markdown, and JSON use the frozen report. An incomplete analysis returns exit code 2 even when the preview is written.
 
@@ -192,7 +192,7 @@ If an analysis finished `INCOMPLETE` only because a top finding has no contradic
 .venv/bin/python -m grit resume-report --research --pack ste --date 2026-11-05 --profile wilson --no-submit
 ```
 
-Objections to the old report drafts are marked superseded, because each new report gets its own final critique. Add `--no-submit` to render without putting the packs into review.
+The research run marks objections to the old report drafts as superseded. Each new report gets its own final critique. Add `--no-submit` to render without putting the packs into review.
 
 For approved internal confirmations, add `--internal-evidence FILE` and `--evidence-approved-by PROFILE` to the reasoned weekly or agents command. `FILE` is a JSON list. Each record has `title`, `text`, `reference`, and an optional `published_at` date. A record can also state the business's own exposure:
 
@@ -203,7 +203,7 @@ For approved internal confirmations, add `--internal-evidence FILE` and `--evide
 
 `type` is `SITE`, `STAFF`, `CONTRACT`, `TRAVEL`, `ASSET`, or `OTHER`. `status` is `CONFIRMED`, `POSSIBLE`, or `NOT_EXPOSED`. Only such a record lets Assessment or the Critic call exposure confirmed or ruled out. A claim without it is recorded as possible exposure. The admitting profile must be a reviewer or a business-area head. Prepare the file with [Prepare the weekly exposure snapshot](docs/templates/exposure-snapshot-prompt.md). Without one, each report says that exposure rests on public sources only.
 
-Keyword matching proposes each signal's risk links. In a reasoned run, Assessment and the Critic may remove a link the fact does not support. They may add a link the keywords missed, only from the pack's register of standing items. The report shows the reviewed links. The cascade to business-area and Group risks follows them.
+Keyword matching proposes each signal's risk links. In a reasoned run, Assessment and the Critic can remove a link the fact does not support. They can add a link the keywords missed, only from the pack's register of standing items. The report shows the reviewed links. The cascade to business-area and Group risks follows them.
 
 A weekly report's status is `RED` only after a Risk & Assurance operator confirms the impact. A RED alert candidate from a headline pattern still drafts an alert. Until that confirmation, the weekly status is `ELEVATED`, `WATCHPOINT`, or `NORMAL`, as set out in [spec 45](specs/45_Weekly_Agent_Reasoning_and_Critique.md). A finding that Assessment marks as confirmed impact, with an internal record behind it, is `ELEVATED` until the operator decides.
 
@@ -213,7 +213,7 @@ The reasoned path stays opt-in until an authorized, budgeted provider comparison
 
 ## Confirm a RED impact
 
-List the candidates, then record a decision with your name and the impact. `GRIT_RED_CONFIRMERS` in `.env` names who may decide, separated by commas. The command refuses anyone else.
+List the candidates, then record a decision with your name and the impact. `GRIT_RED_CONFIRMERS` in `.env` names who can decide, separated by commas. The command refuses anyone else.
 
 ```bash
 .venv/bin/python -m grit red list --pack urs --run 2026-11-02-urs
@@ -243,7 +243,7 @@ A RED candidate that the review excluded is omitted from the report. The status 
 
 ## Run the Thursday schedule
 
-`grit scheduled` runs the packs due that Thursday, then the adverse news scan. The cadence and the planned query counts live in `grit/schedule.py`. `tests/test_schedule.py` locks these planned counts. A run's count moves with the names due that week. The figures below are the high end of that rotation on the plans as of 9 November 2026.
+`grit scheduled` runs the packs due that Thursday, then the adverse news scan. The cadence and the planned query counts live in `grit/schedule.py`. `tests/test_schedule.py` locks these planned counts. A run's count moves with the names due that week. The table gives the high end of that rotation on the plans as of 9 November 2026.
 
 | Pack | Due | Planned Brave queries a run | Planned queries a month |
 |---|---|---|---|
@@ -293,27 +293,27 @@ The scan reads pool pages in the reporting period and adds searches from `config
 
 3. Open `output/adverse/DATE/review.md`. Check the withheld items, the rule decisions, and the Critic's objections.
 
-4. Copy `output/adverse/DATE/email.txt` into a new email, or open `email.eml` in Outlook as a draft, and send it to Wilson.
+4. Copy `output/adverse/DATE/email.txt` into a new email, or open `email.eml` in Outlook as a draft. Send it to Wilson.
 
-The reporting period runs from the end of the previous `READY` scan to `DATE`. The first scan covers seven days. If a model call fails, the scan is `INCOMPLETE`. The email is written as `email-DRAFT-INCOMPLETE.txt`. The next scan's period still starts from the last `READY` scan.
+The reporting period runs from the end of the previous `READY` scan to `DATE`. The first scan covers seven days. If a model call fails, the scan is `INCOMPLETE`. The scan then writes the email as `email-DRAFT-INCOMPLETE.txt`. The next scan's period still starts from the last `READY` scan.
 
 ## Run the WSH digest
 
-Workplace Safety & Health is a functional pack for James Lek ([spec 47](specs/47_WSH_Digest_and_Alerts.md)). It is not a business-area brief, and it is not on the Thursday schedule. `grit digest` scans, assesses, and writes the monthly discussion digest plus serious-incident and regulatory alert drafts. Nothing is sent.
+Workplace Safety & Health is a functional pack for James Lek ([spec 47](specs/47_WSH_Digest_and_Alerts.md)). It is not a business-area brief. It is not on the Thursday schedule. `grit digest` scans, assesses, and writes the monthly discussion digest plus serious-incident and regulatory alert drafts. Nothing is sent.
 
 ```bash
 .venv/bin/python -m grit digest --pack wsh --date DATE --profile james --no-submit
 ```
 
-`--dry-run` prints the query plan and spends nothing. Re-write the digest from a finished run with `grit report --pack wsh --date DATE --profile james --no-submit`. Scope, sections, and the reference bulletins are in [docs/wsh/README.md](docs/wsh/README.md).
+`--dry-run` prints the query plan and spends nothing. Rewrite the digest from a finished run with `grit report --pack wsh --date DATE --profile james --no-submit`. For scope, sections, and the reference bulletins, read [Workplace Safety & Health](docs/wsh/README.md).
 
 ## Run the daily lane
 
 Once a day, GRIT-Scan reads the primary-source feeds that readers named. It asks GDELT's artlist for each standing condition and active management request. That call is capped, free, and not a Brave query. It sends one Currents query for the same set. The scan's own rules assess every page. Kept pages are queued for the next weekly or monthly scan. Once a week it also sweeps named sources that block feed readers, with one Brave `site:` query each, about 15 a week. A nightly index groups pages into events and writes a digest per pack for the Co-Pilot's "what's new" ([spec 42](specs/42_Daily_Lane_and_Nightly_Index.md)).
 
-GDELT's seen time is the page date, because the artlist has no publication date. `--no-gdelt` skips GDELT. Sphera event messages are read from `secrets/sphera.env` when that file holds the OAuth password grant and an `event_messages` URL. Supplier names are attached. Sphera's own scores are not read. `--no-sphera` skips that lane.
+GDELT's seen time is the page date, because the artlist has no publication date. `--no-gdelt` skips GDELT. The lane reads Sphera event messages when `secrets/sphera.env` holds the OAuth password grant and an `event_messages` URL. It attaches supplier names. It does not read Sphera's own scores. `--no-sphera` skips that lane.
 
-A new RED draft from the daily run is sent to the R&A duty team when `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`, `GRAPH_MAIL_SENDER`, and `GRIT_RED_MAIL_TO` are set. The app registration needs application permission Mail.Send. The message goes only to those mailboxes. A named person forwards it. If any setting is missing, the draft stays unsent.
+A new RED draft from the daily run is sent to the R&A duty team when `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`, `GRAPH_MAIL_SENDER`, and `GRIT_RED_MAIL_TO` are set. The app registration needs the application permission `Mail.Send`. The message goes only to those mailboxes. A named person forwards it. If any setting is missing, the draft stays unsent.
 
 URS Taiwan has its own daily run from official sources: USGS earthquakes, Taiwan NCDR disaster alerts, Taiwan MND's daily PLA activity reports, and NASA FIRMS fire detections. Request a FIRMS key and set `FIRMS_MAP_KEY` in `.env`.
 
@@ -374,7 +374,7 @@ Pick a reader and a run in the sidebar.
 
 The Co-Pilot sits in a drawer you can open, close, and resize ([spec 40](specs/40_Copilot_Core.md)). It reads the tab you have open. It also answers from briefs, signals, the report library, and the registers in the reader's reach. Wilson, the CEO, and the Chairman search every pack. Other readers search their own. Each answer gives the answer, the evidence, what it means for STE, and what is uncertain. Every claim is cited. An answer that fails its checks is withheld. Each reader's conversation is private to them.
 
-When the records are silent or older than the question needs, the Co-Pilot searches the web: Currents first, Brave when Currents finds nothing, 17 searches a day for each reader ([spec 41](specs/41_Profiler_Fit_Report_and_Web_Search.md)). Web results are marked unvetted. **Add to pool** under a web citation queues the page for the next scan.
+When the records are silent or older than the question needs, the Co-Pilot searches the web. It tries Currents first, then Brave when Currents finds nothing. Each reader has 17 searches a day ([spec 41](specs/41_Profiler_Fit_Report_and_Web_Search.md)). Web results are marked unvetted. **Add to pool** under a web citation queues the page for the next scan.
 
 - Select **What's new since yesterday?** for the daily digests.
 - Choose a standing condition to focus the Co-Pilot on it.
@@ -389,7 +389,7 @@ To ask from the command line as a named reader:
 
 ## Reader packs
 
-A reader pack is a folder under `config/` with a `pack.json` manifest. The manifest names the pack's level, its parent and children, and its register files. Counts below are the exposure registers and theme files as of 8 November 2026. Rebuild a pack after the workbook changes, then read `grit pack-show`.
+A reader pack is a folder under `config/` with a `pack.json` manifest. The manifest names the pack's level, its parent and children, and its register files. The table counts the exposure registers and theme files as of 8 November 2026. Rebuild a pack after the workbook changes, then read `grit pack-show`.
 
 | Pack | Level | Standing items | Named items in the exposure register |
 |---|---|---|---|
@@ -496,7 +496,7 @@ A reader's preferences come from what they say ([spec 39](specs/39_Reader_Notes_
 .venv/bin/python -m grit profile accept --profile wilson
 ```
 
-`PATH` is the saved note. The proposal and a review file go to `secrets/readers/<profile>/proposals/`. After each brief, `grit report` writes a fit report to `secrets/readers/<profile>/fit/`. Emphasis moves a signal within its tier by at most six places. Every kept signal remains in the brief. A P1 signal and a RED signal keep their place or move up. A profile with a problem stops the brief and the dashboard from loading, and the error names the file.
+`PATH` is the saved note. The proposal and a review file go to `secrets/readers/<profile>/proposals/`. After each brief, `grit report` writes a fit report to `secrets/readers/<profile>/fit/`. Emphasis moves a signal within its tier by at most six places. Every kept signal remains in the brief. A P1 signal and a RED signal keep their place or move up. A profile with a problem stops the brief and the dashboard from loading. The error names the file.
 
 ## Registers
 
@@ -586,7 +586,7 @@ The pool is one SQLite file, `output/grit.sqlite`. Set `GRIT_DB` to move it. The
 
 To print the row counts, run `.venv/bin/python -m grit db`.
 
-Dataverse remains the system of record. This command prints the push. It writes to Dataverse only when you add `--push`. Vectors stay in the pool, because `grit_signals` has no vector column.
+Dataverse remains the system of record. This command prints the push. It writes to Dataverse only when you add `--push`. Vectors stay in the pool. `grit_signals` has no vector column.
 
 ```bash
 .venv/bin/python -m grit dataverse --date DATE

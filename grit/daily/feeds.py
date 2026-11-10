@@ -158,7 +158,7 @@ def _published(entry: Any) -> str | None:
 
 
 def read_kev(raw: bytes, since: datetime) -> list[dict[str, Any]]:
-    """One item per vulnerability CISA added to the catalogue on or after since. Each links to its NVD record."""
+    """One item per vulnerability CISA added to the catalog on or after since. Each links to its NVD record."""
     import json
 
     items = []
@@ -212,7 +212,7 @@ def read_usgs(raw: bytes, since: datetime, min_mag: float = USGS_MIN_MAG) -> lis
 
 
 def read_ncdr(raw: bytes, since: datetime) -> list[dict[str, Any]]:
-    """One item per NCDR alert in NCDR_CATEGORIES. The title gives the English category; the Chinese text is kept as issued."""
+    """One item per NCDR alert in NCDR_CATEGORIES. The title gives the English category. The Chinese text is kept as issued."""
     import feedparser
 
     items = []

@@ -184,7 +184,7 @@ def test_caveat_not_required_when_a_primary_tier_source_exists() -> None:
 
 def test_all_weak_sources_with_a_broken_url_still_caps_at_low() -> None:
     """When no TIER_0/TIER_1 source exists, the full source set becomes the
-    gating set by necessity -- the blanket URL-check rule still applies."""
+    gating set by necessity. The blanket URL-check rule still applies."""
     signal = _make_signal((
         _source(SourceTier.TIER_3, "Outlet A", url_ok=False),
         _source(SourceTier.TIER_3, "Outlet B"),

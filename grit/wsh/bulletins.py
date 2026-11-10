@@ -75,7 +75,7 @@ def is_enforcement_campaign(title: str = "", body: str = "") -> bool:
 
 
 def cluster_key(title: str = "", body: str = "", *, series: str | None = None) -> str | None:
-    """Normalised subject for collapsing one development into one note."""
+    """Normalized subject for collapsing one development into one note."""
     text = f"{title}\n{body}".casefold()
     for key, patterns in _CLUSTER_RULES:
         if any(re.search(pattern, text) for pattern in patterns):

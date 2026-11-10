@@ -3,7 +3,7 @@
 **System of record:** Microsoft Dataverse  
 **Data model principle:** Shared facts are versioned independently from reader-specific assessments.
 
-## 1. Entity Model
+## 1. Entity model
 
 ```text
 GRIT_Theme 1:N GRIT_ThemeEvent N:1 GRIT_Event
@@ -26,7 +26,7 @@ GRIT_OutputPackage 1:N GRIT_OutputPackageSignal N:1 GRIT_Signals
 | ThemeType | Global Choice | `STANDING_RISK`, `EMERGING_THEME`, `MANAGEMENT_REQUESTED`, `WATCH_THEME`. Describes what the theme is; independent of `ThemeStatus`. See spec 31. |
 | FirstObservedAtUtc / LastObservedAtUtc | Date/time, time-zone independent | UTC. |
 | DirectionOfTravel | Choice | Controlled result/proposal status distinguished in record metadata. |
-| ThemeConfidence | Decimal | Controlled metric or clearly labelled proposal. |
+| ThemeConfidence | Decimal | Controlled metric or clearly labeled proposal. |
 | StrategicSignificanceProposal | Choice/text | Agent proposal only. |
 | ApprovedStrategicSignificance | Choice/text | Policy-approved controlled value. |
 | EvidenceCoverageStatus | Choice | Deterministic coverage result. |
@@ -68,7 +68,7 @@ Versioned theme-to-event relationship: `ThemeId` lookup, `EventId` lookup, `Rela
 
 Reader-specific record: `ImpactAssessmentId`, `ReaderProfileId` lookup, `ApertureType`, `NewsPriority`, optional `ManagementRequestId` lookup, optional `ThemeId`/`EventId`/`SignalId` lookups, `BusinessArea`, `LineOfBusiness`, `BusinessUnit`, `AffectedEntity`, `ExposurePath`, `BusinessConsequence`, `LinkedRisk`, `ProposedKRI`, `ProposedWatchpoint`, `ProposedAction`, `LikelihoodProposal`, `ImpactProposal`, `FinalControlledScore`, `FinalControlledBand`, `EvidenceConfidence`, `AssessmentStatus`, `ConfigurationVersion`, `ContentHash`, and source execution lookup.
 
-`FinalControlledScore` and `FinalControlledBand` come only from `ScoreRisk()`. `NewsPriority` comes only from `ApertureRouting()` and is reader-scoped: it is never stored on `GRIT_Signals`, `GRIT_Event`, or `GRIT_Theme`. Every impact assessment remains scoped to its reader profile and aperture. See spec 29.
+`FinalControlledScore` and `FinalControlledBand` come only from `ScoreRisk()`. `NewsPriority` comes only from `ApertureRouting()` and is reader-scoped. It is never stored on `GRIT_Signals`, `GRIT_Event`, or `GRIT_Theme`. Every impact assessment remains scoped to its reader profile and aperture. See spec 29.
 
 ### 4.4 GRIT_ReaderProfile
 
@@ -76,7 +76,7 @@ Reader-specific record: `ImpactAssessmentId`, `ReaderProfileId` lookup, `Apertur
 
 ### 4.5 GRIT_ManagementRequest
 
-Governed intake record for a leadership monitoring request, and the only basis on which `ApertureRouting()` may assign `P1`. Full field list in spec 29. Optional lookup to `GRIT_Theme`; referenced by `GRIT_ImpactAssessment` when priority is `P1`.
+Governed intake record for a leadership monitoring request. It is the only basis on which `ApertureRouting()` can assign `P1`. Spec 29 lists the full field set. The record has an optional lookup to `GRIT_Theme`. `GRIT_ImpactAssessment` references it when priority is `P1`.
 
 ### 4.6 GRIT_TrackingFeedback
 
@@ -84,32 +84,38 @@ Post-publication LOB feedback: `FeedbackId`, optional `ThemeId`/`EventId`/`Signa
 
 `FeedbackType` is `TRACK`, `DO_NOT_TRACK`, `MONITOR`, `ESCALATE`, or `NEEDS_MORE_ANALYSIS`.
 
-Feedback is governance input only. It never modifies `GRIT_Signals`, `GRIT_Event`, or `GRIT_Theme`. `ESCALATE` feedback is an input to `ThemeEscalationAssessment()`; any resulting change still requires `RegisterWriteGate()` validation and policy-required approval. Feedback is post-publication and is not an approval — `ReviewGate()` remains the sole approval gate.
+Feedback is governance input only. It never modifies `GRIT_Signals`, `GRIT_Event`, or `GRIT_Theme`. `ESCALATE` feedback is an input to `ThemeEscalationAssessment()`. Any resulting change still requires `RegisterWriteGate()` validation and policy-required approval. Feedback arrives after publication and is not an approval. `ReviewGate()` remains the sole approval gate.
 
 ### 4.7 GRIT_SourceRegister
 
-Governed source register read by `CredibilityLookup()`, holding `SourceClass`, credibility rating and rationale, source owner, approval authority, review frequency, next review date, and active flag. Full field list in spec 30. `SourceClass` is a shared fact about the source and is never reader-scoped.
+Governed source register read by `CredibilityLookup()`. It holds `SourceClass`, credibility rating and rationale, source owner, approval authority, review frequency, next review date, and active flag. Spec 30 lists the full field set. `SourceClass` is a shared fact about the source and is never reader-scoped.
 
-## 5. Keys, Versions, and Integrity
+## 5. Keys, versions, and integrity
 
 - Use GUID primary keys and publisher-prefixed logical names.
-- Alternate keys: Theme name/version/configuration; Event normalized identity/version/configuration; EventSignal event/signal/signal-version; ThemeEvent theme/event/version; ImpactAssessment reader profile/subject/version; OutputPackageSignal package/signal/membership sequence.
+- Use these alternate keys:
+  - Theme: name/version/configuration.
+  - Event: normalized identity/version/configuration.
+  - EventSignal: event/signal/signal-version.
+  - ThemeEvent: theme/event/version.
+  - ImpactAssessment: reader profile/subject/version.
+  - OutputPackageSignal: package/signal/membership sequence.
 - Theme, event, relationship, and assessment content is append-only or superseded by a new version. Historical content hashes never change.
 - `EventMatch()` and `ThemeMatch()` can return candidates only. `RegisterWriteGate()` validates schema, lookup existence, authority, hashes, versions, and lifecycle policy before a typed write is persisted.
-- `ThemeEscalationAssessment()` deterministically evaluates controlled event, LOB, geography, diversity, and regulatory metrics and returns direction, velocity, escalation recommendation, and lifecycle-state proposal. It performs no writes.
+- `ThemeEscalationAssessment()` deterministically evaluates controlled event, LOB, geography, diversity, and regulatory metrics. It returns direction, velocity, escalation recommendation, and lifecycle-state proposal. It performs no writes.
 - Merge, split, escalation, de-escalation, closure, reopening, and invalidation create versioned lineage records. Similar titles alone are never sufficient to merge.
 
 ## 6. Lifecycle
 
-Agents may propose a new record, match, merge, split, escalation, decline, closure, reopening, or correction. `RegisterWriteGate()` validates the typed proposal. The Supervisor persists only accepted mutations. Human approval is required wherever the active promotion/lifecycle policy requires it. Corrected evidence supersedes affected versions and preserves historical links.
+Agents can propose a new record, match, merge, split, escalation, decline, closure, reopening, or correction. `RegisterWriteGate()` validates the typed proposal. The Supervisor persists only accepted mutations. Human approval is required wherever the active promotion/lifecycle policy requires it. Corrected evidence supersedes affected versions and preserves historical links.
 
-## 7. Security and Audit
+## 7. Security and audit
 
-Organization-owned shared theme/event registers use centrally stewarded R&A roles. Reader profiles and impact assessments use row-level BA/LOB/BU access where required. Audit all create/update/status operations, configuration/version references, content hashes, relationship changes, and human approvals. Restrict direct write access to the Supervisor-controlled persistence path; agents only propose.
+Organization-owned shared theme/event registers use centrally stewarded R&A roles. Reader profiles and impact assessments use row-level BA/LOB/BU access where required. Audit all create/update/status operations, configuration/version references, content hashes, relationship changes, and human approvals. Restrict direct write access to the Supervisor-controlled persistence path. Agents only propose.
 
-## 8. Migration and Audited-Signal Compatibility
+## 8. Migration and audited-signal compatibility
 
-The existing `GRITAuditedSignals` workbook is a compatibility source, not a replacement system of record. Preserve its fields during migration in the current signal/audit import model; do not silently rename, discard, or overwrite them. Populate layered entities through versioned, auditable mappings and retain `auditRecordId`, `flowRunConversationId`, and source timestamps as external/correlation references.
+The existing `GRITAuditedSignals` workbook is a compatibility source, not a replacement system of record. Preserve its fields during migration in the current signal/audit import model. Do not silently rename, discard, or overwrite them. Populate layered entities through versioned, auditable mappings. Retain `auditRecordId`, `flowRunConversationId`, and source timestamps as external/correlation references.
 
 | Existing audited-signal field | Layered destination | Migration rule |
 | --- | --- | --- |
@@ -124,4 +130,4 @@ The existing `GRITAuditedSignals` workbook is a compatibility source, not a repl
 | `riskCodes` | `GRIT_ImpactAssessment.LinkedRisk` | Resolve through the governed risk register; preserve unresolvable legacy values as migration exceptions. |
 | `priorityRank` | Reader-profile reporting order | Retain as a legacy presentation attribute; future ordering derives from governed profile and policy. |
 
-This mapping gives existing URS operational detail a governed route into the `MATERIAL_APERTURE` while allowing the same underlying signal/event evidence to appear in `WIDE_APERTURE` strategic reporting. It does not backfill a theme or event merely from a workbook text field; those records require the governed match/proposal/write process.
+This mapping gives existing URS operational detail a governed route into the `MATERIAL_APERTURE`. The same underlying signal/event evidence can still appear in `WIDE_APERTURE` strategic reporting. The mapping does not backfill a theme or event only from a workbook text field. Those records require the governed match/proposal/write process.

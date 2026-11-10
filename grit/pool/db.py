@@ -189,7 +189,7 @@ class Pool:
 
     def add_signal(self, *, url: str, title: str, text: str, publisher: str | None, published_at: str | None, lane: str, content_hash: str, seen_at: str | None = None) -> str:
         """Insert a page or refresh its last-seen time. The first text seen is kept, so a signal's facts do not drift.
-        Different text with a later stated publication day is kept as a revision; a snippet that only varies by query is not."""
+        Different text with a later stated publication day is kept as a revision. A snippet that only varies by query is not."""
         signal_id = signal_id_for(url)
         now = seen_at or utc_now()
         existing = self.one("SELECT signal_id, text, published_at FROM signals WHERE signal_id = ?", (signal_id,))
@@ -293,7 +293,7 @@ class Pool:
         )
 
     def weekly_assessments(self, run_id: str, *, include_excluded: bool = False) -> list[dict[str, Any]]:
-        """Effective editorial selection; the deterministic rows are never overwritten."""
+        """Effective editorial selection. The deterministic rows are never overwritten."""
         run = self.run(run_id) or {}
         if (run.get("config") or {}).get("weekly_mode") != "reasoned":
             return self.assessments(run_id, kept_only=True)

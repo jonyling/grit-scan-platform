@@ -9,11 +9,11 @@ The repository [README](../README.md) is the operator guide. This folder holds t
 
 ## Design notes
 
-`design/` holds working notes for acquisition lanes, the ontology bind, reader notes, and the Co-Pilot. `design/schema.yaml` and `design/patterns.yaml` sit with those notes.
+The `design/` folder holds working notes for acquisition lanes, the ontology bind, reader notes, and the Co-Pilot. `design/schema.yaml` and `design/patterns.yaml` sit with those notes.
 
 ## Reference files
 
-`reference/` holds the description, the executive-summary deck, and the 2 October 2026 URS Taiwan brief.
+The `reference/` folder holds the description, the executive-summary deck, and the 2 October 2026 URS Taiwan brief.
 
 These source files stay at the folder root because specs and progress notes cite the paths:
 
@@ -24,4 +24,4 @@ These source files stay at the folder root because specs and progress notes cite
 
 ## Progress records
 
-`progress/` holds dated plans and handover notes. They record decisions at the time they were written. The README and the specs describe current behavior.
+The `progress/` folder holds dated plans and handover notes. They record decisions at the time they were written. The README and the specs describe current behavior.

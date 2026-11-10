@@ -343,7 +343,7 @@ def decide_c(draft: Mapping[str, Any], facts: Mapping[str, Any]) -> tuple[dict[s
 
 
 def apply_critic(item: dict[str, Any], verdict: Mapping[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
-    """A withdrawal removes the item; a downgrade lowers the severity one step and weakens an overstated exposure."""
+    """A withdrawal removes the item. A downgrade lowers the severity one step and weakens an overstated exposure."""
     kind = verdict.get("verdict")
     rule = verdict.get("rule")
     if kind not in {"WITHDRAW", "DOWNGRADE"} or rule not in CRITIC_RULES:

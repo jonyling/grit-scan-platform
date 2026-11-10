@@ -1,4 +1,4 @@
-"""Tests never read a real reader's notes or profile: secrets/readers is replaced by an empty folder for every test."""
+"""Tests never read a real reader's notes or profile. Every test gets an empty folder in place of `secrets/readers`."""
 
 from __future__ import annotations
 

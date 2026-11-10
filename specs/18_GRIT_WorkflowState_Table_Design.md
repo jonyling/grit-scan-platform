@@ -9,11 +9,16 @@
 
 ## 1. Purpose
 
-`GRIT_WorkflowState` records every business workflow state transition for every GRIT-Scan signal. It is an append-only, auditable event history from which the `GRIT_Signals.CurrentWorkflowState` projection can be rebuilt and the workflow can be replayed or restored after failure. Every persisted row must be supported by an auditable `TransitionGuard()` decision of `ALLOW`.
+`GRIT_WorkflowState` records every business workflow state transition for every GRIT-Scan signal. It is an append-only, auditable event history. The Supervisor can rebuild the `GRIT_Signals.CurrentWorkflowState` projection from it. The Supervisor can also replay or restore the workflow from it after a failure. Every persisted row must be supported by an auditable `TransitionGuard()` decision of `ALLOW`.
 
-The Supervisor Agent is the only component permitted to create a transition or advance a signal's workflow state. Functions and connected agents may return results, but they cannot write or change workflow state. A transition must be persisted before the Supervisor starts the next business action.
+The Supervisor Agent is the only component permitted to create a transition or advance a signal's workflow state. Functions and connected agents can return results. They cannot write or change workflow state. A transition must be persisted before the Supervisor starts the next business action.
 
-This table is deliberately limited to workflow state. Function details belong in `GRIT_FunctionExecutionLog`, agent details belong in `GRIT_AgentExecutionLog`, output versions belong in `GRIT_OutputPackage`, and human decisions belong in `GRIT_Approval`.
+This table holds workflow state only. Other details belong in these tables:
+
+- function details: `GRIT_FunctionExecutionLog`;
+- agent details: `GRIT_AgentExecutionLog`;
+- output versions: `GRIT_OutputPackage`;
+- human decisions: `GRIT_Approval`.
 
 ## 2. Dataverse table definition
 
@@ -32,9 +37,9 @@ This table is deliberately limited to workflow state. Function details belong in
 
 ### 2.1 Row semantics
 
-One row represents one successfully persisted business transition. The first row for a signal has `GRIT_PreviousState = NULL` and `GRIT_State = NEW`. A retry of the operation that creates a transition must not create a second successful transition row; it must reuse the idempotency key or reconcile the existing row.
+One row represents one successfully persisted business transition. The first row for a signal has `GRIT_PreviousState = NULL` and `GRIT_State = NEW`. A retry of the operation that creates a transition must not create a second successful transition row. The retry must reuse the idempotency key or reconcile the existing row.
 
-A failed attempt that does not change business state is recorded in `GRIT_FunctionExecutionLog` or `GRIT_AgentExecutionLog`. A transition row is created only when the Supervisor has accepted and persisted a valid state change.
+The Supervisor records a failed attempt that does not change business state in `GRIT_FunctionExecutionLog` or `GRIT_AgentExecutionLog`. The Supervisor creates a transition row only after it accepts and persists a valid state change.
 
 ## 3. Field schema
 
@@ -69,7 +74,7 @@ No other business columns belong on `GRIT_WorkflowState`. Dataverse system audit
 
 ## 4. Controlled state choice values
 
-Configure `GRIT_State` as a global Choice named `GRIT Workflow State` so the same values can be used consistently by flows, APIs, views, and validation rules.
+Configure `GRIT_State` as a global Choice named `GRIT Workflow State`. Flows, APIs, views, and validation rules then use the same values.
 
 | Value | Label | Business meaning |
 | --- | --- | --- |
@@ -84,9 +89,9 @@ Configure `GRIT_State` as a global Choice named `GRIT Workflow State` so the sam
 | `AIRIS_HANDOFF_READY` | AIRIS Handoff Ready | Package is ready for downstream AIRIS consumption. |
 | `FAILED` | Failed | Workflow cannot continue without controlled restoration or a new execution. |
 
-`GRIT_State` must not be a free-text field. In this implementation, `PUBLICATION_CONFIRMED` supersedes the earlier shorthand `PUBLISHED`, and `AIRIS_HANDOFF_READY` supersedes `AIRIS_READY`. Do not add implementation states such as `VALIDATING`, `WAITING_RETRY`, or `READY_FOR_PUBLICATION` to this Phase 1 choice set. Retry and failure details are represented by `GRIT_FunctionExecutionLog` and `GRIT_AgentExecutionLog`.
+`GRIT_State` must not be a free-text field. In this implementation, `PUBLICATION_CONFIRMED` supersedes the earlier shorthand `PUBLISHED`, and `AIRIS_HANDOFF_READY` supersedes `AIRIS_READY`. Do not add implementation states such as `VALIDATING`, `WAITING_RETRY`, or `READY_FOR_PUBLICATION` to this Phase 1 choice set. `GRIT_FunctionExecutionLog` and `GRIT_AgentExecutionLog` hold retry and failure details.
 
-Theme discovery, event matching, theme matching, register writes, and reader-profile routing are recorded in their proposal, relationship, and execution records. They must not add `THEME_CLUSTERED`, `EVENT_LINKED`, `HORIZON_SCANNED`, or any other Strategic Horizon state to `GRIT_WorkflowState`.
+Strategic Horizon activity is recorded in its own proposal, relationship, and execution records. This activity includes theme discovery, event matching, theme matching, register writes, and reader-profile routing. It must not add `THEME_CLUSTERED`, `EVENT_LINKED`, `HORIZON_SCANNED`, or any other Strategic Horizon state to `GRIT_WorkflowState`.
 
 ## 5. Relationships
 
@@ -103,11 +108,15 @@ Theme discovery, event matching, theme matching, register writes, and reader-pro
 | Parent transition | Self-referential Dataverse lookup | Many workflow rows to one parent workflow row | `GRIT_ParentWorkflowState`; enables ordered traversal and replay. |
 | Restoration source | Self-referential Dataverse lookup | Many restoration rows to one trusted prior row | `GRIT_RestorationSource`; populated only for controlled restoration. |
 
-`GRIT_TriggerRecordId` must be configured as a Dataverse multi-table lookup restricted to `GRIT_FunctionExecutionLog`, `GRIT_AgentExecutionLog`, `GRIT_OutputPackage`, and `GRIT_Approval`. `GRIT_TriggerType` is the discriminator and must be validated by the Supervisor: `PUBLICATION_CONFIRMATION` targets a verified controlled-publication entry in `GRIT_FunctionExecutionLog`. A `SYSTEM_EVENT` may have no trigger record and must be identified by `GRIT_TransitionReasonCode`; all other trigger types require the matching lookup target. `GRIT_Signal` and `GRIT_Execution` are direct lookups. Correlation IDs and external identifiers remain additional fields, never substitutes for these relationships.
+Configure `GRIT_TriggerRecordId` as a Dataverse multi-table lookup restricted to `GRIT_FunctionExecutionLog`, `GRIT_AgentExecutionLog`, `GRIT_OutputPackage`, and `GRIT_Approval`.
 
-### 5.1 Current-state projection on GRIT_Signals
+`GRIT_TriggerType` is the discriminator. The Supervisor must validate it. `PUBLICATION_CONFIRMATION` targets a verified controlled-publication entry in `GRIT_FunctionExecutionLog`. A `SYSTEM_EVENT` can have no trigger record. `GRIT_TransitionReasonCode` must identify that event. All other trigger types require the matching lookup target.
 
-Add `CurrentWorkflowState` to `GRIT_Signals` as a Dataverse lookup to `GRIT_WorkflowState`. This is the operational projection used for fast current-state queries. It is not part of the event ledger and does not replace the append-only transition chain. The Supervisor updates this lookup only after the corresponding `GRIT_WorkflowState` row has been successfully persisted. The projection can always be rebuilt by selecting the latest accepted transition for each signal by `GRIT_TransitionSequence`.
+`GRIT_Signal` and `GRIT_Execution` are direct lookups. Correlation IDs and external identifiers are additional fields. They never replace these relationships.
+
+### 5.1 Current-state projection on signals
+
+Fast current-state queries read an operational projection on each signal. Add `CurrentWorkflowState` to `GRIT_Signals` as a Dataverse lookup to `GRIT_WorkflowState`. It is not part of the event ledger and does not replace the append-only transition chain. The Supervisor updates this lookup only after the corresponding `GRIT_WorkflowState` row has been successfully persisted. The Supervisor can always rebuild the projection by selecting the latest accepted transition for each signal by `GRIT_TransitionSequence`.
 
 ## 6. Alternate keys and indexes
 
@@ -119,7 +128,7 @@ Create an alternate key named `AK_GRIT_WorkflowState_SignalSequence` on:
 - `GRIT_Execution`
 - `GRIT_TransitionSequence`
 
-This prevents duplicate successful transition rows for the same signal, execution, and sequence number. The Supervisor must handle an alternate-key conflict by retrieving and validating the existing row, not by creating another row.
+This key prevents duplicate successful transition rows for the same signal, execution, and sequence number. On an alternate-key conflict, the Supervisor must retrieve and validate the existing row. It must not create another row.
 
 Create a second alternate key named `AK_GRIT_WorkflowState_Idempotency` on:
 
@@ -134,9 +143,9 @@ Use this key when the same transition request is delivered more than once.
 
 ### 6.2 Output package and approval cardinality
 
-`GRIT_OutputPackage` has a one-to-many relationship to `GRIT_OutputPackageSignal`, and `GRIT_Signals` has a one-to-many relationship to `GRIT_OutputPackageSignal`. This immutable membership entity stores the package version, signal version, signal content hash, and membership sequence. `GRIT_Approval` has a many-to-one lookup to the exact `GRIT_OutputPackage` version it approves. The `APPROVED` transition row uses `GRIT_TriggerType = HUMAN_APPROVAL` and `GRIT_TriggerRecordId` as a real lookup to that `GRIT_Approval` row; the approval's package lookup therefore proves that the signal transition references the same approved package version.
+`GRIT_OutputPackage` and `GRIT_Signals` each have a one-to-many relationship to `GRIT_OutputPackageSignal`. This immutable membership entity stores the package version, signal version, signal content hash, and membership sequence. `GRIT_Approval` has a many-to-one lookup to the exact `GRIT_OutputPackage` version it approves. The `APPROVED` transition row uses `GRIT_TriggerType = HUMAN_APPROVAL` and `GRIT_TriggerRecordId` as a real lookup to that `GRIT_Approval` row. The approval's package lookup therefore proves that the signal transition references the same approved package version.
 
-The `PENDING_REVIEW` transition uses `GRIT_TriggerType = OUTPUT_PACKAGE` and `GRIT_TriggerRecordId` as a real lookup to the same `GRIT_OutputPackage` version. No package ID or approval ID text field is added to the workflow ledger.
+The `PENDING_REVIEW` transition uses `GRIT_TriggerType = OUTPUT_PACKAGE` and `GRIT_TriggerRecordId` as a real lookup to the same `GRIT_OutputPackage` version. Do not add a package ID or approval ID text field to the workflow ledger.
 
 ### 6.3 Recommended indexes/views
 
@@ -169,15 +178,15 @@ Create indexed views or Dataverse views for:
                        -> AIRIS_HANDOFF_READY
    ```
 
-8. `FAILED` may be entered from any non-terminal state when a blocking error prevents continuation. A restored execution must reference the trusted prior row and use `TransitionType = RESTORE`.
-9. A return from human review creates a new transition to `ASSESSED`; it does not modify the prior `PENDING_REVIEW` or output package row.
-10. `PUBLICATION_CONFIRMED` requires a valid approval through `ReviewGate()` for the exact output package version and verified controlled-publication confirmation. `PublicationConcurrencyLock()` may prevent duplicate technical delivery but is not an approval gate. `AIRIS_HANDOFF_READY` requires a valid approved output package and a valid AIRIS handoff payload. Either branch may complete independently.
-11. No row is updated to change historical state, reason, actor, timestamp, or hashes. Current state is projected only on `GRIT_Signals.CurrentWorkflowState`; the event ledger remains immutable.
-12. Dataverse audit logs and this table are complementary: this table records the business event; Dataverse auditing records the record-level mutation.
+8. An execution can enter `FAILED` from any non-terminal state when a blocking error prevents continuation. A restored execution must reference the trusted prior row and use `TransitionType = RESTORE`.
+9. A return from human review creates a new transition to `ASSESSED`. It does not modify the prior `PENDING_REVIEW` or output package row.
+10. `PUBLICATION_CONFIRMED` requires a valid approval through `ReviewGate()` for the exact output package version and verified controlled-publication confirmation. `PublicationConcurrencyLock()` can prevent duplicate technical delivery. It is not an approval gate. `AIRIS_HANDOFF_READY` requires a valid approved output package and a valid AIRIS handoff payload. Either branch can complete independently.
+11. Never update a row to change historical state, reason, actor, timestamp, or hashes. Current state is projected only on `GRIT_Signals.CurrentWorkflowState`. The event ledger remains immutable.
+12. Dataverse audit logs and this table are complementary. This table records the business event. Dataverse auditing records the record-level mutation.
 
 ## 8. Example records
 
-The examples use abbreviated GUIDs for readability. In Dataverse, all IDs are full GUIDs and timestamps are stored in UTC.
+The examples use abbreviated GUIDs for readability. In Dataverse, all IDs are full GUIDs. Timestamps are stored in UTC.
 
 ### 8.1 Normal signal progression
 
@@ -202,20 +211,24 @@ The examples use abbreviated GUIDs for readability. In Dataverse, all IDs are fu
 | `8a2...012` | `SIG-2026-00042` | 2 | `FETCHED` | `FAILED` | `FAIL` | `FUNCTION_EXECUTION` | `CREDIBILITY_LOOKUP_TIMEOUT` | &nbsp; |
 | `8a2...013` | `SIG-2026-00042` | 3 | `FAILED` | `FETCHED` | `RESTORE` | `SYSTEM_EVENT` | `SUPERVISOR_RECONCILIATION_COMPLETE` | `8a2...011` |
 
-The restoration row does not erase or replace the failure row. The sequence remains auditable, and the restoration source identifies the last trusted business state from which processing resumed.
+The restoration row does not erase or replace the failure row. The sequence remains auditable. The restoration source identifies the last trusted business state from which processing resumed.
 
 ## 9. Security and retention
 
-- Grant create/read access to the Supervisor service principal and read access to authorized Group Risk & Assurance users and integration services.
+- Grant create/read access to the Supervisor service principal. Grant read access to authorized Group Risk & Assurance users and integration services.
 - Restrict update access to the Supervisor service principal and a controlled administration role. Users must not edit state, sequence, hashes, or actor fields directly.
-- Grant delete access only to a platform administrator under approved retention procedures; the Supervisor has no delete privilege.
+- Grant delete access only to a platform administrator under approved retention procedures. The Supervisor has no delete privilege.
 - Apply row-level access controls for LOB and entity-sensitive signals.
 - Do not store full source articles, prompts, secrets, or unnecessary personal data in this table. Store secured references and hashes instead.
 - Retain transition rows, Dataverse audit history, and supporting execution logs together for the approved Group Risk & Assurance retention period.
 
 ### 9.1 Known gap (Phase 1 MVP)
 
-Platform-level enforcement of the security model above (Dataverse security roles restricting direct table writes) is not yet deployed, pending System Administrator access to the environment. The sole-writer guarantee is currently enforced at the application layer only: no component other than the Supervisor is built to write `GRIT_WorkflowState`, and every accepted write is preceded by a logged `TransitionGuard()` `ALLOW`. A user with direct table edit access in Dataverse could still bypass this by writing a row manually; nothing at the platform level currently prevents it. The security roles closing this gap (`Deploy-GritSecurity.ps1`) are written and validated but not yet deployed. This is acceptable for MVP demonstration and must be closed before production use.
+Only the application layer enforces the sole-writer guarantee today. The platform-level controls in Section 9 are Dataverse security roles that restrict direct table writes. They wait for System Administrator access to the environment.
+
+At the application layer, the Supervisor is the only component built to write `GRIT_WorkflowState`. A logged `TransitionGuard()` `ALLOW` precedes every accepted write. A user with direct table edit access in Dataverse could still write a row manually. Nothing at the platform level prevents that today.
+
+The security roles that close this gap are written and validated in `Deploy-GritSecurity.ps1`. They are not yet deployed. This gap is acceptable for the MVP demonstration. It must be closed before production use.
 
 ## 10. Implementation acceptance criteria
 
@@ -228,5 +241,5 @@ Platform-level enforcement of the security model above (Dataverse security roles
 - `AIRIS_HANDOFF_READY` is independently reachable from `APPROVED` and is recorded against the approved package through its trigger lookup.
 - A failed workflow can be restored through a new append-only `RESTORE` row referencing the trusted prior state.
 - Multiple LOBs can operate concurrently without sharing sequence numbers or current-state projections across signals.
-- The Supervisor Agent is the only workflow-state writer, and it persists a row only after `TransitionGuard()` returns `ALLOW`.
-- Strategic Horizon processing does not alter the controlled signal state graph; its theme/event/impact mutations use `RegisterWriteGate()` and versioned Dataverse records.
+- The Supervisor Agent is the only workflow-state writer. It persists a row only after `TransitionGuard()` returns `ALLOW`.
+- Strategic Horizon processing does not alter the controlled signal state graph. Its theme/event/impact mutations use `RegisterWriteGate()` and versioned Dataverse records.

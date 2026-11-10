@@ -85,7 +85,7 @@ def main(argv: list[str] | None = None, *, client: Any | None = None) -> int:
         if not violations:
             break
     if not payload["signals"]:
-        draft = {"overview": "", "lob_themes": [], "summaries": []}  # every kept signal has a card, so the model has nothing to summarise
+        draft = {"overview": "", "lob_themes": [], "summaries": []}  # Every kept signal has a card. The model has nothing to summarize.
     meta = {"model": model, "prompt_version": PROMPT_VERSION, "response_hash": canonical_hash(draft), "attempts": len(history)}
     withheld: list[str] = []
     if violations and not any(item.startswith("BAD_SHAPE") for item in violations):

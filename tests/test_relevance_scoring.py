@@ -60,8 +60,8 @@ def test_basis_falls_back_to_domain_and_themes_with_no_entity_or_descent() -> No
 
 
 def test_basis_is_not_keyed_to_a_condition_name_or_reader_pack() -> None:
-    # Two different reader packs, same domain/theme shape, must produce the same
-    # kind of sentence -- nothing here is a lookup table of per-condition prose.
+    # Two different reader packs with the same domain/theme shape must produce the same
+    # kind of sentence. Nothing here is a lookup table of per-condition prose.
     urs_tw_item = {"domain": "Security", "steThemes": ["Geopolitical volatility"], "descentStatus": "NOT_JUSTIFIED", "descent": None}
     urs_item = {"domain": "Security", "steThemes": ["Geopolitical volatility"], "descentStatus": "NOT_JUSTIFIED", "descent": None}
     assert compose_business_relevance_basis(urs_tw_item) == compose_business_relevance_basis(urs_item)

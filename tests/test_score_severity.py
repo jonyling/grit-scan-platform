@@ -83,7 +83,7 @@ def test_thsrc_forced_braking_scores_major_on_health_safety_with_no_value_at_ris
 
 
 def test_large_contract_value_with_no_margin_at_risk_is_insufficient_data_not_severe() -> None:
-    # There is no contract-value field on Signal; only value_at_risk feeds
+    # There is no contract-value field on Signal. Only value_at_risk feeds
     # FINANCIAL. Its absence must never be read as a severe financial event.
     signal = _make_signal(value_at_risk=None, value_at_risk_basis=ValueAtRiskBasis.INSUFFICIENT_DATA)
     result = score_severity(signal, _definition())
@@ -128,8 +128,8 @@ def test_all_none_observations_and_no_value_at_risk_is_not_assessed_not_insignif
 
 def test_tie_is_broken_by_fixed_priority_and_stated_in_the_rationale() -> None:
     # HEALTH_SAFETY (fatalities=1) and REGULATORY_COMPLIANCE (criminal
-    # offence) both score MAJOR/SEVERE-adjacent bands; force an exact tie at
-    # MAJOR via debarment_months, and confirm HEALTH_SAFETY wins the tie.
+    # offence) both score MAJOR/SEVERE-adjacent bands. Force an exact tie at
+    # MAJOR via debarment_months. Confirm that HEALTH_SAFETY wins the tie.
     observations = RiskObservations(
         fatalities=1,
         permanent_incapacity=None,

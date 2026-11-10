@@ -1,9 +1,9 @@
 """Plan-driven Brave News collection. It sends a query plan and writes a run log. No scoring, no page fetch.
 
-grit/ontology/query_plan.py decides which queries run. This module sends them, keeps every search with
-its query id and rank, and collapses the results to one candidate per page. A stop for a limit is
-recorded in the run, so a short run is never read as an empty week. grit/acquisition/brave.py is the
-smaller LOB keyword pull. Both emit candidates, and neither scores.
+This module sends the queries that grit/ontology/query_plan.py chooses. It keeps every search with its
+query id and rank. It collapses the results to one candidate per page. A stop for a limit is recorded in
+the run. A short run is then never read as an empty week. grit/acquisition/brave.py is the smaller LOB
+keyword pull. Both modules emit candidates. Neither scores.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from grit.settings import ROOT
 
 ENV_MONTHLY_LIMIT = "BRAVE_MONTHLY_LIMIT"
 # The key's rate-limit headers report no monthly figure, so this guard is local. Brave's free tier is $5 of credit a month at
-# $5 per 1,000 searches, so about 1,000 queries; above that, Brave refuses with HTTP 402 unless credit is prepaid.
+# $5 per 1,000 searches, which is about 1,000 queries. Above that, Brave refuses with HTTP 402 unless credit is prepaid.
 DEFAULT_MONTHLY_LIMIT = 2000
 MAX_RETRIES = 2
 

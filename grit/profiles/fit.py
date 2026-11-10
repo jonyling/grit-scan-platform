@@ -23,7 +23,7 @@ from grit.profiles.emphasis import _from, _host, _phrase, matches
 from grit.profiles.reader import OPEN_QUESTIONS, readers_dir
 
 TOP_MOVED = 8
-ASKED_MIN = 2  # a topic asked about this often, and not emphasised, is a candidate to add
+ASKED_MIN = 2  # a topic asked about this often, and not emphasized, is a candidate to add
 _KEY = re.compile(r"\b(?:[A-Za-z][A-Za-z-]{4,}|[A-Z]{2,}[0-9]*)\b")  # words of five letters or more, and acronyms in capitals
 _COMMON = frozenset("about which where there their would could should these those other being after before since under while what forwarded actually really words".split())
 

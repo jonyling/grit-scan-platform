@@ -4,8 +4,8 @@ These are the three PowerApps-visible columns (``grit_risklevel``, ``grit_trend`
 ``grit_businessrelevancebasis``) that the URS-TW cascade in the archived GRIT-Scan
 repository used to populate with hand-written, per-condition English prose keyed
 to Taiwan-specific keywords (attack, blockade, Kinmen, ...). That approach does
-not generalise: it only ever covers the conditions someone happened to write a
-sentence for, and it silently invents a Taiwan link for every other reader.
+not generalize. It only ever covers the conditions someone happened to write a
+sentence for. It also silently invents a Taiwan link for every other reader.
 
 This module replaces that with functions of the Ontology model alone: the
 baseline condition's ``domain``, the matched STE themes, the exposure/LOB
@@ -33,8 +33,8 @@ _MAX_BASIS_LENGTH = 4000
 def classify_trend(movement: str | None) -> str:
     """Map a revision's ``movement`` straight onto the Dataverse Trend choice.
 
-    ``weekly_pipeline`` has already normalised movement to one of these three
-    values before a development is accepted; an unrecognised value is treated
+    ``weekly_pipeline`` has already normalized movement to one of these three
+    values before a development is accepted. An unrecognized value is treated
     as no material change rather than invented as a direction.
     """
     text = str(movement or "").strip().upper()
@@ -48,8 +48,8 @@ def classify_risk_level(item: dict[str, Any]) -> str:
     ``weekly_pipeline._priority`` from evidence confidence, movement, STE
     theme breadth, and evidenced descent -- every one of those is an ontology
     fact, not a guess at what the headline means. Risk Level is that same
-    judgement re-expressed on the three-value scale the Dataverse choice
-    column uses; WATCHPOINT (nothing rises to a management priority yet)
+    judgment re-expressed on the three-value scale the Dataverse choice
+    column uses. WATCHPOINT (nothing rises to a management priority yet)
     becomes LOW.
     """
     label = str(item.get("priorityLabel") or "").strip().upper()
@@ -72,7 +72,7 @@ def compose_business_relevance_basis(item: dict[str, Any]) -> str:
       3. Neither: fall back to the condition's domain and matched STE themes.
 
     Every branch is built from fields the ontology matchers already emit
-    (``domain``, ``steThemes``, ``descent``, ``exposureEntities``); no branch
+    (``domain``, ``steThemes``, ``descent``, ``exposureEntities``). No branch
     is keyed to a specific condition name or reader pack.
     """
     domain = str(item.get("domain") or "Unclassified domain").strip()

@@ -1,7 +1,7 @@
 """grit ratings: the shared source credibility ratings in config/source-ratings.json.
 
-One list for every pack, owned by R&A. A pack's own register rating wins; this list fills in where the register has none,
-and grit pack-build never touches it. Each rating is PROPOSED until a named person confirms it.
+One list for every pack, owned by R&A. A pack's own register rating wins. This list fills in where the register has none.
+grit pack-build never touches it. Each rating is PROPOSED until a named person confirms it.
 """
 
 from __future__ import annotations
@@ -90,7 +90,7 @@ def set_rating(document: dict[str, Any], domain: str, rating: str, *, by: str, n
 
 
 def contest(document: dict[str, Any], domain: str, *, by: str, reason: str, today: date | None = None) -> dict[str, Any]:
-    """List an outlet as contested, confirmed by the named person: a labelled signal, never the sole support for a fact.
+    """List an outlet as contested, confirmed by the named person: a labeled signal, never the sole support for a fact.
     Any rating for the outlet is removed."""
     if not reason.strip():
         raise ValueError("A contested listing needs a reason.")

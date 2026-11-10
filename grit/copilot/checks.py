@@ -34,7 +34,7 @@ def strip_marks(text: str) -> str:
 
 
 def split_lines(value: Any) -> list[str] | None:
-    """A part as lines. A string with line breaks is several lines; a leading bullet is dropped. None for a bad shape."""
+    """A part as lines. A string with line breaks is several lines. A leading bullet is dropped. None for a bad shape."""
     if value is None:
         return []
     if isinstance(value, str):

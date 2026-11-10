@@ -13,7 +13,7 @@
   leans. These are counts, never odds.
 - Judge (from 2 November 2026): keyword matching misses most sightings, because the signposts were written for a 1-5 year
   horizon and weekly news rarely uses their phrases. For each signpost and counter-indicator, the signals touching the
-  shift are ranked by embedding similarity to its text; the closest JUDGE_CANDIDATES above JUDGE_FLOOR go to the Signpost
+  shift are ranked by embedding similarity to its text. The closest JUDGE_CANDIDATES above JUDGE_FLOOR go to the Signpost
   Judge, which names the reports that show the development, each with a verbatim quote that a check confirms. Its matches
   are stored on the run (config "signposts_seen") and count as seen, together with keyword matches.
 - Outlook: what a Group brief, deck and the Co-Pilot show: the lean per shift, the signposts seen with their sources, the

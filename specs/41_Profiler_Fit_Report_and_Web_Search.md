@@ -19,10 +19,10 @@ To draft, review and accept a new version:
 
 | File | Content |
 |---|---|
-| `profile_v<N>.md` | The proposed profile. Edit it before accepting if you wish. |
+| `profile_v<N>.md` | The proposed profile. You can edit it before accepting. |
 | `profile_v<N>.review.md` | Each change with its note and quote, the open questions for the reader, and a diff against the current version |
 
-`accept` checks the latest proposal again, keeps the current profile in `history/`, and puts the proposal in force.
+`accept` checks the latest proposal again. It then moves the current profile to `history/` and puts the proposal in force.
 
 The model returns the whole proposed file and a list of changes. Each change names the setting, the note and a verbatim quote. The checks decide:
 
@@ -34,7 +34,7 @@ The model returns the whole proposed file and a list of changes. Each change nam
 | Grounding | Every topic, country and source domain the proposal adds appears in a filed note. |
 | Quotations | A quotation in the body is in a note the line cites. |
 
-Quotes match on words alone, so punctuation and broken characters in a saved email do not matter. A failing proposal is redrafted once with the violations listed, then withheld as `profile_v<N>.withheld.md`. The model's reasoning goes to the execution log, never to the profile.
+Quotes match on words alone, so punctuation and broken characters in a saved email do not matter. The model redrafts a failing proposal once, with the violations listed. If the redraft fails too, the Profiler withholds it as `profile_v<N>.withheld.md`. The model's reasoning goes to the execution log, never to the profile.
 
 ## 2. The fit report
 
@@ -44,7 +44,7 @@ The fit report shows how well a reader's profile fitted one run's brief. It is f
 .venv/bin/python -m grit profile fit --profile wilson
 ```
 
-Add `--run RUN_ID` for one run; the default is the latest run of each pack the reader has a brief for.
+Add `--run RUN_ID` for one run. The default is the latest run of each pack the reader has a brief for.
 
 | Section | Content |
 |---|---|
@@ -53,18 +53,18 @@ Add `--run RUN_ID` for one run; the default is the latest run of each pack the r
 | Lines that never fired | Emphasis items and trusted sources with no signal in the run |
 | What the reader asked | Counts of the reader's Co-Pilot questions since the previous run, by State of the Situation topic and by the profile's own items. The questions themselves never appear. |
 | Gaps | Standing items without a validated assessment, named items with nothing found, and how many shown signals share the key words of each standing question |
-| Questions to raise | The profile's open questions, plus candidates from the other sections. For example, a topic asked about twice that the profile does not emphasise. |
+| Questions to raise | The profile's open questions, plus candidates from the other sections. For example, a topic asked about twice that the profile does not emphasize. |
 
 ## 3. Web search
 
 The Co-Pilot's `web_search` tool searches live news when GRIT-Scan's records are not enough.
 
-| Rule | Behaviour |
+| Rule | Behavior |
 |---|---|
-| Engines | Currents answers first, to keep Brave's free monthly queries for the weekly scans; Brave answers when Currents fails or returns nothing. With `COPILOT_WEB_ORDER=brave`, Brave answers first unless its local monthly count is at 90% of `BRAVE_MONTHLY_LIMIT` (default 1,000). A Brave search from the Co-Pilot counts against the monthly guard like a scan query. |
+| Engines | Currents answers first, to keep Brave's free monthly queries for the weekly scans. Brave answers when Currents fails or returns nothing. With `COPILOT_WEB_ORDER=brave`, Brave answers first unless its local monthly count is at 90% of `BRAVE_MONTHLY_LIMIT` (default 1,000). A Brave search from the Co-Pilot counts against the monthly guard like a scan query. |
 | Budget | 17 searches a day for each reader, or `copilot.web_searches_per_day` from their profile. At most 2 for one question. Each search is a row in `copilot_web_searches`. |
 | Trigger | The model may search whenever the records are silent. Two deterministic triggers also prompt it: a search of the signals that returns nothing, and a question about the present ("since", "latest", "this week", "now") when the newest signal in scope is more than two days old. |
-| Trust | A web result is a `W` source. Its badge reads "Web, unvetted", with the outlet and date, linked. The answer carries the note "Web results are unvetted: GRIT-Scan's rules have not assessed them." A web result never overrides a brief's assessment; a difference goes under "What is uncertain". |
+| Trust | A web result is a `W` source. Its badge reads "Web, unvetted", with the outlet and date, linked. The answer carries the note "Web results are unvetted: GRIT-Scan's rules have not assessed them." A web result never overrides a brief's assessment. A difference goes under "What is uncertain". |
 | Off switch | A toggle in the drawer, or `grit ask --no-web`. |
 
 ## 4. Add to pool
@@ -91,4 +91,4 @@ To queue a page from the command line:
 ## 6. Not yet built
 
 - The daily feed lane, the nightly index job, and `whats_new` are built in spec 42.
-- Guidance from the profile body in the Reporter's prompt. The bottom line is shared by every reader of a run, so per-reader guidance needs per-reader writing, which is an MVP decision.
+- Guidance from the profile body in the Reporter's prompt. Every reader of a run shares the bottom line. Per-reader guidance therefore needs per-reader writing, which is an MVP decision.
