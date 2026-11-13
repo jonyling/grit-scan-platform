@@ -722,6 +722,7 @@ def _delegates() -> dict[str, tuple[str, Callable[[], Callable[..., Any]], str]]
         "scheduled": ("Run the scans due today under the Thursday schedule.", lambda: __import__("grit.schedule", fromlist=["main"]).main, "grit scheduled"),
         "adverse": ("Write the weekly Adverse News & Lessons Learnt Scan as an email for review (spec 46). Nothing is sent.", lambda: __import__("grit.adverse.scan", fromlist=["main"]).main, "grit adverse"),
         "daily": ("Run the daily feed lane for each pack, then the nightly index.", lambda: __import__("grit.daily.commands", fromlist=["daily_main"]).daily_main, "grit daily"),
+        "daily-review": ("Run the daily two-stage review of signals on SharePoint: argue, publish, collect, close and mail (spec 48).", lambda: __import__("grit.review.commands", fromlist=["main"]).main, "grit daily-review"),
         "index": ("Run the nightly index only: full text, events, digests and retention.", lambda: __import__("grit.daily.commands", fromlist=["index_main"]).index_main, "grit index"),
         "feeds": ("List the daily feed register, or check every feed.", lambda: __import__("grit.daily.commands", fromlist=["feeds_main"]).feeds_main, "grit feeds"),
         "pool-add": ("Queue a web page from a Co-Pilot answer for the next scan of a reader's packs.", lambda: __import__("grit.copilot.commands", fromlist=["pool_add_main"]).pool_add_main, "grit pool-add"),

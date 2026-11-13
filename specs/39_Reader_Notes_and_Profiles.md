@@ -37,7 +37,7 @@ A key the profile leaves out keeps the value in the JSON profile.
 | `brief`, `briefs.<pack>` | `sections`, `add_sections`, `remove_sections`, `formats`, `length` (`short` 5, `standard` 8, `full` 15 findings), `show_review_status` | `brief` applies to every pack. `briefs.<pack>` then applies to one. For a pack the JSON profile has no brief for, `briefs.<pack>` adds the pack's default brief. Today only the Group radar has one. |
 | `emphasis`, `de_emphasis` | `conditions` (condition or theme ids), `topics`, `countries` | See section 4. A topic has four or more letters, or is an acronym in capitals. |
 | `sources` | `trust`, `distrust` (web domains) | See section 4. |
-| `signal_buttons` | `true` or `false` (default) | Shows Approve, Reject and Watch on single signals. |
+| `signal_buttons` | `true` or `false` | Shows Approve, Reject and Watch on single signals. Off by default. A daily reviewer (`"signalReview": true` in the JSON profile, [spec 48](48_Daily_Two_Stage_Review.md)) has it on unless this setting turns it off. |
 | `copilot` | `web_searches_per_day` (0 to 50), `answer_length` (`short`, `standard`), `show_review_status` | `answer_length` and `show_review_status` shape Co-Pilot answers (spec 40). `web_searches_per_day` sets the reader's daily web searches (spec 41). |
 
 The body must cite a note on every line, for example `(N1)`. Lines under a heading that starts with "Open questions" can stand without a citation.

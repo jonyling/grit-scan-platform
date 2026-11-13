@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/column-formatting.schema.json",
+  "elmType": "div",
+  "style": { "display": "flex", "align-items": "center", "gap": "6px" },
+  "children": [
+    {
+      "elmType": "span",
+      "txtContent": "[$Decision]",
+      "style": { "font-weight": "600", "min-width": "64px" },
+      "attributes": {
+        "class": "=if([$Decision] == 'Approved', 'sp-field-severity--good', if([$Decision] == 'Rejected', 'sp-field-severity--severeWarning', ''))"
+      }
+    },
+    {
+      "elmType": "button",
+      "txtContent": "Approve",
+      "customRowAction": {
+        "action": "setValue",
+        "actionInput": { "Decision": "Approved", "DecidedBy": "@me", "DecidedAt": "@now" }
+      },
+      "attributes": { "class": "ms-bgColor-themePrimary ms-fontColor-white" },
+      "style": { "display": "=if([$Locked] == true, 'none', 'inherit')", "border": "none", "padding": "4px 10px", "cursor": "pointer" }
+    },
+    {
+      "elmType": "button",
+      "txtContent": "Reject",
+      "customRowAction": {
+        "action": "setValue",
+        "actionInput": { "Decision": "Rejected", "DecidedBy": "@me", "DecidedAt": "@now" }
+      },
+      "attributes": { "class": "ms-bgColor-neutralLight" },
+      "style": { "display": "=if([$Locked] == true, 'none', 'inherit')", "border": "none", "padding": "4px 10px", "cursor": "pointer" }
+    },
+    {
+      "elmType": "span",
+      "txtContent": "Closed",
+      "style": { "display": "=if([$Locked] == true, 'inherit', 'none')", "color": "#605e5c" }
+    }
+  ]
+}

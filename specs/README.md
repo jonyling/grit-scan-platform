@@ -29,5 +29,6 @@ Specs 13–33 state the rules. Spec 34 states the rebuild order. Spec 35 describ
 | [45](45_Weekly_Agent_Reasoning_and_Critique.md) | Opt-in weekly reasoning: whole-pool selection, independent critique, bounded research and reconciliation, frozen report snapshots, and post-decision Memory proposals. |
 | [46](46_Adverse_News_and_Lessons_Learnt_Scan.md) | Wilson's weekly Adverse News & Lessons Learnt Scan: the watchlist, the screen, verified sources, the five tests, the rules that decide each field, duplicates and material updates, and the email. |
 | [47](47_WSH_Digest_and_Alerts.md) | Workplace Safety & Health functional pack: monthly discussion digest for James Lek, five sections, Council Alert/Advisory/Insights line, Assessment→Critic notes, Singapore-then-DPS geography, serious-incident and regulatory alerts. |
+| [48](48_Daily_Two_Stage_Review.md) | The daily two-stage review: Gemini's case for and against, the BP and Manager SharePoint lists with Approve and Reject, the 12:00 and 17:00 deadlines, approved-only packs at 09:00, 13:00 and 18:00, and the memory loop. |
 
 The `archive/` folder holds an early draft of spec 17 for reference. It does not govern.

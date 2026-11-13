@@ -34,6 +34,7 @@ The weekly command uses the compatibility path. `--reasoned` is the opt-in path 
 | `grit/adverse/` | The adverse news and lessons learnt scan. Spec 46. |
 | `grit/wsh/` | The Workplace Safety & Health monthly digest and alert drafts. Spec 47. |
 | `grit/dataverse/` | The Dataverse gateway and the sync to `grit_signals`. |
+| `grit/review/` | The daily two-stage review: Gemini arguments, SharePoint lists, deadlines, packs, and mail. Spec 48. |
 | `grit/library/` | The report library and State of the Situation drafts. Spec 38. |
 | `grit/ui/` | The Streamlit dashboard and the Co-Pilot drawer. |
 | `grit/cli.py` | The command line: `python -m grit`. |
@@ -69,7 +70,7 @@ Use the project virtual environment. Install packages there. Leave system Python
    .venv/bin/python -m pytest -q
    ```
 
-   As of 10 November 2026, 909 tests pass. They make no network call. Set `GRIT_TEST_ROOT` to a disposable directory when a fixture run must leave this checkout's `config/`, `output/`, and `secrets/` unread. That switch also skips `.env`.
+   As of 13 November 2026, 936 tests pass. They make no network call. Set `GRIT_TEST_ROOT` to a disposable directory when a fixture run must leave this checkout's `config/`, `output/`, and `secrets/` unread. That switch also skips `.env`.
 
    ```bash
    GRIT_TEST_ROOT=/tmp/grit-weekly-fixtures .venv/bin/python -m pytest \
@@ -336,6 +337,47 @@ Each daily run writes kept signals to `output/runs/DATE-PACK-daily/DATE-PACK-dai
    ```text
    30 5 * * * cd /path/to/grit-scan-platform && .venv/bin/grit daily >> output/daily.log 2>&1
    ```
+
+## Run the daily signal review
+
+Every working day, the R&A Business Partner and then the Business Area Manager approve or reject the day's signals in SharePoint. Only signals both approve reach the 18:00 report. The pilot covers Urban Solutions, with Hwaimay Mao as the BP and Gareth Tang as the Manager ([spec 48](specs/48_Daily_Two_Stage_Review.md)).
+
+The day runs on Singapore time:
+
+| Time | What happens |
+|---|---|
+| 06:30 | Gemini writes a case for and a case against each signal the daily lane kept. Rules check every quote and number. |
+| 08:30 | The signals appear in the BP's SharePoint list, each with an Approve and a Reject button. |
+| 09:00 | The BP gets the Word, PowerPoint and Excel pack by email. |
+| 12:00 | The BP stage closes. The BP's approvals go to the Manager's list. |
+| 13:00 | The Manager gets the pack of the BP's approvals. |
+| 17:00 | The Manager stage closes. |
+| 18:00 | Both get the final pack, which holds only the signals both approved. |
+
+A row with no decision at the deadline counts as not approved. Each decision feeds the reviewer's memory, which orders the next day's list. A missed decision teaches the memory nothing.
+
+Monday's review holds the weekend's signals. Holidays are listed in `config/review/urs.json`.
+
+1. Set up the site, the lists, the app, and the settings. Follow [Set up the daily signal review](docs/daily-review-setup.md).
+2. Check the day's steps and decisions.
+
+   ```bash
+   .venv/bin/python -m grit daily-review status --pack urs
+   ```
+
+3. Schedule the review every 15 minutes. The command does whatever step is due. Replace the path with this repository.
+
+   ```text
+   */15 * * * * cd /path/to/grit-scan-platform && .venv/bin/grit daily-review tick >> output/daily-review.log 2>&1
+   ```
+
+4. Optional: write what each reviewer's decisions have taught GRIT, to `output/review/learning/`.
+
+   ```bash
+   .venv/bin/python -m grit daily-review learning --profile hwaimay gareth --pack urs
+   ```
+
+Without Graph settings or list IDs, the review still argues the signals and writes the packs to `output/review/`. Nothing is sent.
 
 ## Review a package
 
@@ -604,6 +646,7 @@ Run `grit COMMAND --help` for a command's arguments. Delegated commands take the
 | `adverse` | Write the adverse news email for review. |
 | `digest` | Run the Workplace Safety & Health monthly digest. |
 | `daily`, `feeds`, `index` | The daily lane, the feed register, and the nightly index. |
+| `daily-review` | The daily two-stage review in SharePoint: `tick`, `status`, `step`, `decide`, `learning`, and `columns`. |
 | `red` | List RED candidates, or record a confirmation or rejection. |
 | `review`, `airis`, `feedback` | Decide a package, export to AIRIS, or record a signal decision. |
 | `requests`, `corrections`, `misses`, `ratings`, `scorecard` | Requests, the corrections ledger, review misses, source bands, and the methodology score. |
@@ -625,7 +668,7 @@ These are the open items for the MVP.
 3. Shared outlet bands live in `config/source-ratings.json`. A pack source with no band stays `UNRATED` until you rate it. `grit ratings unrated` lists the outlets a run actually cited.
 4. The URS Taiwan order-book anchors are `REPORTED_FOR_CONFIRMATION`. A named business-area owner confirms them.
 5. The business-area relationship files have no edges yet. Entity-level paths stay limited until those rows are imported. See [Export relationship gaps](#export-relationship-gaps).
-6. Scheduled scans start from cron and `grit scheduled`. A daily RED alert is mailed when Graph mail is configured. Otherwise it stays a draft. The dashboard has no user sign-in. The workflow ledger is written to the pool. Dataverse receives signals only through `grit dataverse --push`.
+6. Scheduled scans start from cron and `grit scheduled`. A daily RED alert is mailed when Graph mail is configured. Otherwise it stays a draft. The dashboard has no user sign-in. The daily review's SharePoint lists are the only reviewer screen with access control. The workflow ledger is written to the pool. Dataverse receives signals only through `grit dataverse --push`.
 7. The Commercial Aerospace and Marine scan plans are still proposed for business-area review. `grit scheduled` runs both on the first Thursday.
 8. A generated short name can match the wrong company. On 7 October 2026, "Amtech Systems" matched a US semiconductor company. Reject such aliases through `grit gaps`.
 

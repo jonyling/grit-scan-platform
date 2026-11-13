@@ -23,6 +23,7 @@
     ]
   },
   "email": null,
+  "signalReview": true,
   "briefs": {
     "urs": {
       "title": "GRIT-Scan: Urban Solutions",

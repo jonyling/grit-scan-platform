@@ -5,6 +5,7 @@ The repository [README](../README.md) is the operator guide. This folder holds t
 ## Guides
 
 - [Add a business area](add-a-business-area.md) adds a reader pack as data.
+- [Set up the daily signal review](daily-review-setup.md) connects the daily review to SharePoint and mail. The `review/` folder holds the column formatting for the Approve and Reject buttons.
 - [Prepare the weekly exposure snapshot](templates/exposure-snapshot-prompt.md) is the prompt for the internal evidence file. [exposure-snapshot.example.json](templates/exposure-snapshot.example.json) shows the shape.
 
 ## Design notes

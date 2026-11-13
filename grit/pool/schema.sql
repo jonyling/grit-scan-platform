@@ -316,6 +316,63 @@ CREATE TABLE IF NOT EXISTS feedback (
 );
 CREATE INDEX IF NOT EXISTS ix_feedback_profile ON feedback (profile_id);
 
+-- Spec 48. The daily two-stage review. A batch is one pack's working day: batch_id is DATE-PACK-review.
+CREATE TABLE IF NOT EXISTS review_steps (
+    batch_id        TEXT NOT NULL,
+    step            TEXT NOT NULL,            -- ARGUE, PUBLISH_BP, MAIL_BP, CLOSE_BP, MAIL_MANAGER, CLOSE_MANAGER, MAIL_FINAL
+    status          TEXT NOT NULL,            -- DONE, SKIPPED, FAILED, UNCERTAIN (a mail may have gone; not re-sent)
+    outcome_json    TEXT NOT NULL DEFAULT '{}',
+    done_at         TEXT NOT NULL,
+    PRIMARY KEY (batch_id, step)
+);
+
+-- Gemini's case for and case against one signal. A proposal only: it never sets a tier, a score, RED or a decision.
+CREATE TABLE IF NOT EXISTS review_arguments (
+    batch_id        TEXT NOT NULL,
+    signal_id       TEXT NOT NULL REFERENCES signals (signal_id),
+    run_id          TEXT NOT NULL,            -- the daily run whose assessment the reviewers see
+    status          TEXT NOT NULL,            -- ARGUED, WITHHELD, FAILED, NOT_CONFIGURED
+    case_for        TEXT,
+    case_against    TEXT,
+    critic_view     TEXT,                     -- HOLDS, WEAK, FAILS
+    quotes_json     TEXT NOT NULL DEFAULT '[]',
+    problems_json   TEXT NOT NULL DEFAULT '[]',
+    model           TEXT,
+    argued_at       TEXT NOT NULL,
+    PRIMARY KEY (batch_id, signal_id)
+);
+
+-- One row per signal, stage and SharePoint list item.
+CREATE TABLE IF NOT EXISTS review_items (
+    batch_id        TEXT NOT NULL,
+    signal_id       TEXT NOT NULL REFERENCES signals (signal_id),
+    stage           TEXT NOT NULL,            -- BP, MANAGER
+    position        INTEGER NOT NULL,
+    list_item_id    TEXT,                     -- NULL until SharePoint accepts the row
+    memory_note     TEXT,
+    published_at    TEXT,
+    uncertain       INTEGER NOT NULL DEFAULT 0, -- a create got no clear answer: look the row up before creating it again
+    PRIMARY KEY (batch_id, signal_id, stage)
+);
+
+-- A reviewer's decision. While a stage is open the row follows the list. At the deadline it is frozen. NO_DECISION is a
+-- missed deadline: it is left out of feedback, so silence teaches the memory nothing.
+CREATE TABLE IF NOT EXISTS review_decisions (
+    batch_id        TEXT NOT NULL,
+    signal_id       TEXT NOT NULL REFERENCES signals (signal_id),
+    stage           TEXT NOT NULL,
+    profile_id      TEXT NOT NULL,
+    decision        TEXT NOT NULL,            -- APPROVE, REJECT, NO_DECISION
+    comment         TEXT,
+    actor           TEXT,                     -- who SharePoint says changed the row
+    decided_at      TEXT,
+    on_time         INTEGER NOT NULL DEFAULT 1,
+    final           INTEGER NOT NULL DEFAULT 0,
+    recorded_at     TEXT NOT NULL,
+    PRIMARY KEY (batch_id, signal_id, stage)
+);
+CREATE INDEX IF NOT EXISTS ix_review_decisions_profile ON review_decisions (profile_id);
+
 -- Spec 29. A request from the workbook, the dashboard, or the chat. Only an ACTIVE request assigns P1.
 CREATE TABLE IF NOT EXISTS management_requests (
     request_id      TEXT PRIMARY KEY,

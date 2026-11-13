@@ -40,8 +40,12 @@ class Profile:
 
     @property
     def signal_buttons(self) -> bool:
-        """Approve, Reject and Watch on single signals. Off unless the reader's profile turns them on."""
-        return bool(self.reader is not None and self.reader.settings.get("signal_buttons"))
+        """Approve, Reject and Watch on single signals, and the memory they feed. Off unless the reader's profile turns them
+        on. A daily reviewer (`"signalReview": true` in the JSON profile, spec 48) has them on unless the reader's profile
+        turns them off."""
+        if self.reader is not None and self.reader.settings.get("signal_buttons") is not None:
+            return bool(self.reader.settings.get("signal_buttons"))
+        return bool(self.raw.get("signalReview"))
 
     @property
     def in_force(self) -> str:
