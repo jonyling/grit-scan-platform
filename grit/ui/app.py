@@ -211,6 +211,10 @@ def main() -> None:
                     st.caption("A reader cannot approve a pack. A reviewer or a BA head approves it.")
             if not packages:
                 st.caption("No pack is written for this reader and run yet.")
+            if profile.raw.get("signalReview"):
+                from grit.ui.daily_review import daily_review_panel
+
+                screens["Packs and review"]["daily_review"] = daily_review_panel(st, db, profile)
 
         with requests_tab:
             requests = db.management_requests()

@@ -371,3 +371,19 @@ def test_a_server_error_on_a_post_is_not_retried_and_an_unclear_mail_is_not_sent
     sharepoint.publish(pool, config, FRIDAY, BP, _profile("bp"), client=None)
     services = _services()
     assert mail_pack(pool, config, FRIDAY, BP, services.profiles, client=client)["status"] == "UNCERTAIN"
+
+
+def test_the_dashboard_panel_shows_only_the_readers_own_stage(tmp_path, monkeypatch) -> None:
+    from grit import settings
+    from grit.ui.daily_review import panel_data
+
+    pool, config, ids = _argued(tmp_path)
+    monkeypatch.setattr(settings, "CONFIG_DIR", tmp_path)
+    graph = FakeGraph()
+    sharepoint.publish(pool, config, FRIDAY, BP, _profile("bp"), client=graph)
+    graph.decide(ids[0], "Approved", "2026-11-13T02:00:00Z")
+    sharepoint.close(pool, config, FRIDAY, BP, client=graph)
+    [entry] = panel_data(pool, _profile("bp"), now=_at(FRIDAY, "12:30"))
+    assert (entry["stage"], entry["rows"], entry["decisions"]) == (BP, 3, {"APPROVE": 1, "NO_DECISION": 2})
+    assert entry["learning"]["approved"] == 1 and entry["learning"]["no_decision"] == 2
+    assert panel_data(pool, _profile("someone-else"), now=_at(FRIDAY, "12:30")) == []

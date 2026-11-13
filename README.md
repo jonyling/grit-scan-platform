@@ -70,7 +70,7 @@ Use the project virtual environment. Install packages there. Leave system Python
    .venv/bin/python -m pytest -q
    ```
 
-   As of 13 November 2026, 936 tests pass. They make no network call. Set `GRIT_TEST_ROOT` to a disposable directory when a fixture run must leave this checkout's `config/`, `output/`, and `secrets/` unread. That switch also skips `.env`.
+   As of 13 November 2026, 937 tests pass. They make no network call. Set `GRIT_TEST_ROOT` to a disposable directory when a fixture run must leave this checkout's `config/`, `output/`, and `secrets/` unread. That switch also skips `.env`.
 
    ```bash
    GRIT_TEST_ROOT=/tmp/grit-weekly-fixtures .venv/bin/python -m pytest \
@@ -371,7 +371,7 @@ Monday's review holds the weekend's signals. Holidays are listed in `config/revi
    */15 * * * * cd /path/to/grit-scan-platform && .venv/bin/grit daily-review tick >> output/daily-review.log 2>&1
    ```
 
-4. Optional: write what each reviewer's decisions have taught GRIT, to `output/review/learning/`.
+4. Optional: write what each reviewer's decisions have taught GRIT, to `output/review/learning/`. Each reviewer also sees this on the dashboard, under **Packs and review**.
 
    ```bash
    .venv/bin/python -m grit daily-review learning --profile hwaimay gareth --pack urs

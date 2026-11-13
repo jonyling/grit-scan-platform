@@ -100,6 +100,8 @@ A reviewer's memory is on when the JSON profile has `"signalReview": true`. A `s
 
 `grit daily-review learning --profile hwaimay gareth` writes a report for each reviewer to `output/review/learning/`. It shows the on-time rate, the approval rate, how often the Manager upheld the BP's approvals, and the features that move signals up or down.
 
+The dashboard shows the same report to each reviewer, under **Packs and review** > **Daily signal review**. The panel also shows today's steps and the reviewer's decisions so far. It is read-only. Decisions are made in SharePoint.
+
 ## 8. Records
 
 | Table | Contents |
@@ -120,5 +122,4 @@ A reviewer's memory is on when the JSON profile has `"signalReview": true`. A `s
 ## 10. Not yet built
 
 - Business areas other than Urban Solutions. To add one, write `config/review/<pack>.json`, create its two lists, and turn on `signalReview` in both reviewers' profiles.
-- A dashboard tab for the learning report. The report is a Markdown file for now.
 - Singapore public holidays for 2027, which MOM has not yet published.
