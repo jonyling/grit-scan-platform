@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 from typing import Any, Mapping, Sequence
+from urllib.parse import urlparse
 
 from docx import Document
 from docx.enum.section import WD_ORIENT, WD_SECTION
@@ -26,6 +27,9 @@ BOX_FILL = {"WATCHPOINT": "FFF2CC", "ELEVATED": "FFF2CC", "STABLE": "E2EFDA", "N
 # Format v2 (spec 44): while a brief renders, every cited source gets a number: [S1], [S2], and so on. Its link goes to the
 # source register at the end. None when a renderer is not inside render_docx.
 _REGISTER: dict[str, Any] | None = None
+# Paragraphs that list a source by its headline. The first-use filter reads them but never cuts them, since a headline
+# such as "Fixes for Nov. 11" is not a pair of sentences.
+_WHOLE: set[Any] = set()
 # Defaults. A pack's scan plan can rename any section through sectionTitles.
 SECTION_TITLES = {
     "ORDER_BOOK": "Order-book baseline and context",
@@ -170,6 +174,17 @@ def _hyperlink(paragraph: Any, text: str, url: str, *, size: float | None = None
     run.append(node)
     link.append(run)
     paragraph._p.append(link)
+
+
+def _viable_url(url: Any) -> str | None:
+    """The URL when a reader can open it: http or https, a dotted host, and no whitespace."""
+    text = str(url or "").strip()
+    if not text or any(char.isspace() for char in text):
+        return None
+    parts = urlparse(text)
+    if parts.scheme not in {"http", "https"} or "." not in (parts.hostname or ""):
+        return None
+    return text
 
 
 def _number(ref: Mapping[str, Any]) -> str:
@@ -349,6 +364,7 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
         renderer(document, brief, f"Appendix {letter}. {title}", dry=False)
     _REGISTER = None
     _apply_first_use(document)
+    _WHOLE.clear()
     _footers(document)
     path.parent.mkdir(parents=True, exist_ok=True)
     document.save(str(path))
@@ -633,7 +649,14 @@ def _requests(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool)
         for item in row["signals"]:
             line = document.add_paragraph()
             line.paragraph_format.left_indent = Cm(1.0)
-            _source_link(line, item["title"], item, size=10)
+            _WHOLE.add(line._p)
+            url = _viable_url(item.get("url"))
+            if url:
+                _hyperlink(line, item["title"], url, size=10)
+                if _REGISTER is not None:
+                    line.add_run(f" [{_number(item)}]").font.size = Pt(10)
+            else:
+                _source_link(line, item["title"], item, size=10)
             line.add_run(f" ({item['outlet']}, {item['date'] or 'date not stated'}{', ' + item['via'] if item.get('via') else ''})").font.size = Pt(10)
     proposed = [row["title"] for row in rows if row["status"] == "PROPOSED"]
     if proposed:
@@ -704,6 +727,7 @@ def _findings(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool)
     for item in brief["findings"]:
         paragraph = document.add_paragraph(style="List Bullet")
         paragraph.add_run((f"[{item['priority']} · tier {item['tier']}] " if item['priority'] else f"[tier {item['tier']}] ")).bold = True
+        _WHOLE.add(paragraph._p)
         _source_link(paragraph, item["title"], item)
         paragraph.add_run(f" ({item['outlet']}, {item['date'] or 'date not stated'})")
         detail = document.add_paragraph()
@@ -718,7 +742,8 @@ def _findings(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool)
         lines.extend(suggestions_for_signal(brief, item["signal_id"]))
         if item["risks"]:
             lines.append("Risk register: " + "; ".join(item["risks"]) + ".")
-        lines.append(item["harm"])
+        if item["harm"]:
+            lines.append(item["harm"])
         if item.get("red_status"):
             lines.append(RED_LINES[item["red_status"]])
         run = detail.add_run(" ".join(lines))
@@ -733,6 +758,7 @@ def _others(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -
     for item in brief["other_signals"]:
         paragraph = document.add_paragraph(style="List Bullet")
         paragraph.add_run((f"[{item['priority']}] " if item['priority'] else ""))
+        _WHOLE.add(paragraph._p)
         _source_link(paragraph, item["title"], item, size=10)
         paragraph.add_run(f" ({item['outlet']}, {item['date'] or 'date not stated'})").font.size = Pt(10)
     return True
@@ -770,6 +796,7 @@ def _ref_text(item: Mapping[str, Any]) -> str:
 def scenario_cells(reading: Mapping[str, Any]) -> list[list[str]]:
     """One row of the scenario outlook, as lines per cell: shared by the Word, Markdown, Excel and deck renderers."""
     from grit.pipeline.scenarios import lean_text
+    from grit.report.format_v2 import clean_title
 
     def line(case: Mapping[str, Any], item: Mapping[str, Any]) -> str:
         quote = f" Evidence: \u201c{item['quotes'][0]}\u201d" if item.get("quotes") else ""
@@ -782,6 +809,9 @@ def scenario_cells(reading: Mapping[str, Any]) -> list[list[str]]:
     triggered = [line for case in reading["cases"] for response in case["responses_triggered"] if (line := suggestion_line(f"{response['action']} Owner: {response['owner']}."))]
     gains = [f"{case['title'].split(' case')[0]}: {HYPOTHESIS_LABEL} {case['where_ste_could_gain']}" for case in reading["cases"] if case.get("where_ste_could_gain")]
     names = [f"{case['title'].split(' for')[0]}: {case['name']}" for case in reading["cases"]]
+    if not seen and reading.get("related"):
+        # Context, not evidence: these reports touched the shift but matched none of its reviewed signposts.
+        seen = ["None matched. Related this week, not a signpost: " + "; ".join(f"{clean_title(ref['title'])} ({ref['outlet']}, {ref['date'] or 'date not stated'})" for ref in reading["related"]) + "."]
     return [[reading["name"], *names], [lean_text(reading)], seen or ["None this period."], against or ["None this period."], triggered or ["None."], gains or ["None in the reviewed scenarios."]]
 
 
@@ -798,12 +828,11 @@ def _scenarios(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool
         for cell, width, lines in zip(cells, widths, scenario_cells(reading)):
             cell.width = Cm(width)
             _cell_lines(cell, lines, bold_first=cell is cells[0])
-    if outlook.get("indicators"):
-        from grit.pipeline.indicators import indicator_line
-
+    # A format v2 brief lists the indicators once, in the look-ahead.
+    if outlook.get("indicators") and not brief.get("v2"):
         document.add_paragraph("Leading indicators. Green: no action. Amber: BAs review exposure and plans. Red: BAs act on the planned responses. The bounds are proposed by GRIT-Scan until Wilson confirms them.")
         for item in outlook["indicators"]:
-            document.add_paragraph(f"{item['name']}: {indicator_line(item)} Applies to {', '.join(item['applies_to'])}.", style="List Bullet")
+            document.add_paragraph(_indicator_text(item), style="List Bullet")
     if outlook.get("risk_links"):
         document.add_paragraph("Group risks and the business-area and LOB risks under them. A blank LOB cell means the register does not name one. The crosswalk is proposed until a named person confirms it.")
         link_widths = (6.0, 8.0, 6.0, 3.0)
@@ -900,7 +929,7 @@ def _apply_first_use(document: Any) -> None:
         if child.tag != qn("w:p"):
             continue
         paragraph = Paragraph(child, document)
-        if paragraph._p.find(".//" + qn("w:hyperlink")) is not None:
+        if child in _WHOLE or paragraph._p.find(".//" + qn("w:hyperlink")) is not None:
             state.observe(paragraph.text)
             continue
         updated = state.filter(paragraph.text)
@@ -911,9 +940,12 @@ def _apply_first_use(document: Any) -> None:
 
 
 def _footers(document: Any) -> None:
-    for section in document.sections:
+    """One footer carries the disclaimer. Later sections link to it, so the document holds it once (spec 36)."""
+    for number, section in enumerate(document.sections):
         footer = section.footer
-        footer.is_linked_to_previous = False
+        footer.is_linked_to_previous = number > 0
+        if number:
+            continue
         paragraph = footer.paragraphs[0]
         paragraph.text = DISCLAIMER
         for run in paragraph.runs:
@@ -1048,8 +1080,20 @@ def _look_ahead(document: Any, brief: Mapping[str, Any], title: str, *, dry: boo
 
         document.add_paragraph("Leading indicators:")
         for item in indicators:
-            document.add_paragraph(f"{item['name']}: {indicator_line(item)}", style="List Bullet")
+            document.add_paragraph(_indicator_text(item), style="List Bullet")
     return True
+
+
+def _indicator_text(item: Mapping[str, Any]) -> str:
+    """An indicator's reading and band, the risk themes it bears on by name, and why its band may differ from their trend."""
+    from grit.pipeline.indicators import indicator_line, theme_note
+
+    themes = [theme for theme in item.get("themes") or [] if isinstance(theme, Mapping)]
+    text = f"{item['name']}: {indicator_line(item)}"
+    if themes:
+        text += " Bears on risk " + ("themes " if len(themes) > 1 else "theme ") + "; ".join(f"{theme['number']}, {theme['name']} ({theme['trend']})" for theme in themes) + "."
+    note = theme_note(item)
+    return f"{text} {note}" if note else text
 
 
 def _priorities(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
@@ -1185,6 +1229,8 @@ def _quality(document: Any, brief: Mapping[str, Any], title: str) -> None:
 
 
 def _source_register(document: Any, brief: Mapping[str, Any], title: str) -> None:
+    from grit.report.format_v2 import clean_title
+
     refs = _REGISTER["refs"] if _REGISTER else {}
     if not refs:
         return
@@ -1194,7 +1240,7 @@ def _source_register(document: Any, brief: Mapping[str, Any], title: str) -> Non
     for key, number in _REGISTER["numbers"].items():
         ref = refs[key]
         paragraph = document.add_paragraph()
-        run = paragraph.add_run(f"[{number}] {ref.get('outlet') or 'source'}, {ref.get('title') or ''}, {ref.get('when') or ref.get('date') or 'date not stated'} ({tiers.get(str(ref.get('signal_id')), 'T4')}) ")
+        run = paragraph.add_run(f"[{number}] {ref.get('outlet') or 'source'}, {clean_title(ref.get('title')) or ref.get('title') or ''}, {ref.get('when') or ref.get('date') or 'date not stated'} ({tiers.get(str(ref.get('signal_id')), 'T4')}) ")
         run.font.size = Pt(8.5)
         if ref.get("url"):
             _hyperlink(paragraph, str(ref["url"]), str(ref["url"]), size=8)

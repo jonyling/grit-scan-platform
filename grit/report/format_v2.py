@@ -38,6 +38,7 @@ _COUNTRY_ALIASES = {
     "united kingdom": ("UK", "Britain"), "people's republic of china": ("China",), "hong kong": ("Hong Kong",), "taiwan": ("Taiwan",),
 }
 # An outlet or breadcrumb suffix: " | The Straits Times", " - Reuters", " < IT·Gaming < 기사본문".
+_NOTHING = re.compile(r"\s*Nothing\b", re.IGNORECASE)
 _SUFFIX = re.compile(r"\s+(?:[|\u2013\u2014<-]\s+[^|\u2013\u2014<-]{2,60})$")
 _CONFLICT = re.compile(r"(\d[\d,]*)\s+(?:people\s+|persons\s+)?(killed|dead|deaths|died|injured|wounded|missing|cancelled|flights|missiles|drones)\b", re.I)
 
@@ -241,10 +242,11 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         return (drafted.get(event["event_id"]) or {}).get("item") or clean_title(event["lead"].get("title"))
 
     # 1. Escalating and elevated items. In a run that records the events the EventAssessor withheld, only the events it
-    # drafted or withheld are rows, so a slot that story merging frees is not filled by an event nobody drafted.
+    # drafted are rows, so a slot that story merging frees is not filled by an event nobody drafted.
+    # A row whose draft failed its checks is not a finding: it is neither listed nor ranked, and the QA log records it.
     recorded = "event_rows_withheld" in config
-    assessed = set(drafted) | set(config.get("event_rows_withheld") or [])
-    elevated = [event for event in events if event["elevated"] and (not recorded or event["event_id"] in assessed)][:8]
+    withheld = set(config.get("event_rows_withheld") or [])
+    elevated = [event for event in events if event["elevated"] and event["event_id"] not in withheld and (not recorded or event["event_id"] in drafted)][:8]
     from grit.core.financial_band import financial_size as _financial_size
 
     pack_bands = ((getattr(pack, "manifest", None) or {}) if hasattr(pack, "manifest") else {}).get("severityBands")
@@ -265,7 +267,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     previous = {row["condition_id"]: row for row in pool.conditions(pool.latest_run(run["pack"], before=run["run_date"], kind="READER_SCAN")["run_id"])} \
         if pool.latest_run(run["pack"], before=run["run_date"], kind="READER_SCAN") else {}
     changes = []
-    for event in [item for item in events if item["band"] in {UP, DOWN} and (item["elevated"] or item["band"] == DOWN)][:MAX_CHANGES]:
+    for event in [item for item in events if item["band"] in {UP, DOWN} and (item["elevated"] or item["band"] == DOWN) and item["event_id"] not in withheld][:MAX_CHANGES]:
         before = event.get("previous_lead")
         changes.append({
             "item": label(event), "risk": event["risk_label"],
@@ -294,12 +296,19 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
                            "risk": event["risk_label"], "owner": (row.get("response") or {}).get("owner") or "To assign", "signal_ids": [event["lead"]["signal_id"]]})
     covered = {item for event in elevated for item in event["risks"]}
     for row in conditions:
-        if row["trend"] == "Escalating" and row["condition_id"] not in covered:
-            priorities.append({"item": row["name"], "trend": f"{UP} Escalating", "risk": risk_labels([row["condition_id"]], names), "owner": "To assign", "signal_ids": []})
-    for event in [item for item in events if item["band"] == SAME and not item["elevated"] and item["tier"] <= 2 and item["risks"]]:
+        # An escalating theme is ranked only with the reports behind it.
+        cited = [str(ref["signal_id"]) for ref in row.get("sources") or [] if ref.get("signal_id")]
+        if row["trend"] == "Escalating" and row["condition_id"] not in covered and cited:
+            owner = next((option.get("owner") for option in row.get("options") or [] if option.get("owner")), None) or "To assign"
+            priorities.append({"item": row["name"], "trend": f"{UP} Escalating", "risk": risk_labels([row["condition_id"]], names), "owner": owner, "signal_ids": cited[:2]})
+    # A continuing item takes the owner its risk theme's proposed options name.
+    theme_owner = {row["condition_id"]: owner for row in conditions
+                   if (owner := next((option.get("owner") for option in row.get("options") or [] if option.get("owner")), None))}
+    for event in [item for item in events if item["band"] == SAME and not item["elevated"] and item["tier"] <= 2 and item["risks"] and item["event_id"] not in withheld]:
         if len(priorities) >= MAX_PRIORITIES:
             break
-        priorities.append({"item": label(event), "trend": f"{SAME} Continuing", "risk": event["risk_label"], "owner": "To assign", "signal_ids": [event["lead"]["signal_id"]]})
+        owner = next((theme_owner[risk] for risk in event["risks"] if risk in theme_owner), "To assign")
+        priorities.append({"item": label(event), "trend": f"{SAME} Continuing", "risk": event["risk_label"], "owner": owner, "signal_ids": [event["lead"]["signal_id"]]})
 
     # 5. Coverage matrix.
     lookup = _lob_lookup(pack)
@@ -348,9 +357,15 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
 
     # 7. Named supplier, customer and partner watch.
     # A passing mention says nothing about the item, so it stays in the exposure checks and out of the report.
+    # A summary that opens "Nothing was found ..." is a passing mention whatever its status says.
+    def passing_only(item: Mapping[str, Any]) -> bool:
+        text = item.get("text")
+        text = text.get("plain") or "" if isinstance(text, Mapping) else str(text or "")
+        return item.get("status") == "NOTHING_FOUND" or bool(_NOTHING.match(text))
+
     watch = [{"name": item["name"], "type": kind, "text": item["text"], "status": item["status"]}
-             for kind, items in named.items() for item in items if item.get("text") and item.get("status") != "NOTHING_FOUND"]
-    passing = sum(1 for items in named.values() for item in items if item.get("text") and item.get("status") == "NOTHING_FOUND")
+             for kind, items in named.items() for item in items if item.get("text") and not passing_only(item)]
+    passing = sum(1 for items in named.values() for item in items if item.get("text") and passing_only(item))
     targets = {str(row.get("target_id")) for row in scope["queries"] if row.get("lane") in {"SUPPLIER", "CUSTOMER", "COMPETITOR", "ENTITY"}}
     total = sum(len(items) for items in named.values())
     not_searched = sum(1 for items in named.values() for item in items if item.get("item_id") not in targets and not item.get("text"))
@@ -424,7 +439,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     red = any(event["red"] for event in events)
     status = "RED" if red else "ELEVATED" if elevated or rising else "STABLE"
     # The status line names what moved: ▲ events, and standing risks whose trend eased. An event without a report this week has not eased.
-    arrows = [f"{label(event)} {UP}" for event in events if event["band"] == UP][:4] + [f"{row['name']} {DOWN}" for row in conditions if row["trend"] == "Easing"][:2]
+    arrows = [f"{label(event)} {UP}" for event in events if event["band"] == UP and event["event_id"] not in withheld][:4] + [f"{row['name']} {DOWN}" for row in conditions if row["trend"] == "Easing"][:2]
     window = [f"{item['date'].day} {item['date'].strftime('%b')}: {short_text(item['event'])}" for item in look[:2]]
 
     # Source tiers for every signal the brief may cite.

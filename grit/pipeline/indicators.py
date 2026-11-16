@@ -65,6 +65,30 @@ LEADING = (
 )
 
 
+def pack_indicators(manifest: Mapping[str, Any] | None) -> tuple[tuple[LeadingIndicator, ...], dict[str, list[str]]]:
+    """The indicators a pack reads, and the pack's risk themes each one bears on. A pack.json "leadingIndicators" list of
+    {"id", "themes"} chooses them; an empty list reads none. A pack without the key reads them all, with no theme links."""
+    chosen = (manifest or {}).get("leadingIndicators")
+    if chosen is None:
+        return LEADING, {}
+    known = {item.indicator_id: item for item in LEADING}
+    unknown = [str(entry.get("id")) for entry in chosen if entry.get("id") not in known]
+    if unknown:
+        raise ValueError(f"Unknown leading indicator(s) in pack.json: {', '.join(unknown)}. Known: {', '.join(known)}.")
+    return tuple(known[entry["id"]] for entry in chosen), {str(entry["id"]): [str(theme) for theme in entry.get("themes") or []] for entry in chosen}
+
+
+def theme_note(item: Mapping[str, Any]) -> str:
+    """Why an amber or red count can sit beside a theme that is easing: the count is how much news there was, not which way
+    it moved. Empty when the item carries no theme, or its band and the theme trends agree."""
+    calm = [theme for theme in item.get("themes") or [] if isinstance(theme, Mapping) and theme.get("trend") in {"Easing", "Unchanged"}]
+    if item.get("band") not in {"amber", "red"} or not calm:
+        return ""
+    named = " and ".join(f"{theme['number']} ({str(theme['trend']).lower()})" for theme in calm)
+    return (f"The band differs from risk theme{'s' if len(calm) > 1 else ''} {named} because it counts how much "
+            f"{str(item['name']).lower()} news there was, not which way it moved; the theme trend reads the direction from its sources.")
+
+
 def band(count: int | None, green_max: int | None, amber_max: int | None) -> str:
     """green at or under green_max, amber at or under amber_max, and red above that. A missing bound is not established."""
     if green_max is None or amber_max is None or amber_max < green_max:

@@ -474,7 +474,8 @@ def _instruction(task: str, payload: Mapping[str, Any] | None = None) -> str:
     else:
         ask = ('Return {"edits":[{"path":"bottom_line.text","text":"One sentence [SIG-0123456789abcdef].","source_ids":["SIG-0123456789abcdef"]},'
                '{"path":"bottom_line.escalation","text":"One sentence [SIG-0123456789abcdef].","source_ids":["SIG-0123456789abcdef"]}]}. '
-               "Write each of those two paths once. Put the prose in text. Cite each sentence before its final punctuation. "
+               "Write each of those two paths once. Put the prose in text. Cite each sentence before its final punctuation, except a "
+               "sentence on the business's own state or on what would raise the status to RED, which cites nothing. "
                + _report_rules(payload))
     return (f"Read task.json in this directory. Write proposal.json as one JSON object for task {task}. "
             f"{ask} Do not add score, priority, severity, RED, or approval fields. Do not write your private reasoning.")

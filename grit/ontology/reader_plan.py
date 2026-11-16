@@ -81,17 +81,33 @@ def _name_lanes(add: Any, pack: Any, lanes: Mapping[str, Any], reviewed_aliases:
     exposure = pack.exposure
     reviewed = reviewed_by_id(reviewed_aliases)
     countries = sorted({str(row.get("countryOfIncorporation") or "").strip() for row in exposure.get("entities") or []} - {""})
+    def weekly(lane: str) -> dict[str, str | None]:
+        """A lane's "weekly" list: register names searched every week, whatever the lane's rotation. An entry is the name, or
+        {"name", "query"} when news prints the name differently ("Volotea", not "Volotea S. L.")."""
+        found: dict[str, str | None] = {}
+        for entry in lanes[lane].get("weekly") or []:
+            name, query = (entry.get("name"), entry.get("query")) if isinstance(entry, Mapping) else (entry, None)
+            found[str(name).casefold()] = str(query) if query else None
+        return found
+
     for lane, (key, id_key, name_key) in NAME_FIELDS.items():
         if lane not in lanes:
             continue
+        every_week = weekly(lane)
         for row in exposure.get(key) or []:
             if row.get("anonymised") or row.get("counterpartyClass"):
                 continue  # 'Thailand NPE Programme Customer' or 'Marine equipment vendors' names no organization that news would print
             query, _basis = search_name(row[name_key], str(row.get(id_key) or ""), reviewed, countries)
-            add(lane, query, str(row.get(id_key)), key, exact=True, cadence=lanes[lane].get("cadenceWeeks", 1))
+            name = str(row[name_key]).casefold()
+            cadence = 1 if name in every_week else lanes[lane].get("cadenceWeeks", 1)
+            add(lane, every_week.get(name) or query, str(row.get(id_key)), key, exact=True, cadence=cadence)
     if "COMPETITOR" in lanes:
+        every_week = weekly("COMPETITOR")
         for row in (pack.competitors or {}).get("competitors") or []:
-            add("COMPETITOR", row["competitor"], f"COMPETITOR-row-{row['row']}", f"competitors row {row['row']}", exact=True, cadence=lanes["COMPETITOR"].get("cadenceWeeks", 8), lob=row.get("canonicalLob"))
+            name = row["competitor"].casefold()
+            cadence = 1 if name in every_week else lanes["COMPETITOR"].get("cadenceWeeks", 8)
+            add("COMPETITOR", every_week.get(name) or row["competitor"], f"COMPETITOR-row-{row['row']}", f"competitors row {row['row']}", exact=True,
+                cadence=cadence, lob=row.get("canonicalLob"))
 
 
 def target_of(spec: QuerySpec) -> str | None:

@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date
 from typing import Any, Callable, Mapping, Sequence
 
-from grit.agents.checks import sentence_cite_problems, text_problems
+from grit.agents.checks import INTERNAL_CLAIM, sentence_cite_problems, text_problems
 from grit.agents.loop.llm import LoopError, call_json
 from grit.agents.weekly import (
     significance_band,
@@ -1542,7 +1542,7 @@ class WeeklyCoordinator:
                         last = 0
                         for mark in CITE.finditer(edit["text"]):
                             claim = edit["text"][last:mark.start()].strip(" .!?")
-                            fragment = sentence_break(claim)
+                            fragment = sentence_break(without_internal_claims(claim))
                             if fragment:
                                 problems.append("Cite each factual sentence, not an entire paragraph: a sentence ends "
                                                 f"inside '{fragment}' before its citation. Put a citation before each "
@@ -1550,7 +1550,7 @@ class WeeklyCoordinator:
                                 break
                             last = mark.end()
                         else:
-                            if edit["text"][last:].strip(" .!?\n"):
+                            if without_internal_claims(edit["text"][last:]).strip(" .!?\n"):
                                 problems.append(f"{edit['path']}: uncited narrative after the final reference.")
                     # A cited source's title is part of its evidence, as it is for quotes.
                     cited = " ".join(f"{sources[ref].get('title') or ''} {sources[ref].get('text') or ''}" for ref in refs)
@@ -1639,6 +1639,11 @@ ABBREVIATIONS = frozenset({
     "jr", "sr", "gen", "lt", "col", "gov", "sen", "rep", "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept",
     "oct", "nov", "dec",
 })
+
+
+def without_internal_claims(text: str) -> str:
+    """The text without its sentences on the business's own status or the RED rule, which stand without a citation."""
+    return " ".join(part for part in re.split(r"(?<=[.!?])\s+", text.strip()) if not INTERNAL_CLAIM.search(part))
 
 
 def sentence_break(text: str) -> str | None:

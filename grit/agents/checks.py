@@ -15,6 +15,10 @@ MIN_QUOTE = 20
 BANNED = re.compile(r"\b(severity|likelihood|probabilit(?:y|ies)|risk score|risk rating|high negative impact)\b", re.I)
 SOURCE_MARK = re.compile(r"\[(S\d{1,3}(?:\s*,\s*S\d{1,3})*)\]")
 _SPACE = re.compile(r"\s+")
+# A statement about the business's own state, or the escalation rule. A news page cannot attest to either, so it carries no
+# citation: "No internal impact is confirmed", "would raise the status to RED".
+INTERNAL_CLAIM = re.compile(
+    r"\binternal impact\b|\bno (?:internal )?impact (?:is|was|has been) (?:yet )?confirmed\b|\braises? (?:the )?status to RED\b", re.IGNORECASE)
 
 
 def normalise(text: str) -> str:
@@ -74,6 +78,10 @@ def sentence_cite_problems(text: str, sources: Mapping[str, Mapping[str, Any]], 
             f"{(sources.get(ref) or {}).get('date') or ''}"
             for ref in refs
         )
+        if INTERNAL_CLAIM.search(_last_sentence(claim)):
+            found.append(f"INTERNAL_CLAIM_CITED: {where}: '{claim[:80]}' states the business's own status or the RED rule, which no news "
+                         "page can confirm. Write it without a citation, or cite only the news fact it rests on.")
+            continue
         folded = normalise(pages)
         if not folded:
             found.append(f"UNSUPPORTED_CITE: {where}: '{claim[:80]}' cites {', '.join(refs)}, which have no stored text.")
@@ -93,6 +101,10 @@ def sentence_cite_problems(text: str, sources: Mapping[str, Mapping[str, Any]], 
             sample = ", ".join(missing[:4])
             found.append(f"UNSUPPORTED_NAME: {where}: '{claim[:80]}' cites {', '.join(refs)}, which do not state {sample}.")
     return found
+
+
+def _last_sentence(text: str) -> str:
+    return re.split(r"(?<=[.!?])\s+", text.strip())[-1]
 
 
 def quote_problems(quotes: Any, sources: Mapping[str, Mapping[str, Any]], where: str, allowed: Iterable[str] | None = None) -> list[str]:

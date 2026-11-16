@@ -14,7 +14,7 @@ from typing import Any, Mapping, Sequence
 
 from grit.core.canonical import canonical_hash
 from grit.core.corrections import ledger_view
-from grit.core.routing import aperture_routing
+from grit.core.routing import aperture_routing, request_in_pack
 from grit.ontology.pack import load_ontology_pack
 from grit.pool import Pool
 from grit.profiles import Profile
@@ -65,9 +65,15 @@ def citations(text: str | None, signals: Mapping[str, Mapping[str, Any]]) -> tup
     runs: list[dict[str, Any]] = []
     cited: dict[str, dict[str, str | None]] = {}
     last = 0
+    from grit.agents.checks import INTERNAL_CLAIM
+
     for match in CITE.finditer(text or ""):
         if match.start() > last:
             runs.append({"text": text[last : match.start()]})
+        sentence = re.split(r"(?<=[.!?])\s+", text[last : match.start()].strip())[-1]
+        if INTERNAL_CLAIM.search(sentence):
+            last = match.end()  # no outlet can stand behind the business's own status, so the mark is dropped
+            continue
         refs = []
         for signal_id in (part.strip() for part in match.group(1).split(",")):
             signal = signals.get(signal_id)
@@ -134,6 +140,7 @@ def routed_signals(pool: Pool, run_id: str, profile: Profile) -> list[dict[str, 
     requests = pool.management_requests(active_only=True)
     run = pool.run(run_id) or {}
     decisions = pool.red_decisions(str(run.get("pack") or "")) if any(row.get("red") for row in rows) else {}
+    off_scope = out_of_scope(str(run.get("pack") or ""))
     out = []
     for row in rows:
         if row.get("red"):
@@ -142,10 +149,24 @@ def routed_signals(pool: Pool, run_id: str, profile: Profile) -> list[dict[str, 
         route = aperture_routing(row, aperture=profile.aperture, packs=profile.packs, requests=requests)
         effect = profile_effect(row, profile, protected=bool(row.get("red")) or route.priority == "P1", memory=memory)
         selected = (row.get("editorial") or {}).get("decision", "INCLUDE") in {"INCLUDE", "WATCH"}
+        # A headline the pack names as outside its business, such as a defence programme in a commercial pack, is not shown.
+        # A RED candidate is always shown.
+        if selected and off_scope and not row.get("red") and off_scope.search(str(row.get("title") or "")):
+            selected = False
         out.append({**row, "route": route.as_record(), "preference": effect.as_record(), "shown": route.include and selected})
     out.sort(key=lambda row: str(row.get("published_at") or ""), reverse=True)
     out.sort(key=lambda row: (not row["shown"], row["route"]["priority"] or "P9", row.get("tier") or 9, not row.get("condition_ids"), -row["preference"]["affinity"], -(row.get("corroboration") or 1)))
     return out
+
+
+def out_of_scope(pack_name: str) -> re.Pattern[str] | None:
+    """The pack.json "outOfScope" headline terms as one pattern, or None when the pack names none."""
+    from grit.ontology.pack import manifests
+
+    terms = [str(term).strip() for term in (manifests().get(pack_name) or {}).get("outOfScope") or [] if str(term).strip()]
+    if not terms:
+        return None
+    return re.compile(r"(?<![A-Za-z0-9])(?:" + "|".join(re.escape(term) for term in terms) + r")(?![A-Za-z0-9])", re.IGNORECASE)
 
 
 def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
@@ -266,7 +287,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
     for row in priority_rows:
         card = (cards.get(row["signal_id"]) or {}).get("card")
         findings.append({
-            "signal_id": row["signal_id"], "title": row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"],
+            "signal_id": row["signal_id"], "title": clean_title(row["title"]) or row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"],
             "priority": row["route"]["priority"], "tier": row.get("tier"), "rung": row.get("rung"), "why": row["route"]["matched"][:2] or [row.get("relevance_basis")],
             "risks": [f"{hit['level'].title()}: {hit['name']}" for hit in (row.get("risk_cascade") or [])[:3]],
             "corroboration": row.get("corroboration"), "red": row.get("red_status") == "CONFIRMED", "red_status": row.get("red_status"), "harm": _harm_line(row), "preference": row["preference"]["reasons"],
@@ -274,7 +295,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         })
     others = [row for row in shown if row not in priority_rows][:25] if "OTHER_SIGNALS" in sections else []
     other_signals = [
-        {"signal_id": row["signal_id"], "title": row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"], "priority": row["route"]["priority"], "tier": row.get("tier"), "rung": row.get("rung")}
+        {"signal_id": row["signal_id"], "title": clean_title(row["title"]) or row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"], "priority": row["route"]["priority"], "tier": row.get("tier"), "rung": row.get("rung")}
         for row in others
     ]
 
@@ -285,14 +306,14 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             if row["route"].get("request_id"):
                 matched[row["route"]["request_id"]].append(row)
         requests = [request for request in pool.management_requests()
-                    if request.get("pack") in (None, pack_name) and request["status"] in {"ACTIVE", "PROPOSED"}]
+                    if request_in_pack(request, pack_name) and request["status"] in {"ACTIVE", "PROPOSED"}]
         # A request this pack's signals did not answer may be answered by a child pack it covers, such as URS Taiwan.
         from_child = child_request_hits(pool, run_date, pack, [request for request in requests if not matched.get(request["request_id"])])
         for request in requests:
             hits = (matched.get(request["request_id"]) or from_child.get(request["request_id"]) or [])[:5]
             request_rows.append({
                 "request_id": request["request_id"], "title": request["title"], "status": request["status"], "requested_by": request["requested_by"], "source": request.get("source"),
-                "signals": [{"signal_id": row["signal_id"], "title": row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"],
+                "signals": [{"signal_id": row["signal_id"], "title": clean_title(row["title"]) or row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"],
                              **({"via": row["via"]} if row.get("via") else {})} for row in hits],
             })
         request_rows.sort(key=lambda row: (row["status"] != "ACTIVE", not row["signals"], row["request_id"]))
@@ -382,6 +403,11 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         from grit.pipeline.scenarios import outlook
 
         scenarios = outlook(pool, run_id, pack)
+        if scenarios:
+            by_id = {row["condition_id"]: row for row in condition_rows}
+            for item in scenarios.get("indicators") or []:
+                item["themes"] = [{"id": theme, "number": by_id[theme]["number"], "name": by_id[theme]["name"], "trend": by_id[theme]["trend"]}
+                                  for theme in item.get("themes") or [] if theme in by_id]
         if scenarios and "SCENARIOS" not in sections:
             sections.insert(sections.index("CONDITIONS") + 1 if "CONDITIONS" in sections else len(sections), "SCENARIOS")
     seen_ids = {signal_id for shift in (scenarios or {}).get("shifts") or [] for case in shift["cases"]
@@ -417,10 +443,17 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
     return model
 
 
+def clean_title(title: Any) -> str:
+    from grit.report.format_v2 import clean_title as clean
+
+    return clean(title)
+
+
 def _harm_line(row: Mapping[str, Any]) -> str:
+    """The harm verdict for the reader. A scorer that did not run says nothing: its reason is pipeline state, logged elsewhere."""
     harm = row.get("harm") or {}
     if harm.get("status") != "SCORED":
-        return f"Harm scorer not run: {harm.get('reason') or 'no input'}."
+        return ""
     severity = (harm.get("severity") or {}).get("max_band")
     transmission = (harm.get("transmission") or {}).get("rung")
     verdict = (harm.get("verdict") or {}).get("verdict")

@@ -64,7 +64,7 @@ def _registry_and_definition(pack: str | None = None) -> tuple[Any, Any, str | N
     try:
         workbook = workbook_path(build.get("defaultWorkbook"), prefix=prefix)
         aliases = CONFIG_DIR / "registry_aliases.json" if prefix.upper() == "URS" else None
-        registry = load_transmission_registry(workbook, aliases)
+        registry = load_transmission_registry(workbook, aliases, entity_sheet=str(build.get("entitySheet") or "2. Entity Address"))
     except (FileNotFoundError, ValueError) as exc:
         return None, definition, str(exc)
     return registry, definition, None

@@ -48,6 +48,13 @@ You need:
    | `themeLayout`, `themeClassificationRequire` | A sheet 7 that is one `Risk Theme \| Rationale \| Classification` table, as Marine's is. Set `themeLayout` to `"classified"`. Each row's tier is the first tier its classification names, so `Key/Tier 2` is Key. Set `themeClassificationRequire` to text that only governed rows carry, such as `"BA Annual Risk Refresh"`. Other rows are listed under `draftThemes` and are not scanned. With this layout, `themeCounts` is checked only for the tiers it names. |
    | `classRows` | Customer or supplier rows that name a class of counterparty, such as `Marine equipment vendors`, not an organization. Give a regular expression for each sheet, such as `{"customers": "\\bclass\\b", "suppliers": "\\b(suppliers\|OEMs\|vendors)\\b"}`. A matching row stays in the register, marked `counterpartyClass`, and is not searched by name. |
 
+   Two optional top-level fields shape what the BA's report shows.
+
+   | Field | Use |
+   |---|---|
+   | `leadingIndicators` | The leading indicators the BA reads, each with the BA's risk themes it bears on, such as CA's `[{"id": "EXPORT-CONTROLS", "themes": ["CA-KEY-03", "CA-KEY-08"]}]`. The ids are those in `grit/pipeline/indicators.py`. Use `[]` for none. Without the field, the report reads all of them, including the Taiwan ones. |
+   | `outOfScope` | Headline terms for news outside the BA's business, such as CA's defence platforms (`"P-8A"`, `"sub hunter"`). A matching signal is left out of the BA's report, unless it is a RED candidate. |
+
    The build also handles these differences without configuration:
    - A sheet 6 cell with two or more commas is split into one keyword per item.
    - A sheet 6 with a `Keyword | LOB` header, as Marine's has, is read keyword first. A keyword with no LOB is filed under `All LOBs`.
@@ -85,7 +92,7 @@ The scan plan decides what is searched every week and what the brief calls its s
    - `queries`: one to five searches.
    - `keywords`: the phrases that make a signal P1. Join parts with ` + ` when all of them must appear, such as `Qatar + work visa`. A keyword with no country or sector in it matches news from everywhere.
 
-3. **Named items.** Keep `"namedItems": {"source": "graph"}`. Set each lane's `cadenceWeeks` so the weekly total stays inside the Brave budget. Set `genericNames.cues` to the places where the BA's public-body customers sit, so "Ministry of Defence" counts only for the right country.
+3. **Named items.** Keep `"namedItems": {"source": "graph"}`. Set each lane's `cadenceWeeks` so the weekly total stays inside the Brave budget. List a lane's key names under `weekly` to search them every week whatever the cadence. Give `{"name": ..., "query": ...}` when news prints the name differently from the register, such as `{"name": "Volotea S. L.", "query": "Volotea"}`. Set `genericNames.cues` to the places where the BA's public-body customers sit, so "Ministry of Defence" counts only for the right country.
 
 4. **Section titles and audience.** Rename sections in `sectionTitles`. Name the readers in `audience`. The bottom-line agent writes for them.
 

@@ -9,6 +9,7 @@ from typing import Any
 _LETTER = re.compile(r"[A-Za-z]")
 _SPACE = re.compile(r"\s+")
 _DANGLING = re.compile(r"(?:\s*[;|,/]\s*)+(?=[;|,/]|$)")
+_URL = re.compile(r"https?://\S+$", re.IGNORECASE)
 
 
 def latin_script(text: str | None) -> str:
@@ -43,9 +44,10 @@ def has_latin_letter(text: str | None) -> bool:
 
 
 def latin_copy(value: Any) -> Any:
-    """A copy of a brief (or any JSON-like value) with non-Latin letters removed from every string."""
+    """A copy of a brief (or any JSON-like value) with non-Latin letters removed from every string except a URL, which
+    must stay exactly as written to open."""
     if isinstance(value, str):
-        return latin_script(value)
+        return value if _URL.match(value) else latin_script(value)
     if isinstance(value, dict):
         return {key: latin_copy(item) for key, item in value.items()}
     if isinstance(value, list):

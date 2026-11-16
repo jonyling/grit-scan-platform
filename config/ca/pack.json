@@ -65,7 +65,12 @@
         "airline insolvency",
         "customer default",
         "credit risk",
-        "airline financial distress"
+        "airline financial distress",
+        "ceases operations",
+        "suspends operations",
+        "AOC suspended",
+        "ACMI",
+        "creditor protection"
       ],
       "lack of qualified": [
         "technician shortage",
@@ -137,5 +142,27 @@
         "aftermarket services"
       ]
     }
-  }
+  },
+  "leadingIndicators": [
+    {
+      "id": "EXPORT-CONTROLS",
+      "themes": [
+        "CA-KEY-03",
+        "CA-KEY-08"
+      ]
+    }
+  ],
+  "outOfScope": [
+    "P-8",
+    "P-8A",
+    "Poseidon",
+    "sub hunter",
+    "sub hunters",
+    "submarine hunter",
+    "fighter jet",
+    "fighter jets",
+    "military aircraft",
+    "Eurofighter",
+    "F-35"
+  ]
 }

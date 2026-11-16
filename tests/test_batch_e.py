@@ -118,3 +118,18 @@ def test_history_names_sources_beyond_the_library_and_the_gain_stays_marked() ->
         "counter_indicators_seen": [], "responses_triggered": [], "where_ste_could_gain": "Digital Systems & Cyber could gain a support contract.",
     }]}
     assert scenario_cells(reading)[-1] == [f"Best: {HYPOTHESIS_LABEL} Digital Systems & Cyber could gain a support contract."]
+
+
+def test_a_pack_reads_only_its_indicators_and_explains_a_band_its_themes_contradict() -> None:
+    import pytest
+
+    from grit.pipeline.indicators import LEADING, pack_indicators, theme_note
+
+    assert pack_indicators({})[0] == LEADING, "a pack that chooses none keeps every indicator"
+    chosen, themes = pack_indicators({"leadingIndicators": [{"id": "EXPORT-CONTROLS", "themes": ["CA-KEY-03"]}]})
+    assert [item.indicator_id for item in chosen] == ["EXPORT-CONTROLS"] and themes == {"EXPORT-CONTROLS": ["CA-KEY-03"]}
+    with pytest.raises(ValueError):
+        pack_indicators({"leadingIndicators": [{"id": "NOT-AN-INDICATOR"}]})
+    easing = [{"number": 3, "name": "Geopolitical risks", "trend": "Easing"}]
+    assert "risk theme 3 (easing)" in theme_note({"name": "Export controls", "band": "red", "themes": easing})
+    assert theme_note({"name": "Export controls", "band": "green", "themes": easing}) == ""

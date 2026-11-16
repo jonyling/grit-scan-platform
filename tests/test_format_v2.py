@@ -137,6 +137,25 @@ def test_the_word_brief_moves_links_to_a_numbered_source_register(tmp_path: Path
     assert document.paragraphs[0]._p.find(".//{http://schemas.openxmlformats.org/wordprocessingml/2006/main}hyperlink") is None, "no link in the body"
 
 
+def test_a_management_request_signal_links_to_its_page_with_the_url_intact() -> None:
+    from docx import Document
+
+    from grit.report import docx_brief
+    from grit.report.script import latin_copy
+
+    url = "https://example.com/news/2026/11/typhoon/"
+    signals = [{"signal_id": "SIG-1", "title": "Typhoon nears Taiwan", "outlet": "example.com", "date": "11 Nov 2026", "url": url},
+               {"signal_id": "SIG-2", "title": "No page", "outlet": "example.org", "date": "11 Nov 2026", "url": "example.org/a"}]
+    brief = latin_copy({"management_requests": [{"title": "Typhoon", "status": "ACTIVE", "source": None, "requested_by": "Hwaimay", "signals": signals}]})
+    document = Document()
+    docx_brief._REGISTER = {"numbers": {}, "refs": {}, "tiers": {}}
+    docx_brief._requests(document, brief, "10. Management-requested topics", dry=False)
+    docx_brief._REGISTER = None
+    targets = [rel.target_ref for rel in document.part.rels.values() if rel.is_external]
+    assert targets == [url], "the page opens from its title, and a URL a reader cannot open gets no link"
+    assert any(item.text.startswith("Typhoon nears Taiwan [S1] (example.com") for item in document.paragraphs)
+
+
 def test_a_signpost_match_needs_a_candidate_a_verbatim_quote_and_a_shared_specific_word() -> None:
     from grit.agents.reader import check_signpost_matches
 
@@ -263,3 +282,48 @@ def test_the_scenario_window_includes_the_run_being_reported_before_it_finishes(
     pool.add_sighting(signal, "2026-11-02-urs", query_id="q", query="costs", lane="THEME", target_id=None, rank=1)
     pool.save_assessment({"signal_id": signal, "run_id": "2026-11-02-urs", "pack": "urs", "decision": "KEEP"})
     assert [row["signal_id"] for row in window_rows(pool, "2026-11-02-urs")] == [signal]
+
+
+def test_a_withheld_row_and_a_theme_without_reports_are_not_ranked(tmp_path: Path) -> None:
+    from grit.ontology.pack import load_ontology_pack
+    from grit.report import format_v2
+    from grit.settings import CONFIG_DIR
+
+    pool = Pool(tmp_path / "grit.sqlite")
+    pool.start_run("2026-10-22-urs", run_date="2026-10-22", pack="urs", kind="READER_SCAN", config={})
+    pool.finish_run("2026-10-22-urs")
+    pool.start_run("2026-10-29-urs", run_date="2026-10-29", pack="urs", kind="READER_SCAN", config={})
+    _signal(pool, "a", "Missiles hit Riyadh", "2026-10-29-urs", tier=1, day="2026-10-27")
+    _signal(pool, "b", "Drones strike Jeddah port", "2026-10-29-urs", tier=1, day="2026-10-28", themes=("URS-KEY-03",))
+    pool.finish_run("2026-10-29-urs")
+    events = {event["lead"]["title"]: event["event_id"] for event in event_register(pool, "2026-10-29-urs", names={})}
+    pool.update_run_config("2026-10-29-urs", event_rows={events["Drones strike Jeddah port"]: {"item": "Drones strike Jeddah port", "response": {"owner": "Security"}}},
+                           event_rows_withheld=[events["Missiles hit Riyadh"]])
+    routed = [{**row, "shown": True, "route": {"priority": None}} for row in pool.weekly_assessments("2026-10-29-urs")]
+    jeddah = next(row["signal_id"] for row in routed if row["title"].startswith("Drones"))
+    conditions = [
+        {"condition_id": "URS-KEY-01", "name": "Theme with no report", "trend": "Escalating", "sources": [], "options": []},
+        {"condition_id": "URS-KEY-02", "name": "Theme with a report", "trend": "Escalating", "sources": [{"signal_id": jeddah}], "options": [{"owner": "Finance"}]},
+    ]
+    named = {"Customer": [{"name": "Thai Airways", "status": "FOUND", "text": {"plain": "Nothing was found touching its maintenance; reports covered a breach."}},
+                          {"name": "Saudia", "status": "FOUND", "text": {"plain": "Saudia moved its heavy checks to a new hangar."}}]}
+    v2 = format_v2.build(pool, pool.run("2026-10-29-urs"), load_ontology_pack(CONFIG_DIR, "urs"), routed, conditions, named, [])
+    assert [(row["item"], row["owner"]) for row in v2["priorities"]] == [("Drones strike Jeddah port", "Security"), ("Theme with a report", "Finance")]
+    assert all("Riyadh" not in text for text in [*(row["item"] for row in v2["escalating"]), *(row["item"] for row in v2["changes"]), *v2["arrows"]])
+    assert [row["name"] for row in v2["watch"]] == ["Saudia"], "a summary saying nothing was found is a passing mention"
+
+
+def test_a_headline_is_never_cut_by_the_first_use_filter() -> None:
+    from docx import Document
+
+    from grit.report import docx_brief
+
+    document = Document()
+    document.add_paragraph("Node.js Plans High-Severity Security Fixes for Nov. 11 patches are due next week.")
+    title = "Node.js Plans High-Severity Security Fixes for Nov. 11"
+    brief = {"management_requests": [{"title": "Bugs", "status": "ACTIVE", "source": "MR-1", "requested_by": "Yikai",
+                                      "signals": [{"signal_id": "SIG-1", "title": title, "outlet": "esecurityplanet.com", "date": "9 Nov 2026", "url": None}]}]}
+    docx_brief._requests(document, brief, "10. Management-requested topics", dry=False)
+    docx_brief._apply_first_use(document)
+    docx_brief._WHOLE.clear()
+    assert any(item.text.startswith(title) for item in document.paragraphs)

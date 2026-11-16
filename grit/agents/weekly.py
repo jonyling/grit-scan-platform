@@ -550,7 +550,8 @@ name only the readers. When the meeting fields are blank, name one owner_roles r
 reconfirm, or check), and a time (before, by, or the next cycle); do not invent a forum or a meeting.
 When settled_conflicts are supplied, quote only each row's chosen figure; the quality section already records the rest.
 Cite each sentence separately, with the supplied signal-ID citation before its final punctuation. Each citation must be
-a page that states that sentence's dates, numbers, and distinctive names.
+a page that states that sentence's dates, numbers, and distinctive names. A sentence on the business's own state ("no
+internal impact is confirmed") or on what would raise the status to RED cites nothing: no news page can confirm it.
 Call exposure confirmed only when a cited selection has exposure_status CONFIRMED; otherwise write possible exposure.
 The report status (v2.status) is set by policy from the reviewed selections; state it and its basis, and never call
 the business's position RED unless the status is RED. Only the Risk & Assurance operator confirms a RED impact; a RED

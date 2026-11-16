@@ -52,6 +52,19 @@ def _hit(keyword: str, text: str) -> bool:
     return True
 
 
+def request_scope(request: Mapping[str, Any]) -> tuple[str, ...]:
+    """The packs a request belongs to: its own pack, else the packs of the profile that raised it (the "scope" the pool
+    adds). Empty means every pack."""
+    if request.get("pack"):
+        return (str(request["pack"]),)
+    return tuple(request.get("scope") or ())
+
+
+def request_in_pack(request: Mapping[str, Any], pack: str) -> bool:
+    scope = request_scope(request)
+    return not scope or pack in scope
+
+
 def match_request(record: Mapping[str, Any], requests: Iterable[Mapping[str, Any]], packs: Sequence[str]) -> tuple[str, str] | None:
     """The first active request in scope whose keyword appears in the title or lead. Returns (request_id, keyword).
     A keyword 'A + B' needs every part in the title or lead."""
@@ -60,8 +73,8 @@ def match_request(record: Mapping[str, Any], requests: Iterable[Mapping[str, Any
     for request in requests:
         if request.get("status") != "ACTIVE":
             continue
-        scope = request.get("pack")
-        if scope and (scope not in packs or (record.get("pack") and scope != record["pack"])):
+        scope = request_scope(request)
+        if scope and (not set(scope) & set(packs) or (record.get("pack") and record["pack"] not in scope)):
             continue
         for keyword in request.get("keywords") or []:
             keyword = str(keyword).strip()

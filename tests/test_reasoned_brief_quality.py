@@ -46,3 +46,17 @@ def test_a_ranking_payload_is_reduced_until_it_fits():
     assert all(set(row["significance"]) == {"exposure", "consequence", "immediacy", "evidence", "change"}
                for row in raw["selections"])
     assert len(json.dumps(raw, ensure_ascii=False).encode("utf-8")) <= 32 * 1024
+
+
+def test_a_statement_on_the_business_own_status_carries_no_news_citation():
+    from grit.pipeline.weekly import sentence_break, without_internal_claims
+    from grit.report.brief import citations, plain
+
+    sources = {"S1": {"title": "Thai airlines hit by data breach", "text": "Two airlines were affected."}}
+    problems = sentence_cite_problems("No internal impact is confirmed on business operations [S1].", sources, "bottom_line.text")
+    assert problems and problems[0].startswith("INTERNAL_CLAIM_CITED")
+    assert sentence_break(without_internal_claims("No internal impact is confirmed. Two airlines were affected")) is None
+    signal = "SIG-0123456789abcdef"
+    runs, _ = citations(f"Two airlines were affected [{signal}]. No internal impact is confirmed [{signal}].",
+                        {signal: {"publisher": "thethaiger.com", "published_at": "2026-11-12T03:10:00Z", "url": "https://thethaiger.com/a", "title": "t"}})
+    assert plain(runs) == "Two airlines were affected (thethaiger.com, 12 Nov 2026). No internal impact is confirmed."

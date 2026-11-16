@@ -10,7 +10,9 @@
         "aircraft MRO airworthiness directive",
         "aviation maintenance quality escape FAA EASA",
         "engine parts certification investigation",
-        "MRO facility regulator audit"
+        "MRO facility regulator audit",
+        "Airbus A220 airworthiness directive",
+        "EASA airworthiness directive Airbus"
       ]
     },
     {
@@ -19,7 +21,10 @@
         "MRO market competition pricing airlines",
         "airline maintenance contract award",
         "engine MRO capacity expansion competitor",
-        "freighter conversion competition"
+        "freighter conversion competition",
+        "767 freighter conversion order",
+        "MRO acquisition deal",
+        "\"ST Engineering\" aerospace"
       ]
     },
     {
@@ -46,7 +51,10 @@
         "airline bankruptcy filing",
         "airline financial distress lessor",
         "aircraft lessor default",
-        "airline insolvency maintenance payments"
+        "airline insolvency maintenance payments",
+        "airline ceases operations",
+        "ACMI airline suspends operations",
+        "airline restructuring creditor protection"
       ]
     },
     {
@@ -212,10 +220,23 @@
         "cadenceWeeks": 4
       },
       "CUSTOMER": {
-        "cadenceWeeks": 26
+        "cadenceWeeks": 26,
+        "weekly": [
+          {
+            "name": "Volotea S. L.",
+            "query": "Volotea"
+          },
+          {
+            "name": "The Boeing Company",
+            "query": "Boeing Commercial Airplanes"
+          }
+        ]
       },
       "COMPETITOR": {
-        "cadenceWeeks": 8
+        "cadenceWeeks": 8,
+        "weekly": [
+          "AAR Corp."
+        ]
       }
     }
   },

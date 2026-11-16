@@ -35,6 +35,7 @@ from grit.settings import CONFIG_DIR
 REVIEWED = "REVIEWED"
 JUDGE_CANDIDATES = 3  # closest signals per signpost or counter-indicator sent to the Signpost Judge
 JUDGE_FLOOR = 0.60  # cosine below this is not a candidate
+RELATED = 2  # reports listed on a shift row that no signpost matched
 JUDGE_SOURCES = 18  # distinct candidate reports per shift
 LEAD_CHARS = 800
 COMMON_SHARE, COMMON_MIN = 0.08, 5  # a keyword in more of the period's shift signals than this is common, not distinctive
@@ -352,7 +353,14 @@ def track(pool: Pool, run_id: str, register: Mapping[str, Any], *, shift_conditi
             cases.append({"case": case["case"], "title": CASE_TITLES.get(case["case"], case["case"]), "name": case["name"],
                           "where_ste_could_gain": case.get("where_ste_could_gain") or None,
                           "signposts_seen": seen, "counter_indicators_seen": against, "responses_triggered": triggered, "signposts_total": len(case["signposts"])})
-        readings.append({"themeId": shift["themeId"], "name": shift["name"], "signals_considered": len(relevant), "lean": _lean(seen_counts), "seen": seen_counts, "cases": cases})
+        # The week's best-tier reports on the shift, so a row with no signpost still says what touched it.
+        terms = {str(word).casefold() for _key, item in _items(shift) for word in item.get("keywords") or [] if str(word).strip()}
+        hits = {signal_id: sum(term in text.casefold() for term in terms) for signal_id, text in texts.items()}
+        # Reports that use the shift's own signpost words lead, then the better tier, then the latest.
+        related = sorted(sorted(relevant, key=lambda row: str(row.get("published_at") or ""), reverse=True),
+                         key=lambda row: (-hits.get(row["signal_id"], 0), row.get("tier") or 9))
+        readings.append({"themeId": shift["themeId"], "name": shift["name"], "signals_considered": len(relevant), "lean": _lean(seen_counts), "seen": seen_counts, "cases": cases,
+                         "related_ids": [row["signal_id"] for row in related[:RELATED]]})
     return readings
 
 
@@ -395,7 +403,15 @@ def outlook(pool: Pool, run_id: str, pack: Any, *, config_dir: Path | None = Non
             for item in [*case["signposts_seen"], *case["counter_indicators_seen"]]:
                 item["sources"] = [found for found in (ref(signal_id) for signal_id in item["signal_ids"][:3]) if found]
                 item["more"] = max(0, len(item["signal_ids"]) - 3)
-    from grit.pipeline.indicators import score_indicators
+        reading["related"] = [found for found in (ref(signal_id) for signal_id in reading.get("related_ids") or []) if found]
+    from grit.pipeline.indicators import pack_indicators, score_indicators
+
+    # Each pack reads only its own indicators, and a signal the reviewed selection excluded is not evidence for one.
+    chosen, themes = pack_indicators(pack.manifest)
+    excluded = editorial_exclusions(pool, run_id)
+    indicators = score_indicators([row for row in window_rows(pool, run_id) if row["signal_id"] not in excluded], chosen)
+    for item in indicators:
+        item["themes"] = themes.get(item["id"], [])
 
     root = config_dir or Path(pack.config_dir).parent
     try:
@@ -406,7 +422,7 @@ def outlook(pool: Pool, run_id: str, pack: Any, *, config_dir: Path | None = Non
         risk_links = []
     return {
         "version": register.get("version"), "reviewed_by": register.get("reviewedBy"), "reviewed_on": register.get("reviewedOn"),
-        "shifts": now, "indicators": score_indicators(window_rows(pool, run_id)), "risk_links": risk_links,
+        "shifts": now, "indicators": indicators, "risk_links": risk_links,
     }
 
 

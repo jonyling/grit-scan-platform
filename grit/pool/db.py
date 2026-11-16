@@ -66,6 +66,16 @@ def signal_id_for(url: str) -> str:
     return "SIG-" + hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
 
 
+def _profile_packs() -> dict[str, tuple[str, ...]]:
+    from grit.profiles import _load_json_profiles
+    from grit.settings import PROFILES_DIR
+
+    try:
+        return {profile_id: profile.packs for profile_id, profile in _load_json_profiles(PROFILES_DIR).items()}
+    except (OSError, ValueError):
+        return {}
+
+
 def _dump(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
 
@@ -471,8 +481,14 @@ class Pool:
         return self.rows("SELECT * FROM misses WHERE pack = ? ORDER BY miss_row_id", (pack,))
 
     def management_requests(self, *, active_only: bool = False) -> list[dict[str, Any]]:
+        """Each request carries "scope": the packs it belongs to. A request raised in chat has no pack, so it belongs to the
+        packs of the profile that raised it. Empty means every pack."""
         where = "WHERE status = 'ACTIVE'" if active_only else ""
-        return self.rows(f"SELECT * FROM management_requests {where} ORDER BY request_date, request_id")
+        rows = self.rows(f"SELECT * FROM management_requests {where} ORDER BY request_date, request_id")
+        packs = _profile_packs() if any(not row.get("pack") and row.get("profile_id") for row in rows) else {}
+        for row in rows:
+            row["scope"] = [row["pack"]] if row.get("pack") else list(packs.get(str(row.get("profile_id") or "")) or [])
+        return rows
 
     # Workflow ledger ------------------------------------------------------------------------------------------
 

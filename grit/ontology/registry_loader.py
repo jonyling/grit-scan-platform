@@ -127,12 +127,12 @@ def supplier_header(rows: list[list[object | None]]) -> tuple[int, bool]:
     raise ValueError("Suppliers sheet is missing its Name/BA header row.")
 
 
-def _seed_entries(workbook_path: Path) -> tuple[RegistryEntry, ...]:
+def _seed_entries(workbook_path: Path, entity_sheet: str = "2. Entity Address") -> tuple[RegistryEntry, ...]:
     """Seed the three actual source-sheet layouts without guessing headers."""
     entries: list[RegistryEntry] = []
     seen_ids: dict[str, str] = {}
 
-    entity_rows = entity_sheet_rows(workbook_path, "2. Entity Address")
+    entity_rows = entity_sheet_rows(workbook_path, entity_sheet)
     # Some rows leave NameOfEntity blank and put the legal name in LOB1 instead.
     # Treat LOB1 as a name only when it never appears as a real LOB alongside a filled NameOfEntity.
     lob_names = {keyword.lob for keyword in load_lob_keywords(workbook_path)}
@@ -190,10 +190,11 @@ def _canonical_snapshot_hash(
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def load_transmission_registry(workbook_path: str | Path, aliases_path: str | Path | None) -> TransmissionRegistry:
-    """Seed canonical records from sheets 2/4/5/6 and validate alias references. aliases_path None means no reviewed aliases."""
+def load_transmission_registry(workbook_path: str | Path, aliases_path: str | Path | None, *, entity_sheet: str = "2. Entity Address") -> TransmissionRegistry:
+    """Seed canonical records from sheets 2/4/5/6 and validate alias references. aliases_path None means no reviewed aliases.
+    entity_sheet is the pack's entity sheet when it is not "2. Entity Address" (the build's entitySheet)."""
     workbook = Path(workbook_path)
-    entries = _seed_entries(workbook)
+    entries = _seed_entries(workbook, entity_sheet)
     seen_ids = {entry.entity_id for entry in entries}
     lob_keywords = load_lob_keywords(workbook)
 

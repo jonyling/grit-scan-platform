@@ -6,7 +6,7 @@ import json
 
 from grit.core.confidence import evidence_confidence, trend_label
 from grit.core.red_alert import red_check
-from grit.core.routing import aperture_routing
+from grit.core.routing import aperture_routing, request_in_pack
 from grit.ontology.pack import load_ontology_pack
 from grit.ontology.reader_index import ReaderIndex
 from grit.ontology.risk_cascade import load_risk_cascade
@@ -36,6 +36,16 @@ def test_p1_needs_an_active_request() -> None:
     active = [{"request_id": "MR-1", "status": "ACTIVE", "keywords": ["metro tender"]}]
     route = aperture_routing(record, aperture="WIDE_APERTURE", packs=["urs-tw"], requests=active)
     assert route.priority == "P1" and route.request_id == "MR-1"
+
+
+def test_a_chat_request_belongs_only_to_the_packs_of_the_profile_that_raised_it() -> None:
+    record = _record(title="Kaohsiung metro tender delayed again", pack="urs")
+    dsc = [{"request_id": "MR-2", "status": "ACTIVE", "pack": None, "scope": ["dsc"], "keywords": ["metro tender"]}]
+    assert aperture_routing(record, aperture="WIDE_APERTURE", packs=["urs", "dsc"], requests=dsc).priority is None
+    assert not request_in_pack(dsc[0], "urs") and request_in_pack(dsc[0], "dsc")
+    urs = [{**dsc[0], "scope": ["urs", "urs-tw"]}]
+    assert aperture_routing(record, aperture="WIDE_APERTURE", packs=["urs"], requests=urs).request_id == "MR-2"
+    assert request_in_pack({"pack": None, "scope": []}, "urs"), "a request with no owner stays in every pack"
 
 
 def test_material_aperture_suppresses_without_deleting_and_wide_keeps() -> None:

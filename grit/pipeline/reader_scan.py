@@ -34,7 +34,7 @@ from grit.ontology.graph import build_graph
 from grit.ontology.link import LinkIndex, link_candidate
 from grit.ontology.matchers.credibility_lookup import credibility_lookup
 from grit.ontology.pack import OntologyPack, load_ontology_pack
-from grit.core.routing import match_request
+from grit.core.routing import match_request, request_in_pack
 from grit.ontology.reader_index import CONDITION, CUSTOMER, HAZARD, PROJECT, SITE, SUPPLIER, WATCHPOINT, ReaderHit, ReaderIndex
 from grit.ontology.reader_plan import reader_queries, target_of
 from grit.ontology.risk_cascade import load_risk_cascade
@@ -200,7 +200,7 @@ def plan(pool: Pool, run: ReaderRun) -> list[Any]:
                          f"optional in its pack.json (docs/add-a-business-area.md, 'Write the scan plan').")
     seed_watchpoints(pool, pack)
     seed_requests(pool, pack)
-    requests = [row for row in pool.management_requests(active_only=True) if row.get("pack") in (None, run.pack)]
+    requests = [row for row in pool.management_requests(active_only=True) if request_in_pack(row, run.pack)]
     return reader_queries(pack.scan_plan, pool.watchpoints(run.pack), requests, pack=pack, reviewed_aliases=_aliases(), run_date=run.run_date)
 
 
@@ -447,7 +447,7 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
     from_graph = ((reader.scan_plan or {}).get("namedItems") or {}).get("source") == "graph"
     terms = business_terms(business)
     readers = ReaderIndex({} if from_graph else reader.exposure, reader.scan_plan, reader.baseline, pool.watchpoints(run.pack))
-    requests = [row for row in pool.management_requests(active_only=True) if row.get("pack") in (None, run.pack)]
+    requests = [row for row in pool.management_requests(active_only=True) if request_in_pack(row, run.pack)]
     themes_in_plan = {item["id"] for item in standing_items(reader)} if standing_set(reader) == "themes" else set()
     cascade = load_risk_cascade(pack=reader)
     from grit.core.red_events import merge_red_patterns
@@ -1161,7 +1161,7 @@ def bottom_line_facts(pool: Pool, run: ReaderRun) -> dict[str, Any]:
 
     pack = _load_pack(run.pack)
     rows = _kept(pool, run)
-    requests = {row["request_id"]: row for row in pool.management_requests() if row.get("pack") in (None, run.pack)}
+    requests = {row["request_id"]: row for row in pool.management_requests() if request_in_pack(row, run.pack)}
     matches = request_matches(rows)
     return {
         "brief": f"{pack.label} {'monthly' if int((pack.scan_plan or {}).get('windowDays') or 8) > 10 else 'weekly'} risk scan ({pack.level.lower()} level)",

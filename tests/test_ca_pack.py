@@ -179,3 +179,32 @@ def test_the_ca_scan_plan_covers_every_theme_and_rotates_its_name_lanes() -> Non
     assert lanes["CUSTOMER"]["cadenceWeeks"] >= 12, "458 customers would cost more than the Brave budget allows every week"
     weekly = reader_queries(pack.scan_plan, pack=pack, run_date=date(2026, 11, 2))
     assert 60 <= len(weekly) <= 120
+
+
+def test_ca_searches_its_key_names_every_week_and_reads_only_its_own_indicators() -> None:
+    from datetime import date
+
+    from grit.ontology.pack import load_ontology_pack, manifests
+    from grit.ontology.reader_plan import reader_queries
+    from grit.pipeline.indicators import pack_indicators
+    from grit.report.brief import out_of_scope
+
+    pack = load_ontology_pack(_ROOT / "config", "ca")
+    if not pack.scan_plan:
+        pytest.skip("config/ca has no scan plan on this machine")
+    for week in range(4):
+        queries = {spec.query for spec in reader_queries(pack.scan_plan, pack=pack, run_date=date(2026, 11, 2 + 7 * week))}
+        assert {"Volotea", "Boeing Commercial Airplanes", "AAR Corp."} <= queries, "a name on a lane's weekly list skips the rotation, under the name news prints"
+    chosen, _themes = pack_indicators(manifests(_ROOT / "config")["ca"])
+    assert [item.indicator_id for item in chosen] == ["EXPORT-CONTROLS"], "no Taiwan indicator in a CA report"
+    assert out_of_scope("ca").search("Boeing Wins $120M Deal to Upgrade US, Australian Sub Hunters")
+    assert not out_of_scope("ca").search("Boeing to cut 5% of commercial airplane workers")
+
+
+def test_the_harm_registry_reads_the_ca_entity_sheet() -> None:
+    if not _CA_WORKBOOK.exists():
+        pytest.skip("the CA workbook is not on this machine")
+    from grit.pipeline.harm import _registry_and_definition
+
+    registry, _definition, missing = _registry_and_definition("ca")
+    assert missing is None and registry is not None and registry.entries

@@ -76,7 +76,12 @@
         "airline insolvency",
         "customer default",
         "credit risk",
-        "airline financial distress"
+        "airline financial distress",
+        "ceases operations",
+        "suspends operations",
+        "AOC suspended",
+        "ACMI",
+        "creditor protection"
       ],
       "sheetDetail": "Customer financial difficulty from recession, withdrawal of government aid or aviation crisis; airline distress, low margins, high fuel prices and economic pressure; reliance on key customers across BUs may reduce bargaining power and amplify customer-loss impact.",
       "sheetExtra": "Bi-weekly credit reviews and risk tiering using market/internal intelligence and early-warning indicators; segment customers by exposure and risk; monitor debts and intensify dunning, late-payment interest, legal warnings and COD terms; liens or sale-and-leaseback where appropriate; negotiate payment/commercial terms; review customer portfolio and concentration; long-term contracts, JVs and customer-feedback monitoring; diversify customers, products, programmes, services and partnerships.",
