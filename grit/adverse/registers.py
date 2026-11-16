@@ -85,6 +85,11 @@ class Registers:
     def query_limit(self) -> int:
         return int(self.plan.get("queryLimit") or 40)
 
+    @property
+    def currency_limit(self) -> int:
+        """Searches for the 72-hour currency check, on top of queryLimit."""
+        return int(self.plan.get("currencyLimit", 8))
+
     def entry(self, node_id: str) -> Mapping[str, Any] | None:
         return next((e for e in self.watchlist.get("entries") or [] if e["id"] == node_id), None)
 

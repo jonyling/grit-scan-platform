@@ -123,6 +123,7 @@ def _item_a(doc: _Doc, item: Mapping[str, Any]) -> None:
     doc.field("Recommended action", f"{item['action']}{owner}")
     doc.field("Rationale for recommended action", item.get("action_rationale") or "")
     _update(doc, item)
+    _extras(doc, item, "A")
 
 
 def _item_b(doc: _Doc, item: Mapping[str, Any]) -> None:
@@ -149,6 +150,7 @@ def _item_b(doc: _Doc, item: Mapping[str, Any]) -> None:
     doc.field("Suggested internal review", ", ".join(item.get("internal_review") or []) or "No further action beyond monitoring")
     doc.field("Severity", f"{item['severity']}{_corroboration(item)}")
     _update(doc, item)
+    _extras(doc, item, "B")
 
 
 def _item_c(doc: _Doc, item: Mapping[str, Any]) -> None:
@@ -165,6 +167,35 @@ def _item_c(doc: _Doc, item: Mapping[str, Any]) -> None:
     doc.field("Time horizon", item["time_horizon"])
     doc.field("Recommended response", item["response"])
     _update(doc, item)
+    _extras(doc, item, "C")
+
+
+def _extras(doc: _Doc, item: Mapping[str, Any], section: str) -> None:
+    """What a same-topic merge brought in, and the 72-hour currency check."""
+    related = item.get("related") or []
+    if related:
+        doc.add("Related reports on the same topic, merged into this item:")
+        for row in related:
+            headline = str(row["headline"]).rstrip(". ")
+            title = doc.link(headline, row["url"]) if row.get("url") else headline
+            doc.bullet(f"{title} ({long_date(row.get('publication_date'))}; first assessed as Section {row['section']})", 1)
+    if section != "B" and item.get("lessons"):
+        doc.add("Lessons learnt for ST Engineering (from a competitor or industry report on this topic):")
+        for lesson in item["lessons"]:
+            doc.bullet(lesson, 1)
+    if section == "A" and item.get("trigger_points"):
+        doc.add("Trigger points to watch:")
+        for trigger in item["trigger_points"]:
+            doc.bullet(trigger, 1)
+    currency = item.get("currency")
+    if currency:
+        if currency["latest"]:
+            doc.add(f"Newer reports on {currency['entity']} since {long_date(currency['since'])} (headlines only, not assessed; read before acting):")
+            for row in currency["latest"]:
+                flag = f"; adverse terms: {', '.join(row['adverse_terms']).lower()}" if row.get("adverse_terms") else ""
+                doc.bullet(f"{doc.link(row['title'], row['url'])} ({row['outlet']}, {long_date(row['published'])}{flag})", 1)
+        else:
+            doc.field("Currency check", f"No newer report on {currency['entity']} found since {long_date(currency['since'])}.")
 
 
 def _repeats(doc: _Doc, repeats: Sequence[Mapping[str, Any]], section: str) -> None:

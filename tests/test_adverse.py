@@ -280,6 +280,7 @@ def test_a_scan_searches_screens_verifies_assesses_and_writes_the_email(pool: Po
     report = scan(pool, tmp_path, date(2026, 11, 5), model)
     assert report["status"] == "READY", report["blockers"]
     assert report["search"]["queries_sent"] == 2 and report["search"]["corroboration"] == 1, "the third query of the limit corroborates the High item"
+    assert report["search"]["currency"] == 2 and report["items"]["A"][0]["currency"]["entity"] == "Polar Security Cutter programme", "each item's main entity is re-searched"
     a, b = report["items"]["A"], report["items"]["B"]
     assert [i["headline"] for i in a] == ["Polar Security Cutter delivery slips again"]
     assert a[0]["relationship"] == "ST Engineering entity" and a[0]["exposure"] == checks.DIRECT_EXPOSURE
@@ -370,3 +371,84 @@ def test_merged_affected_entities_are_listed_once() -> None:
     home = {"affected_entity": "Singapore Airlines Limited; Japan Airlines Co., Ltd.", "sources": [], "facts": []}
     checks.merge_into(home, {"affected_entity": "Cathay Pacific Airways Limited, Japan Airlines Co., Ltd., and ANA Holdings Inc.", "sources": [], "facts": []})
     assert home["affected_entity"] == "Singapore Airlines Limited; Japan Airlines Co., Ltd; Cathay Pacific Airways Limited; ANA Holdings Inc"
+
+
+def _item(item_id: str, section: str, severity: str, headline: str, entity_ids: list[str], **fields: Any) -> dict[str, Any]:
+    return {"item_id": item_id, "section": section, "severity": severity, "headline": headline, "affected_entity": headline.split()[0], "entity_ids": entity_ids,
+            "sources": [{"source_id": "S1", "url": f"https://{item_id}.example", "outlet": item_id, "basis": "PAGE"}],
+            "facts": [{"statement": "s", "source_id": "S1", "quote": f"a quote from {item_id} that is long"}], "outlets": [item_id], **fields}
+
+
+def test_items_on_one_topic_merge_across_sections_and_the_group_is_no_topic() -> None:
+    names = {"SUP-NV": "NVIDIA Corporation", "ORG-AMA": "Amadeus", "STE-GROUP": "ST Engineering"}
+    items = {
+        "A": [_item("A?1", "A", "Medium", "NVIDIA faces FBI probe", ["SUP-NV"]), _item("A?2", "A", "Low", "Thai Airways booking data exposed", ["ORG-AMA"]),
+              _item("A?3", "A", "Medium", "ST Engineering wins a contract dispute", ["STE-GROUP"])],
+        "B": [_item("B?1", "B", "Medium", "Amadeus breach hits seven airlines", ["ORG-AMA"], lessons=["Review supplier access to booking data."])],
+        "C": [_item("C?1", "C", "Medium", "Nvidia chips diverted via Singapore", []), _item("C?2", "C", "Low", "Lawmakers tighten NVIDIA export rules", ["SUP-NV"]),
+              _item("C?3", "C", "Low", "ST Engineering named in a tender row", ["STE-GROUP"])],
+    }
+    kept, merged = checks.merge_topics(items, names, ignore={"STE-GROUP"})
+    assert [e["item_id"] for e in kept["A"]] == ["A?1", "A?2", "A?3"] and kept["B"] == [] and [e["item_id"] for e in kept["C"]] == ["C?3"]
+    nvidia, amadeus = kept["A"][0], kept["A"][1]
+    assert [r["headline"] for r in nvidia["related"]] == ["Nvidia chips diverted via Singapore", "Lawmakers tighten NVIDIA export rules"], "a headline naming the entity joins it"
+    assert len(nvidia["sources"]) == 3 and amadeus["lessons"] == ["Review supplier access to booking data."], "a Section B lesson travels with its report"
+    assert len(merged) == 3
+
+
+def test_immediate_attention_needs_confirmed_exposure_and_holds_at_most_four() -> None:
+    def a(n: int, severity: str, exposure: str, action: str = checks.FOLLOW_BA) -> dict[str, Any]:
+        return {"item_id": f"A-{n}", "headline": f"Item {n}", "severity": severity, "exposure": exposure, "action": action}
+
+    items = {"A": [a(1, "Low", checks.DIRECT_EXPOSURE), *(a(n, "Medium", checks.INDIRECT_EXPOSURE) for n in (2, 3, 4, 5)), a(6, "High", checks.NOT_CONFIRMED)],
+             "B": [], "C": [{"item_id": "C-1", "headline": "A generic threat", "severity": "Medium", "response": checks.FOLLOW_GF}]}
+    found = checks.attention(items)
+    assert [line.split()[0] for line in found["immediate"]] == ["A-2", "A-3", "A-4", "A-5"], "four, highest severity first"
+    assert any(line.startswith("A-1 ") and "over the Immediate Attention limit" in line for line in found["monitoring"])
+    assert any(line.startswith("A-6 ") and "no confirmed ST Engineering exposure" in line for line in found["monitoring"])
+    assert any(line.startswith("C-1 ") for line in found["monitoring"])
+    assert checks.overall(items)[0] == "Management Action Recommended"
+    assert checks.overall({"A": [a(6, "High", checks.NOT_CONFIRMED)], "B": [], "C": []})[0] == "Elevated Monitoring Required"
+
+
+def test_the_final_validation_counts_what_rests_on_search_engine_text() -> None:
+    from grit.adverse.scan import validation_lines
+
+    page = _item("A-1", "A", "Medium", "Opened page item", [])
+    extract = _item("A-2", "A", "Low", "Extract item", [])
+    extract["sources"][0]["basis"] = "SEARCH_EXTRACT"
+    lines = validation_lines({"A": [page, extract], "B": [], "C": []}, high=[], earlier=0, repeats=0, withheld=0, search_result={},
+                             merges=0, currency={"ran": False}, internal=None)
+    assert lines[0] == "Sources: 2 items cite 2 sources; 1 pages were opened and checked, and 1 rest on search-engine text only because the page did not open."
+    assert lines[1].startswith("Facts: 2 facts are quoted verbatim from their sources; 1 of 2 come from search-engine text only.") and lines[1].endswith("A-2.")
+    assert any("Currency check" in line and "not run" in line for line in lines)
+    assert any("no EXCO travel, personnel or staff-safety data was supplied" in line for line in lines)
+
+
+def test_the_currency_check_lists_a_newer_report_on_the_main_entity(pool: Pool, tmp_path: Path) -> None:
+    from grit.adverse.scan import currency_check
+
+    def getter(url: str, params: dict[str, str]) -> BraveResponse:
+        result = {"title": "Rheinmetall chief executive resigns after bribery fine", "url": "https://wire.example.org/ceo", "description": "He resigned.",
+                  "age": "2026-11-11T08:00:00Z", "page_age": "2026-11-11T08:00:00Z", "meta_url": {"hostname": "wire.example.org"}}
+        return BraveResponse(200, {"results": [result] if "Rheinmetall" in params["q"] else []}, {"x-ratelimit-limit": "50"})
+
+    pool.start_run("2026-11-12-adverse", run_date="2026-11-12", pack="adverse", kind="ADVERSE_SCAN", config={})
+    entry = _item("B?1", "B", "Medium", "Rheinmetall fined over agent bribery", ["ADV-PEER-RHEINMETALL"])
+    result = currency_check(pool, "2026-11-12-adverse", {"A": [], "B": [entry], "C": []}, {"ADV-PEER-RHEINMETALL": "Rheinmetall"}, set(), date(2026, 11, 12),
+                            tmp_path, registers=registers(), band_of=lambda _u, _p: "UNRATED", limit=8, getter=getter, usage_path=tmp_path / "usage.json",
+                            sleep=lambda _s: None, log=lambda _m: None)
+    assert result["queries_sent"] == 1 and result["newer"] == 1
+    assert entry["currency"]["latest"][0]["title"] == "Rheinmetall chief executive resigns after bribery fine"
+    doc = render._Doc(False)
+    render._extras(doc, entry, "B")
+    assert any("chief executive resigns" in line for line in doc.lines)
+
+
+def test_internal_context_is_read_when_supplied(tmp_path: Path) -> None:
+    from grit.adverse.scan import load_internal_context
+
+    assert load_internal_context(tmp_path / "none.json") is None
+    path = tmp_path / "internal-context.json"
+    path.write_text(json.dumps({"asOf": "2026-11-17", "travel": [{"person": "P", "country": "Qatar"}], "staff_safety": []}), encoding="utf-8")
+    assert load_internal_context(path) == {"travel": [{"person": "P", "country": "Qatar"}], "personnel": [], "staff_safety": [], "as_of": "2026-11-17"}

@@ -362,18 +362,37 @@ def apply_critic(item: dict[str, Any], verdict: Mapping[str, Any]) -> tuple[dict
     return changed, reason
 
 
+MAX_IMMEDIATE = 4  # Immediate Attention lists at most this many items; the rest are monitored
+
+
+def confirmed_exposure(item: Mapping[str, Any]) -> bool:
+    return item.get("exposure") in {DIRECT_EXPOSURE, INDIRECT_EXPOSURE}
+
+
+def _immediate(items: Mapping[str, Sequence[Mapping[str, Any]]]) -> tuple[list[Mapping[str, Any]], list[Mapping[str, Any]]]:
+    """Items for Immediate Attention, highest severity first, and the follow-ups that wait under monitoring. Immediate needs
+    confirmed ST Engineering exposure and a follow-up, or an EXCO recommendation. A generic threat with no confirmed exposure
+    is monitored whatever its recommended action. At most MAX_IMMEDIATE are immediate; the overflow is monitored."""
+    a, c = items.get("A", []), items.get("C", [])
+    due = [i for i in a if i.get("action") == EXCO or (i.get("action") in {FOLLOW_BA, FOLLOW_GF} and confirmed_exposure(i))]
+    due += [i for i in c if i.get("response") == EXCO]
+    due.sort(key=lambda i: (SEVERITIES.index(str(i.get("severity") or "Low")), i.get("action") != EXCO and i.get("response") != EXCO))
+    waiting = [i for i in a if i.get("action") in {FOLLOW_BA, FOLLOW_GF} and i not in due] + [i for i in c if i.get("response") in {FOLLOW_BA, FOLLOW_GF}]
+    return due[:MAX_IMMEDIATE], [*due[MAX_IMMEDIATE:], *waiting]
+
+
 def overall(items: Mapping[str, Sequence[Mapping[str, Any]]]) -> tuple[str, str]:
     a, b, c = items.get("A", []), items.get("B", []), items.get("C", [])
     exco = [i for i in a if i.get("action") == EXCO] + [i for i in c if i.get("response") == EXCO]
-    follow = [i for i in a if i.get("action") in {FOLLOW_BA, FOLLOW_GF}] + [i for i in c if i.get("response") in {FOLLOW_BA, FOLLOW_GF}]
-    watch = [i for i in a if i.get("action") == MONITOR] + [i for i in c if i.get("response") in {MONITOR, OBTAIN}]
+    immediate, waiting = _immediate(items)
+    watch = [*waiting, *(i for i in a if i.get("action") == MONITOR), *(i for i in c if i.get("response") in {MONITOR, OBTAIN})]
     counts = f"{len(a)} Section A, {len(b)} Section B and {len(c)} Section C items"
     if exco:
         return OVERALL[3], f"{len(exco)} item(s) recommended for EXCO escalation, among {counts}."
-    if follow:
-        return OVERALL[2], f"{len(follow)} item(s) recommended for follow-up with a Business Area or Group Function, among {counts}."
+    if immediate:
+        return OVERALL[2], f"{len(immediate)} item(s) with confirmed ST Engineering exposure recommended for follow-up, among {counts}."
     if watch:
-        return OVERALL[1], f"{len(watch)} item(s) to monitor, among {counts}; none needs follow-up."
+        return OVERALL[1], f"{len(watch)} item(s) to monitor, among {counts}; none has confirmed ST Engineering exposure needing follow-up."
     return OVERALL[0], f"{counts} after the materiality, evidence and accuracy tests; none needs follow-up or monitoring."
 
 
@@ -383,14 +402,19 @@ def attention(items: Mapping[str, Sequence[Mapping[str, Any]]]) -> dict[str, lis
     def name(item: Mapping[str, Any]) -> str:
         return f"{item['item_id']} {str(item['headline']).rstrip('. ')}"
 
-    immediate = [f"{name(i)} ({i['action']})" for i in a if i.get("action") != MONITOR]
-    immediate += [f"{name(i)} ({i['response']})" for i in c if i.get("response") in {FOLLOW_BA, FOLLOW_GF, EXCO}]
-    monitoring = [name(i) for i in a if i.get("action") == MONITOR]
+    def step(item: Mapping[str, Any]) -> str:
+        return str(item.get("action") or item.get("response"))
+
+    immediate, waiting = _immediate(items)
+    monitoring = [f"{name(i)} ({step(i)}; " + ("exposure confirmed, over the Immediate Attention limit)" if confirmed_exposure(i) or step(i) == EXCO
+                                              else "no confirmed ST Engineering exposure)") for i in waiting]
+    monitoring += [name(i) for i in a if i.get("action") == MONITOR]
     monitoring += [f"{name(i)} ({i['response']})" for i in c if i.get("response") in {MONITOR, OBTAIN}]
-    ranked = sorted(b, key=lambda i: SEVERITIES.index(str(i.get("severity") or "Low")))
+    # Lessons come from Section B items, and from items that absorbed a Section B report on the same topic.
+    ranked = sorted([*b, *(i for i in (*a, *c) if i.get("lessons"))], key=lambda i: SEVERITIES.index(str(i.get("severity") or "Low")))
     lessons = [f"{name(i)}: consider " + ", ".join(r for r in i.get("internal_review") or [] if r != INTERNAL_REVIEWS[-1]).lower()
                for i in ranked if SEVERITIES.index(str(i.get("severity") or "Low")) <= 2 and any(r != INTERNAL_REVIEWS[-1] for r in i.get("internal_review") or [])]
-    return {"immediate": immediate, "monitoring": monitoring, "lessons": lessons}
+    return {"immediate": [f"{name(i)} ({step(i)})" for i in immediate], "monitoring": monitoring, "lessons": lessons}
 
 
 def _rank(entry: Mapping[str, Any]) -> tuple[int, int]:
@@ -426,8 +450,9 @@ def merge_into(home: dict[str, Any], entry: Mapping[str, Any]) -> None:
         if not any(name.casefold() in known.casefold() or known.casefold() in name.casefold() for known in names):
             names.append(name)
     home["affected_entity"] = "; ".join(names)
-    for key in ("signal_ids", "event_ids", "entity_ids", "outlets"):
-        home[key] = list(dict.fromkeys([*(home.get(key) or []), *(entry.get(key) or [])]))
+    for key in ("signal_ids", "event_ids", "entity_ids", "outlets", "lessons", "internal_review", "trigger_points"):
+        if home.get(key) or entry.get(key):
+            home[key] = list(dict.fromkeys([*(home.get(key) or []), *(entry.get(key) or [])]))
     home["corroborated"] = bool(home.get("corroborated") or entry.get("corroborated") or len(home.get("outlets") or []) >= 2)
 
 
@@ -463,3 +488,61 @@ def merge_groups(entries: list[dict[str, Any]], groups: Sequence[Sequence[str]])
             gone.add(entry["item_id"])
             merged.append((entry, home))
     return [entry for entry in entries if entry["item_id"] not in gone], merged
+
+
+SECTION_ORDER = ("A", "C", "B")  # the section that keeps a merged topic: news about ST Engineering first, then emerging signals
+_LEGAL = re.compile(r"\b(?:corporation|corp|incorporated|inc|limited|ltd|llc|plc|co|company|group|holdings|s\.?a|ag|gmbh|pte|bhd|public)\b\.?", re.IGNORECASE)
+
+
+def topic_name(name: str) -> str:
+    """A register name as headlines print it: 'NVIDIA Corporation' is 'NVIDIA'. Empty when too short to name a topic."""
+    text = " ".join(_LEGAL.sub(" ", str(name or "").split("(")[0]).replace(",", " ").split())
+    return text if len(text) >= 4 else ""
+
+
+def merge_topics(items: Mapping[str, list[dict[str, Any]]], names: Mapping[str, str], *, ignore: Iterable[str] = ()
+                 ) -> tuple[dict[str, list[dict[str, Any]]], list[tuple[dict[str, Any], dict[str, Any]]]]:
+    """Items on one topic become one, across sections: items that share a linked entity, or whose headline names an entity
+    another item is linked to. The item in the earliest SECTION_ORDER section, then the highest rated, keeps its text; the
+    others add their sources, quoted facts, lessons and triggers, and are listed under it as related reports.
+    names maps entity ids to register names; ignore lists ids too broad to be a topic, such as the Group itself."""
+    skip = set(ignore)
+    entries = [entry for section in SECTION_ORDER for entry in items.get(section, [])]
+    vocabulary = {node: topic_name(names.get(node, "")) for entry in entries for node in entry.get("entity_ids") or [] if node not in skip}
+    patterns = {node: re.compile(rf"(?<![\w-]){re.escape(word)}(?![\w-])", re.IGNORECASE) for node, word in vocabulary.items() if word}
+
+    def topics(entry: Mapping[str, Any]) -> set[str]:
+        linked = {node for node in entry.get("entity_ids") or [] if node not in skip}
+        return linked or {node for node, pattern in patterns.items() if pattern.search(str(entry.get("headline") or ""))}
+
+    parent = list(range(len(entries)))
+
+    def root(index: int) -> int:
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = parent[index]
+        return index
+
+    owner: dict[str, int] = {}
+    for index, entry in enumerate(entries):
+        for node in topics(entry):
+            if node in owner:
+                parent[root(index)] = root(owner[node])
+            else:
+                owner[node] = index
+    groups: dict[int, list[dict[str, Any]]] = {}
+    for index, entry in enumerate(entries):
+        groups.setdefault(root(index), []).append(entry)
+    merged: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    gone: set[int] = set()
+    for members in groups.values():
+        if len(members) < 2:
+            continue
+        home, *rest = sorted(members, key=lambda e: (SECTION_ORDER.index(e["section"]), *_rank(e)))
+        for entry in rest:
+            merge_into(home, entry)
+            home.setdefault("related", []).append({"section": entry["section"], "headline": entry["headline"],
+                                                   "publication_date": entry.get("publication_date"), "url": (entry.get("sources") or [{}])[0].get("url")})
+            gone.add(id(entry))
+            merged.append((entry, home))
+    return {section: [e for e in items.get(section, []) if id(e) not in gone] for section in ("A", "B", "C")}, merged

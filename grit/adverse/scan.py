@@ -7,6 +7,7 @@ Every dependency that touches the network or a model can be injected, so the tes
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
@@ -26,6 +27,8 @@ ASSESS_CAPS = {"A": 30, "B": 20, "C": 20}
 MAX_SOURCES = 4
 MAX_SOURCE_CHARS = 8000
 PACK = "adverse"
+CURRENCY_DAYS = 3  # the currency check re-searches each item's main entity over the 72 hours to the report date
+TOPIC_IGNORE_KINDS = frozenset({"GROUP", "BUSINESS_AREA", "UNIT"})  # STE nodes too broad to make two items one topic
 
 
 MIN_PAGE_CHARS = 400
@@ -500,6 +503,19 @@ def run_scan(
                 notes.setdefault(home["item_id"], []).append(f"The Critic found '{entry['headline']}' reports the same event; merged here with its sources.")
             included[section] = kept_items
 
+    # Items on one topic (a shared entity, such as NVIDIA or Amadeus) become one item, across sections.
+    names = {node_id: node.name for node_id, node in graph.nodes.items()}
+    broad = {node_id for node_id, node in graph.nodes.items() if node.kind in TOPIC_IGNORE_KINDS or node.cls == "Place"}
+    included, topic_merges = checks.merge_topics(included, names, ignore=broad)
+    for entry, home in topic_merges:
+        notes.setdefault(home["item_id"], []).append(f"Merged '{entry['headline']}' (Section {entry['section']}) into this item: same topic.")
+
+    # Currency check: re-search each item's main entity over the last 72 hours, so a later fact (a resignation, a recall)
+    # is seen before the item is sent. The newer headlines are listed under the item; they are not assessed.
+    currency = currency_check(pool, scan_id, included, names, broad, run_date, folder, registers=registers, band_of=band_of,
+                              limit=0 if no_search else registers.currency_limit, getter=getter, usage_path=usage_path, sleep=sleep, log=log)
+    search_result["currency"] = currency["queries_sent"]
+
     # Order and number
     final: dict[str, list[dict[str, Any]]] = {}
     for section in ("A", "B", "C"):
@@ -513,19 +529,8 @@ def run_scan(
         final[section] = ordered
 
     high = [e for s in ("A", "B") for e in final[s] if e["severity"] in {"Critical", "High"}]
-    no_date = sum(1 for s in final.values() for e in s if not e.get("publication_date"))
-    reported = sum(len(v) for v in final.values())
-    validation = [
-        f"Every reported item cites only pages that were opened and returned their text; every fact is quoted verbatim from those pages ({reported} items, "
-        f"{sum(len(e['sources']) for s in final.values() for e in s)} pages).",
-        f"Numbers in the narrative appear in the cited pages; outlet names, dates and links come from the record of each page, not from the model.",
-        f"Event and publication dates are shown for every item; {no_date} publication date(s) not stated by the source and labelled.",
-        f"Critical and High items corroborated by an official source or a second independent outlet: {sum(1 for e in high if e.get('corroborated'))} of {len(high)}.",
-        f"Earlier reports checked: {len(earlier)} items from the last {PREVIOUS_DAYS} days; {len(repeats)} repeat(s) with no material update left out.",
-        f"Withheld by the tests, the rules or the Critic: {len(withheld)} (listed in the reviewer worksheet).",
-        "Searches: " + (f"{search_result.get('queries_sent', 0)} sent this run, {search_result.get('corroboration', 0)} for corroboration"
-                        + (f"; stopped: {search_result['stopped']}" if search_result.get("stopped") else "") + "."),
-    ]
+    validation = validation_lines(final, high=high, earlier=len(earlier), repeats=len(repeats), withheld=len(withheld), search_result=search_result,
+                                  merges=len(topic_merges), currency=currency, internal=load_internal_context())
     if not critic_ok:
         validation.append("The independent Critic did not complete its review.")
     validation.append("Email accuracy check: recipient, subject line, greeting and closing confirmed.")
@@ -547,6 +552,104 @@ def run_scan(
     pool.finish_run(scan_id, "COMPLETE" if report["status"] == "READY" else "FAILED", notes="; ".join(blockers) or None)
     report["paths"] = {key: str(value) for key, value in paths.items()}
     return report
+
+
+def _main_topic(entry: Mapping[str, Any], names: Mapping[str, str], broad: set[str]) -> str:
+    for node_id in entry.get("entity_ids") or []:
+        if node_id not in broad and (topic := checks.topic_name(names.get(node_id, ""))):
+            return topic
+    return ""
+
+
+def currency_check(pool: Pool, scan_id: str, items: Mapping[str, list[dict[str, Any]]], names: Mapping[str, str], broad: set[str], run_date: date,
+                   folder: Path, *, registers: Registers, band_of: Callable[[Any, Any], str], limit: int, getter: Any = None,
+                   usage_path: Path | None = None, sleep: Any = None, log: Callable[[str], None] = print) -> dict[str, Any]:
+    """One search per distinct main entity, over the 72 hours to the report date, within limit. Items with confirmed exposure go
+    first, then Section A, C and B, then by severity. Each checked item gets "currency": the query, and up to three newer headlines that name the
+    entity and are not already among its sources."""
+    window = {"start": run_date - timedelta(days=CURRENCY_DAYS), "end": run_date}
+    order = sorted((entry for section in ("A", "C", "B") for entry in items.get(section, [])),
+                   key=lambda e: (not checks.confirmed_exposure(e), ("A", "C", "B").index(e["section"]), checks.SEVERITIES.index(str(e.get("severity") or "Low"))))
+    topics = list(dict.fromkeys(topic for entry in order if (topic := _main_topic(entry, names, broad))))[:max(0, limit)]
+    specs = {topic: PlannedQuery(f"ADV-NOW-{hashlib.sha1(topic.casefold().encode()).hexdigest()[:10]}", f'"{topic}"', "CURRENCY") for topic in topics}
+    result = search(pool, scan_id, list(specs.values()), window, folder, limit=len(specs), getter=getter, usage_path=usage_path, sleep=sleep, log=log) \
+        if specs else {"queries_sent": 0, "stopped": None}
+    checked = newer = 0
+    for entry in order:
+        topic = _main_topic(entry, names, broad)
+        spec = specs.get(topic)
+        if spec is None:
+            continue
+        rows = pool.rows("SELECT DISTINCT s.* FROM sightings g JOIN signals s ON s.signal_id = g.signal_id WHERE g.run_id = ? AND g.query_id = ?",
+                         (scan_id, spec.query_id))
+        known = {ref["url"] for ref in entry.get("sources") or []}
+        seen = [str(entry["headline"]), *(str(r.get("headline") or "") for r in entry.get("related") or [])]
+        latest = []
+        for row in sorted(rows, key=lambda r: str(r.get("published_at") or ""), reverse=True):
+            day = str(row.get("published_at") or "")[:10]
+            if (row["url"] in known or not day or not in_window(day, window["start"], window["end"]) or topic.casefold() not in str(row["title"]).casefold()
+                    or band_of(row["url"], row.get("publisher")) in {"T4", "CONTESTED"} or any(similar(row["title"], title) >= 0.5 for title in seen)):
+                continue
+            terms = sorted({registers.lexicon.label(hit.category) for hit in registers.lexicon.hits(str(row["title"]), "") if hit.where == "TITLE"})
+            latest.append({"title": row["title"], "outlet": str(row.get("publisher") or ""), "url": row["url"], "published": day, "adverse_terms": terms})
+            if len(latest) == 3:
+                break
+        entry["currency"] = {"entity": topic, "since": window["start"].isoformat(), "latest": latest}
+        checked += 1
+        newer += bool(latest)
+    total = sum(len(v) for v in items.values())
+    return {"queries_sent": result.get("queries_sent", 0), "stopped": result.get("stopped"), "checked": checked, "items": total, "newer": newer, "ran": bool(specs)}
+
+
+def load_internal_context(path: Path | None = None) -> dict[str, Any] | None:
+    """Internal context R&A supplies (secrets/adverse/internal-context.json): EXCO travel and personnel, and the local-staff
+    safety log. None when not supplied. Spec 46, section 2, gives the format."""
+    from grit.settings import SECRETS_DIR
+
+    path = path or SECRETS_DIR / "adverse" / "internal-context.json"
+    if not path.is_file():
+        return None
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return {key: list(data.get(key) or []) for key in ("travel", "personnel", "staff_safety")} | {"as_of": data.get("asOf")}
+
+
+def validation_lines(final: Mapping[str, Sequence[Mapping[str, Any]]], *, high: Sequence[Mapping[str, Any]], earlier: int, repeats: int, withheld: int,
+                     search_result: Mapping[str, Any], merges: int, currency: Mapping[str, Any], internal: Mapping[str, Any] | None) -> list[str]:
+    """The Final Validation lines, each computed from the report's own records, so none claims more than was done."""
+    entries = [e for s in final.values() for e in s]
+    refs = [ref for e in entries for ref in e.get("sources") or []]
+    extracts = sum(ref.get("basis") == SEARCH_EXTRACT for ref in refs)
+    facts = extract_facts = 0
+    for entry in entries:
+        basis = {ref["source_id"]: ref.get("basis") for ref in entry.get("sources") or []}
+        for fact in entry.get("facts") or []:
+            facts += 1
+            extract_facts += basis.get(fact.get("source_id")) == SEARCH_EXTRACT
+    only_extract = [e["item_id"] for e in entries if e.get("sources") and all(ref.get("basis") == SEARCH_EXTRACT for ref in e["sources"])]
+    no_event = sum(1 for e in entries if e.get("event_date") in (None, "", "not stated"))
+    no_date = sum(1 for e in entries if not e.get("publication_date"))
+    lines = [
+        f"Sources: {len(entries)} items cite {len(refs)} sources; {len(refs) - extracts} pages were opened and checked, and {extracts} rest on "
+        f"search-engine text only because the page did not open.",
+        f"Facts: {facts} facts are quoted verbatim from their sources; {extract_facts} of {facts} come from search-engine text only."
+        + (f" Items resting only on search-engine text: {', '.join(only_extract)}." if only_extract else ""),
+        "Numbers in the narrative appear in the cited source text; outlet names, dates and links come from the record of each source, not from the model.",
+        f"Dates: {no_event} item(s) have no event date stated by the source; {no_date} item(s) have no publication date stated, and each is labelled.",
+        f"Critical and High items corroborated by an official source or a second independent outlet: {sum(1 for e in high if e.get('corroborated'))} of {len(high)}.",
+        f"Same-topic items merged across sections: {merges}.",
+        (f"Currency check (last {CURRENCY_DAYS * 24} hours): {currency['checked']} of {currency['items']} items re-searched by their main entity; "
+         f"{currency['newer']} show newer reports, listed under the item and not assessed."
+         + (f" Stopped: {currency['stopped']}." if currency.get("stopped") else "")) if currency.get("ran")
+        else "Currency check (last 72 hours): not run this time, so a development after the sources' dates may be missing.",
+        (f"Internal context supplied (as of {internal.get('as_of') or 'date not stated'}): {len(internal['travel'])} travel, {len(internal['personnel'])} personnel "
+         f"and {len(internal['staff_safety'])} staff-safety records.") if internal
+        else "Internal context: no EXCO travel, personnel or staff-safety data was supplied, so exposure rests on public sources and the registers only.",
+        f"Earlier reports checked: {earlier} items from the last {PREVIOUS_DAYS} days; {repeats} repeat(s) with no material update left out.",
+        f"Withheld by the tests, the rules or the Critic: {withheld} (listed in the reviewer worksheet).",
+        "Searches: " + (f"{search_result.get('queries_sent', 0)} sent this run, {search_result.get('corroboration', 0)} for corroboration, "
+                        f"{search_result.get('currency', 0)} for the currency check" + (f"; stopped: {search_result['stopped']}" if search_result.get("stopped") else "") + "."),
+    ]
+    return lines
 
 
 def _persist(pool: Pool, scan_id: str, report: Mapping[str, Any], paths: Mapping[str, Path]) -> None:

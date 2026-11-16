@@ -38,6 +38,18 @@ The prompt asks an analyst to judge each item. GRIT-Scan keeps its rule: agents 
 | The watchlist | `config/adverse/Adverse-Watchlist.json` | Names the registers lack: the Defence, Marine, Land Systems, Satcom and US businesses, their programs, Singapore defense customers, JV partners, and defense, satcom and MRO peers. Recorded on Jony Ling's instruction, 5 November 2026, without Wilson's review. |
 | The lexicon | `config/adverse/Adverse-Lexicon.json` | Adverse terms for the A1–A7 and Section B categories, and change terms for Section C. A screen, never a verdict. |
 | The scan plan | `config/adverse/Adverse-Scan-Plan.json` | The weekly Brave queries: the group, subsidiaries and programs, customers, enforcement sources, and peers. |
+| Internal context (optional) | `secrets/adverse/internal-context.json` | EXCO travel, personnel, and the local-staff safety log, supplied by R&A. Its format is below. The Final Validation says whether it was supplied. Until real records are seen, it is reported, not used to set exposure. |
+
+The internal-context file is one JSON object. Every list may be empty.
+
+```json
+{
+  "asOf": "2026-11-17",
+  "travel": [{"person": "Name", "role": "EXCO role", "country": "Qatar", "city": "Doha", "from": "2026-11-18", "to": "2026-11-21"}],
+  "personnel": [{"entity": "ST Engineering entity", "country": "Qatar", "city": "Doha", "headcount": 40, "expatriates": 12}],
+  "staff_safety": [{"date": "2026-11-10", "entity": "ST Engineering entity", "country": "Qatar", "summary": "What was logged"}]
+}
+```
 
 ## 3. Reporting period
 
@@ -100,7 +112,10 @@ The model proposes. These rules decide.
 | Section B | Lessons must not state or imply that ST Engineering has the weakness. A control weakness needs a verbatim quote, or reads "The publicly available information does not yet establish the underlying control weakness." Coverage is "Unable to determine" while no internal Risk Radar, CSA or policy material is supplied. |
 | Section C | A time horizon other than "Unable to determine" needs a verbatim quote. The connection must name a business area, line of business or registered name from the supplied list. |
 | Escalation summary | Section A items rated Critical or High that name at least one of the prompt's immediate-escalation triggers. |
-| Overall assessment | Immediate Escalation Recommended if any item is escalated to EXCO; Management Action Recommended if any item needs follow-up; Elevated Monitoring Required if any item is monitored; otherwise No Material Concern. |
+| Same topic | After the Critic, items that share a linked entity, or whose headline names an entity another item is linked to, become one item across sections. The Group, business-area and unit nodes are too broad to make a topic. The item in Section A, then C, then B, then the highest rated, keeps its text. The others add their sources, quoted facts, lessons and trigger points, and are listed under it as related reports. |
+| Currency check | Each item's main entity is searched again over the 72 hours to the report date, up to `currencyLimit` searches (default 8) on top of `queryLimit`. Items with confirmed exposure go first, then Sections A, C and B, then by severity. Up to three newer headlines that name the entity and are not among its sources are listed under the item, flagged with any lexicon terms. They are not assessed. |
+| Immediate Attention | Section A items with Direct or Indirect exposure and a follow-up action, and any item recommended for EXCO, highest severity first, at most four. A follow-up with no confirmed exposure, such as a generic vulnerability or threat, is listed under Enhanced Monitoring with the reason. |
+| Overall assessment | Immediate Escalation Recommended if any item is escalated to EXCO; Management Action Recommended if any item is in Immediate Attention; Elevated Monitoring Required if any item is monitored; otherwise No Material Concern. |
 
 ## 7. Duplicates and material updates
 
@@ -118,11 +133,11 @@ Each run writes to `output/adverse/DATE/`:
 | `report.json` | The decided items, the window, the checks and the status. |
 | `review.md` | The reviewer worksheet: blockers, withheld items and why, sources checked only against search-engine text, repeats, the Critic's objections, and the searches. |
 
-The email carries the standard notice that the content is GRIT-Scan AI-generated suggestions, which a named person reviews before anyone acts on them. The Final Validation lists the deterministic checks with their counts. The email accuracy check confirms the recipient, the subject line, the greeting and the closing.
+The email carries the standard notice that the content is GRIT-Scan AI-generated suggestions, which a named person reviews before anyone acts on them. The Final Validation is computed from the report's own records: how many sources were opened pages and how many search-engine text only, how many facts rest on search-engine text, which items rest on nothing else, missing dates, same-topic merges, the currency check, and whether internal context was supplied. The email accuracy check confirms the recipient, the subject line, the greeting and the closing.
 
 ## 9. Schedule and cost
 
-`grit scheduled` runs `grit adverse` every Thursday after the business-area scans due that day, so it reads their pages. `--no-adverse` leaves it out. A week costs at most 40 Brave queries (36 planned, plus up to 4 corroboration searches), about 160 to 200 a month, which is above the free Brave credit. Model calls: up to 13 screening batches, up to 70 assessments with retries, and one or two Critic calls. On the 5 November 2026 pool, with no searches, a run took about 10 minutes.
+`grit scheduled` runs `grit adverse` every Thursday after the business-area scans due that day, so it reads their pages. `--no-adverse` leaves it out. A week costs at most 48 Brave queries (36 planned, up to 4 corroboration searches and up to 8 currency checks), about 190 to 240 a month, which is above the free Brave credit. Model calls: up to 13 screening batches, up to 70 assessments with retries, and one or two Critic calls. On the 5 November 2026 pool, with no searches, a run took about 10 minutes.
 
 A first trial on 5 November 2026 (a copy of the pool, `--no-search`) screened 6,601 pages, verified 33 source pages, and reported 4 Section A and 4 Section B items. The Screener's choices vary from run to run by a few candidates at the margin. The rules and the Critic hold the reported set steady.
 
