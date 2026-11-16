@@ -2,7 +2,7 @@
 
 This guide connects the daily review to STE's SharePoint and mail. When it is done, the R&A Business Partner and the Business Area Manager each get a private SharePoint list with an Approve and a Reject button on every row. They also get the Word, PowerPoint and Excel packs by email. [Spec 48](../specs/48_Daily_Two_Stage_Review.md) describes how the review works.
 
-The pilot covers Urban Solutions. Hwaimay Mao is the R&A Business Partner. Gareth Tang is the Business Area Manager.
+The pilot covers Urban Solutions. Hwaimay Mao is the R&A Business Partner. Gareth Tang is the Business Area Manager, but who would be replaced by Wilson Yeo (R&A Head) for the trial period.
 
 ## Before you start
 
@@ -24,7 +24,7 @@ Each reviewer gets a separate list. Only that reviewer and the R&A owners can op
 4. On each list, open **List settings** > **Permissions for this list** and select **Stop Inheriting Permissions**.
 5. Remove every group except the R&A owners from each list.
 6. Give Hwaimay Mao **Contribute** on the BP list only.
-7. Give Gareth Tang **Contribute** on the Manager list only.
+7. Give Wilson Yeo **Contribute** on the Manager list only.
 8. Optional: apply the sensitivity label `Confidential` to the site, and turn off external sharing.
 
 ## Add the columns
@@ -97,7 +97,7 @@ Replace `SITE_ID` with the site ID, and `CLIENT_ID` with the app's client ID. An
 
 2. In `config/review/urs.json`, set `listId` for `BP` and for `MANAGER`.
 3. Optional: set `listUrl` for each stage. The emails then link straight to the list.
-4. In `config/profiles/hwaimay.json` and `config/profiles/gareth.json`, set `email`.
+4. In `config/profiles/hwaimay.json` and `config/profiles/wilson.json`, set `email`.
 5. Check the setup. This command prints the steps and makes no change:
 
    ```bash
