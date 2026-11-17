@@ -203,7 +203,7 @@ def verified_sources(item: Item, verify: Callable[[str], Mapping[str, Any]], cac
         key = f"S{len(table) + 1}"
         table[key] = {"title": member.title, "outlet": outlet_of(member), "publication_date": (member.published_at or "")[:10] or "not stated",
                       "band": member.band, "basis": basis, "text": text[:MAX_SOURCE_CHARS]}
-        refs.append({"source_id": key, "outlet": outlet_of(member), "url": member.url, "published": (member.published_at or "")[:10] or None,
+        refs.append({"source_id": key, "outlet": outlet_of(member), "url": member.url, "title": clean_title(member.title), "published": (member.published_at or "")[:10] or None,
                      "first_seen": member.first_seen_at[:10], "signal_id": member.signal_id, "band": member.band, "basis": basis})
 
     for member in sorted(item.members, key=lambda m: (band_rank.get(m.band, 9), -m.score)):
@@ -386,6 +386,7 @@ def run_scan(
     anchors = anchor_names(graph, lob_profiles)
     jobs: list[dict[str, Any]] = []
     own_unreported: list[dict[str, Any]] = []  # pinned items the scan could not report in full; the email still lists them
+    own_reviewed: list[dict[str, Any]] = []  # pinned mentions that failed the adverse test: one line in the email
 
     def unreported(item: Item, reason: str) -> None:
         if item.pinned:
@@ -447,7 +448,8 @@ def run_scan(
             withheld.append({"section": section, "headline": item.lead.title, "url": item.lead.url, "reason": reason})
             continue
         if draft.get("include") is False:
-            unreported(item, f"the Assessor found no adverse development to report: {draft.get('exclusion_reason')}")
+            if item.pinned:
+                own_reviewed.append({"headline": clean_title(item.lead.title), "url": item.lead.url, "names": item.pinned, "reason": str(draft.get("exclusion_reason") or "")})
             withheld.append({"section": section, "headline": item.lead.title, "url": item.lead.url, "reason": f"Assessor: {draft.get('exclusion_reason')}"})
             continue
         previous = job["previous"]
@@ -475,6 +477,13 @@ def run_scan(
                  "ste_named": ste_named(job["sources"], index), "publication_stated": bool(publication), "corroborated": corro["corroborated"],
                  "business_areas": list(dict.fromkeys(a for n in item.node_ids for a in business_areas(graph, n))),
                  "people": item_people(item, people),
+                 "people_cities": staff.targeted_sites(" ".join([str(draft.get(k) or "") for k in ("headline", "event", "why_adverse")]
+                                                                + [str(f.get("quote") or "") for f in draft.get("facts") or []]),
+                                                       [c for c in (people or {}).get("countries", {}) if staff.node_id(c) in item.node_ids], people),
+                 "own_exploit": bool(item.pinned) and any(checks.EXPLOIT.search(f"{v.get('title') or ''} {v.get('text') or ''}") for v in job["sources"].values()),
+                 "conflicts": checks.description_conflicts([(key, f"{v.get('title') or ''} {v.get('text') or ''}") for key, v in job["sources"].items()]
+                                                           + [("the item", " ".join(str(draft.get(k) or "") for k in ("headline", "event", "why_adverse", "assessment")))])
+                 if draft.get("category") == "A4" or any(hit.category == "CYBER" for m in item.members for hit in m.hits if hit.where != "BODY") else [],
                  "people_event": draft.get("category") == "A5" or any(hit.category == staff.PEOPLE_RISK for m in item.members for hit in m.hits if hit.where != "BODY")}
         decided, rule_notes = (checks.decide_a(draft, facts) if section == "A" else checks.decide_b(draft, facts) if section == "B" else checks.decide_c(draft, facts))
         decided.update({"section": section, "sources": refs, "publication_date": publication, "publication_display": display,
@@ -485,6 +494,10 @@ def run_scan(
         named = staff.countries_named(" ".join(str(decided.get(key) or "") for key in ("headline", "event", "affected_entity")), people)
         decided["people"] = [staff.presence(country, people) for country in dict.fromkeys([*named, *(c for c in people["countries"]
                              if staff.node_id(c) in item.node_ids)])] if people else []
+        if item.pinned and checks.mention_only(decided):
+            own_reviewed.append({"headline": clean_title(item.lead.title), "url": item.lead.url, "names": item.pinned,
+                                 "reason": "Not adverse: " + str((decided.get("tests") or {}).get("adverse_consequence") or "")})
+            continue
         decided["item_id"] = f"{section}?{len(included[section]) + 1}"
         if rule_notes:
             notes[decided["item_id"]] = rule_notes
@@ -525,6 +538,7 @@ def run_scan(
                 if text and name and name.casefold() in text.casefold():
                     entry["corroborated"] = True
                     entry["sources"].append({"source_id": f"S{len(entry['sources']) + 1}", "outlet": str(row.get("publisher") or host), "url": row["url"],
+                                             "title": clean_title(row.get("title")),
                                              "published": (row.get("published_at") or "")[:10] or None, "first_seen": str(row["first_seen_at"])[:10],
                                              "signal_id": row["signal_id"], "band": band_of(row["url"], row.get("publisher")), "basis": basis})
                     break
@@ -546,6 +560,8 @@ def run_scan(
             for entry in included[section]:
                 changed, reason = checks.apply_critic(entry, verdicts.get(entry["item_id"], {}))
                 if changed is None:
+                    if entry.get("pinned"):
+                        own_reviewed.append({"headline": entry["headline"], "url": entry["sources"][0]["url"], "names": entry["pinned"], "reason": f"Critic: {reason}"})
                     withheld.append({"section": section, "headline": entry["headline"], "url": entry["sources"][0]["url"], "reason": f"Critic withdrew it: {reason}"})
                     continue
                 if reason:
@@ -615,7 +631,7 @@ def run_scan(
     high = [e for s in ("A", "B") for e in final[s] if e["severity"] in {"Critical", "High"}]
     validation = validation_lines(final, high=high, earlier=len(earlier), repeats=len(repeats), withheld=len(withheld), search_result=search_result,
                                   merges=len(topic_merges), currency=currency, internal=people, reassessed=reassessed,
-                                  own_unreported=own_unreported)
+                                  own_unreported=own_unreported, own_reviewed=own_reviewed)
     if not critic_ok:
         validation.append("The independent Critic did not complete its review.")
     validation.append("Email accuracy check: recipient, subject line, greeting and closing confirmed.")
@@ -623,7 +639,7 @@ def run_scan(
         "scan_id": scan_id, "run_date": run_date.isoformat(), "status": "READY" if not blockers else "INCOMPLETE", "blockers": blockers,
         "window": {"start": window["start"].isoformat(), "end": window["end"].isoformat(), "previous": window["previous"]},
         "counts": counts, "search": search_result, "items": final, "repeats": repeats, "withheld": withheld, "notes": notes,
-        "overall": checks.overall(final), "attention": checks.attention(final), "own_unreported": own_unreported, "validation": validation,
+        "overall": checks.overall(final), "attention": checks.attention(final), "own_unreported": own_unreported, "own_reviewed": own_reviewed, "validation": validation,
         "calls": [asdict(call) for call in calls], "model": model,
     }
     problems = render.email_problems(render.compose(report), run_date)
@@ -682,7 +698,7 @@ def reassess_items(items: Mapping[str, list[dict[str, Any]]], triggers: Sequence
             basis = PAGE if check.get("status") == "SUCCEEDED" and readable(str(check.get("text") or "")) else SEARCH_EXTRACT
             if basis == SEARCH_EXTRACT and not search_extract(signal.get("text")):
                 continue
-            added.append({"source_id": "new", "outlet": row["outlet"], "url": row["url"], "published": row["published"],
+            added.append({"source_id": "new", "outlet": row["outlet"], "url": row["url"], "title": clean_title(row["title"]), "published": row["published"],
                           "first_seen": str(signal.get("first_seen_at") or run_date)[:10], "signal_id": row["signal_id"], "band": row["band"], "basis": basis})
         trigger = [row["title"] for row in rows[:2]]
         if not added:
@@ -797,7 +813,8 @@ def _internal_line(internal: Mapping[str, Any] | None, entries: Sequence[Mapping
 
 def validation_lines(final: Mapping[str, Sequence[Mapping[str, Any]]], *, high: Sequence[Mapping[str, Any]], earlier: int, repeats: int, withheld: int,
                      search_result: Mapping[str, Any], merges: int, currency: Mapping[str, Any], internal: Mapping[str, Any] | None,
-                     reassessed: Mapping[str, int] | None = None, own_unreported: Sequence[Mapping[str, Any]] = ()) -> list[str]:
+                     reassessed: Mapping[str, int] | None = None, own_unreported: Sequence[Mapping[str, Any]] = (),
+                     own_reviewed: Sequence[Mapping[str, Any]] = ()) -> list[str]:
     """The Final Validation lines, each computed from the report's own records, so none claims more than was done."""
     entries = [e for s in final.values() for e in s]
     refs = [ref for e in entries for ref in e.get("sources") or []]
@@ -826,8 +843,8 @@ def validation_lines(final: Mapping[str, Sequence[Mapping[str, Any]]], *, high: 
         else "Currency check (last 72 hours): not run this time, so a development after the sources' dates may be missing.",
         *([f"Re-assessed after the currency check: {reassessed['triggered']} item(s) had a newer top-tier report changing a key fact; "
             f"{reassessed['updated']} updated, the rest unchanged."] if reassessed and reassessed.get("triggered") else []),
-        f"ST Engineering items (always reported): {sum(1 for e in entries if e.get('pinned'))} reported in full"
-        + (f"; {len(own_unreported)} listed without a full assessment" if own_unreported else "") + ".",
+        f"ST Engineering mentions (always reviewed): {sum(1 for e in entries if e.get('pinned'))} adverse and reported; {len(own_reviewed)} not adverse"
+        + (f"; {len(own_unreported)} could not be assessed and are listed" if own_unreported else "") + ".",
         _internal_line(internal, entries),
         f"Earlier reports checked: {earlier} items from the last {PREVIOUS_DAYS} days; {repeats} repeat(s) with no material update left out.",
         f"Withheld by the tests, the rules or the Critic: {withheld} (listed in the reviewer worksheet).",

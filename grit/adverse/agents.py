@@ -61,8 +61,9 @@ _COMMON = (
 )
 
 ASSESSOR_A = ROLE + " You assess one Section A item: adverse news directly relevant to STE." + _COMMON + (
-    " When the task has pinned, the sources name ST Engineering or a subsidiary, and the item is always reported: return "
-    "include true; if the tests show no material adverse development, say so plainly, rate it Low and recommend Monitor."
+    " When the task has pinned, the sources name ST Engineering or a subsidiary. Apply the five tests as for any item: a "
+    "mention that is not adverse (results, awards, commentary, a vendor list) returns include false with an exclusion_reason "
+    "that starts 'Not adverse:'. An adverse development, however small, returns include true."
     " When the task has a current earlier_report, the item was reported today: the new sources may change a key fact; "
     "answer MATERIAL_UPDATE only when they do."
     " Fields: category (A1 Financial, A2 Project delivery, A3 Regulatory and compliance, A4 Cyber and security, A5 Safety, "

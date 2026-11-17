@@ -286,6 +286,19 @@ def decide_a(draft: Mapping[str, Any], facts: Mapping[str, Any]) -> tuple[dict[s
         item["exposure"] = NOT_CONFIRMED if classes else EXPOSURE_UNKNOWN
         notes.append(f"'{exposure}' needs ST Engineering named in a verified source; set to '{item['exposure']}'.")
     people = list(facts.get("people") or [])
+    targeted = list(facts.get("people_cities") or [])
+    if people and facts.get("people_event") and targeted:
+        # STE people are in the country and their city is the one targeted: direct exposure, at least High.
+        if not classes:
+            item["relationship"] = "ST Engineering entity"
+        if item["exposure"] != DIRECT_EXPOSURE:
+            notes.append(f"Exposure set to '{DIRECT_EXPOSURE}': the event targets " + ", ".join(targeted) + ", where the staff log places STE people.")
+            item["exposure"], item["exposure_basis"] = DIRECT_EXPOSURE, STAFF_LOG
+        if SEVERITIES.index(str(item["severity"])) > SEVERITIES.index("High"):
+            notes.append(f"Severity raised from {item['severity']} to High: a city with STE people is targeted.")
+            item["severity"] = "High"
+        item["targeted_sites"] = targeted
+        item["escalation_triggers"] = list(dict.fromkeys([*(item.get("escalation_triggers") or []), "ST Engineering"]))
     if people and facts.get("people_event"):
         # STE people are in the country of a safety or security event, per the internal staff log: indirect exposure of people.
         if not classes:
@@ -299,6 +312,11 @@ def decide_a(draft: Mapping[str, Any], facts: Mapping[str, Any]) -> tuple[dict[s
         if item["action"] == MONITOR:
             item["action"], item["owner"] = FOLLOW_GF, PEOPLE_OWNER
             notes.append(f"STE people in the country: a staff-safety check is a follow-up for {PEOPLE_OWNER}, not monitoring.")
+    if facts.get("own_exploit") and SEVERITIES.index(str(item["severity"])) > SEVERITIES.index("Medium"):
+        notes.append(f"Severity raised from {item['severity']} to Medium: a public exploit for an ST Engineering product.")
+        item["severity"] = "Medium"
+    if facts.get("conflicts"):
+        item["conflicts"] = list(facts["conflicts"])
     severity = item["severity"]
     if severity == "Critical" and item["exposure"] not in {DIRECT_EXPOSURE, INDIRECT_EXPOSURE}:
         severity = "High"
@@ -365,7 +383,7 @@ def apply_critic(item: dict[str, Any], verdict: Mapping[str, Any]) -> tuple[dict
     if kind not in {"WITHDRAW", "DOWNGRADE"} or rule not in CRITIC_RULES:
         return item, None
     reason = f"{rule}: {str(verdict.get('reason') or '').strip()}"
-    if kind == "WITHDRAW" and item.get("pinned"):
+    if kind == "WITHDRAW" and item.get("pinned") and rule != "NOT_ADVERSE":
         kind, reason = "DOWNGRADE", f"{reason} (an item naming ST Engineering is always reported, so withdrawal became a downgrade)"
     if kind == "WITHDRAW":
         return None, reason
@@ -587,6 +605,10 @@ def cap_item(entry: dict[str, Any], caps: Mapping[str, int] = CAPS) -> list[str]
         kept = sorted(range(len(sources)), key=lambda i: rank(sources[i], i))[:caps["sources"]]
         trimmed.append(f"{len(sources) - caps['sources']} lower-ranked source(s)")
         sources = [sources[i] for i in sorted(kept)]
+    if sources:
+        # The lead source is the best-ranked one that reports the headline's event, so its link opens on that story.
+        lead = min(range(len(sources)), key=lambda i: (rank(sources[i], i)[:2], -_about(entry.get("headline"), sources[i]), i))
+        sources = [sources[lead], *sources[:lead], *sources[lead + 1:]]
     order = {ref["source_id"]: rank(ref, n) for n, ref in enumerate(sources)}
     renumber = {ref["source_id"]: f"S{n}" for n, ref in enumerate(sources, start=1)}
     facts = [fact for fact in entry.get("facts") or [] if fact.get("source_id") in renumber]
@@ -605,3 +627,61 @@ def cap_item(entry: dict[str, Any], caps: Mapping[str, int] = CAPS) -> list[str]
             entry[key] = values[:caps[key]]
             trimmed.append(f"{len(values) - caps[key]} {key.replace('_', ' ')}")
     return trimmed
+
+
+def _about(headline: Any, ref: Mapping[str, Any]) -> float:
+    """How far a source's title (else its link's words) shares the headline's words."""
+    from grit.adverse.screen import similar
+
+    words = str(ref.get("title") or "") or re.sub(r"[-_/]+", " ", re.sub(r"^https?://[^/]+", "", str(ref.get("url") or "")))
+    stem = lambda text: " ".join(re.sub(r"(?<=\w{4})(?:es|s)$", "", word) for word in str(text).split())  # noqa: E731
+    return similar(stem(headline), stem(words))
+
+
+EXPLOIT = re.compile(r"\b(?:proof[- ]of[- ]concept|PoC|exploit(?:ed|s|ation)?|zero[- ]day|actively exploited|in the wild)\b", re.IGNORECASE)
+_VECTOR = {"local": re.compile(r"\blocal(?:ly)?\b(?: privilege escalation| attacker| access)?", re.IGNORECASE),
+           "remote": re.compile(r"\bremote(?:ly)?\b|\bnetwork[- ]adjacent\b|\bover the network\b", re.IGNORECASE)}
+_UNAUTH = re.compile(r"\bunauthenticated\b|\bwithout authentication\b", re.IGNORECASE)
+_CVSS = re.compile(r"CVSS[^0-9]{0,25}(\d{1,2}\.\d)", re.IGNORECASE)
+_DESCRIBED = re.compile(r"(?:privilege escalation|code execution|authentication bypass|injection|denial of service|vulnerabilit(?:y|ies)|flaw)s? in ([^.]{0,160})", re.IGNORECASE)
+_SERIES = re.compile(r"([a-z]?[A-Z]{1,3}\d{0,4}|\d{1,5})-Series")  # also inside run-together page text: "terminals3315-Series"
+
+
+def description_conflicts(texts: Sequence[tuple[str, str]]) -> list[str]:
+    """Where the descriptions of a vulnerability disagree, across sources and within one: local against remote, a local flaw
+    reached without authentication, different CVSS scores, and different sets of affected product series. texts is
+    [(label, text)], such as [("S1", ...), ("the item", ...)]."""
+    found: list[str] = []
+    vectors = {label: {name for name, pattern in _VECTOR.items() if pattern.search(text)} for label, text in texts}
+    local = [label for label, seen in vectors.items() if "local" in seen]
+    remote = [label for label, seen in vectors.items() if "remote" in seen]
+    if local and remote:
+        found.append(f"Attack route: {', '.join(local)} describe(s) a local flaw; {', '.join(remote)} describe(s) a remote one.")
+    for label, text in texts:
+        if "local" in vectors[label] and "remote" not in vectors[label] and _UNAUTH.search(text):
+            found.append(f"Attack route unclear in {label}: a local flaw reached through an unauthenticated interface, so it may be reachable over the network.")
+    scores = {label: sorted(set(_CVSS.findall(text))) for label, text in texts}
+    if len({score for values in scores.values() for score in values}) > 1:
+        found.append("CVSS scores differ: " + "; ".join(f"{label} {', '.join(values)}" for label, values in scores.items() if values) + ".")
+    for label, text in texts:
+        listed = sorted(set(_SERIES.findall(text)), key=str.casefold)
+        for clause in _DESCRIBED.findall(text):
+            described = sorted(set(_SERIES.findall(clause)), key=str.casefold)
+            if described and set(described) < set(listed):
+                found.append(f"Affected products differ in {label}: it lists {', '.join(f'{n}-Series' for n in listed)}, "
+                             f"but its description names only {', '.join(f'{n}-Series' for n in described)}.")
+                break
+    everywhere = [sorted(set(_SERIES.findall(text))) for _label, text in texts]
+    named = [(label, sets) for (label, _text), sets in zip(texts, everywhere) if sets]
+    if len({tuple(sets) for _label, sets in named}) > 1:
+        found.append("Affected products differ between sources: " + "; ".join(f"{label} {', '.join(f'{n}-Series' for n in sets)}" for label, sets in named) + ".")
+    return list(dict.fromkeys(found))
+
+
+_NOT_ADVERSE = re.compile(r"\b(?:no|not an?|without)\s+(?:material\s+)?(?:adverse|negative)\b|\bnot adverse\b|\bpositive\b|\bnone\b", re.IGNORECASE)
+
+
+def mention_only(item: Mapping[str, Any]) -> bool:
+    """A pinned item that fails the adverse test: rated Low, monitored, and its own adverse-consequence answer says none."""
+    answer = str((item.get("tests") or {}).get("adverse_consequence") or "")
+    return item.get("severity") == "Low" and (item.get("action") or item.get("response")) == MONITOR and bool(_NOT_ADVERSE.search(answer))

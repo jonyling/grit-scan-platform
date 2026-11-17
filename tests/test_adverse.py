@@ -533,10 +533,10 @@ def test_a_merged_item_keeps_its_best_sources_and_their_facts() -> None:
              "facts": [{"statement": f"f{n}", "source_id": f"S{n % 7 + 1}", "quote": f"q{n}"} for n in range(12)],
              "lessons": ["l1", "l2", "l3", "l4"], "trigger_points": [f"t{n}" for n in range(7)]}
     trimmed = checks.cap_item(entry)
-    assert [ref["url"] for ref in entry["sources"]] == ["u1", "u3", "u4", "u5", "u6"], "T1, T2 pages, then T2 search text, then T3; order kept"
+    assert [ref["url"] for ref in entry["sources"]] == ["u3", "u1", "u4", "u5", "u6"], "T1, T2 pages, T2 search text and T3 kept; the T1 page leads"
     assert [ref["source_id"] for ref in entry["sources"]] == ["S1", "S2", "S3", "S4", "S5"]
     assert len(entry["facts"]) == 8 and {f["source_id"] for f in entry["facts"]} <= {"S1", "S2", "S3", "S4", "S5"}
-    assert entry["facts"][0]["statement"] == "f0" and any(f["statement"] == "f2" and f["source_id"] == "S2" for f in entry["facts"]), "facts follow their source"
+    assert entry["facts"][0]["statement"] == "f0" and any(f["statement"] == "f2" and f["source_id"] == "S1" for f in entry["facts"]), "facts follow their source"
     assert entry["lessons"] == ["l1", "l2", "l3"] and len(entry["trigger_points"]) == 5 and trimmed
 
 
@@ -565,3 +565,52 @@ def test_a_newer_top_tier_report_re_runs_the_item(pool: Pool) -> None:
     assert counts == {"triggered": 1, "updated": 1} and set(seen["table"]) == {"S1", "S2"} and seen["previous"]["headline"] == entry["headline"]
     updated = items["B"][0]
     assert updated["reassessed"]["outcome"] == "UPDATED" and updated["item_id"] == "B?1" and [r["url"] for r in updated["sources"]][-1] == "https://wire.example.org/ceo"
+
+
+def test_the_lead_source_is_the_one_about_the_headline() -> None:
+    entry = {"headline": "Houthi missiles target Riyadh", "facts": [],
+             "sources": [{"source_id": "S1", "url": "https://abc.example/news/israel-kills-top-hamas-commander", "band": "T2", "basis": "PAGE"},
+                         {"source_id": "S2", "url": "https://aj.example/x", "title": "Saudi coalition intercepts missiles over Riyadh", "band": "T2", "basis": "PAGE"}]}
+    checks.cap_item(entry)
+    assert entry["sources"][0]["url"] == "https://aj.example/x" and entry["sources"][0]["source_id"] == "S1"
+
+
+def test_a_targeted_city_with_ste_people_is_direct_and_high() -> None:
+    from grit.adverse.people import targeted_sites
+
+    people = {"countries": {"Saudi Arabia": {"local_staff": 27, "entities": ["URS"], "travellers": 19,
+                                             "sites": {"Riyadh": ["ST Engineering Saudi Limited, registered address"]}}}}
+    sites = targeted_sites("Houthi missiles target Riyadh", ["Saudi Arabia"], people)
+    assert sites == ["Riyadh (ST Engineering Saudi Limited, registered address)"]
+    assert targeted_sites("Missiles hit Jeddah", ["Saudi Arabia"], people) == [], "another city is not a targeted STE site"
+    draft = {"relationship": "Other relevant stakeholder", "exposure": checks.EXPOSURE_UNKNOWN, "severity": "Medium", "action": checks.MONITOR, "impacts": []}
+    decided, _notes = checks.decide_a(draft, {"classes": [], "people": ["Saudi Arabia: 27 local staff."], "people_event": True, "people_cities": sites,
+                                              "publication_stated": True})
+    assert (decided["exposure"], decided["severity"], decided["targeted_sites"]) == (checks.DIRECT_EXPOSURE, "High", sites)
+    assert "ST Engineering" in decided["escalation_triggers"] and decided["escalate"]
+
+
+def test_an_own_product_exploit_is_at_least_medium_and_conflicts_are_flagged() -> None:
+    page = ("ST Engineering iDirectiQ-Series terminals3315-Series terminals9-Series terminalslocal privilege escalationRedis IPC bus "
+            "Local privilege escalation in iDirect iQ-Series terminals via unauthenticated Redis IPC bus.")
+    conflicts = checks.description_conflicts([("S1", page), ("S2", "A remote attacker can run code; CVSS 9.8."), ("S3", "Rated CVSS 7.8.")])
+    assert any(line.startswith("Attack route: S1 describe(s) a local flaw; S2") for line in conflicts)
+    assert any("unauthenticated interface" in line for line in conflicts) and any(line.startswith("CVSS scores differ") for line in conflicts)
+    assert any("description names only iQ-Series" in line for line in conflicts)
+    draft = {"relationship": "Other relevant stakeholder", "exposure": checks.DIRECT_EXPOSURE, "severity": "Low", "action": checks.FOLLOW_BA, "impacts": []}
+    decided, _ = checks.decide_a(draft, {"classes": ["STE"], "ste_named": True, "own_exploit": True, "conflicts": conflicts, "business_areas": ["Satcom"],
+                                         "publication_stated": True})
+    assert decided["severity"] == "Medium" and decided["conflicts"] == conflicts and decided["owner"] == "Satcom"
+
+
+def test_a_pinned_mention_that_is_not_adverse_is_counted_not_reported() -> None:
+    mention = {"severity": "Low", "action": checks.MONITOR, "tests": {"adverse_consequence": "No adverse development: revenue grew 9%."}}
+    assert checks.mention_only(mention)
+    assert not checks.mention_only({**mention, "tests": {"adverse_consequence": "A vulnerability exposes terminals."}})
+    item = {"pinned": ["ST Engineering"], "severity": "Low", "action": checks.MONITOR}
+    assert checks.apply_critic(item, {"verdict": "WITHDRAW", "rule": "NOT_ADVERSE", "reason": "results"})[0] is None, "not adverse leaves even a pinned item"
+    report = {"run_date": "2026-11-16", "window": {"start": "2026-11-10", "end": "2026-11-16", "previous": None}, "items": {"A": [], "B": [], "C": []},
+              "counts": {"pages": 0, "verified_pages": 0}, "attention": {"immediate": [], "monitoring": [], "lessons": []},
+              "overall": checks.overall({"A": [], "B": [], "C": []}), "validation": ["ok"], "repeats": [],
+              "own_reviewed": [{"headline": h, "url": "u", "names": ["ST Engineering"], "reason": "Not adverse"} for h in ("a", "b", "c", "d")]}
+    assert "ST Engineering mentions reviewed (4): none adverse." in render.compose(report)

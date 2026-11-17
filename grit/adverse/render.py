@@ -110,7 +110,8 @@ def _item_a(doc: _Doc, item: Mapping[str, Any]) -> None:
     doc.field("Evidence-based assessment", item.get("assessment") or "None beyond the facts.")
     unverified = [u for u in item.get("unverified") or [] if isinstance(u, str) and u.strip()]
     doc.field("Unverified", "; ".join(unverified) if unverified else "Nothing further identified.")
-    basis = " (from the internal staff log, not a news source)" if item.get("exposure_basis") == checks.STAFF_LOG else ""
+    basis = (f" (the event targets {', '.join(item['targeted_sites'])}; from the internal staff log and entity register, not a news source)"
+             if item.get("targeted_sites") else " (from the internal staff log, not a news source)" if item.get("exposure_basis") == checks.STAFF_LOG else "")
     doc.field("Exposure assessment", f"{item['exposure']}{basis}")
     impacts = item.get("impacts") or []
     if impacts:
@@ -190,6 +191,10 @@ def _extras(doc: _Doc, item: Mapping[str, Any], section: str) -> None:
             doc.bullet(trigger, 1)
     if item.get("pinned"):
         doc.field("Always reported", f"names {', '.join(item['pinned'])}; not merged or filtered out")
+    if item.get("conflicts"):
+        doc.add("Conflicting descriptions (confirm with the vendor advisory before acting):")
+        for line in item["conflicts"]:
+            doc.bullet(line, 1)
     reassessed = item.get("reassessed")
     if reassessed:
         text = {"UPDATED": "re-assessed with the newer report(s) below as sources; the item above reflects them",
@@ -260,6 +265,9 @@ def compose(report: Mapping[str, Any], *, markdown: bool = False) -> str:
     else:
         doc.add(checks.NO_DEVELOPMENTS)
     _repeats(doc, report.get("repeats") or [], "A")
+    reviewed = report.get("own_reviewed") or []
+    if reviewed:
+        doc.add(f"ST Engineering mentions reviewed ({len(reviewed)}): none adverse. They are listed in the reviewer worksheet.")
     own = report.get("own_unreported") or []
     if own:
         doc.add("Items naming ST Engineering that could not be assessed in full (always listed; read the source):")
@@ -345,6 +353,8 @@ def worksheet(report: Mapping[str, Any]) -> str:
     lines += ["", "## Withheld", ""]
     withheld = report.get("withheld") or []
     lines += [f"- {w['headline']} ({w.get('section') or '-'}): {w['reason']}" + (f" {w['url']}" if w.get("url") else "") for w in withheld] or ["- None."]
+    lines += ["", "## ST Engineering mentions reviewed, not adverse", ""]
+    lines += [f"- {r['headline']} (names {', '.join(r['names'])}): {r['reason']} {r['url']}" for r in report.get("own_reviewed") or []] or ["- None."]
     lines += ["", "## Sources checked against search-engine text", ""]
     lines += [f"- [{item.get('item_id')}] {item.get('headline')}: {ref['outlet']} {ref['url']}"
               for section in ("A", "B", "C") for item in (report.get("items") or {}).get(section) or []
