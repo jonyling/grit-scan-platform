@@ -44,6 +44,7 @@ class Candidate:
     score: float
     event_id: str | None = None
     previous: dict[str, Any] | None = None
+    pinned: list[str] = field(default_factory=list)  # ST Engineering names the page states: always reported
 
     @property
     def day(self) -> str:
@@ -77,6 +78,10 @@ class Item:
     def node_ids(self) -> list[str]:
         return list(dict.fromkeys(node for member in self.members for node in member.node_ids))
 
+    @property
+    def pinned(self) -> list[str]:
+        return list(dict.fromkeys(name for member in self.members for name in member.pinned))
+
 
 def in_window(day: str, start: date, end: date) -> bool:
     return bool(day) and start.isoformat() <= day[:10] <= end.isoformat()
@@ -91,6 +96,25 @@ def similar(a: str, b: str) -> float:
     return len(left & right) / len(left | right) if left and right else 0.0
 
 
+def own_named(title: str, lead: str, own: Mapping[str, Sequence[str]] | None) -> list[str]:
+    """The ST Engineering names (group or subsidiary) the title or lead states, by name. own maps a name to its aliases.
+    A short alias right after another capitalised word is a namesake: "Vilas Transcore" is not TransCore. A name that
+    contains "ST Engineering" is never a namesake."""
+    text = f"{title}\n{lead}"
+    found: list[str] = []
+    for name, aliases in (own or {}).items():
+        for alias in aliases:
+            for match in re.finditer(rf"(?<![\w-]){re.escape(alias)}(?![\w-])", text, re.IGNORECASE):
+                before = re.search(r"([A-Za-z][\w&.'-]*)\s+$", text[max(0, match.start() - 40):match.start()])
+                if "st engineering" not in alias.casefold() and before and before.group(1)[0].isupper() and before.group(1) not in {"The", "A", "An"}:
+                    continue
+                found.append(name)
+                break
+            if name in found:
+                break
+    return found
+
+
 def screen(
     rows: Iterable[Mapping[str, Any]],
     *,
@@ -102,9 +126,11 @@ def screen(
     peer_ids: frozenset[str] = frozenset(),
     business_areas_of: Any = None,
     people: Mapping[str, Any] | None = None,
+    own: Mapping[str, Sequence[str]] | None = None,
 ) -> tuple[dict[str, list[Candidate]], dict[str, int]]:
     """Candidates by provisional section, ranked and capped, and counts of what the screen dropped. people is the internal staff
-    log (grit.adverse.people): a threat to people in a country where STE people are is a Section A candidate, rung PEOPLE."""
+    log (grit.adverse.people): a threat to people in a country where STE people are is a Section A candidate, rung PEOPLE.
+    own maps ST Engineering names to aliases: a page that states one and hits the lexicon is pinned, Section A, and never capped."""
     out: dict[str, list[Candidate]] = {"A": [], "B": [], "C": []}
     counts = {"pages": 0, "no_lead_hit": 0, "unusable_source": 0, "unlinked": 0}
     for row in rows:
@@ -134,7 +160,10 @@ def screen(
         staffed = countries_named(f"{clean_title(title)}\n{text[:LEAD_CHARS]}", people) if any(hit.category == PEOPLE_RISK for hit in lead_hits) else []
         if staffed and rung not in {DIRECT, COUNTERPARTY}:
             rung = PEOPLE
-        if rung in {DIRECT, COUNTERPARTY, PEOPLE} and adverse_lead:
+        pinned = own_named(title, text[:LEAD_CHARS], own)
+        if pinned:
+            rung, section = DIRECT, "A"
+        elif rung in {DIRECT, COUNTERPARTY, PEOPLE} and adverse_lead:
             section = "A"
         elif (rung == COMPETITOR or set(lanes) & B_LANES) and adverse_lead:
             section = "B"
@@ -155,12 +184,14 @@ def screen(
                  + (2 if title_name and any(hit.where == "TITLE" for hit in adverse_lead) else 0))
         out[section].append(Candidate(
             str(row["signal_id"]), str(row.get("url") or ""), title, text, row.get("publisher"), row.get("published_at"),
-            str(row.get("first_seen_at") or ""), rung, involves, hits, lanes, band, section, score, row.get("event_id"),
+            str(row.get("first_seen_at") or ""), rung, involves, hits, lanes, band, section, score, row.get("event_id"), pinned=pinned,
         ))
     for section, items in out.items():
         items.sort(key=lambda c: (-c.score, c.day, c.signal_id))
-        counts[f"over_cap_{section}"] = max(0, len(items) - CAPS[section])
-        del items[CAPS[section]:]
+        over = [c for c in items[CAPS[section]:] if not c.pinned]
+        counts[f"over_cap_{section}"] = len(over)
+        items[:] = [c for c in items if c not in over]
+    counts["pinned"] = sum(1 for items in out.values() for c in items if c.pinned)
     return out, counts
 
 

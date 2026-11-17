@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from datetime import date, datetime, timedelta, timezone
@@ -18,6 +19,7 @@ from typing import Any, Callable, Mapping, Sequence
 from grit.adverse import agents, checks, render
 from grit.adverse import people as staff
 from grit.adverse.registers import PlannedQuery, Registers, business_areas, load_registers
+from grit.report.format_v2 import clean_title
 from grit.adverse.screen import Candidate, Item, corroboration, group, in_window, match_previous, screen, similar
 from grit.pool import Pool
 from grit.pool.db import utc_now
@@ -28,6 +30,10 @@ ASSESS_CAPS = {"A": 30, "B": 20, "C": 20}
 MAX_SOURCES = 4
 MAX_SOURCE_CHARS = 8000
 PACK = "adverse"
+REASSESS_BANDS = frozenset({"T1", "T2"})  # a newer headline from these bands that changes a key fact re-runs the item
+KEY_CHANGE = re.compile(r"\b(?:resign\w*|steps? down|stepped down|ousted|fired|sacked|replaced|arrest\w*|charged|indicted|convicted|sentenced|"
+                        r"acquitted|cleared|dropped|withdr[ae]w\w*|revers\w*|reinstat\w*|comeback|returns? as|recall\w*|bankrupt\w*|default\w*|"
+                        r"collaps\w*|died|dies|killed|shut\w*|halt\w*|suspend\w*)\b", re.IGNORECASE)
 CURRENCY_DAYS = 3  # the currency check re-searches each item's main entity over the 72 hours to the report date
 STAFF_LOG = checks.STAFF_LOG
 TOPIC_IGNORE_KINDS = frozenset({"GROUP", "BUSINESS_AREA", "UNIT"})  # STE nodes too broad to make two items one topic
@@ -318,7 +324,8 @@ def run_scan(
     peer_ids = frozenset(e["id"] for e in registers.watchlist.get("entries") or [] if e.get("cls") == "Org")
     rows = pool_rows(pool, window)
     candidates, counts = screen(rows, index=index, lob_profiles=lob_profiles, lexicon=registers.lexicon, lanes_by_signal=lanes, band_of=band_of,
-                                peer_ids=peer_ids, business_areas_of=lambda node_id: business_areas(graph, node_id), people=people)
+                                peer_ids=peer_ids, business_areas_of=lambda node_id: business_areas(graph, node_id), people=people,
+                                own=own_aliases(graph))
     counts.update({f"candidates_{s}": len(v) for s, v in candidates.items()})
     log(f"Screened {counts['pages']} pages: {len(candidates['A'])} Section A, {len(candidates['B'])} Section B and {len(candidates['C'])} Section C candidates.")
     if dry_run:
@@ -350,7 +357,8 @@ def run_scan(
     screened = 0
     for section in ("A", "B", "C"):
         pool_of = candidates[section]
-        keyed = {f"{section}{n}": c for n, c in enumerate(pool_of, start=1)}
+        kept["A"] += [c for c in pool_of if c.pinned]  # a page naming ST Engineering skips the Screener: always reported
+        keyed = {f"{section}{n}": c for n, c in enumerate(pool_of, start=1) if not c.pinned}
         allowed_a = {k for k, c in keyed.items() if c.rung in {DIRECT, COUNTERPARTY, staff.PEOPLE}}
         keys = list(keyed)
         for start in range(0, len(keys), agents.SCREEN_BATCH):
@@ -377,13 +385,22 @@ def run_scan(
     cache: dict[str, Any] = json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.is_file() else {}
     anchors = anchor_names(graph, lob_profiles)
     jobs: list[dict[str, Any]] = []
+    own_unreported: list[dict[str, Any]] = []  # pinned items the scan could not report in full; the email still lists them
+
+    def unreported(item: Item, reason: str) -> None:
+        if item.pinned:
+            own_unreported.append({"headline": clean_title(item.lead.title), "url": item.lead.url, "names": item.pinned, "reason": reason})
+
     for section in ("A", "B", "C"):
-        items = sorted(group(kept[section], section), key=lambda i: -i.lead.score)
-        for over in items[ASSESS_CAPS[section]:]:
+        # Pinned items come first and are never over the cap.
+        items = sorted(group(kept[section], section), key=lambda i: (not i.pinned, -i.lead.score))
+        cap = max(ASSESS_CAPS[section], sum(1 for i in items if i.pinned))
+        for over in items[cap:]:
             withheld.append({"section": section, "headline": over.lead.title, "url": over.lead.url, "reason": f"Over the Section {section} assessment cap of {ASSESS_CAPS[section]} items."})
-        for item in items[:ASSESS_CAPS[section]]:
+        for item in items[:cap]:
             sources, refs, failures = verified_sources(item, verify, cache, band_rank)
             if not sources:
+                unreported(item, "no source page opened and the search engine returned too little text to verify it")
                 withheld.append({"section": section, "headline": item.lead.title, "url": item.lead.url,
                                  "reason": "No source page could be opened from the scan server and the search engine returned too little text, "
                                            "so nothing was verified: " + "; ".join(failures[:3])})
@@ -398,14 +415,20 @@ def run_scan(
     period = {"start": window["start"].isoformat(), "end": window["end"].isoformat()}
     footprint = sorted(node.name for node in graph.of_class("Place") if graph.entities_in_place(node.id))
 
+    def task_for(item: Item) -> dict[str, Any]:
+        task = {"report_date": run_date.isoformat(), "reporting_period": period, "link": item.lead.rung or "none",
+                "register": register_facts(item, graph, registers, people), "ste_context": {"countries_with_ste_entities": footprint},
+                "lexicon": sorted({hit.category for m in item.members for hit in m.hits if hit.where != "BODY"})}
+        if item.pinned:
+            task["pinned"] = item.pinned
+        return task
+
     def assess(job: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any] | None, agents.CallRecord]:
         item: Item = job["item"]
         stated = any(ref.get("published") for ref in job["refs"])
         previous = job["previous"]
         earlier_view = ({"run_date": previous["run_date"], "headline": previous["headline"], "evidence": previous["evidence"]} if previous else None)
-        task = {"report_date": run_date.isoformat(), "reporting_period": period, "link": item.lead.rung or "none",
-                "register": register_facts(item, graph, registers, people), "ste_context": {"countries_with_ste_entities": footprint},
-                "lexicon": sorted({hit.category for m in item.members for hit in m.hits if hit.where != "BODY"})}
+        task = task_for(item)
         draft, call = agents.assess_item(client, model, job["section"], task, job["sources"], stated_publication=stated, previous=earlier_view,
                                          anchors=anchors, key=item.lead.signal_id, thinking=thinking)
         return job, draft, call
@@ -420,9 +443,11 @@ def run_scan(
         section = job["section"]
         if draft is None:
             reason = "The model call failed." if call.status == "LLM_ERROR" else "The draft failed the checks twice: " + "; ".join(call.violations[-3:])
+            unreported(item, "the assessment " + ("call failed" if call.status == "LLM_ERROR" else "draft failed its checks twice"))
             withheld.append({"section": section, "headline": item.lead.title, "url": item.lead.url, "reason": reason})
             continue
         if draft.get("include") is False:
+            unreported(item, f"the Assessor found no adverse development to report: {draft.get('exclusion_reason')}")
             withheld.append({"section": section, "headline": item.lead.title, "url": item.lead.url, "reason": f"Assessor: {draft.get('exclusion_reason')}"})
             continue
         previous = job["previous"]
@@ -456,7 +481,7 @@ def run_scan(
                         "link": item.lead.rung or "none", "signal_ids": [m.signal_id for m in item.members],
                         "event_ids": sorted({m.event_id for m in item.members if m.event_id}), "entity_ids": item.node_ids,
                         "outlets": corro["outlets"], "previous": ({"run_date": previous["run_date"], "item_id": previous["item_id"]} if update else None),
-                        "_item": item})
+                        "_item": item, "_facts": facts, "pinned": item.pinned})
         named = staff.countries_named(" ".join(str(decided.get(key) or "") for key in ("headline", "event", "affected_entity")), people)
         decided["people"] = [staff.presence(country, people) for country in dict.fromkeys([*named, *(c for c in people["countries"]
                              if staff.node_id(c) in item.node_ids)])] if people else []
@@ -544,6 +569,36 @@ def run_scan(
                               limit=0 if no_search else registers.currency_limit, getter=getter, usage_path=usage_path, sleep=sleep, log=log)
     search_result["currency"] = currency["queries_sent"]
 
+    # A newer top-tier headline that changes a key fact re-runs the item with that page as a source, then the Critic reviews it.
+    reassessed = reassess_items(included, currency["triggers"][:registers.reassess_limit], verify=verify, cache=cache, pool=pool, run_date=run_date,
+                                assess=lambda section, item, table, previous: agents.assess_item(
+                                    client, model, section, task_for(item), table, stated_publication=True, previous=previous,
+                                    anchors=anchors, key=f"{item.lead.signal_id}-now", thinking=thinking), record=record, notes=notes)
+    updated = [entry for section in ("A", "B", "C") for entry in included[section] if (entry.get("reassessed") or {}).get("outcome") == "UPDATED"]
+    if updated:
+        verdicts, _same, critic_calls = agents.critique(client, model, [agents.critic_view(e) for e in updated], period, thinking=thinking)
+        for call in critic_calls:
+            record(call)
+        for section in ("A", "B", "C"):
+            kept_items = []
+            for entry in included[section]:
+                changed, reason = checks.apply_critic(entry, (verdicts or {}).get(entry["item_id"], {})) if entry in updated else (entry, None)
+                if changed is None:
+                    withheld.append({"section": section, "headline": entry["headline"], "url": entry["sources"][0]["url"], "reason": f"Critic withdrew the re-assessed item: {reason}"})
+                    continue
+                if reason:
+                    notes.setdefault(entry["item_id"], []).append(f"Critic downgraded the re-assessed item: {reason}")
+                kept_items.append(changed)
+            included[section] = kept_items
+    cache_path.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
+
+    # Each item stays readable: at most 5 sources, 8 facts, 3 lessons and 5 trigger points, the best-ranked sources first.
+    for section in ("A", "B", "C"):
+        for entry in included[section]:
+            trimmed = checks.cap_item(entry)
+            if trimmed:
+                notes.setdefault(entry["item_id"], []).append("Trimmed to the item caps: " + "; ".join(trimmed) + ".")
+
     # Order and number
     final: dict[str, list[dict[str, Any]]] = {}
     for section in ("A", "B", "C"):
@@ -554,11 +609,13 @@ def run_scan(
             if old in notes:
                 notes[entry["item_id"]] = notes.pop(old)
             entry.pop("_item", None)
+            entry.pop("_facts", None)
         final[section] = ordered
 
     high = [e for s in ("A", "B") for e in final[s] if e["severity"] in {"Critical", "High"}]
     validation = validation_lines(final, high=high, earlier=len(earlier), repeats=len(repeats), withheld=len(withheld), search_result=search_result,
-                                  merges=len(topic_merges), currency=currency, internal=people)
+                                  merges=len(topic_merges), currency=currency, internal=people, reassessed=reassessed,
+                                  own_unreported=own_unreported)
     if not critic_ok:
         validation.append("The independent Critic did not complete its review.")
     validation.append("Email accuracy check: recipient, subject line, greeting and closing confirmed.")
@@ -566,7 +623,7 @@ def run_scan(
         "scan_id": scan_id, "run_date": run_date.isoformat(), "status": "READY" if not blockers else "INCOMPLETE", "blockers": blockers,
         "window": {"start": window["start"].isoformat(), "end": window["end"].isoformat(), "previous": window["previous"]},
         "counts": counts, "search": search_result, "items": final, "repeats": repeats, "withheld": withheld, "notes": notes,
-        "overall": checks.overall(final), "attention": checks.attention(final), "validation": validation,
+        "overall": checks.overall(final), "attention": checks.attention(final), "own_unreported": own_unreported, "validation": validation,
         "calls": [asdict(call) for call in calls], "model": model,
     }
     problems = render.email_problems(render.compose(report), run_date)
@@ -582,6 +639,82 @@ def run_scan(
     return report
 
 
+def own_aliases(graph: Any) -> dict[str, tuple[str, ...]]:
+    """ST Engineering's own names and their aliases: the group, its entities and joint ventures. A business area or unit name
+    such as "Urban Solutions" is a common phrase, so it does not pin a page."""
+    return {node.name: tuple(dict.fromkeys([node.name, *(node.aliases or ())])) for node in graph.nodes.values()
+            if node.cls == "STE" and node.kind not in {"BUSINESS_AREA", "UNIT"}}
+
+
+def _source_table(refs: Sequence[Mapping[str, Any]], cache: Mapping[str, Any], pool: Pool) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    """The Assessor's source table for refs already on an item: an opened page's text from the verify cache, else the search
+    engine's text from the pool. A ref with no text left is dropped. Kept refs are renumbered S1.."""
+    table: dict[str, dict[str, Any]] = {}
+    kept: list[dict[str, Any]] = []
+    for ref in refs:
+        signal = pool.signal(ref["signal_id"]) if ref.get("signal_id") else None
+        checked = cache.get(ref["url"]) or {}
+        text = str(checked.get("text") or "") if ref.get("basis") == PAGE and checked.get("status") == "SUCCEEDED" else search_extract((signal or {}).get("text")) or ""
+        if not text:
+            continue
+        key = f"S{len(table) + 1}"
+        table[key] = {"title": (signal or {}).get("title") or ref.get("outlet"), "outlet": ref["outlet"], "publication_date": ref.get("published") or "not stated",
+                      "band": ref.get("band"), "basis": ref.get("basis") or PAGE, "text": text[:MAX_SOURCE_CHARS]}
+        kept.append({**ref, "source_id": key})
+    return table, kept
+
+
+def reassess_items(items: Mapping[str, list[dict[str, Any]]], triggers: Sequence[tuple[dict[str, Any], list[dict[str, Any]]]], *,
+                   verify: Callable[[str], Mapping[str, Any]], cache: dict[str, Any], pool: Pool, run_date: date,
+                   assess: Callable[..., tuple[dict[str, Any] | None, Any]], record: Callable[[Any], None], notes: dict[str, list[str]]) -> dict[str, int]:
+    """Re-run each triggered item with its newer top-tier pages added as sources and its current text as the earlier report.
+    A MATERIAL_UPDATE replaces the item's text and keeps its place; anything else keeps the item and says the check found no
+    material change. Every outcome is recorded on the item as "reassessed"."""
+    counts = {"triggered": len(triggers), "updated": 0}
+    deciders = {"A": checks.decide_a, "B": checks.decide_b, "C": checks.decide_c}
+    for entry, rows in triggers:
+        section = entry["section"]
+        added = []
+        for row in rows[:2]:
+            check = cache.get(row["url"]) or dict(verify(row["url"]))
+            cache[row["url"]] = check
+            signal = pool.signal(row["signal_id"]) or {}
+            basis = PAGE if check.get("status") == "SUCCEEDED" and readable(str(check.get("text") or "")) else SEARCH_EXTRACT
+            if basis == SEARCH_EXTRACT and not search_extract(signal.get("text")):
+                continue
+            added.append({"source_id": "new", "outlet": row["outlet"], "url": row["url"], "published": row["published"],
+                          "first_seen": str(signal.get("first_seen_at") or run_date)[:10], "signal_id": row["signal_id"], "band": row["band"], "basis": basis})
+        trigger = [row["title"] for row in rows[:2]]
+        if not added:
+            entry["reassessed"] = {"outcome": "NOT_RUN", "trigger": trigger, "reason": "the newer page did not open and had too little search text"}
+            continue
+        table, refs = _source_table([*entry["sources"], *added], cache, pool)
+        previous = {"run_date": run_date.isoformat(), "headline": entry["headline"], "evidence": " ".join(str(f.get("quote") or "") for f in entry.get("facts") or [])}
+        draft, call = assess(section, entry["_item"], table, previous)
+        record(call)
+        if not draft or draft.get("include") is False or draft.get("update_status") != "MATERIAL_UPDATE":
+            entry["reassessed"] = {"outcome": "NO_CHANGE" if draft else "FAILED", "trigger": trigger}
+            continue
+        decided, rule_notes = deciders[section](draft, entry["_facts"])
+        carried = {key: entry[key] for key in ("section", "item_id", "publication_date", "publication_display", "link", "event_ids", "entity_ids",
+                                               "_item", "_facts", "pinned", "related", "people", "previous", "exposure_basis") if key in entry}
+        for key in ("lessons", "trigger_points", "internal_review"):
+            if entry.get(key) and not decided.get(key):
+                carried[key] = entry[key]
+        currency = dict(entry.get("currency") or {})
+        currency["latest"] = [row for row in currency.get("latest") or [] if row["url"] not in {ref["url"] for ref in added}]
+        decided.update(carried)
+        decided.update({"sources": refs, "signal_ids": list(dict.fromkeys([*entry.get("signal_ids", []), *(ref["signal_id"] for ref in added)])),
+                        "outlets": list(dict.fromkeys([*entry.get("outlets", []), *(ref["outlet"] for ref in added)])), "currency": currency,
+                        "corroborated": bool(entry.get("corroborated") or decided.get("corroborated")),
+                        "reassessed": {"outcome": "UPDATED", "trigger": trigger}})
+        items[section][items[section].index(entry)] = decided
+        counts["updated"] += 1
+        notes.setdefault(entry["item_id"], []).append("Re-assessed after the currency check found: " + "; ".join(trigger) + "."
+                                                      + (" " + " ".join(rule_notes) if rule_notes else ""))
+    return counts
+
+
 def _main_topic(entry: Mapping[str, Any], names: Mapping[str, str], broad: set[str]) -> str:
     for node_id in entry.get("entity_ids") or []:
         if node_id not in broad and (topic := checks.topic_name(names.get(node_id, ""))):
@@ -594,7 +727,8 @@ def currency_check(pool: Pool, scan_id: str, items: Mapping[str, list[dict[str, 
                    usage_path: Path | None = None, sleep: Any = None, log: Callable[[str], None] = print) -> dict[str, Any]:
     """One search per distinct main entity, over the 72 hours to the report date, within limit. Items with confirmed exposure go
     first, then Section A, C and B, then by severity. Each checked item gets "currency": the query, and up to three newer headlines that name the
-    entity and are not already among its sources."""
+    entity and are not already among its sources. "triggers" lists the items with a newer headline that a T1 or T2 outlet ran and
+    that changes a key fact (an adverse term, or a change such as a resignation, arrest or recall): those are re-assessed."""
     window = {"start": run_date - timedelta(days=CURRENCY_DAYS), "end": run_date}
     order = sorted((entry for section in ("A", "C", "B") for entry in items.get(section, [])),
                    key=lambda e: (not checks.confirmed_exposure(e), ("A", "C", "B").index(e["section"]), checks.SEVERITIES.index(str(e.get("severity") or "Low"))))
@@ -603,6 +737,7 @@ def currency_check(pool: Pool, scan_id: str, items: Mapping[str, list[dict[str, 
     result = search(pool, scan_id, list(specs.values()), window, folder, limit=len(specs), getter=getter, usage_path=usage_path, sleep=sleep, log=log) \
         if specs else {"queries_sent": 0, "stopped": None}
     checked = newer = 0
+    triggers: list[tuple[dict[str, Any], list[dict[str, Any]]]] = []
     for entry in order:
         topic = _main_topic(entry, names, broad)
         spec = specs.get(topic)
@@ -618,15 +753,21 @@ def currency_check(pool: Pool, scan_id: str, items: Mapping[str, list[dict[str, 
             if (row["url"] in known or not day or not in_window(day, window["start"], window["end"]) or topic.casefold() not in str(row["title"]).casefold()
                     or band_of(row["url"], row.get("publisher")) in {"T4", "CONTESTED"} or any(similar(row["title"], title) >= 0.5 for title in seen)):
                 continue
-            terms = sorted({registers.lexicon.label(hit.category) for hit in registers.lexicon.hits(str(row["title"]), "") if hit.where == "TITLE"})
-            latest.append({"title": row["title"], "outlet": str(row.get("publisher") or ""), "url": row["url"], "published": day, "adverse_terms": terms})
+            hits = [hit for hit in registers.lexicon.hits(str(row["title"]), "") if hit.where == "TITLE"]
+            terms = sorted({registers.lexicon.label(hit.category) for hit in hits})
+            band = band_of(row["url"], row.get("publisher"))
+            key_fact = any(hit.category != "EMERGING" for hit in hits) or bool(KEY_CHANGE.search(str(row["title"])))
+            latest.append({"title": row["title"], "outlet": str(row.get("publisher") or ""), "url": row["url"], "published": day, "adverse_terms": terms,
+                           "band": band, "signal_id": row["signal_id"], "reassess": band in REASSESS_BANDS and key_fact})
             if len(latest) == 3:
                 break
         entry["currency"] = {"entity": topic, "since": window["start"].isoformat(), "latest": latest}
+        if any(row["reassess"] for row in latest):
+            triggers.append((entry, [row for row in latest if row["reassess"]]))
         checked += 1
         newer += bool(latest)
     total = sum(len(v) for v in items.values())
-    return {"queries_sent": result.get("queries_sent", 0), "stopped": result.get("stopped"), "checked": checked, "items": total, "newer": newer, "ran": bool(specs)}
+    return {"queries_sent": result.get("queries_sent", 0), "stopped": result.get("stopped"), "checked": checked, "items": total, "newer": newer, "ran": bool(specs), "triggers": triggers}
 
 
 def load_internal_context(path: Path | None = None, *, today: date | None = None) -> dict[str, Any] | None:
@@ -655,7 +796,8 @@ def _internal_line(internal: Mapping[str, Any] | None, entries: Sequence[Mapping
 
 
 def validation_lines(final: Mapping[str, Sequence[Mapping[str, Any]]], *, high: Sequence[Mapping[str, Any]], earlier: int, repeats: int, withheld: int,
-                     search_result: Mapping[str, Any], merges: int, currency: Mapping[str, Any], internal: Mapping[str, Any] | None) -> list[str]:
+                     search_result: Mapping[str, Any], merges: int, currency: Mapping[str, Any], internal: Mapping[str, Any] | None,
+                     reassessed: Mapping[str, int] | None = None, own_unreported: Sequence[Mapping[str, Any]] = ()) -> list[str]:
     """The Final Validation lines, each computed from the report's own records, so none claims more than was done."""
     entries = [e for s in final.values() for e in s]
     refs = [ref for e in entries for ref in e.get("sources") or []]
@@ -682,6 +824,10 @@ def validation_lines(final: Mapping[str, Sequence[Mapping[str, Any]]], *, high: 
          f"{currency['newer']} show newer reports, listed under the item and not assessed."
          + (f" Stopped: {currency['stopped']}." if currency.get("stopped") else "")) if currency.get("ran")
         else "Currency check (last 72 hours): not run this time, so a development after the sources' dates may be missing.",
+        *([f"Re-assessed after the currency check: {reassessed['triggered']} item(s) had a newer top-tier report changing a key fact; "
+            f"{reassessed['updated']} updated, the rest unchanged."] if reassessed and reassessed.get("triggered") else []),
+        f"ST Engineering items (always reported): {sum(1 for e in entries if e.get('pinned'))} reported in full"
+        + (f"; {len(own_unreported)} listed without a full assessment" if own_unreported else "") + ".",
         _internal_line(internal, entries),
         f"Earlier reports checked: {earlier} items from the last {PREVIOUS_DAYS} days; {repeats} repeat(s) with no material update left out.",
         f"Withheld by the tests, the rules or the Critic: {withheld} (listed in the reviewer worksheet).",

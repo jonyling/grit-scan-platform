@@ -95,6 +95,11 @@ class Registers:
         """Searches for threats to people, one per country with STE people, on top of queryLimit."""
         return int(self.plan.get("peopleLimit", 5))
 
+    @property
+    def reassess_limit(self) -> int:
+        """Items the currency check may re-assess with the model each week."""
+        return int(self.plan.get("reassessLimit", 5))
+
     def entry(self, node_id: str) -> Mapping[str, Any] | None:
         return next((e for e in self.watchlist.get("entries") or [] if e["id"] == node_id), None)
 

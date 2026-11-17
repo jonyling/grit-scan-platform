@@ -444,10 +444,11 @@ def test_the_currency_check_lists_a_newer_report_on_the_main_entity(pool: Pool, 
     pool.start_run("2026-11-12-adverse", run_date="2026-11-12", pack="adverse", kind="ADVERSE_SCAN", config={})
     entry = _item("B?1", "B", "Medium", "Rheinmetall fined over agent bribery", ["ADV-PEER-RHEINMETALL"])
     result = currency_check(pool, "2026-11-12-adverse", {"A": [], "B": [entry], "C": []}, {"ADV-PEER-RHEINMETALL": "Rheinmetall"}, set(), date(2026, 11, 12),
-                            tmp_path, registers=registers(), band_of=lambda _u, _p: "UNRATED", limit=8, getter=getter, usage_path=tmp_path / "usage.json",
+                            tmp_path, registers=registers(), band_of=lambda _u, _p: "T2", limit=8, getter=getter, usage_path=tmp_path / "usage.json",
                             sleep=lambda _s: None, log=lambda _m: None)
     assert result["queries_sent"] == 1 and result["newer"] == 1
     assert entry["currency"]["latest"][0]["title"] == "Rheinmetall chief executive resigns after bribery fine"
+    assert [e for e, _rows in result["triggers"]] == [entry], "a T2 headline saying the chief executive resigns re-runs the item"
     doc = render._Doc(False)
     render._extras(doc, entry, "B")
     assert any("chief executive resigns" in line for line in doc.lines)
@@ -500,3 +501,67 @@ def test_a_threat_to_people_where_ste_staff_are_is_section_a_with_indirect_expos
     assert decided["relationship"] == "ST Engineering entity" and any(i["area"] == "Safety" for i in decided["impacts"]) and notes
     unrelated, _ = checks.decide_a({**draft, "category": "A1"}, {"classes": [], "people": ["Qatar: 52 local staff (URS)."], "people_event": False})
     assert unrelated["exposure"] == checks.EXPOSURE_UNKNOWN, "staff in the country do not make a financial story an exposure"
+
+
+def test_a_page_naming_ste_is_pinned_unless_it_is_a_namesake() -> None:
+    from grit.adverse.scan import own_aliases
+    from grit.adverse.screen import screen
+    from grit.ontology.link import LinkIndex
+
+    graph = watchlist_graph(WATCHLIST)
+    own = {**own_aliases(graph), "TransCore, LP": ("TransCore",)}
+    rows = [{"signal_id": "SIG-1", "title": "VT Halter Marine warns as shipyard rules tighten", "text": "", "url": "https://n.example/1",
+             "publisher": "N", "published_at": "2026-11-15T08:00:00Z", "first_seen_at": "2026-11-15"},
+            {"signal_id": "SIG-2", "title": "Vilas Transcore warns as margins tighten", "text": "", "url": "https://n.example/2",
+             "publisher": "N", "published_at": "2026-11-15T08:00:00Z", "first_seen_at": "2026-11-15"}]
+    found, counts = screen(rows, index=LinkIndex(graph, {"lobs": []}), lob_profiles={"lobs": []}, lexicon=Lexicon(LEXICON), lanes_by_signal={},
+                           band_of=lambda _u, _p: "T2", own=own)
+    assert [(c.signal_id, c.pinned) for c in found["A"]] == [("SIG-1", ["VT Halter Marine"])], "an emerging term is enough for an own entity"
+    assert counts["pinned"] == 1 and "SIG-2" not in {c.signal_id for cs in found.values() for c in cs}, "Vilas Transcore is a namesake"
+    pinned = _item("A?1", "A", "Low", "VT Halter Marine NVIDIA chip audit", ["SUP-NV"], pinned=["VT Halter Marine"])
+    other = _item("C?1", "C", "Low", "NVIDIA export rules tighten", ["SUP-NV"])
+    kept, merged = checks.merge_topics({"A": [pinned], "B": [], "C": [other]}, {"SUP-NV": "NVIDIA Corporation"})
+    assert merged == [] and kept["A"] == [pinned] and kept["C"] == [other], "a pinned item is never merged"
+    changed, reason = checks.apply_critic({**pinned, "exposure": checks.DIRECT_EXPOSURE, "action": checks.MONITOR}, {"verdict": "WITHDRAW", "rule": "NOT_MATERIAL", "reason": "minor"})
+    assert changed is not None and "always reported" in reason
+
+
+def test_a_merged_item_keeps_its_best_sources_and_their_facts() -> None:
+    bands = ["T3", "UNRATED", "T1", "T2", "T3", "T2", "UNRATED"]
+    entry = {"sources": [{"source_id": f"S{n}", "url": f"u{n}", "outlet": f"o{n}", "band": band, "basis": "SEARCH_EXTRACT" if n == 4 else "PAGE"}
+                         for n, band in enumerate(bands, start=1)],
+             "facts": [{"statement": f"f{n}", "source_id": f"S{n % 7 + 1}", "quote": f"q{n}"} for n in range(12)],
+             "lessons": ["l1", "l2", "l3", "l4"], "trigger_points": [f"t{n}" for n in range(7)]}
+    trimmed = checks.cap_item(entry)
+    assert [ref["url"] for ref in entry["sources"]] == ["u1", "u3", "u4", "u5", "u6"], "T1, T2 pages, then T2 search text, then T3; order kept"
+    assert [ref["source_id"] for ref in entry["sources"]] == ["S1", "S2", "S3", "S4", "S5"]
+    assert len(entry["facts"]) == 8 and {f["source_id"] for f in entry["facts"]} <= {"S1", "S2", "S3", "S4", "S5"}
+    assert entry["facts"][0]["statement"] == "f0" and any(f["statement"] == "f2" and f["source_id"] == "S2" for f in entry["facts"]), "facts follow their source"
+    assert entry["lessons"] == ["l1", "l2", "l3"] and len(entry["trigger_points"]) == 5 and trimmed
+
+
+def test_a_newer_top_tier_report_re_runs_the_item(pool: Pool) -> None:
+    from grit.adverse.scan import reassess_items
+
+    old_url = "https://wire.example.org/rheinmetall"
+    new_id = pool.add_signal(url="https://wire.example.org/ceo", title="Rheinmetall chief executive resigns", text="The chief executive resigned on 11 November 2026. " * 10,
+                             publisher="Wire", published_at="2026-11-11T08:00:00Z", lane="BRAVE", content_hash="h9", seen_at="2026-11-11T09:00:00Z")
+    entry = _item("B?1", "B", "Medium", "Rheinmetall fined over agent bribery", ["ADV-PEER-RHEINMETALL"], _item=None, _facts={"publication_stated": True})
+    entry["sources"] = [{"source_id": "S1", "url": old_url, "outlet": "Wire", "basis": "PAGE", "band": "T2"}]
+    cache = {old_url: {"status": "SUCCEEDED", "text": RHM_TEXT * 5}}
+    rows = [{"title": "Rheinmetall chief executive resigns", "url": "https://wire.example.org/ceo", "outlet": "Wire", "published": "2026-11-11",
+             "signal_id": new_id, "band": "T2"}]
+    seen: dict[str, Any] = {}
+
+    def assess(section, item, table, previous):
+        seen.update(table=table, previous=previous)
+        payload = json.dumps({"section": "B", "sources": {"S1": {"text": RHM_TEXT}}})
+        draft = json.loads(FakeModel().generate_content(model="m", contents=payload, config={"system_instruction": "assess"}).text)
+        return {**draft, "update_status": "MATERIAL_UPDATE"}, None
+
+    items = {"A": [], "B": [entry], "C": []}
+    counts = reassess_items(items, [(entry, rows)], verify=lambda _u: {"status": "NOT_CHECKED"}, cache=cache, pool=pool, run_date=date(2026, 11, 12),
+                            assess=assess, record=lambda _c: None, notes={})
+    assert counts == {"triggered": 1, "updated": 1} and set(seen["table"]) == {"S1", "S2"} and seen["previous"]["headline"] == entry["headline"]
+    updated = items["B"][0]
+    assert updated["reassessed"]["outcome"] == "UPDATED" and updated["item_id"] == "B?1" and [r["url"] for r in updated["sources"]][-1] == "https://wire.example.org/ceo"

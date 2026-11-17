@@ -188,6 +188,15 @@ def _extras(doc: _Doc, item: Mapping[str, Any], section: str) -> None:
         doc.add("Trigger points to watch:")
         for trigger in item["trigger_points"]:
             doc.bullet(trigger, 1)
+    if item.get("pinned"):
+        doc.field("Always reported", f"names {', '.join(item['pinned'])}; not merged or filtered out")
+    reassessed = item.get("reassessed")
+    if reassessed:
+        text = {"UPDATED": "re-assessed with the newer report(s) below as sources; the item above reflects them",
+                "NO_CHANGE": "re-assessed with the newer report(s) below; no material change to the facts above",
+                "FAILED": "re-assessment failed its checks; the item above is as first assessed",
+                "NOT_RUN": f"not re-assessed: {reassessed.get('reason')}"}[reassessed["outcome"]]
+        doc.field("Currency re-assessment", f"{text} (" + "; ".join(reassessed["trigger"]) + ")")
     if item.get("people") and section != "B":
         doc.add("ST Engineering people in the country (internal staff log, R&A; country level, no site or city):")
         for line in item["people"]:
@@ -251,6 +260,11 @@ def compose(report: Mapping[str, Any], *, markdown: bool = False) -> str:
     else:
         doc.add(checks.NO_DEVELOPMENTS)
     _repeats(doc, report.get("repeats") or [], "A")
+    own = report.get("own_unreported") or []
+    if own:
+        doc.add("Items naming ST Engineering that could not be assessed in full (always listed; read the source):")
+        for row in own:
+            doc.bullet(f"{doc.link(row['headline'], row['url'])} (names {', '.join(row['names'])}; {row['reason']})", 1)
 
     doc.heading("Section B: Competitor and industry adverse news, lessons learnt")
     if items["B"]:

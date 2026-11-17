@@ -365,6 +365,8 @@ def apply_critic(item: dict[str, Any], verdict: Mapping[str, Any]) -> tuple[dict
     if kind not in {"WITHDRAW", "DOWNGRADE"} or rule not in CRITIC_RULES:
         return item, None
     reason = f"{rule}: {str(verdict.get('reason') or '').strip()}"
+    if kind == "WITHDRAW" and item.get("pinned"):
+        kind, reason = "DOWNGRADE", f"{reason} (an item naming ST Engineering is always reported, so withdrawal became a downgrade)"
     if kind == "WITHDRAW":
         return None, reason
     changed = dict(item)
@@ -480,7 +482,8 @@ def merge_duplicates(entries: list[dict[str, Any]], *, threshold: float = 0.3) -
     kept: list[dict[str, Any]] = []
     merged: list[tuple[dict[str, Any], dict[str, Any]]] = []
     for entry in sorted(entries, key=_rank):
-        home = next((k for k in kept if similar(str(k["headline"]), str(entry["headline"])) >= threshold), None)
+        home = None if entry.get("pinned") else next(
+            (k for k in kept if not k.get("pinned") and similar(str(k["headline"]), str(entry["headline"])) >= threshold), None)
         if home is None:
             kept.append(entry)
             continue
@@ -495,7 +498,7 @@ def merge_groups(entries: list[dict[str, Any]], groups: Sequence[Sequence[str]])
     gone: set[str] = set()
     merged: list[tuple[dict[str, Any], dict[str, Any]]] = []
     for group in groups:
-        members = [by_id[i] for i in group if i in by_id and i not in gone]
+        members = [by_id[i] for i in group if i in by_id and i not in gone and not by_id[i].get("pinned")]
         if len(members) < 2 or len({m["section"] for m in members}) > 1:
             continue
         home, *rest = sorted(members, key=_rank)
@@ -523,7 +526,8 @@ def merge_topics(items: Mapping[str, list[dict[str, Any]]], names: Mapping[str, 
     others add their sources, quoted facts, lessons and triggers, and are listed under it as related reports.
     names maps entity ids to register names; ignore lists ids too broad to be a topic, such as the Group itself."""
     skip = set(ignore)
-    entries = [entry for section in SECTION_ORDER for entry in items.get(section, [])]
+    # An item naming ST Engineering stays its own item: it neither absorbs nor is absorbed.
+    entries = [entry for section in SECTION_ORDER for entry in items.get(section, []) if not entry.get("pinned")]
     vocabulary = {node: topic_name(names.get(node, "")) for entry in entries for node in entry.get("entity_ids") or [] if node not in skip}
     patterns = {node: re.compile(rf"(?<![\w-]){re.escape(word)}(?![\w-])", re.IGNORECASE) for node, word in vocabulary.items() if word}
 
@@ -562,3 +566,42 @@ def merge_topics(items: Mapping[str, list[dict[str, Any]]], names: Mapping[str, 
             gone.add(id(entry))
             merged.append((entry, home))
     return {section: [e for e in items.get(section, []) if id(e) not in gone] for section in ("A", "B", "C")}, merged
+
+
+CAPS = {"sources": 5, "facts": 8, "lessons": 3, "trigger_points": 5}  # per item, after merging
+BAND_ORDER = ("T1", "T2", "T3", "UNRATED", "T4", "CONTESTED")
+
+
+def cap_item(entry: dict[str, Any], caps: Mapping[str, int] = CAPS) -> list[str]:
+    """Trim an item to the caps. Sources rank by band, then an opened page before search-engine text, then their order; the
+    facts of the kept sources rank the same way; lessons and trigger points keep the item's own first. Kept sources are
+    renumbered S1.. and their facts follow. Returns what was trimmed, for the reviewer."""
+    trimmed: list[str] = []
+    sources = list(entry.get("sources") or [])
+
+    def rank(ref: Mapping[str, Any], order: int) -> tuple[int, int, int]:
+        band = str(ref.get("band") or "UNRATED")
+        return (BAND_ORDER.index(band) if band in BAND_ORDER else len(BAND_ORDER), ref.get("basis") == "SEARCH_EXTRACT", order)
+
+    if len(sources) > caps["sources"]:
+        kept = sorted(range(len(sources)), key=lambda i: rank(sources[i], i))[:caps["sources"]]
+        trimmed.append(f"{len(sources) - caps['sources']} lower-ranked source(s)")
+        sources = [sources[i] for i in sorted(kept)]
+    order = {ref["source_id"]: rank(ref, n) for n, ref in enumerate(sources)}
+    renumber = {ref["source_id"]: f"S{n}" for n, ref in enumerate(sources, start=1)}
+    facts = [fact for fact in entry.get("facts") or [] if fact.get("source_id") in renumber]
+    dropped = len(entry.get("facts") or []) - len(facts)
+    if len(facts) > caps["facts"]:
+        keep = sorted(range(len(facts)), key=lambda i: (order[facts[i]["source_id"]], i))[:caps["facts"]]
+        dropped += len(facts) - caps["facts"]
+        facts = [facts[i] for i in sorted(keep)]
+    if dropped:
+        trimmed.append(f"{dropped} fact(s) from lower-ranked or trimmed sources")
+    entry["sources"] = [{**ref, "source_id": renumber[ref["source_id"]]} for ref in sources]
+    entry["facts"] = [{**fact, "source_id": renumber[fact["source_id"]]} for fact in facts]
+    for key in ("lessons", "trigger_points"):
+        values = list(entry.get(key) or [])
+        if len(values) > caps[key]:
+            entry[key] = values[:caps[key]]
+            trimmed.append(f"{len(values) - caps[key]} {key.replace('_', ' ')}")
+    return trimmed

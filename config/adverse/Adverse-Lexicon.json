@@ -127,7 +127,13 @@
         "malware",
         "intrusion",
         "compromised",
-        "classified information"
+        "classified information",
+        "vulnerabilit*",
+        "CVE-*",
+        "exploit*",
+        "proof-of-concept",
+        "privilege escalation",
+        "remote code execution"
       ]
     },
     {
