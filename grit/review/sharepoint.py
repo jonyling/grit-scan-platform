@@ -36,6 +36,7 @@ COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("Published", "Single line of text", "When the outlet published it."),
     ("Tier", "Number", "Priority tier, 1 is highest."),
     ("Red", "Yes/No", "A RED event. Its alert has already gone to the duty team."),
+    ("Adverse", "Yes/No", "Yes when the signal is in the latest READY adverse scan, or people-risk lexicon + staffed country match."),
     ("RiskLevel", "Single line of text", ""),
     ("Trend", "Single line of text", ""),
     ("Evidence", "Single line of text", "Evidence confidence."),
@@ -63,15 +64,27 @@ def ordered_for(pool: Pool, profile: Profile, rows: Sequence[Mapping[str, Any]])
     hides a row: a reviewer must see every signal to decide on it."""
     feedback = pool.feedback(profile.profile_id)
     memory = build_memory(profile.profile_id, feedback, pool.latest_assessments(row["signal_id"] for row in feedback)) if feedback else None
+    from grit.core.people import STAFF_AFFINITY, staff_priority_key
+
     scored = []
     for index, row in enumerate(rows):
         effect = profile_effect(row, profile, protected=protected(row), memory=memory)
-        scored.append(((row.get("tier") or 9, -int(bool(row.get("red"))), -effect.affinity, index), row, " ".join(effect.reasons)))
+        staff = STAFF_AFFINITY if staff_priority_key(row) == 0 else 0
+        note = " ".join(effect.reasons)
+        if staff:
+            note = (note + " STE people in a named staffed country (internal staff log).").strip()
+        scored.append(((row.get("tier") or 9, -int(bool(row.get("red"))), staff_priority_key(row), -(effect.affinity + staff), index), row, note))
     return [(row, note) for _key, row, note in sorted(scored, key=lambda item: item[0])]
 
 
-def row_fields(record: Mapping[str, Any], *, day: date, position: int, memory_note: str, bp: Mapping[str, Any] | None = None) -> dict[str, Any]:
+def row_fields(record: Mapping[str, Any], *, day: date, position: int, memory_note: str, bp: Mapping[str, Any] | None = None,
+               adverse: bool | None = None, people: Mapping[str, Any] | None = None,
+               adverse_signal_ids: set[str] | None = None, adverse_urls: set[str] | None = None) -> dict[str, Any]:
+    from grit.core.people import is_adverse_signal
+
     case_for, case_against, view = withheld_text(record.get("argument"))
+    if adverse is None:
+        adverse = is_adverse_signal(record, people=people, adverse_signal_ids=adverse_signal_ids, adverse_urls=adverse_urls)
     fields: dict[str, Any] = {
         "Title": _clip(record.get("title"), 255),
         "SignalId": record["signal_id"],
@@ -82,6 +95,7 @@ def row_fields(record: Mapping[str, Any], *, day: date, position: int, memory_no
         "Published": _clip(record.get("published_at"), 40),
         "Tier": record.get("tier") or 9,
         "Red": bool(record.get("red")),
+        "Adverse": bool(adverse),
         "RiskLevel": _clip(record.get("risk_level"), 40),
         "Trend": _clip(record.get("trend"), 40),
         "Evidence": _clip(record.get("evidence_confidence"), 40),
@@ -111,11 +125,15 @@ def stage_rows(pool: Pool, config: ReviewConfig, day: date, stage: str) -> list[
 def publish(pool: Pool, config: ReviewConfig, day: date, stage: str, profile: Profile, *, client: Any | None) -> dict[str, Any]:
     """Write the stage's rows to its list. Safe to repeat: a row that SharePoint accepted is never sent again. With no list
     or no Graph client, the rows are recorded locally so the mail pack still lists them, and nothing is sent."""
+    from grit.core.people import latest_adverse_included, load_people
+
     batch = batch_id(day, config.pack)
     target: Stage = config.stages[stage]
     present = {row["signal_id"]: row for row in items(pool, batch, stage)}
     rows = stage_rows(pool, config, day, stage)
     bp = decisions(pool, batch, BP) if stage == MANAGER else {}
+    people = load_people(today=day)
+    adverse_signal_ids, adverse_urls = latest_adverse_included(pool)
     if not present:
         for position, (record, note) in enumerate(ordered_for(pool, profile, rows), start=1):
             pool.insert("review_items", {"batch_id": batch, "signal_id": record["signal_id"], "stage": stage, "position": position,
@@ -133,7 +151,8 @@ def publish(pool: Pool, config: ReviewConfig, day: date, stage: str, profile: Pr
         record = by_id.get(item["signal_id"])
         if record is None:
             continue
-        fields = row_fields(record, day=day, position=item["position"], memory_note=item.get("memory_note") or "", bp=bp.get(item["signal_id"]))
+        fields = row_fields(record, day=day, position=item["position"], memory_note=item.get("memory_note") or "",
+                            bp=bp.get(item["signal_id"]), people=people, adverse_signal_ids=adverse_signal_ids, adverse_urls=adverse_urls)
         try:
             list_item_id = _find(client, target.list_id, item["signal_id"], day) if item.get("uncertain") else None
             list_item_id = list_item_id or client.create_item(target.list_id, fields)

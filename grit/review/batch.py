@@ -14,8 +14,10 @@ def daily_run_ids(config: ReviewConfig, day: date) -> list[str]:
 
 
 def _rank(row: Mapping[str, Any]) -> tuple:
-    """Tier first, RED first within a tier, newest first, then the id so the order never moves between calls."""
-    return (row.get("tier") or 9, -int(bool(row.get("red"))), -_stamp(row), row["signal_id"])
+    """Tier first, RED first within a tier, staff-log people-risk next, newest first, then the id so the order never moves between calls."""
+    from grit.core.people import staff_priority_key
+
+    return (row.get("tier") or 9, -int(bool(row.get("red"))), staff_priority_key(row), -_stamp(row), row["signal_id"])
 
 
 def _stamp(row: Mapping[str, Any]) -> float:

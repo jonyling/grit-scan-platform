@@ -49,7 +49,9 @@ Neither agent sets a tier, a score, RED, or a decision. The model is `GEMINI_MOD
 
 Each stage has its own list. Only that stage's reviewer and the R&A owners can open it. Item-level permissions are not used.
 
-Each row shows the headline, the source and a link, the tier, RED, the risk level, the trend, the evidence confidence, and why the rules kept it. It also shows both of Gemini's cases, and a memory note that says how the reviewer's past decisions moved the row. The Manager's list also shows the BP's decision and comment.
+Each row shows the headline, the source and a link, the tier, RED, Adverse, the risk level, the trend, the evidence confidence, and why the rules kept it. It also shows both of Gemini's cases, and a memory note that says how the reviewer's past decisions moved the row. The Manager's list also shows the BP's decision and comment.
+
+`Adverse` is Yes when (a) the signal or its URL appears in the latest READY adverse scan's included items, or (b) people-risk lexicon terms hit a country where STE people are present (internal staff log via `grit.core.people`). The site owner creates the Yes/No column once per list ([daily-review-setup](../docs/daily-review-setup.md)).
 
 The `Decision` column has an Approve and a Reject button ([decision-column.json](../docs/review/decision-column.json)). A click sets `Decision`, `DecidedBy` and `DecidedAt` in place. A reviewer can add a comment, which GRIT keeps with the decision.
 
