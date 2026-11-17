@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 from grit.adverse import agents, checks, render
+from grit.adverse import people as staff
 from grit.adverse.registers import PlannedQuery, Registers, business_areas, load_registers
 from grit.adverse.screen import Candidate, Item, corroboration, group, in_window, match_previous, screen, similar
 from grit.pool import Pool
@@ -28,6 +29,7 @@ MAX_SOURCES = 4
 MAX_SOURCE_CHARS = 8000
 PACK = "adverse"
 CURRENCY_DAYS = 3  # the currency check re-searches each item's main entity over the 72 hours to the report date
+STAFF_LOG = checks.STAFF_LOG
 TOPIC_IGNORE_KINDS = frozenset({"GROUP", "BUSINESS_AREA", "UNIT"})  # STE nodes too broad to make two items one topic
 
 
@@ -218,8 +220,25 @@ def verified_sources(item: Item, verify: Callable[[str], Mapping[str, Any]], cac
     return table, refs, failures
 
 
-def register_facts(item: Item, graph: Any, registers: Registers) -> list[dict[str, Any]]:
-    facts: list[dict[str, Any]] = []
+def item_people(item: Item, people: Mapping[str, Any] | None) -> list[str]:
+    """Where the staff log places STE people, for the countries the screen matched to this item."""
+    if not people:
+        return []
+    return [staff.presence(country, people) for country in people["countries"] if staff.node_id(country) in item.node_ids]
+
+
+def people_queries(people: Mapping[str, Any] | None, limit: int) -> list[PlannedQuery]:
+    """One search per country with STE people, most people first, for attacks, strikes, evacuations and unrest."""
+    if not people:
+        return []
+    ranked = sorted(people["countries"], key=lambda c: -(people["countries"][c]["local_staff"] + people["countries"][c]["travellers"]))
+    return [PlannedQuery(f"ADV-PEOPLE-{staff.node_id(country)[7:]}", f'"{country}" missile OR drone OR attack OR evacuation OR unrest', "PEOPLE")
+            for country in ranked[:max(0, limit)]]
+
+
+def register_facts(item: Item, graph: Any, registers: Registers, people: Mapping[str, Any] | None = None) -> list[dict[str, Any]]:
+    facts: list[dict[str, Any]] = [{"name": f"ST Engineering people in {line.split(':')[0]}", "class": "People", "presence": line,
+                                    "basis": "internal staff log supplied by R&A (country level; no site or city)"} for line in item_people(item, people)]
     for node_id in item.node_ids:
         node = graph.nodes.get(node_id)
         if node is None:
@@ -275,10 +294,14 @@ def run_scan(
     limit = registers.query_limit if limit_queries is None else max(0, int(limit_queries))
     band_of = band_function(ratings)
     band_rank = {band: rank for rank, band in enumerate(BANDS)}
+    people = load_internal_context(today=run_date)
+    planned = [*registers.queries, *people_queries(people, registers.people_limit)]
+    if limit_queries is None:  # an explicit --limit-queries stays the cap
+        limit += len(planned) - len(registers.queries)
     log(f"Adverse news scan {scan_id}: reporting period {window['start']} to {window['end']}"
         + (f", since the scan of {window['previous']}." if window["previous"] else ", the seven days to the run date (no previous scan)."))
 
-    search_result: dict[str, Any] = {"planned": len(registers.queries), "queries_sent": 0, "skipped_answered": 0, "stopped": None}
+    search_result: dict[str, Any] = {"planned": len(planned), "queries_sent": 0, "skipped_answered": 0, "stopped": None}
     if not dry_run:
         pool.start_run(scan_id, run_date=run_date.isoformat(), pack=PACK, kind="ADVERSE_SCAN", config={"window": {k: str(v) for k, v in window.items()}})
         pool.upsert("adverse_scans", {"scan_id": scan_id, "run_date": run_date.isoformat(), "window_start": window["start"].isoformat(),
@@ -287,7 +310,7 @@ def run_scan(
             search_result["stopped"] = "NOT_RUN: --no-search"
         else:
             log(f"Searching: up to {limit} Brave queries, including corroboration.")
-            search_result = search(pool, scan_id, registers.queries, window, folder, limit=limit, getter=getter, usage_path=usage_path, sleep=sleep, log=log)
+            search_result = search(pool, scan_id, planned, window, folder, limit=limit, getter=getter, usage_path=usage_path, sleep=sleep, log=log)
 
     lanes: dict[str, list[str]] = {}
     for row in pool.rows("SELECT signal_id, lane FROM sightings WHERE run_id = ?", (scan_id,)):
@@ -295,11 +318,11 @@ def run_scan(
     peer_ids = frozenset(e["id"] for e in registers.watchlist.get("entries") or [] if e.get("cls") == "Org")
     rows = pool_rows(pool, window)
     candidates, counts = screen(rows, index=index, lob_profiles=lob_profiles, lexicon=registers.lexicon, lanes_by_signal=lanes, band_of=band_of,
-                                peer_ids=peer_ids, business_areas_of=lambda node_id: business_areas(graph, node_id))
+                                peer_ids=peer_ids, business_areas_of=lambda node_id: business_areas(graph, node_id), people=people)
     counts.update({f"candidates_{s}": len(v) for s, v in candidates.items()})
     log(f"Screened {counts['pages']} pages: {len(candidates['A'])} Section A, {len(candidates['B'])} Section B and {len(candidates['C'])} Section C candidates.")
     if dry_run:
-        for spec in registers.queries:
+        for spec in planned:
             log(f"  {spec.lane:10} {spec.query}")
         return {"status": "DRY_RUN", "window": {k: str(v) for k, v in window.items()}, "counts": counts}
     if client is None:
@@ -328,7 +351,7 @@ def run_scan(
     for section in ("A", "B", "C"):
         pool_of = candidates[section]
         keyed = {f"{section}{n}": c for n, c in enumerate(pool_of, start=1)}
-        allowed_a = {k for k, c in keyed.items() if c.rung in {DIRECT, COUNTERPARTY}}
+        allowed_a = {k for k, c in keyed.items() if c.rung in {DIRECT, COUNTERPARTY, staff.PEOPLE}}
         keys = list(keyed)
         for start in range(0, len(keys), agents.SCREEN_BATCH):
             batch_keys = keys[start:start + agents.SCREEN_BATCH]
@@ -381,7 +404,7 @@ def run_scan(
         previous = job["previous"]
         earlier_view = ({"run_date": previous["run_date"], "headline": previous["headline"], "evidence": previous["evidence"]} if previous else None)
         task = {"report_date": run_date.isoformat(), "reporting_period": period, "link": item.lead.rung or "none",
-                "register": register_facts(item, graph, registers), "ste_context": {"countries_with_ste_entities": footprint},
+                "register": register_facts(item, graph, registers, people), "ste_context": {"countries_with_ste_entities": footprint},
                 "lexicon": sorted({hit.category for m in item.members for hit in m.hits if hit.where != "BODY"})}
         draft, call = agents.assess_item(client, model, job["section"], task, job["sources"], stated_publication=stated, previous=earlier_view,
                                          anchors=anchors, key=item.lead.signal_id, thinking=thinking)
@@ -425,13 +448,18 @@ def run_scan(
         corro = corroboration(item, lambda url: registrable(host_of(url)))
         facts = {"classes": [graph.nodes[n].cls for n in item.node_ids if n in graph.nodes], "kinds": [graph.nodes[n].kind for n in item.node_ids if n in graph.nodes],
                  "ste_named": ste_named(job["sources"], index), "publication_stated": bool(publication), "corroborated": corro["corroborated"],
-                 "business_areas": list(dict.fromkeys(a for n in item.node_ids for a in business_areas(graph, n)))}
+                 "business_areas": list(dict.fromkeys(a for n in item.node_ids for a in business_areas(graph, n))),
+                 "people": item_people(item, people),
+                 "people_event": draft.get("category") == "A5" or any(hit.category == staff.PEOPLE_RISK for m in item.members for hit in m.hits if hit.where != "BODY")}
         decided, rule_notes = (checks.decide_a(draft, facts) if section == "A" else checks.decide_b(draft, facts) if section == "B" else checks.decide_c(draft, facts))
         decided.update({"section": section, "sources": refs, "publication_date": publication, "publication_display": display,
                         "link": item.lead.rung or "none", "signal_ids": [m.signal_id for m in item.members],
                         "event_ids": sorted({m.event_id for m in item.members if m.event_id}), "entity_ids": item.node_ids,
                         "outlets": corro["outlets"], "previous": ({"run_date": previous["run_date"], "item_id": previous["item_id"]} if update else None),
                         "_item": item})
+        named = staff.countries_named(" ".join(str(decided.get(key) or "") for key in ("headline", "event", "affected_entity")), people)
+        decided["people"] = [staff.presence(country, people) for country in dict.fromkeys([*named, *(c for c in people["countries"]
+                             if staff.node_id(c) in item.node_ids)])] if people else []
         decided["item_id"] = f"{section}?{len(included[section]) + 1}"
         if rule_notes:
             notes[decided["item_id"]] = rule_notes
@@ -530,7 +558,7 @@ def run_scan(
 
     high = [e for s in ("A", "B") for e in final[s] if e["severity"] in {"Critical", "High"}]
     validation = validation_lines(final, high=high, earlier=len(earlier), repeats=len(repeats), withheld=len(withheld), search_result=search_result,
-                                  merges=len(topic_merges), currency=currency, internal=load_internal_context())
+                                  merges=len(topic_merges), currency=currency, internal=people)
     if not critic_ok:
         validation.append("The independent Critic did not complete its review.")
     validation.append("Email accuracy check: recipient, subject line, greeting and closing confirmed.")
@@ -601,16 +629,29 @@ def currency_check(pool: Pool, scan_id: str, items: Mapping[str, list[dict[str, 
     return {"queries_sent": result.get("queries_sent", 0), "stopped": result.get("stopped"), "checked": checked, "items": total, "newer": newer, "ran": bool(specs)}
 
 
-def load_internal_context(path: Path | None = None) -> dict[str, Any] | None:
-    """Internal context R&A supplies (secrets/adverse/internal-context.json): EXCO travel and personnel, and the local-staff
-    safety log. None when not supplied. Spec 46, section 2, gives the format."""
-    from grit.settings import SECRETS_DIR
+def load_internal_context(path: Path | None = None, *, today: date | None = None) -> dict[str, Any] | None:
+    """Where STE people are, from secrets/adverse/internal-context.json (grit.adverse.people). None when not supplied."""
+    return staff.load_people(path, today=today)
 
-    path = path or SECRETS_DIR / "adverse" / "internal-context.json"
-    if not path.is_file():
-        return None
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return {key: list(data.get(key) or []) for key in ("travel", "personnel", "staff_safety")} | {"as_of": data.get("asOf")}
+
+def _internal_line(internal: Mapping[str, Any] | None, entries: Sequence[Mapping[str, Any]]) -> str:
+    if not internal:
+        return "Internal context: no staff-by-country data was supplied, so exposure rests on public sources and the registers only."
+    from grit.adverse.render import long_date
+
+    countries = internal["countries"]
+    dated = "; ".join(f"{label} as at {long_date(internal['dates'][key])}" for key, label in (("local_staff", "local staff"), ("travellers", "travellers"))
+                      if internal["dates"].get(key))
+    matched = [e["item_id"] for e in entries if e.get("people")]
+    set_by = [e["item_id"] for e in entries if e.get("exposure_basis") == STAFF_LOG]
+    line = (f"Internal context (staff log, R&A; {dated}): STE people in {len(countries)} countries ({', '.join(countries)}), country level only. "
+            f"Items in those countries: {len(matched)}" + (f" ({', '.join(matched)})" if matched else "")
+            + f"; exposure set from the staff log: {len(set_by)}" + (f" ({', '.join(set_by)})" if set_by else "") + ".")
+    if internal.get("stale"):
+        line += f" The staff data is {internal['age_days']} days old: ask R&A for a current log."
+    if internal.get("caveats"):
+        line += " Caveats: " + "; ".join(internal["caveats"]) + "."
+    return line
 
 
 def validation_lines(final: Mapping[str, Sequence[Mapping[str, Any]]], *, high: Sequence[Mapping[str, Any]], earlier: int, repeats: int, withheld: int,
@@ -641,9 +682,7 @@ def validation_lines(final: Mapping[str, Sequence[Mapping[str, Any]]], *, high: 
          f"{currency['newer']} show newer reports, listed under the item and not assessed."
          + (f" Stopped: {currency['stopped']}." if currency.get("stopped") else "")) if currency.get("ran")
         else "Currency check (last 72 hours): not run this time, so a development after the sources' dates may be missing.",
-        (f"Internal context supplied (as of {internal.get('as_of') or 'date not stated'}): {len(internal['travel'])} travel, {len(internal['personnel'])} personnel "
-         f"and {len(internal['staff_safety'])} staff-safety records.") if internal
-        else "Internal context: no EXCO travel, personnel or staff-safety data was supplied, so exposure rests on public sources and the registers only.",
+        _internal_line(internal, entries),
         f"Earlier reports checked: {earlier} items from the last {PREVIOUS_DAYS} days; {repeats} repeat(s) with no material update left out.",
         f"Withheld by the tests, the rules or the Critic: {withheld} (listed in the reviewer worksheet).",
         "Searches: " + (f"{search_result.get('queries_sent', 0)} sent this run, {search_result.get('corroboration', 0)} for corroboration, "

@@ -38,18 +38,17 @@ The prompt asks an analyst to judge each item. GRIT-Scan keeps its rule: agents 
 | The watchlist | `config/adverse/Adverse-Watchlist.json` | Names the registers lack: the Defence, Marine, Land Systems, Satcom and US businesses, their programs, Singapore defense customers, JV partners, and defense, satcom and MRO peers. Recorded on Jony Ling's instruction, 5 November 2026, without Wilson's review. |
 | The lexicon | `config/adverse/Adverse-Lexicon.json` | Adverse terms for the A1–A7 and Section B categories, and change terms for Section C. A screen, never a verdict. |
 | The scan plan | `config/adverse/Adverse-Scan-Plan.json` | The weekly Brave queries: the group, subsidiaries and programs, customers, enforcement sources, and peers. |
-| Internal context (optional) | `secrets/adverse/internal-context.json` | EXCO travel, personnel, and the local-staff safety log, supplied by R&A. Its format is below. The Final Validation says whether it was supplied. Until real records are seen, it is reported, not used to set exposure. |
+| Internal context (optional) | `secrets/adverse/internal-context.json` | Where STE people are, by country: Middle East local staff by entity and country, and travellers and assignees by country, each with an as-at date. Supplied by R&A on 17 November 2026 (`grit/adverse/people.py` reads it). Country level only: no city or site. |
 
-The internal-context file is one JSON object. Every list may be empty.
+The file is one JSON object. `middle_east_local_staff` has `as_at` and `entries` of `{entity, country, headcount}`. `middle_east_travellers_and_assignees` has `as_at` and `by_country` (`{country: count}`). `entity_level_examples` lists `{entity, country, staff}`. Country names are normalised: "UAE (Dubai)" is United Arab Emirates. Each country also matches its people and main cities in news text, such as "Saudi", "Riyadh" or "Doha".
 
-```json
-{
-  "asOf": "2026-11-17",
-  "travel": [{"person": "Name", "role": "EXCO role", "country": "Qatar", "city": "Doha", "from": "2026-11-18", "to": "2026-11-21"}],
-  "personnel": [{"entity": "ST Engineering entity", "country": "Qatar", "city": "Doha", "headcount": 40, "expatriates": 12}],
-  "staff_safety": [{"date": "2026-11-10", "entity": "ST Engineering entity", "country": "Qatar", "summary": "What was logged"}]
-}
-```
+How the scan uses it:
+
+- **Search.** One search per country with STE people, most people first, up to `peopleLimit` (default 5) on top of `queryLimit`: `"Qatar" missile OR drone OR attack OR evacuation OR unrest`.
+- **Screen.** A page whose title or lead hits the lexicon's Threat to people category (missiles, strikes, evacuations, travel warnings, unrest, disasters) and names a country with STE people is a Section A candidate, link `PEOPLE`, even when no page names ST Engineering. An outlet suffix such as "\| The Times of Israel" does not count as naming a country.
+- **Exposure.** For a safety or security item (category A5, or a Threat to people hit), STE people in the country make the exposure Indirect exposure, marked as coming from the staff log, not a news source. A Safety impact is added, and Monitor becomes a staff-safety follow-up for Group Health, Safety and Environment. A financial or other story is not made an exposure by staff presence.
+- **Context.** Any Section A or C item that names such a country lists the staff in it.
+- **Validation.** The Final Validation gives the as-at dates, the countries, the items matched, the exposures set from the log, and the caveats. Data older than 30 days is flagged as stale.
 
 ## 3. Reporting period
 
@@ -104,7 +103,7 @@ The model proposes. These rules decide.
 |---|---|
 | Grounding | Every fact quotes a verified source verbatim, 20 characters or more. Every number in the prose appears in the cited sources. No URL in prose. Links come from the pool. |
 | Dates | The publication date comes from the pool. Without one, the Assessor's date needs a verbatim quote that contains the year. Otherwise the item says "not stated by the source" and cannot be High or Critical. An event date other than "not stated" needs a verbatim quote. |
-| Section | A needs a DIRECT or COUNTERPARTY link. A competitor-only item moves to B. |
+| Section | A needs a DIRECT or COUNTERPARTY link, or a PEOPLE link (a threat to people in a country where the staff log places STE people). A competitor-only item moves to B. |
 | Relationship | Must match the register: a customer is Customer or Government stakeholder; a supplier is Supplier, Major subcontractor or Critical technology provider; a JV partner is Joint venture partner. A competitor is Competitor. An item about ST Engineering itself, a subsidiary or a program reads "ST Engineering entity", because the prompt's list has no value for the group's own entities. A watchlist joint venture reads "Joint venture partner". |
 | Exposure | Direct or Indirect exposure needs an ST Engineering name in a verified source. Otherwise a registered relationship reads "Relationship identified, but material dependency not confirmed". An item with no relationship reads "Exposure unknown". |
 | Severity cap | Critical needs Direct or Indirect exposure and a verified source. High needs a verified source and a stated publication date. Critical and High record whether they were corroborated. |
@@ -137,7 +136,7 @@ The email carries the standard notice that the content is GRIT-Scan AI-generated
 
 ## 9. Schedule and cost
 
-`grit scheduled` runs `grit adverse` every Thursday after the business-area scans due that day, so it reads their pages. `--no-adverse` leaves it out. A week costs at most 48 Brave queries (36 planned, up to 4 corroboration searches and up to 8 currency checks), about 190 to 240 a month, which is above the free Brave credit. Model calls: up to 13 screening batches, up to 70 assessments with retries, and one or two Critic calls. On the 5 November 2026 pool, with no searches, a run took about 10 minutes.
+`grit scheduled` runs `grit adverse` every Thursday after the business-area scans due that day, so it reads their pages. `--no-adverse` leaves it out. A week costs at most 53 Brave queries (36 planned, up to 5 staff-country searches, up to 4 corroboration searches and up to 8 currency checks), about 210 to 260 a month, which is above the free Brave credit. Model calls: up to 13 screening batches, up to 70 assessments with retries, and one or two Critic calls. On the 5 November 2026 pool, with no searches, a run took about 10 minutes.
 
 A first trial on 5 November 2026 (a copy of the pool, `--no-search`) screened 6,601 pages, verified 33 source pages, and reported 4 Section A and 4 Section B items. The Screener's choices vary from run to run by a few candidates at the margin. The rules and the Critic hold the reported set steady.
 

@@ -153,6 +153,14 @@ def test_search_text_sources_are_labelled_in_the_email_and_listed_for_the_review
     assert "- [A-1] Acme breach: Blocked https://blocked.example.org/a" in render.worksheet(report)
 
 
+@pytest.fixture(autouse=True)
+def no_internal_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A test reads internal context only from the file it writes, never from secrets/."""
+    import grit.settings
+
+    monkeypatch.setattr(grit.settings, "SECRETS_DIR", tmp_path / "no-secrets")
+
+
 @pytest.fixture
 def pool(tmp_path: Path) -> Pool:
     pool = Pool(tmp_path / "grit.sqlite")
@@ -422,7 +430,7 @@ def test_the_final_validation_counts_what_rests_on_search_engine_text() -> None:
     assert lines[0] == "Sources: 2 items cite 2 sources; 1 pages were opened and checked, and 1 rest on search-engine text only because the page did not open."
     assert lines[1].startswith("Facts: 2 facts are quoted verbatim from their sources; 1 of 2 come from search-engine text only.") and lines[1].endswith("A-2.")
     assert any("Currency check" in line and "not run" in line for line in lines)
-    assert any("no EXCO travel, personnel or staff-safety data was supplied" in line for line in lines)
+    assert any("no staff-by-country data was supplied" in line for line in lines)
 
 
 def test_the_currency_check_lists_a_newer_report_on_the_main_entity(pool: Pool, tmp_path: Path) -> None:
@@ -445,10 +453,44 @@ def test_the_currency_check_lists_a_newer_report_on_the_main_entity(pool: Pool, 
     assert any("chief executive resigns" in line for line in doc.lines)
 
 
-def test_internal_context_is_read_when_supplied(tmp_path: Path) -> None:
-    from grit.adverse.scan import load_internal_context
+def test_the_staff_log_is_read_by_country_and_its_age_is_reported(tmp_path: Path) -> None:
+    from grit.adverse.people import countries_named, load_people, presence
 
-    assert load_internal_context(tmp_path / "none.json") is None
+    assert load_people(tmp_path / "none.json") is None
     path = tmp_path / "internal-context.json"
-    path.write_text(json.dumps({"asOf": "2026-11-17", "travel": [{"person": "P", "country": "Qatar"}], "staff_safety": []}), encoding="utf-8")
-    assert load_internal_context(path) == {"travel": [{"person": "P", "country": "Qatar"}], "personnel": [], "staff_safety": [], "as_of": "2026-11-17"}
+    path.write_text(json.dumps({
+        "middle_east_local_staff": {"as_at": "2026-11-04", "entries": [{"entity": "URS", "country": "Qatar", "headcount": 52},
+                                                                       {"entity": "iDirect", "country": "UAE (Dubai)", "headcount": 9}], "caveat": "bulk read"},
+        "middle_east_travellers_and_assignees": {"as_at": "2026-10-01", "by_country": {"Qatar": 21, "UAE": 4}},
+    }), encoding="utf-8")
+    people = load_people(path, today=date(2026, 11, 17))
+    assert set(people["countries"]) == {"Qatar", "United Arab Emirates"} and people["age_days"] == 47 and people["stale"]
+    assert presence("Qatar", people) == "Qatar: 52 local staff (URS), as at 4 November 2026; 21 travellers and assignees, as at 1 October 2026."
+    assert countries_named("Missiles intercepted over Doha and Dubai", people) == ["Qatar", "United Arab Emirates"]
+    assert countries_named("A quaestor in a guaestor", people) == [], "an abbreviation matches only as a word, in capitals"
+
+
+def test_a_threat_to_people_where_ste_staff_are_is_section_a_with_indirect_exposure(tmp_path: Path) -> None:
+    from grit.adverse.people import PEOPLE, load_people
+    from grit.adverse.screen import screen
+    from grit.ontology.link import LinkIndex
+
+    path = tmp_path / "internal-context.json"
+    path.write_text(json.dumps({"middle_east_local_staff": {"as_at": "2026-11-04", "entries": [{"entity": "URS", "country": "Qatar", "headcount": 52}]}}),
+                    encoding="utf-8")
+    people = load_people(path, today=date(2026, 11, 17))
+    lexicon = Lexicon([*LEXICON, {"id": "PEOPLE_RISK", "label": "Threat to people", "sectionA": "A5", "terms": ["missile*", "evacuat*"]}])
+    rows = [{"signal_id": "SIG-1", "title": "Missiles intercepted over Doha as Gulf tension rises", "text": "Air defences engaged.", "url": "https://n.example/1",
+             "publisher": "N", "published_at": "2026-11-15T08:00:00Z", "first_seen_at": "2026-11-15"},
+            {"signal_id": "SIG-2", "title": "Missiles intercepted over Kyiv", "text": "Air defences engaged.", "url": "https://n.example/2",
+             "publisher": "N", "published_at": "2026-11-15T08:00:00Z", "first_seen_at": "2026-11-15"}]
+    found, _counts = screen(rows, index=LinkIndex(watchlist_graph(WATCHLIST), {"lobs": []}), lob_profiles={"lobs": []}, lexicon=lexicon,
+                            lanes_by_signal={}, band_of=lambda _u, _p: "T2", people=people)
+    assert [(c.signal_id, c.rung, c.node_ids) for c in found["A"]] == [("SIG-1", PEOPLE, ["PEOPLE-qatar"])], "no staff in Ukraine, so Kyiv is not Section A"
+    draft = {"relationship": "Other relevant stakeholder", "exposure": checks.EXPOSURE_UNKNOWN, "severity": "High", "action": checks.MONITOR, "impacts": []}
+    decided, notes = checks.decide_a(draft, {"classes": [], "people": ["Qatar: 52 local staff (URS)."], "people_event": True, "publication_stated": True})
+    assert (decided["exposure"], decided["exposure_basis"], decided["action"], decided["owner"]) == (
+        checks.INDIRECT_EXPOSURE, checks.STAFF_LOG, checks.FOLLOW_GF, checks.PEOPLE_OWNER)
+    assert decided["relationship"] == "ST Engineering entity" and any(i["area"] == "Safety" for i in decided["impacts"]) and notes
+    unrelated, _ = checks.decide_a({**draft, "category": "A1"}, {"classes": [], "people": ["Qatar: 52 local staff (URS)."], "people_event": False})
+    assert unrelated["exposure"] == checks.EXPOSURE_UNKNOWN, "staff in the country do not make a financial story an exposure"

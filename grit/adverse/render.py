@@ -110,7 +110,8 @@ def _item_a(doc: _Doc, item: Mapping[str, Any]) -> None:
     doc.field("Evidence-based assessment", item.get("assessment") or "None beyond the facts.")
     unverified = [u for u in item.get("unverified") or [] if isinstance(u, str) and u.strip()]
     doc.field("Unverified", "; ".join(unverified) if unverified else "Nothing further identified.")
-    doc.field("Exposure assessment", item["exposure"])
+    basis = " (from the internal staff log, not a news source)" if item.get("exposure_basis") == checks.STAFF_LOG else ""
+    doc.field("Exposure assessment", f"{item['exposure']}{basis}")
     impacts = item.get("impacts") or []
     if impacts:
         doc.add("Potential impact to ST Engineering:")
@@ -187,6 +188,10 @@ def _extras(doc: _Doc, item: Mapping[str, Any], section: str) -> None:
         doc.add("Trigger points to watch:")
         for trigger in item["trigger_points"]:
             doc.bullet(trigger, 1)
+    if item.get("people") and section != "B":
+        doc.add("ST Engineering people in the country (internal staff log, R&A; country level, no site or city):")
+        for line in item["people"]:
+            doc.bullet(line, 1)
     currency = item.get("currency")
     if currency:
         if currency["latest"]:

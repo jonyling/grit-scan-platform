@@ -28,6 +28,8 @@ IMPACT_AREAS = ("Revenue", "Profitability", "Cash flow", "Project delivery", "Op
                 "Reputation", "Strategic objectives")
 IMPACT_STATUS = {"CONFIRMED": "Confirmed impact", "POTENTIAL": "Potential impact supported by evidence", "NOT_ESTABLISHED": "Impact not yet established"}
 SEVERITIES = ("Critical", "High", "Medium", "Low")
+PEOPLE_OWNER = "Group Health, Safety and Environment"  # owns a staff-safety check
+STAFF_LOG = "internal staff log"  # exposure_basis of an exposure the staff log, not a news page, establishes
 MONITOR, FOLLOW_BA, FOLLOW_GF, EXCO = "Monitor", "Follow-up with Business Area", "Follow-up with Group Function", "Escalate to EXCO"
 ACTIONS = (MONITOR, FOLLOW_BA, FOLLOW_GF, EXCO)
 OBTAIN = "Obtain further information"
@@ -283,6 +285,20 @@ def decide_a(draft: Mapping[str, Any], facts: Mapping[str, Any]) -> tuple[dict[s
     if exposure in {DIRECT_EXPOSURE, INDIRECT_EXPOSURE} and not facts.get("ste_named"):
         item["exposure"] = NOT_CONFIRMED if classes else EXPOSURE_UNKNOWN
         notes.append(f"'{exposure}' needs ST Engineering named in a verified source; set to '{item['exposure']}'.")
+    people = list(facts.get("people") or [])
+    if people and facts.get("people_event"):
+        # STE people are in the country of a safety or security event, per the internal staff log: indirect exposure of people.
+        if not classes:
+            item["relationship"] = "ST Engineering entity"
+        if item["exposure"] not in {DIRECT_EXPOSURE, INDIRECT_EXPOSURE}:
+            notes.append(f"Exposure set to '{INDIRECT_EXPOSURE}' from the internal staff log: " + " ".join(people))
+            item["exposure"], item["exposure_basis"] = INDIRECT_EXPOSURE, STAFF_LOG
+        if not any(impact.get("area") == "Safety" for impact in item.get("impacts") or []):
+            item["impacts"] = [*(item.get("impacts") or []), {"area": "Safety", "status": "POTENTIAL",
+                                                              "basis": "STE people are in the country, per the internal staff log: " + " ".join(people)}]
+        if item["action"] == MONITOR:
+            item["action"], item["owner"] = FOLLOW_GF, PEOPLE_OWNER
+            notes.append(f"STE people in the country: a staff-safety check is a follow-up for {PEOPLE_OWNER}, not monitoring.")
     severity = item["severity"]
     if severity == "Critical" and item["exposure"] not in {DIRECT_EXPOSURE, INDIRECT_EXPOSURE}:
         severity = "High"
@@ -307,7 +323,7 @@ def decide_a(draft: Mapping[str, Any], facts: Mapping[str, Any]) -> tuple[dict[s
             if owner:
                 notes.append(f"Owner '{owner}' is not the linked entity's business area.")
     elif action in {FOLLOW_GF, EXCO}:
-        item["owner"] = owner if owner in GROUP_FUNCTIONS else None
+        item["owner"] = owner if owner in GROUP_FUNCTIONS else PEOPLE_OWNER if people and facts.get("people_event") else None
     else:
         item["owner"] = None
     triggers = [t for t in item.get("escalation_triggers") or [] if t in TRIGGERS_ESCALATION]
@@ -450,7 +466,7 @@ def merge_into(home: dict[str, Any], entry: Mapping[str, Any]) -> None:
         if not any(name.casefold() in known.casefold() or known.casefold() in name.casefold() for known in names):
             names.append(name)
     home["affected_entity"] = "; ".join(names)
-    for key in ("signal_ids", "event_ids", "entity_ids", "outlets", "lessons", "internal_review", "trigger_points"):
+    for key in ("signal_ids", "event_ids", "entity_ids", "outlets", "lessons", "internal_review", "trigger_points", "people"):
         if home.get(key) or entry.get(key):
             home[key] = list(dict.fromkeys([*(home.get(key) or []), *(entry.get(key) or [])]))
     home["corroborated"] = bool(home.get("corroborated") or entry.get("corroborated") or len(home.get("outlets") or []) >= 2)

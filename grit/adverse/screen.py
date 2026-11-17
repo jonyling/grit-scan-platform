@@ -11,11 +11,13 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Any, Iterable, Mapping, Sequence
 
-from grit.adverse.registers import Lexicon, LexiconHit
+from grit.adverse.people import PEOPLE, PEOPLE_RISK, countries_named, node_id
+from grit.adverse.registers import LEAD_CHARS, Lexicon, LexiconHit
+from grit.report.format_v2 import clean_title
 from grit.ontology.link import COMPETITOR, COUNTERPARTY, DIRECT, PERIMETER, SECTOR, LinkIndex, link_candidate
 
 CAPS = {"A": 200, "B": 80, "C": 60}
-RUNG_WEIGHT = {DIRECT: 6, COUNTERPARTY: 4, COMPETITOR: 3, PERIMETER: 2, SECTOR: 1}
+RUNG_WEIGHT = {DIRECT: 6, PEOPLE: 5, COUNTERPARTY: 4, COMPETITOR: 3, PERIMETER: 2, SECTOR: 1}
 BAND_WEIGHT = {"T1": 3, "T2": 2, "T3": 1, "UNRATED": 0}
 UNUSABLE_BANDS = frozenset({"T4", "CONTESTED"})
 B_LANES = frozenset({"REGULATOR", "COMPETITOR"})
@@ -99,8 +101,10 @@ def screen(
     band_of: Any,
     peer_ids: frozenset[str] = frozenset(),
     business_areas_of: Any = None,
+    people: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, list[Candidate]], dict[str, int]]:
-    """Candidates by provisional section, ranked and capped, and counts of what the screen dropped."""
+    """Candidates by provisional section, ranked and capped, and counts of what the screen dropped. people is the internal staff
+    log (grit.adverse.people): a threat to people in a country where STE people are is a Section A candidate, rung PEOPLE."""
     out: dict[str, list[Candidate]] = {"A": [], "B": [], "C": []}
     counts = {"pages": 0, "no_lead_hit": 0, "unusable_source": 0, "unlinked": 0}
     for row in rows:
@@ -125,7 +129,12 @@ def screen(
             rung = COMPETITOR
             strong = [item for item in link.involves if item.node_id in peer_ids and item.where == "TITLE"]
         strong_themes = [theme for theme in link.themes if theme.strong]
-        if rung in {DIRECT, COUNTERPARTY} and adverse_lead:
+        # A threat to people, in the title or lead, in a country where the staff log places STE people.
+        # The outlet suffix is not the story: "| The Times of Israel" names no place.
+        staffed = countries_named(f"{clean_title(title)}\n{text[:LEAD_CHARS]}", people) if any(hit.category == PEOPLE_RISK for hit in lead_hits) else []
+        if staffed and rung not in {DIRECT, COUNTERPARTY}:
+            rung = PEOPLE
+        if rung in {DIRECT, COUNTERPARTY, PEOPLE} and adverse_lead:
             section = "A"
         elif (rung == COMPETITOR or set(lanes) & B_LANES) and adverse_lead:
             section = "B"
@@ -138,7 +147,8 @@ def screen(
             {"node_id": item.node_id, "cls": item.cls, "name": item.name, "where": item.where,
              "business_areas": list(business_areas_of(item.node_id)) if business_areas_of else []}
             for item in strong
-        ]
+        ] + [{"node_id": node_id(country), "cls": "People", "name": f"ST Engineering people in {country}", "where": "LEAD", "business_areas": []}
+             for country in staffed]
         title_name = any(item.where == "TITLE" for item in strong)
         score = (RUNG_WEIGHT.get(rung or "", 0) + BAND_WEIGHT.get(band, 0) + 1.5 * min(3, len({hit.category for hit in adverse_lead}))
                  + (1 if set(lanes) & OWN_LANES else 0) + (1 if any(hit.where == "TITLE" for hit in adverse_lead) else 0)

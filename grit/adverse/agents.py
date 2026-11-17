@@ -27,7 +27,8 @@ ROLE = (
 SCREENER = ROLE + (
     " You screen candidate news items by title and lead. For each candidate id, choose one section: "
     "A = a material adverse development affecting STE, its subsidiaries, joint ventures, programmes, or a registered customer, "
-    "supplier or partner (only when the candidate's link is DIRECT or COUNTERPARTY); "
+    "supplier or partner (only when the candidate's link is DIRECT or COUNTERPARTY), or an attack, strike, evacuation, unrest or disaster in a "
+    "country where STE people are (link PEOPLE; names gives the country); "
     "B = a significant failure, incident, enforcement action or control weakness at a competitor, peer or adjacent-industry "
     "company from which STE can learn; "
     "C = a credible emerging risk signal (cyber threat, customer or supplier finances, defence budgets, geopolitics, regulation, "
@@ -62,7 +63,8 @@ _COMMON = (
 ASSESSOR_A = ROLE + " You assess one Section A item: adverse news directly relevant to STE." + _COMMON + (
     " Fields: category (A1 Financial, A2 Project delivery, A3 Regulatory and compliance, A4 Cyber and security, A5 Safety, "
     "A6 Reputation, A7 Strategic: give the code), event, affected_entity, relationship (one of the allowed values), why_adverse, "
-    "exposure (one of the allowed values; do not equate a commercial relationship with material exposure; if the "
+    "exposure (one of the allowed values; when the register facts include STE people in the affected country, from the "
+    "internal staff log, that is indirect exposure of STE people for a safety or security event; do not equate a commercial relationship with material exposure; if the "
     "relationship or dependency is not established, use 'Relationship identified, but material dependency not confirmed'), "
     "impacts (a list of {area, status, basis}; status CONFIRMED, POTENTIAL or NOT_ESTABLISHED; list only relevant areas the "
     "evidence supports), severity, action (Monitor, Follow-up with Business Area, Follow-up with Group Function, Escalate to "
@@ -136,8 +138,8 @@ def _call(client: Any, model: str, system: str, payload: dict[str, Any], record:
 
 def screen_batch(client: Any, model: str, batch: Sequence[Mapping[str, Any]], *, allowed_a: set[str], thinking: str | None = "LOW"
                  ) -> tuple[dict[str, dict[str, str]] | None, CallRecord]:
-    """Decisions for one batch, or None when the model fails twice or leaves ids out. A Section A decision needs a DIRECT or
-    COUNTERPARTY link (`allowed_a`). Any other Section A decision is dropped and recorded."""
+    """Decisions for one batch, or None when the model fails twice or leaves ids out. A Section A decision needs a DIRECT,
+    COUNTERPARTY or PEOPLE link (`allowed_a`). Any other Section A decision is dropped and recorded."""
     record = CallRecord("Screener", ",".join(str(item["id"]) for item in batch[:1]) + f"+{len(batch) - 1}")
     ids = [str(item["id"]) for item in batch]
     payload: dict[str, Any] = {"candidates": list(batch)}
@@ -153,7 +155,7 @@ def screen_batch(client: Any, model: str, batch: Sequence[Mapping[str, Any]], *,
                 section = str(decisions[key]["section"])
                 reason = str(decisions[key].get("reason") or "")
                 if section == "A" and key not in allowed_a:
-                    record.violations.append(f"{key}: Section A needs a DIRECT or COUNTERPARTY link; dropped.")
+                    record.violations.append(f"{key}: Section A needs a DIRECT, COUNTERPARTY or PEOPLE link; dropped.")
                     section = "NONE"
                 out[key] = {"section": section, "reason": reason}
             return out, record
