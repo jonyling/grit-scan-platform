@@ -165,7 +165,8 @@ def screen(
 
 
 def group(candidates: Sequence[Candidate], section: str) -> list[Item]:
-    """One item per event: the nightly index's event, else a shared linked name and a similar title (no name: a closer title)."""
+    """One item per event: the nightly index's event, else a shared linked name and a similar title (no name: a closer title).
+    Threat-to-people pages (rung PEOPLE) that share a staffed country join one item."""
     items: list[Item] = []
     for candidate in sorted(candidates, key=lambda c: -c.score):
         home = None
@@ -175,6 +176,8 @@ def group(candidates: Sequence[Candidate], section: str) -> list[Item]:
                     home = item
                 elif set(candidate.node_ids) & set(member.node_ids) and similar(candidate.title, member.title) >= 0.35:
                     home = item
+                elif candidate.rung == PEOPLE == member.rung and {n for n in candidate.node_ids if n.startswith("PEOPLE-")} & set(member.node_ids):
+                    home = item  # threats to people in one country are one security situation: one item, one assessment
                 elif not candidate.node_ids and not member.node_ids and similar(candidate.title, member.title) >= 0.5:
                     home = item
                 if home:

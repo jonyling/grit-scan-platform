@@ -487,6 +487,12 @@ def test_a_threat_to_people_where_ste_staff_are_is_section_a_with_indirect_expos
     found, _counts = screen(rows, index=LinkIndex(watchlist_graph(WATCHLIST), {"lobs": []}), lob_profiles={"lobs": []}, lexicon=lexicon,
                             lanes_by_signal={}, band_of=lambda _u, _p: "T2", people=people)
     assert [(c.signal_id, c.rung, c.node_ids) for c in found["A"]] == [("SIG-1", PEOPLE, ["PEOPLE-qatar"])], "no staff in Ukraine, so Kyiv is not Section A"
+    from dataclasses import replace
+
+    from grit.adverse.screen import group
+
+    other = replace(found["A"][0], signal_id="SIG-3", title="Doha residents told to shelter as drones are downed")
+    assert len(group([found["A"][0], other], "A")) == 1, "threats to people in one staffed country are one item"
     draft = {"relationship": "Other relevant stakeholder", "exposure": checks.EXPOSURE_UNKNOWN, "severity": "High", "action": checks.MONITOR, "impacts": []}
     decided, notes = checks.decide_a(draft, {"classes": [], "people": ["Qatar: 52 local staff (URS)."], "people_event": True, "publication_stated": True})
     assert (decided["exposure"], decided["exposure_basis"], decided["action"], decided["owner"]) == (
