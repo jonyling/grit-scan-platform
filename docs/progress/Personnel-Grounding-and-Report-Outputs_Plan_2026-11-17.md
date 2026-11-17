@@ -1,7 +1,7 @@
 # Personnel grounding and report outputs
 
 **Date:** 17 November 2026 (Asia/Singapore)  
-**Status:** Plan only. Not built.  
+**Status:** Built on feature branch (17 November 2026). Live secret placement and Thursday adverse pass remain operator steps.  
 **Origin:** Request captured on the Cloud Agent environment-setup chat; filed here so the grit-scan-platform coding project can pick it up.
 
 ## Requests

@@ -149,6 +149,7 @@ def render_docx(pack: Pack, path: Path) -> Path:
     from docx.shared import Pt, RGBColor
 
     from grit.report.docx_brief import _hyperlink
+    from grit.report.table_style import DAILY_REVIEW, header_row
 
     document = Document()
     style = document.styles["Normal"]
@@ -159,10 +160,7 @@ def render_docx(pack: Pack, path: Path) -> Path:
     note = document.add_paragraph(DISCLAIMER)
     note.runs[0].font.size, note.runs[0].font.color.rgb = Pt(9), RGBColor(0x55, 0x55, 0x55)
     if pack.rows:
-        table = document.add_table(rows=1, cols=5)
-        table.style = "Light Grid Accent 1"
-        for cell, text in zip(table.rows[0].cells, ("#", "Signal", "Source", "Tier", "RED")):
-            cell.text = text
+        table = header_row(document, DAILY_REVIEW)
         for row in pack.rows:
             cells = table.add_row().cells
             for cell, text in zip(cells, (str(row.position), row.title, row.publisher, f"P{row.tier}" if row.tier else "", "RED" if row.red else "")):

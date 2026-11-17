@@ -494,6 +494,11 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
         records.append({**signal, "doc_type": doc, "link": link, "hits": hits, "scale": scale_cues(candidate)})
     decisions = filter_reader(records, run_date=run.run_date, vectors=run_vectors(pool, run), config=ReaderFilterConfig(window_days=window))
 
+    from grit.core.people import append_staff_basis, apply_staff_priority, ground_page, load_people, people_risk_terms
+
+    people = load_people(today=run.run_date)
+    risk_terms = people_risk_terms() if people else ()
+
     kept = red = 0
     for record in records:
         signal_id = record["signal_id"]
@@ -537,11 +542,17 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
             outlet_bands = [{"outlet": item.get("outlet") or item.get("publisher"), "url": item["url"],
                              "band": source_band(item["url"], item.get("credibilityRating"), item.get("outlet"), source_class=item.get("sourceClass"))}
                             for item in credibility]
+            # Staff-log grounding: elevate within tier and cite presence. Never invents Direct exposure or a PEOPLE rung.
+            grounding = ground_page(record.get("title") or "", record.get("text") or "", people, terms=risk_terms)
+            priority = apply_staff_priority(row.get("priority_json") or decision.get("priority") or {}, grounding)
+            if grounding is not None:
+                row["priority_json"], row["tier"] = priority, priority.get("tier", row.get("tier"))
+            basis = compose_wild_scan_basis(condition, publisher=record["publisher"]) if condition else _basis(decision, link, exposure)
             row |= {"outlets_json": outlet_bands, "source_band": outlet_bands[0]["band"]}
             row |= {
                 "risk_cascade_json": [hit.as_record() for hit in risks], "harm_json": harm, "harm_verdict": verdict, "opportunity_cost": opportunity_status(harm),
                 "trend": "NO_MATERIAL_CHANGE", "risk_level": classify_wild_scan_risk_level(own_level),
-                "relevance_basis": compose_wild_scan_basis(condition, publisher=record["publisher"]) if condition else _basis(decision, link, exposure),
+                "relevance_basis": append_staff_basis(basis, grounding),
                 "evidence_confidence": evidence_confidence(credibility)[0], "red_rule_json": red_result.as_record(), "red": int(red_result.red),
             }
         pool.save_assessment(row)
@@ -684,12 +695,16 @@ def _recent_first(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
 
 def material_order(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
     """Briefing order for findings: a management-request match first, then a signal bound to a standing item, then the
-    rest, each by tier, outlets and recency. It is deterministic. It decides what the reader sees first, never a fact."""
+    rest, each by tier, staff-log priority within the tier, outlets and recency. It is deterministic. It decides what
+    the reader sees first, never a fact."""
+    from grit.core.people import staff_priority_key
+
     rows = list(rows)
     rows.sort(key=lambda row: str(row.get("published_at") or ""), reverse=True)
     rows.sort(key=lambda row: (
         not any(hit.get("item_type") == REQUEST for hit in (row.get("link") or {}).get("reader_hits") or []),
         row.get("tier") or 9,
+        staff_priority_key(row),
         not row.get("condition_ids"),
         -(row.get("corroboration") or 1),
     ))

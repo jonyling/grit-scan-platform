@@ -68,6 +68,9 @@ def _note_from_signal(signal: Mapping[str, Any], classification: Mapping[str, An
         if industry != NOT_ESTABLISHED
         else "A possible implication for a watched industry is not established from this source alone."
     )
+    staff_note = _staff_note(signal)
+    if staff_note:
+        implication = f"{implication} {staff_note}"
     return {
         "title": title,
         "established": established,
@@ -80,10 +83,27 @@ def _note_from_signal(signal: Mapping[str, Any], classification: Mapping[str, An
             text[:280] if classification.get("is_method") and text else NOT_ESTABLISHED
         ),
         "implication": implication,
+        "staff_log": staff_note or None,
         "sources": [_source(signal)],
         "classification": classification,
         "depth": "discussion",
     }
+
+
+def _staff_note(signal: Mapping[str, Any]) -> str:
+    """Cite the internal staff log when the assessment already recorded a staffed-country people-risk match."""
+    priority = signal.get("priority_json") or signal.get("priority") or {}
+    if isinstance(priority, str):
+        import json
+
+        try:
+            priority = json.loads(priority)
+        except json.JSONDecodeError:
+            return ""
+    if not isinstance(priority, Mapping) or not priority.get("staff_priority"):
+        return ""
+    reasons = [str(reason) for reason in priority.get("reasons") or [] if "staff log" in str(reason).casefold()]
+    return reasons[0] if reasons else "STE people are present in a country named here (internal staff log, R&A)."
 
 
 def _log_row(signal: Mapping[str, Any], classification: Mapping[str, Any]) -> dict[str, Any]:
@@ -261,11 +281,15 @@ def _collect_reasoned(pool: Pool, run_id: str, pack: Any, *, client: Any | None,
     dropped: list[dict[str, Any]] = []
     seen_titles: set[str] = set()
     pending: dict[str, list[dict[str, Any]]] = {key: [] for key in sections}
-    # Prefer INCLUDE over WATCH, then higher evidence score, so duplicate wires of one event keep one note.
+    # Prefer INCLUDE over WATCH, then staffed-country threats, then higher evidence score, so duplicate wires of one
+    # event keep one note. Staff preference cites the internal staff log when the assessment recorded it.
+    from grit.core.people import staff_priority_key
+
     ordered = sorted(
         review["selections"].items(),
         key=lambda item: (
             0 if item[1].get("decision") == "INCLUDE" else 1 if item[1].get("decision") == "WATCH" else 2,
+            staff_priority_key(signals.get(item[0]) or {}),
             -int((item[1].get("significance") or {}).get("evidence") or 0),
             item[0],
         ),
@@ -566,10 +590,9 @@ def render_docx(digest: Mapping[str, Any], path: Path) -> Path:
                 document.add_paragraph(f"Source: {src.get('outlet')}, {src.get('date') or 'n.d.'}. {src.get('url')}")
         if section.get("log"):
             document.add_heading("Incident log", level=2)
-            table = document.add_table(rows=1, cols=5)
-            headers = ("Title", "Date", "Place", "Energy", "Source")
-            for cell, header in zip(table.rows[0].cells, headers):
-                cell.text = header
+            from grit.report.table_style import WSH_INCIDENT_LOG, header_row
+
+            table = header_row(document, WSH_INCIDENT_LOG)
             for row in section["log"]:
                 cells = table.add_row().cells
                 src = row.get("source") or {}

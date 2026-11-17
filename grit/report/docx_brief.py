@@ -9,7 +9,6 @@ from urllib.parse import urlparse
 
 from docx import Document
 from docx.enum.section import WD_ORIENT, WD_SECTION
-from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.opc.constants import RELATIONSHIP_TYPE
 from docx.oxml import OxmlElement
@@ -19,8 +18,7 @@ from docx.shared import Cm, Pt, RGBColor
 from grit.core.source_bands import LEGEND as SOURCE_LEGEND
 from grit.report.brief import text_only
 from grit.report.notices import DISCLAIMER
-
-NAVY = RGBColor(0x1F, 0x38, 0x64)
+from grit.report.table_style import NAVY, header_row, shade_cell
 GREY = RGBColor(0x55, 0x55, 0x55)
 LIGHT = RGBColor(0x77, 0x77, 0x77)
 BOX_FILL = {"WATCHPOINT": "FFF2CC", "ELEVATED": "FFF2CC", "STABLE": "E2EFDA", "NORMAL": "E2EFDA", "RED": "F8CBAD"}
@@ -143,11 +141,7 @@ def correction_cells(row: Mapping[str, Any]) -> list[str]:
 
 
 def _shade(cell: Any, fill: str) -> None:
-    shading = OxmlElement("w:shd")
-    shading.set(qn("w:val"), "clear")
-    shading.set(qn("w:color"), "auto")
-    shading.set(qn("w:fill"), fill)
-    cell._tc.get_or_add_tcPr().append(shading)
+    shade_cell(cell, fill)
 
 
 def _hyperlink(paragraph: Any, text: str, url: str, *, size: float | None = None) -> None:
@@ -257,17 +251,7 @@ def _bullet(document: Any, label: str | None, rendered: Mapping[str, Any] | None
 
 
 def _table(document: Any, headers: Sequence[str], widths: Sequence[float]) -> Any:
-    table = document.add_table(rows=1, cols=len(headers))
-    table.style = "Table Grid"
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    for cell, text, width in zip(table.rows[0].cells, headers, widths):
-        cell.width = Cm(width)
-        _shade(cell, "1F3864")
-        run = cell.paragraphs[0].add_run(text)
-        run.bold = True
-        run.font.size = Pt(9)
-        run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
-    return table
+    return header_row(document, headers, widths)
 
 
 def _row(table: Any, values: Sequence[Any], widths: Sequence[float]) -> None:

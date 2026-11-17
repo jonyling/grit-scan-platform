@@ -134,8 +134,12 @@ Each run writes to `output/adverse/DATE/`:
 | `email.txt` | The email to paste: `To: wilsonweimeng.yeo@stengg.com`, `Subject: Adverse News & Lessons Learnt Scan \| D Month YYYY`, "Dear Wilson," and "Kind Regards, Jony". Written only when the scan is `READY`. Otherwise the file is `email-DRAFT-INCOMPLETE.txt`. |
 | `email.eml` | The same message, to open in Outlook. |
 | `email.md` | A Markdown preview. |
+| `adverse.docx` | Word pack with the same sections as the email (Immediate Escalation, A/B/C tables, Management Attention, Final Validation), using the shared navy table chrome. Written only when the scan is `READY`. |
+| `adverse-signals.csv` | One row per included item source: section, severity, action, country, staffed?, Adverse=Yes, URL, publisher, why_adverse, exposure_basis. Written only when `READY`. |
 | `report.json` | The decided items, the window, the checks and the status. |
 | `review.md` | The reviewer worksheet: blockers, withheld items and why, sources checked only against search-engine text, repeats, the Critic's objections, and the searches. |
+
+The staff log lives in `grit.core.people` (adverse keeps a thin re-export). Weekly, daily and WSH lanes call the same matcher for priority and disclosure; only this scan uses the `PEOPLE` rung.
 
 The email carries the standard notice that the content is GRIT-Scan AI-generated suggestions, which a named person reviews before anyone acts on them. The Final Validation is computed from the report's own records: how many sources were opened pages and how many search-engine text only, how many facts rest on search-engine text, which items rest on nothing else, missing dates, same-topic merges, the currency check, and whether internal context was supplied. The email accuracy check confirms the recipient, the subject line, the greeting and the closing.
 

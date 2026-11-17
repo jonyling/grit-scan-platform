@@ -306,6 +306,8 @@ def run_weekly_pipeline(
 
 
 def _priority(item: dict[str, Any], pack: OntologyPack) -> dict[str, Any]:
+    from grit.core.people import append_staff_basis, ground_page, load_people
+
     score = 0
     reasons: list[str] = []
     confidence = item.get("evidenceConfidence")
@@ -334,6 +336,11 @@ def _priority(item: dict[str, Any], pack: OntologyPack) -> dict[str, Any]:
     if item.get("descentStatus") == "SUPPORTED":
         score += 2
         reasons.append("evidenced entity-level transmission path (+2)")
+    # Staff-log grounding elevates within the score band and cites presence; it does not invent Direct exposure.
+    grounding = ground_page(str(item.get("headline") or item.get("summary") or ""), str(item.get("summary") or ""), load_people())
+    if grounding is not None:
+        score += 1
+        reasons.append(f"STE people in {', '.join(grounding.countries)} (staff log) (+1)")
     checks = [credibility_lookup(url, pack.source_register) for url in list(item.get("sources") or [])]
     label = "HIGH" if score >= 5 else "MEDIUM" if score >= 3 else "WATCHPOINT"
     ranked_item = {
@@ -356,10 +363,11 @@ def _priority(item: dict[str, Any], pack: OntologyPack) -> dict[str, Any]:
         "descentStatus": item.get("descentStatus"),
         "descent": item.get("descent"),
         "exposureEntities": item.get("exposureEntities"),
+        "staffCountries": list(grounding.countries) if grounding else [],
     }
     ranked_item["riskLevel"] = classify_risk_level(ranked_item)
     ranked_item["trend"] = classify_trend(ranked_item["movement"])
-    ranked_item["businessRelevanceBasis"] = compose_business_relevance_basis(ranked_item)
+    ranked_item["businessRelevanceBasis"] = append_staff_basis(compose_business_relevance_basis(ranked_item), grounding)
     return ranked_item
 
 

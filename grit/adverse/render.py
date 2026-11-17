@@ -370,6 +370,135 @@ def worksheet(report: Mapping[str, Any]) -> str:
     return "\n".join(lines)
 
 
+CSV_COLUMNS = (
+    "section", "item_id", "headline", "severity", "action", "country", "staffed", "Adverse",
+    "url", "publisher", "why_adverse", "exposure_basis", "event_date", "publication_date",
+)
+
+
+def _item_countries(item: Mapping[str, Any]) -> list[str]:
+    countries: list[str] = []
+    for line in item.get("people") or []:
+        name = str(line).split(":", 1)[0].strip()
+        if name and name not in countries:
+            countries.append(name)
+    return countries
+
+
+def signals_csv_rows(report: Mapping[str, Any]) -> list[list[str]]:
+    """One row per included item's lead source (and further sources as extra rows with the same item fields)."""
+    rows: list[list[str]] = []
+    for section in ("A", "B", "C"):
+        for item in (report.get("items") or {}).get(section) or []:
+            countries = _item_countries(item)
+            staffed = "Yes" if countries or item.get("exposure_basis") == checks.STAFF_LOG or item.get("people") else "No"
+            why = item.get("why_adverse") or item.get("why_material") or item.get("why_it_matters") or ""
+            refs = item.get("sources") or [{"url": "", "outlet": ""}]
+            for ref in refs:
+                rows.append([
+                    section, str(item.get("item_id") or ""), str(item.get("headline") or ""),
+                    str(item.get("severity") or ""), str(item.get("action") or item.get("response") or ""),
+                    "; ".join(countries), staffed, "Yes",
+                    str(ref.get("url") or ""), str(ref.get("outlet") or ""),
+                    str(why), str(item.get("exposure_basis") or ""),
+                    str(item.get("event_date") or ""), str(item.get("publication_date") or ""),
+                ])
+    return rows
+
+
+def write_signals_csv(folder: Path, report: Mapping[str, Any]) -> Path:
+    import csv
+
+    path = folder / "adverse-signals.csv"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8-sig", newline="") as handle:
+        out = csv.writer(handle)
+        out.writerow(CSV_COLUMNS)
+        out.writerows(signals_csv_rows(report))
+    return path
+
+
+def render_docx(report: Mapping[str, Any], path: Path) -> Path:
+    """Word pack mirroring the email sections. Uses the shared navy table chrome."""
+    from docx import Document
+    from docx.shared import Pt, RGBColor
+
+    from grit.report.table_style import ADVERSE_SECTION, NAVY, header_row
+
+    document = Document()
+    style = document.styles["Normal"]
+    style.font.name, style.font.size = "Calibri", Pt(10.5)
+    run_date = date.fromisoformat(report["run_date"])
+    title = document.add_heading(f"Adverse News & Lessons Learnt Scan | {long_date(run_date)}", level=0)
+    for run in title.runs:
+        run.font.color.rgb = NAVY
+    document.add_paragraph(f"Status: {report.get('status')}")
+    window = report.get("window") or {}
+    document.add_paragraph(f"Reporting period: {long_date(window.get('start'))} to {long_date(window.get('end'))}")
+
+    escalate = [i for i in (report.get("items") or {}).get("A") or [] if i.get("escalate")]
+    document.add_heading("Immediate Escalation Summary", level=1)
+    if escalate:
+        for item in escalate:
+            document.add_paragraph(f"[{item['item_id']}] {item['headline']} ({item['severity']}; {item['action']})", style="List Bullet")
+    else:
+        document.add_paragraph(checks.NO_ESCALATION)
+
+    for section, heading in (
+        ("A", "Section A: Adverse news directly relevant to ST Engineering"),
+        ("B", "Section B: Competitor and industry adverse news, lessons learnt"),
+        ("C", "Section C: Emerging risk signals"),
+    ):
+        document.add_heading(heading, level=1)
+        items = (report.get("items") or {}).get(section) or []
+        if not items:
+            document.add_paragraph(checks.NO_DEVELOPMENTS)
+            continue
+        table = header_row(document, ADVERSE_SECTION, (7.0, 6.0, 3.5))
+        for item in items:
+            sources = item.get("sources") or []
+            first = sources[0] if sources else {}
+            source_line = f"{first.get('outlet') or 'source'}"
+            if first.get("url"):
+                source_line += f" — {first['url']}"
+            event = f"[{item.get('item_id')}] {item.get('headline') or item.get('event') or ''}\n{source_line}\nEvent {long_date(item.get('event_date'))}; source {long_date(item.get('publication_date'))}"
+            if item.get("people"):
+                event += "\nStaff: " + "; ".join(item["people"])
+            why = item.get("why_adverse") or item.get("why_material") or item.get("why_it_matters") or ""
+            if item.get("exposure"):
+                why += f"\nExposure: {item['exposure']}" + (f" ({item['exposure_basis']})" if item.get("exposure_basis") else "")
+            if item.get("assessment"):
+                why += f"\n{item['assessment']}"
+            severity = f"{item.get('severity') or ''}"
+            if item.get("action") or item.get("response"):
+                severity += f"\n{item.get('action') or item.get('response')}"
+            cells = table.add_row().cells
+            for cell, value in zip(cells, (event, why, severity)):
+                cell.text = ""
+                run = cell.paragraphs[0].add_run(str(value))
+                run.font.size = Pt(9)
+
+    attention = report.get("attention") or {}
+    document.add_heading("Management Attention Summary", level=1)
+    for label, key, empty in (("Immediate Attention", "immediate", checks.NO_IMMEDIATE),
+                              ("Enhanced Monitoring", "monitoring", checks.NO_MONITORING),
+                              ("Competitor Lessons Learnt", "lessons", checks.NO_LESSONS)):
+        document.add_paragraph(label).runs[0].bold = True
+        for line in attention.get(key) or [empty]:
+            document.add_paragraph(line, style="List Bullet")
+    overall = report.get("overall") or ("", "")
+    document.add_paragraph(f"Overall Assessment: {overall[0]}. {overall[1]}")
+
+    document.add_heading("Final Validation", level=1)
+    for line in report.get("validation") or []:
+        document.add_paragraph(line, style="List Bullet")
+    note = document.add_paragraph(DISCLAIMER)
+    note.runs[0].font.size, note.runs[0].font.color.rgb = Pt(9), RGBColor(0x55, 0x55, 0x55)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    document.save(str(path))
+    return path
+
+
 def write(folder: Path, report: Mapping[str, Any]) -> dict[str, Path]:
     folder.mkdir(parents=True, exist_ok=True)
     text = compose(report)
@@ -386,4 +515,7 @@ def write(folder: Path, report: Mapping[str, Any]) -> dict[str, Path]:
     paths["eml"].write_bytes(eml(text))
     paths["markdown"].write_text(compose(report, markdown=True), encoding="utf-8")
     paths["review"].write_text(worksheet(report), encoding="utf-8")
+    if ready:
+        paths["docx"] = render_docx(report, folder / "adverse.docx")
+        paths["csv"] = write_signals_csv(folder, report)
     return paths

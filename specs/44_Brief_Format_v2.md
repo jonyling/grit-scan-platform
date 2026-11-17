@@ -157,7 +157,11 @@ The first business-area briefs showed "No signpost seen" for every risk, althoug
 
 On 2 November 2026: URS 1 match (a report of a Rs 4.4 trillion infrastructure cost overrun, URS Key Risk 3, worst case), CA 3, DS&C none. A judged match without a shared specific word, such as an airport's unleaded-fuel campaign offered for a Defense Production Act signpost, is dropped.
 
-## 9. Not built
+## 9. Shared Word table chrome (added 17 November 2026)
 
-- Internal facts (staff locations, safety confirmations, EBIT bands, RSC dates) from a business partner's weekly notes.
+Weekly, daily-review, WSH and adverse Word tables share one navy header chrome (`grit.report.table_style`). Column wording stays per-report unless Wilson / Jony sign off a rename. Staff-country people-risk matches from `grit.core.people` elevate within a briefing tier and appear in Relevance text; they do not change the BA link ladder.
+
+## 10. Not built
+
+- Internal facts (staff locations, safety confirmations, EBIT bands, RSC dates) from a business partner's weekly notes — other than the country-level staff log already used for priority and disclosure.
 - Probabilities or odds. Scenarios show signposts seen.
