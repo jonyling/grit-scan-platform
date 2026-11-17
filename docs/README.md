@@ -25,4 +25,4 @@ These source files stay at the folder root because specs and progress notes cite
 
 ## Progress records
 
-The `progress/` folder holds dated plans and handover notes. They record decisions at the time they were written. The README and the specs describe current behavior.
+The `progress/` folder holds dated plans and handover notes. They record decisions at the time they were written. The README and the specs describe current behavior. [Personnel grounding and report outputs (17 November 2026)](progress/Personnel-Grounding-and-Report-Outputs_Plan_2026-11-17.md) is the open plan to ground all lanes on the STE staff log, ship adverse as Word and CSV, standardize Word table headers, and add an Adverse column on SharePoint.
