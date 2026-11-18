@@ -28,6 +28,21 @@ MIGRATIONS = {
     "red_decisions": {"trigger_id": "TEXT"},
 }
 _JSON_SUFFIX = "_json"
+# Schema defaults and call-site shapes: empty recovered cells become these instead of crashing json.loads("").
+_JSON_LIST_COLUMNS = frozenset({
+    "blockers_json", "citations_json", "condition_ids_json", "entity_ids_json", "event_ids_json",
+    "exposure_json", "keywords_json", "options_json", "outlets_json", "problems_json", "queries_json",
+    "quotes_json", "recipients_json", "risk_cascade_json", "routed_json", "signal_ids_json",
+    "source_ids_json", "themes_json", "vector_json", "violations_json",
+})
+
+
+def _loads_json(column: str, value: str) -> Any:
+    """Parse a *_json cell. Blank strings (seen after sqlite .recover) become [] or {}."""
+    text = value.strip()
+    if not text:
+        return [] if column in _JSON_LIST_COLUMNS or column.endswith("_ids_json") else {}
+    return json.loads(text)
 
 
 def reviewed_links(row: dict[str, Any]) -> dict[str, Any]:
@@ -85,7 +100,7 @@ def _row(row: sqlite3.Row) -> dict[str, Any]:
     for key in row.keys():
         value = row[key]
         if key.endswith(_JSON_SUFFIX) and isinstance(value, str):
-            record[key[: -len(_JSON_SUFFIX)]] = json.loads(value)
+            record[key[: -len(_JSON_SUFFIX)]] = _loads_json(key, value)
         else:
             record[key] = value
     return record
