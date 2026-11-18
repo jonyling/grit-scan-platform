@@ -38,7 +38,7 @@ Both lists use the same columns. To print the list, run this command on the serv
 1. On each list, create every column the command prints. Use the internal name exactly as printed, because GRIT writes to that name.
 2. For `Decision`, create a Choice column with the choices `Pending`, `Approved` and `Rejected`. Set the default to `Pending`.
 3. For `Locked`, create a Yes/No column with the default `No`.
-4. For `Adverse`, create a Yes/No column. GRIT sets it to Yes when the signal appears in the latest READY adverse scan, or when people-risk lexicon terms hit a country where STE people are present (internal staff log). Optional: add a list view filtered to `Adverse` = Yes.
+4. For `Adverse`, create a Yes/No column. GRIT sets it to Yes when the signal appears in the latest READY adverse scan, or when people-risk lexicon terms hit a country where STE people are present (internal staff log). Optional: add a list view filtered to `Adverse` = Yes. A list created before this column existed still receives its rows: GRIT leaves the field out and records `missing_columns` in the publish step's outcome until you add the column.
 5. Index `SignalId` and `ReviewDate` in **List settings** > **Indexed columns**.
 
 ## Add the Approve and Reject buttons

@@ -387,3 +387,29 @@ def test_the_dashboard_panel_shows_only_the_readers_own_stage(tmp_path, monkeypa
     assert (entry["stage"], entry["rows"], entry["decisions"]) == (BP, 3, {"APPROVE": 1, "NO_DECISION": 2})
     assert entry["learning"]["approved"] == 1 and entry["learning"]["no_decision"] == 2
     assert panel_data(pool, _profile("someone-else"), now=_at(FRIDAY, "12:30")) == []
+
+
+def test_a_list_without_the_adverse_column_still_gets_its_rows(tmp_path) -> None:
+    pool, config, ids = _argued(tmp_path)
+
+    class OldList(FakeGraph):
+        def list_columns(self, _list_id):
+            return {name for name, _kind, _note in sharepoint.COLUMNS if name != "Adverse"}
+
+        def create_item(self, list_id, fields):
+            if "Adverse" in fields:
+                raise GraphError("Graph POST answered HTTP 400 (invalidRequest)", 400)
+            return super().create_item(list_id, fields)
+
+    graph = OldList()
+    outcome = sharepoint.publish(pool, config, FRIDAY, BP, _profile("bp"), client=graph)
+    assert outcome == {"status": "DONE", "rows": 3, "sent": 3, "failed": 0, "missing_columns": ["Adverse"]}
+
+    class NewList(FakeGraph):
+        def list_columns(self, _list_id):
+            return {name for name, _kind, _note in sharepoint.COLUMNS}
+
+    pool, config, ids = _argued(tmp_path / "new")
+    graph = NewList()
+    assert sharepoint.publish(pool, config, FRIDAY, BP, _profile("bp"), client=graph)["status"] == "DONE"
+    assert all("Adverse" in fields for _list, fields in graph.created)

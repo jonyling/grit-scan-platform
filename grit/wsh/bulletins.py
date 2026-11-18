@@ -8,6 +8,15 @@ from typing import Any, Mapping, Sequence
 SERIES = ("ALERT", "ADVISORY", "INSIGHTS")
 SERIES_LABEL = {"ALERT": "WSH Alert", "ADVISORY": "WSH Advisory", "INSIGHTS": "WSH Insights"}
 
+
+def score_value(value: Any) -> int:
+    """A significance score from model output as an int. A word such as "high" or a blank counts as 0."""
+    try:
+        return int(float(value or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
 _AUTHORITY_DOMAINS = ("wshc.sg", "mom.gov.sg", "mom.gov", "straitstimes.com", "channelnewsasia.com")
 _COUNCIL_OR_MOM = ("wshc.sg", "mom.gov.sg", "workplace safety and health council", "ministry of manpower", "wsh council")
 
@@ -166,7 +175,7 @@ def collapse_notes(notes: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
             lead.get("outlet") or "",
             str(note.get("decision") or "WATCH"),
         )
-        evidence = -int((note.get("significance") or {}).get("evidence") or 0)
+        evidence = -score_value((note.get("significance") or {}).get("evidence"))
         score = (*rank, evidence)
         if key not in winners:
             winners[key] = dict(note)

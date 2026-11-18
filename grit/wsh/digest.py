@@ -16,9 +16,10 @@ from grit.wsh.bulletins import (
     fill_energy,
     is_scanned_pdf_only,
     route_section,
+    score_value,
 )
 from grit.wsh.precedents import store_from_selection, surface_for_note
-from grit.wsh.scope import classify, in_scope, section_for_signal
+from grit.wsh.scope import classify, in_scope, in_window, section_for_signal
 
 NOT_ESTABLISHED = "not established"
 DISCUSSION_CAP = 4  # full notes per section; the rest go to the log for serious incidents
@@ -136,7 +137,7 @@ def _note_from_selection(signal: Mapping[str, Any], classification: Mapping[str,
         "industry": industry,
         "hazard": hazard,
         "lesson_or_practice": lesson,
-        "implication": selection.get("impact") or base["implication"],
+        "implication": " ".join(part for part in (selection.get("impact"), base.get("staff_log")) if part) if selection.get("impact") else base["implication"],
         "exposure": selection.get("exposure") or NOT_ESTABLISHED,
         "transmission": selection.get("transmission") or NOT_ESTABLISHED,
         "uncertainty": selection.get("uncertainty") or NOT_ESTABLISHED,
@@ -195,9 +196,12 @@ def collect_items(
     seen_titles: set[str] = set()
     relevance_client = client
     for row in pool.assessments(run_id, kept_only=False):
+        if not in_window(row):
+            dropped.append({"signal_id": row["signal_id"], "title": row.get("title"), "reason": row.get("drop_reason")})
+            continue
         signal = {
             "signal_id": row["signal_id"], "title": row.get("title"), "text": row.get("text"), "publisher": row.get("publisher"),
-            "url": row.get("url"), "published_at": row.get("published_at"),
+            "url": row.get("url"), "published_at": row.get("published_at"), "priority": row.get("priority"),
         }
         themes = [item.get("theme_id") for item in (row.get("themes") or []) if item.get("theme_id")]
         for target in (row.get("link") or {}).get("sighting_targets") or []:
@@ -259,6 +263,7 @@ def collect_items(
             "series": detect_series(row.get("title") or "", row.get("text") or "", row.get("url") or "", row.get("publisher") or ""),
         }
         for row in pool.assessments(run_id, kept_only=False)
+        if in_window(row)
     ]
     return {
         "sections": [sections[row["id"]] for row in scope.get("sections") or []],
@@ -290,7 +295,7 @@ def _collect_reasoned(pool: Pool, run_id: str, pack: Any, *, client: Any | None,
         key=lambda item: (
             0 if item[1].get("decision") == "INCLUDE" else 1 if item[1].get("decision") == "WATCH" else 2,
             staff_priority_key(signals.get(item[0]) or {}),
-            -int((item[1].get("significance") or {}).get("evidence") or 0),
+            -score_value((item[1].get("significance") or {}).get("evidence")),
             item[0],
         ),
     )
@@ -316,7 +321,7 @@ def _collect_reasoned(pool: Pool, run_id: str, pack: Any, *, client: Any | None,
         classification = classify(row.get("title") or "", row.get("text") or "", scope=scope)
         signal = {
             "signal_id": signal_id, "title": title, "text": row.get("text"), "publisher": row.get("publisher"),
-            "url": row.get("url"), "published_at": row.get("published_at"),
+            "url": row.get("url"), "published_at": row.get("published_at"), "priority": row.get("priority"),
         }
         note = _note_from_selection(signal, classification, selection, section_id)
         note["prior_bulletins"] = surface_for_note(pool, note.get("hazard") or "", exclude_signal=signal_id)
@@ -343,6 +348,7 @@ def _collect_reasoned(pool: Pool, run_id: str, pack: Any, *, client: Any | None,
             "series": detect_series(row.get("title") or "", row.get("text") or "", row.get("url") or "", row.get("publisher") or ""),
         }
         for row in signals.values()
+        if in_window(row)
     ]
     return {
         "sections": [sections[row["id"]] for row in scope.get("sections") or []],

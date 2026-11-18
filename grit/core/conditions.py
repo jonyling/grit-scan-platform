@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from grit.ontology.matchers.credibility_lookup import credibility_lookup
 from grit.ontology.matchers.exposure_matcher import exposure_entity_match
@@ -178,8 +178,12 @@ def revise(document: dict[str, Any], pack: OntologyPack) -> dict[str, Any]:
 
 
 def rank(revision: dict[str, Any], pack: OntologyPack) -> dict[str, Any]:
-    ranked = [_priority(item, pack) for item in revision.get("revisions") or [] if item.get("movement") != "NO_MATERIAL_CHANGE"]
-    ranked.sort(key=lambda item: item["priorityScore"], reverse=True)
+    from grit.core.people import load_people
+
+    people = load_people()
+    ranked = [_priority(item, pack, people) for item in revision.get("revisions") or [] if item.get("movement") != "NO_MATERIAL_CHANGE"]
+    # Staff-log grounding orders items within the same score; it never changes the score or label.
+    ranked.sort(key=lambda item: (item["priorityScore"], bool(item["staffCountries"])), reverse=True)
     return {
         "revisionId": revision.get("revisionId"),
         "revisionDate": revision.get("revisionDate"),
@@ -305,8 +309,8 @@ def run_weekly_pipeline(
     return paths
 
 
-def _priority(item: dict[str, Any], pack: OntologyPack) -> dict[str, Any]:
-    from grit.core.people import append_staff_basis, ground_page, load_people
+def _priority(item: dict[str, Any], pack: OntologyPack, people: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    from grit.core.people import append_staff_basis, ground_page
 
     score = 0
     reasons: list[str] = []
@@ -336,11 +340,11 @@ def _priority(item: dict[str, Any], pack: OntologyPack) -> dict[str, Any]:
     if item.get("descentStatus") == "SUPPORTED":
         score += 2
         reasons.append("evidenced entity-level transmission path (+2)")
-    # Staff-log grounding elevates within the score band and cites presence; it does not invent Direct exposure.
-    grounding = ground_page(str(item.get("headline") or item.get("summary") or ""), str(item.get("summary") or ""), load_people())
+    # Staff-log grounding cites presence and orders within the score band (see rank); it adds no score and never
+    # invents Direct exposure.
+    grounding = ground_page(str(item.get("headline") or item.get("summary") or ""), str(item.get("summary") or ""), people)
     if grounding is not None:
-        score += 1
-        reasons.append(f"STE people in {', '.join(grounding.countries)} (staff log) (+1)")
+        reasons.append(f"STE people in {', '.join(grounding.countries)} (staff log; ranked first within its band, +0)")
     checks = [credibility_lookup(url, pack.source_register) for url in list(item.get("sources") or [])]
     label = "HIGH" if score >= 5 else "MEDIUM" if score >= 3 else "WATCHPOINT"
     ranked_item = {

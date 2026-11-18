@@ -145,3 +145,22 @@ def test_adverse_people_reexports_shared_module() -> None:
 
     assert adverse_people.load_people is core_people.load_people
     assert adverse_people.PEOPLE_RISK == "PEOPLE_RISK"
+
+
+def test_weekly_rank_orders_staffed_items_first_without_changing_score_or_label(tmp_path: Path, monkeypatch) -> None:
+    import grit.core.people as people_module
+    from grit.core.conditions import rank
+    from grit.ontology.pack import load_ontology_pack
+    from grit.settings import CONFIG_DIR
+
+    people = load_people(_staff_file(tmp_path), today=date(2026, 11, 17), addresses={})
+    monkeypatch.setattr(people_module, "load_people", lambda *args, **kwargs: people)
+    base = {"evidenceConfidence": "HIGH", "movement": "ESCALATING", "steThemes": ["A", "B"], "sources": []}
+    revision = {"revisions": [
+        {**base, "developmentId": "plain", "headline": "Factory output update in Vietnam"},
+        {**base, "developmentId": "staffed", "headline": "Missile strike kills workers in Doha, Qatar"},
+    ]}
+    ranked = rank(revision, load_ontology_pack(CONFIG_DIR))["rankedItems"]
+    assert [item["developmentId"] for item in ranked] == ["staffed", "plain"]
+    assert {(item["priorityScore"], item["priorityLabel"]) for item in ranked} == {(4, "MEDIUM")}
+    assert ranked[0]["staffCountries"] == ["Qatar"]

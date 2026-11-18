@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from grit.pool import Pool, utc_now
-from grit.wsh.scope import classify, match_alert
+from grit.wsh.scope import classify, in_window, match_alert
 
 
 def _address(profile: Any) -> str:
@@ -33,9 +33,11 @@ def draft_wsh_alerts(
     ]
     if not recipients:
         recipients = [profile for profile in profiles if pack.pack in profile.packs]
-    rows = list(signals) if signals is not None else []
+    rows = [row for row in signals if in_window(row)] if signals is not None else []
     if not rows:
         for assessment in pool.assessments(run_id, kept_only=False):
+            if not in_window(assessment):
+                continue
             rows.append({
                 "signal_id": assessment["signal_id"], "title": assessment.get("title"), "text": assessment.get("text"),
                 "publisher": assessment.get("publisher"), "url": assessment.get("url"), "published_at": assessment.get("published_at"),

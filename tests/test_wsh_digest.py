@@ -440,3 +440,89 @@ def test_next_digest_version_advances_past_disk_folders(tmp_path) -> None:
     (root / "v2").mkdir(parents=True)
     assert next_digest_version(pool, run_id, profile_id, output_root=tmp_path) == 3
     assert next_digest_version(pool, run_id, profile_id, output_root=tmp_path / "empty") == 2
+
+
+def _add_signal(pool: Pool, run_id: str, key: str, *, title: str, text: str, published_at: str, url: str = "",
+                publisher: str = "The Straits Times", decision: str = "KEEP", drop_reason: str | None = None,
+                priority: dict | None = None) -> str:
+    signal_id = pool.add_signal(url=url or f"https://example.sg/{key}", title=title, text=text, publisher=publisher,
+                                published_at=published_at, lane="FIXTURE", content_hash=key)
+    pool.save_assessment({
+        "signal_id": signal_id, "run_id": run_id, "pack": "wsh", "decision": decision, "drop_reason": drop_reason,
+        "themes_json": [{"theme_id": "WSH-SERIOUS", "tier": "KEY", "matched": [], "where": "TITLE", "strong": True}],
+        "link_json": {"sighting_targets": ["WSH-SERIOUS"]}, "priority_json": priority or {},
+    })
+    return signal_id
+
+
+def test_out_of_window_pages_never_alert_nominate_or_reach_the_council_line(tmp_path) -> None:
+    from grit.wsh.reason import nominate
+
+    pack = load_ontology_pack(CONFIG_DIR, "wsh")
+    profile = load_profiles()["james"]
+    pool = Pool(tmp_path / "wsh.sqlite")
+    run_id = _seed_fixture(pool)
+    stale = _add_signal(pool, run_id, "stale-fall", title="Worker killed after fall from height at Singapore shipyard worksite",
+                        text="A worker died after a fall from height at a Singapore shipyard. MOM is investigating.",
+                        published_at="2019-03-01", decision="DROP", drop_reason="STALE")
+    future = _add_signal(pool, run_id, "future-alert", title="WSH Alert: worker crushed by lifting operation in Singapore",
+                         text="WSH Alert. A worker was crushed during a lifting operation at a Singapore worksite.",
+                         published_at="2026-12-01", url="https://www.wshc.sg/alert-future", publisher="WSH Council",
+                         decision="DROP", drop_reason="AFTER_RUN_DATE")
+
+    drafts = draft_wsh_alerts(pool, run_id, pack, [profile], tmp_path / "alerts")
+    assert drafts and all("shipyard" not in draft["title"] and "lifting" not in draft["title"] for draft in drafts)
+    for row in pool.rows("SELECT rule_json FROM alerts"):
+        assert all(isinstance(reason, str) for reason in row["rule"]["reasons"])
+
+    assert {stale, future}.isdisjoint(row["signal_id"] for row in nominate(pool, run_id, pack))
+    assert "lifting" not in collect_items(pool, run_id, pack)["council_line"]
+
+
+def test_nominate_cap_drops_the_oldest_candidates(tmp_path) -> None:
+    from grit.wsh.reason import nominate
+
+    pack = load_ontology_pack(CONFIG_DIR, "wsh")
+    pool = Pool(tmp_path / "wsh.sqlite")
+    run_id = "2026-11-01-wsh"
+    pool.start_run(run_id, run_date="2026-11-01", pack="wsh", kind="READER_SCAN")
+    ids = {
+        day: _add_signal(pool, run_id, f"fall-{day}", title=f"Worker killed after fall from height at Singapore construction worksite {day}",
+                         text="A construction worker died after a fall from height at a Singapore worksite. MOM is investigating.",
+                         published_at=f"2026-10-{day:02d}")
+        for day in (5, 15, 25)
+    }
+    assert len(nominate(pool, run_id, pack, limit=None)) == 3
+    kept = {row["signal_id"] for row in nominate(pool, run_id, pack, limit=2)}
+    assert kept == {ids[15], ids[25]}
+
+
+def test_reasoned_digest_tolerates_word_scores_and_cites_the_staff_log(tmp_path, monkeypatch) -> None:
+    import grit.wsh.reason as reason
+
+    pack = load_ontology_pack(CONFIG_DIR, "wsh")
+    pool = Pool(tmp_path / "wsh.sqlite")
+    run_id = "2026-11-01-wsh"
+    pool.start_run(run_id, run_date="2026-11-01", pack="wsh", kind="READER_SCAN")
+    staff_reason = "STE people in Singapore (internal staff log, R&A; country level): Singapore: 10 local staff."
+    staffed = _add_signal(pool, run_id, "staffed", title="Worker killed after fall from height at Singapore construction worksite",
+                          text="A construction worker died after a fall from height. MOM is investigating.", published_at="2026-10-20",
+                          priority={"staff_priority": True, "reasons": [staff_reason]})
+    other = _add_signal(pool, run_id, "other", title="Crane collapse injures two at Singapore shipyard",
+                        text="Two workers were injured when a crane collapsed at a Singapore shipyard.", published_at="2026-10-21")
+
+    def selection(signal_id: str, evidence: object) -> dict:
+        return {"signal_id": signal_id, "decision": "INCLUDE", "section_id": "SERIOUS", "reason": "Singapore workplace incident",
+                "impact": "Could inform STE contractor controls.", "significance": {"evidence": evidence}}
+
+    monkeypatch.setattr(reason, "run_reasoned_review", lambda *args, **kwargs: {
+        "selections": {staffed: selection(staffed, "high"), other: selection(other, 3)},
+        "nominated": 2, "reviewed": 2, "prompt_version": "test",
+    })
+    collected = collect_items(pool, run_id, pack, use_reasoned=True)
+    notes = {note["title"]: note for section in collected["sections"] for note in section["discussions"]}
+    note = notes["Worker killed after fall from height at Singapore construction worksite"]
+    assert note["staff_log"] == staff_reason
+    assert staff_reason in note["implication"]
+    assert check_selection(selection("s", "high") | {"significance": {"evidence": "high", "exposure": "2"}}, {"s"})["significance"] == {
+        "evidence": 0, "exposure": 2}

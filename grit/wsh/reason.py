@@ -12,9 +12,9 @@ import os
 import re
 from typing import Any, Callable, Mapping, Sequence
 
-from grit.wsh.bulletins import detect_series, is_bulletin, is_scanned_pdf_only
+from grit.wsh.bulletins import detect_series, is_bulletin, is_scanned_pdf_only, score_value
 from grit.wsh.prompt import ASSESSMENT_SYSTEM, CRITIC_SYSTEM, REASON_PROMPT_VERSION
-from grit.wsh.scope import classify, candidate_for_reasoning, section_for_signal
+from grit.wsh.scope import classify, candidate_for_reasoning, in_window, section_for_signal
 
 BATCH = 10
 INDUSTRIES = (
@@ -141,7 +141,8 @@ def check_selection(row: Mapping[str, Any], expected: set[str], *, bulletin: boo
         "uncertainty": _plain(str(row.get("uncertainty") or "")) or "not established",
         "ste_industry": (str(row["ste_industry"]).strip() if row.get("ste_industry") else None),
         "section_id": str(row.get("section_id") or "").upper() or None,
-        "significance": row.get("significance") if isinstance(row.get("significance"), dict) else {},
+        "significance": {str(key): score_value(value) for key, value in row["significance"].items()}
+        if isinstance(row.get("significance"), dict) else {},
         "what_happened": _plain(str(row.get("what_happened") or "")) or "not established",
         "failed_controls": _plain(str(row.get("failed_controls") or "")) or "not established",
         "earlier_cases": _plain(str(row.get("earlier_cases") or "")) or "not established",
@@ -323,7 +324,7 @@ def nominate(pool: Any, run_id: str, pack: Any, *, limit: int | None = 80) -> li
         consider(row)
     # Method, regulator, and Council bulletins sometimes fail the generic event assessor. Recover them for reasoning.
     for row in pool.assessments(run_id, kept_only=False):
-        if row.get("decision") == "KEEP":
+        if row.get("decision") == "KEEP" or not in_window(row):
             continue
         classification = classify(row.get("title") or "", row.get("text") or "", scope=scope)
         if classification.get("is_method") or classification.get("is_regulatory") or is_bulletin(
@@ -341,7 +342,10 @@ def nominate(pool: Any, run_id: str, pack: Any, *, limit: int | None = 80) -> li
             "CANDIDATE_SG_EMERGING": 5,
             "CANDIDATE_FRAMEWORK": 6,
         }
-        nominated.sort(key=lambda row: (rank.get(str(row.get("prefilter")), 9), row.get("published_at") or "", row["signal_id"]))
+        # Newest first within a rank; undated items last, so the cap drops the oldest.
+        nominated.sort(key=lambda row: row["signal_id"])
+        nominated.sort(key=lambda row: str(row.get("published_at") or ""), reverse=True)
+        nominated.sort(key=lambda row: rank.get(str(row.get("prefilter")), 9))
         nominated = nominated[:limit]
     return nominated
 

@@ -52,6 +52,20 @@ COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("DecidedAt", "Date and time", "Set by the button (@now)."),
     ("Locked", "Yes/No (default No)", "Set by GRIT at the deadline. The buttons hide when it is Yes."),
 )
+# Columns added after lists were first created. A list without one still gets its rows; the field is left out.
+OPTIONAL_COLUMNS = ("Adverse",)
+
+
+def _missing_optional(client: Any, list_id: str) -> tuple[str, ...]:
+    """The optional columns the list lacks. When the list cannot be read, all of them, so no row is rejected."""
+    lookup = getattr(client, "list_columns", None)
+    if lookup is None:
+        return ()
+    try:
+        present = lookup(list_id)
+    except GraphError:
+        return OPTIONAL_COLUMNS
+    return tuple(name for name in OPTIONAL_COLUMNS if name not in present)
 
 
 def _clip(value: Any, limit: int = TEXT_MAX) -> str:
@@ -143,6 +157,7 @@ def publish(pool: Pool, config: ReviewConfig, day: date, stage: str, profile: Pr
         return {"status": "NOT_CONFIGURED", "rows": len(present), "sent": 0,
                 "reason": "no SharePoint list id for this stage" if not target.list_id else "Graph is not configured"}
     by_id = {row["signal_id"]: row for row in rows}
+    missing_columns = _missing_optional(client, target.list_id)
     sent = failed = 0
     error = None
     for item in items(pool, batch, stage):
@@ -153,6 +168,8 @@ def publish(pool: Pool, config: ReviewConfig, day: date, stage: str, profile: Pr
             continue
         fields = row_fields(record, day=day, position=item["position"], memory_note=item.get("memory_note") or "",
                             bp=bp.get(item["signal_id"]), people=people, adverse_signal_ids=adverse_signal_ids, adverse_urls=adverse_urls)
+        for name in missing_columns:
+            fields.pop(name, None)
         try:
             list_item_id = _find(client, target.list_id, item["signal_id"], day) if item.get("uncertain") else None
             list_item_id = list_item_id or client.create_item(target.list_id, fields)
@@ -172,6 +189,8 @@ def publish(pool: Pool, config: ReviewConfig, day: date, stage: str, profile: Pr
     outcome: dict[str, Any] = {"status": "FAILED" if failed else "DONE", "rows": len(present), "sent": sent, "failed": failed}
     if error:
         outcome["error"] = error
+    if missing_columns:
+        outcome["missing_columns"] = list(missing_columns)
     return outcome
 
 

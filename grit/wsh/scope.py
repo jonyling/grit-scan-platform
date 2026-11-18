@@ -10,6 +10,15 @@ from __future__ import annotations
 import re
 from typing import Any, Mapping
 
+from grit.core.reader_filter import AFTER_RUN_DATE, STALE
+
+OUT_OF_WINDOW = frozenset({STALE, AFTER_RUN_DATE})
+
+
+def in_window(row: Mapping[str, Any]) -> bool:
+    """False for a page the assessor dropped as older than the window or published after the run date."""
+    return row.get("drop_reason") not in OUT_OF_WINDOW
+
 
 def _text(title: str, body: str = "") -> str:
     return f"{title}\n{body}".casefold()
@@ -331,9 +340,9 @@ def match_alert(title: str, body: str, classification: Mapping[str, Any], patter
             "reasons": [
                 f"Matched '{matched}'",
                 *([f"Place: {classification['place']}"] if classification.get("place") else []),
-                *([f"Industry: {item['label']}"] for item in classification.get("industries") or []),
-                *([f"Hazard: {item['label']}"] for item in classification.get("hazards") or []),
-                *([f"Regulator: {item['label']}"] for item in classification.get("regulators") or []),
+                *(f"Industry: {item['label']}" for item in classification.get("industries") or []),
+                *(f"Hazard: {item['label']}" for item in classification.get("hazards") or []),
+                *(f"Regulator: {item['label']}" for item in classification.get("regulators") or []),
                 *([f"Workplace: {classification['workplace_cue']}"] if classification.get("workplace_cue") else []),
             ],
         }

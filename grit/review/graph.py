@@ -137,6 +137,11 @@ class GraphClient:
 
     # SharePoint list items ------------------------------------------------------------------------------------
 
+    def list_columns(self, list_id: str) -> set[str]:
+        """The internal names of the list's columns, which are the keys a row's fields use."""
+        body = self.call("GET", self._list(list_id) + "/columns?$select=name")
+        return {str(row["name"]) for row in (body or {}).get("value") or [] if row.get("name")}
+
     def create_item(self, list_id: str, fields: Mapping[str, Any]) -> str:
         body = self.call("POST", self._list(list_id) + "/items", json={"fields": dict(fields)})
         item_id = (body or {}).get("id")
