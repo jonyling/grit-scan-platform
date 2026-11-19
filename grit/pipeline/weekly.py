@@ -1658,7 +1658,7 @@ ABBREVIATIONS = frozenset({
 })
 
 
-# The policy status and its basis in the reviewed findings: "The report status is ELEVATED based on five included findings."
+# The policy status and its basis in the reviewed findings: "The report status is ELEVATED based on the reviewed findings."
 # Policy sets it from the selections, so no news page can attest to it. A status sentence that names news events is cited.
 STATUS_BASIS = re.compile(r"^\s*the report status is [A-Z_]+\b[^.!?]*\b(?:findings?|selections?)\b[^.!?]*[.!?]?\s*$", re.IGNORECASE)
 

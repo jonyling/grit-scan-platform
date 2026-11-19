@@ -70,3 +70,14 @@ def test_a_policy_status_sentence_needs_no_citation_but_a_news_basis_does():
     assert sentence_break(without_internal_claims(policy)) is None
     news = "The report status is ELEVATED based on missile strikes across the Gulf. An ADNOC Logistics & Services vessel was attacked"
     assert sentence_break(without_internal_claims(news)) is not None
+
+
+def test_common_red_trigger_phrasings_stand_without_a_citation():
+    from grit.agents.checks import INTERNAL_CLAIM
+
+    for sentence in ("The status would be raised to RED upon a Middle East evacuation.",
+                     "A Middle East evacuation would raise the status to RED.",
+                     "It becomes RED only when R&A confirms a site was hit."):
+        assert INTERNAL_CLAIM.search(sentence), sentence
+    for sentence in ("Iran raised its air-defence alert to red after the strike.", "The tanker turned red-hot after the blast."):
+        assert not INTERNAL_CLAIM.search(sentence), sentence

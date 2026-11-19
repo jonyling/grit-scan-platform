@@ -836,8 +836,8 @@ def test_a_non_material_issue_without_valid_evidence_is_withheld_not_a_failed_ca
            "source_ids": ["A"], "quote": "A sentence quoted from the report, not the source"}
     raw = check_critique({"reviewed_ids": ["A"], "issues": [good, bad], "resolved_issue_ids": []}, {"A"}, sources, set())
     assert [issue["issue_id"] for issue in raw["issues"]] == ["G"]
-    assert raw["withheld_issues"][0]["issue_id"] == "B" and "verbatim source quote" in raw["withheld_issues"][0]["withheld_because"]
-    with pytest.raises(ContractError, match="verbatim source quote"):
+    assert raw["withheld_issues"][0]["issue_id"] == "B" and "verbatim quote from a cited source page" in raw["withheld_issues"][0]["withheld_because"]
+    with pytest.raises(ContractError, match="verbatim quote from a cited source page"):
         check_critique({"reviewed_ids": ["A"], "issues": [{**bad, "material": True}], "resolved_issue_ids": []}, {"A"}, sources, set())
 
 

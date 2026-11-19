@@ -18,7 +18,9 @@ _SPACE = re.compile(r"\s+")
 # A statement about the business's own state, or the escalation rule. A news page cannot attest to either, so it carries no
 # citation: "No internal impact is confirmed", "would raise the status to RED".
 INTERNAL_CLAIM = re.compile(
-    r"\binternal impact\b|\bno (?:internal )?impact (?:is|was|has been) (?:yet )?confirmed\b|\braises? (?:the )?status to RED\b", re.IGNORECASE)
+    r"\binternal impact\b|\bno (?:internal )?impact (?:is|was|has been) (?:yet )?confirmed\b"
+    r"|\b(?:raise[sd]?|raising)\b[^.!?]{0,40}?\bto (?-i:RED)\b|\b(?:become|becomes|turn|turns|move|moves|go|goes) (?:to )?(?-i:RED)\b",
+    re.IGNORECASE)
 
 
 def normalise(text: str) -> str:

@@ -422,7 +422,8 @@ def check_critique(raw: Any, expected: set[str], sources: Mapping[str, Any], ope
             quote = issue.get("quote")
             text = " ".join(f"{sources[ref].get('title') or ''} {sources[ref].get('text') or ''}" for ref in refs)
             if not isinstance(quote, str) or len(quote.strip()) < 20 or normalise(quote) not in normalise(text):
-                problem = "A factual correction needs a verbatim source quote."
+                problem = ("A factual correction needs a verbatim quote from a cited source page, not from the report. "
+                           "To challenge the report's wording against the selections or status_basis, use kind NARRATIVE.")
         if problem and issue["material"]:
             raise ContractError(problem)
         if problem:
@@ -527,7 +528,10 @@ A report that repeats an earlier statement its corrections ledger (report.correc
 Missing internal evidence is material only when a text states CONFIRMED exposure or impact, or presents POSSIBLE
 exposure as established. POSSIBLE exposure that is labelled as such is the required wording without internal evidence:
 raise INTERNAL_EVIDENCE with "material": false so the missing internal check is listed, not blocked.
-Do not fabricate a quotation to prove missing support. No issues is valid only after all targets are reviewed.""",
+Do not fabricate a quotation to prove missing support. No issues is valid only after all targets are reviewed.
+A quote is always from a cited source page, never from the report under review. To challenge the report's own wording
+against the selections, the ledger or status_basis (a wrong count, a dropped qualifier), use NARRATIVE: name the
+report wording in problem and the selection ids in source_ids.""",
     "Screen": COMMON + """You are the Critic screening signals the deterministic filter DROPPED (drop_reason gives why).
 Each candidate is a compact record: headline, dates, drop reason and an excerpt. Look for false negatives:
 a relevant event for this pack's business, entities or conditions that the filter wrongly discarded.
@@ -559,8 +563,9 @@ internal impact is confirmed") or on what would raise the status to RED cites no
 Call exposure confirmed only when a cited selection has exposure_status CONFIRMED; otherwise write possible exposure.
 The report status (v2.status) is set by policy from the reviewed selections; state it and its basis, and never call
 the business's position RED unless the status is RED. A status sentence whose basis is the reviewed findings ("The
-report status is ELEVATED based on five included findings.") cites nothing; put each news fact in its own cited
-sentence. Only the Risk & Assurance operator confirms a RED impact; a RED
+report status is ELEVATED based on the reviewed findings.") cites nothing; put each news fact in its own cited
+sentence. Give a count only in status_basis's own words, with its qualifier ("4 included findings combine identifiable
+exposure ..."), never shortened to a bare "four included findings". Only the Risk & Assurance operator confirms a RED impact; a RED
 candidate or an assessed CONFIRMED impact without that decision awaits R&A confirmation and is not RED.
 Use a number only when it appears in the cited source text; otherwise omit it. Write each number with its unit (%, $,
 bps, units); if the source gives a number without its unit, leave the number out rather than guess the unit. The previous output, if supplied
