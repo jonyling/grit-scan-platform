@@ -2,8 +2,9 @@
 
 A draft that failed its checks is withheld, and the QA log names the date or figure that failed ("'30 November' is not
 on the cited page(s) S1"). That date or figure must not reach the reader by another route: any row, sentence or
-look-ahead entry that rests on the withheld item's own reports. This module finds such leaks so a report that has one
-is not released. The same date about a different event, from different reports, is not a leak.
+look-ahead entry that rests on the withheld item's own reports, unless a page that text cites states it. This module
+finds such leaks so a report that has one is not released. The same date about a different event, from different
+reports, is not a leak, and neither is a date another report of the same event gives.
 """
 
 from __future__ import annotations
@@ -86,8 +87,10 @@ def _strings(value: Any, path: str, context: frozenset[str]) -> Iterator[tuple[s
             yield from _strings(item, f"{path}[{index}]", context)
 
 
-def leaks(brief: Mapping[str, Any]) -> list[str]:
-    """Each place a withheld date or figure reappears in text resting on the withheld item's own reports."""
+def leaks(brief: Mapping[str, Any], pages: Mapping[str, str] | None = None) -> list[str]:
+    """Each place a withheld date or figure reappears in text resting on the withheld item's own reports, where no page
+    the text cites states it. pages: {signal_id: title and text}. A page not supplied states nothing."""
+    pages = pages or {}
     withheld = withheld_terms(brief.get("qa"))
     if not withheld:
         return []
@@ -101,6 +104,7 @@ def leaks(brief: Mapping[str, Any]) -> list[str]:
             if not context & row["signal_ids"]:
                 continue
             for term in row["terms"]:
-                if _pattern(term).search(text):
+                pattern = _pattern(term)
+                if pattern.search(text) and not any(pattern.search(pages.get(key) or "") for key in context):
                     found.append(f"'{term}', withheld for {row['item']}, appears in {path}.")
     return list(dict.fromkeys(found))

@@ -75,7 +75,12 @@ def write_pack(pool: Pool, run_id: str, profile: Profile, *, folder: Path | None
     result: dict[str, Any] = {"profile": profile.profile_id, "files": files, "content_hash": brief["content_hash"], "members": len(brief["membership"])}
     from grit.report.withheld import leaks
 
-    leaked = leaks(brief)
+    from grit.report.withheld import _ids
+
+    cited = sorted(set(_ids(brief)))
+    pages = {row["signal_id"]: f"{row.get('title') or ''} {row.get('text') or ''}" for row in pool.rows(
+        f"SELECT signal_id, title, text FROM signals WHERE signal_id IN ({','.join('?' * len(cited))})", tuple(cited))} if cited else {}
+    leaked = leaks(brief, pages)
     if submit and leaked:
         # A date or figure the QA log withheld reached the reader: the files are written for checking, not submitted.
         result["package"] = {"skipped": "Not submitted. The QA log withheld these, but the report still shows them: " + " ".join(leaked)}

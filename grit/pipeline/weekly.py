@@ -1678,7 +1678,7 @@ class WeeklyCoordinator:
         # Every reason is stated, so an INCOMPLETE report always says what keeps it from READY.
         blocked_by = [
             *(f"Completeness: {item}" for item in brief["method"]["weekly"]["completeness"]["blocking"]),
-            *(f"QA log: {item}" for item in leaks(brief)),
+            *(f"QA log: {item}" for item in leaks(brief, {key: f"{row.get('title') or ''} {row.get('text') or ''}" for key, row in sources.items()})),
             *(f"Open material issue {key}: {str(row['issue'].get('problem') or '')[:200]}"
               for key, row in self.store.issues().items() if row["issue"].get("material")),
             *(["No reviewed sources."] if not sources else []),

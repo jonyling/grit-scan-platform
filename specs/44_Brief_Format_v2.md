@@ -93,7 +93,7 @@ The QA log blocks what it withholds:
 
 - Each `grit agents` pass clears the run's earlier withheld entries, so the log lists only what the latest drafts withheld.
 - A withheld event's reports feed no table: not the look-ahead, the status line's dated items, the coverage matrix or the jurisdictions.
-- A date or figure a withheld draft failed on may not reappear in any text that cites the withheld event's reports (`grit.report.withheld`). The same date about another event is not a leak. Bare one- and two-digit numbers are not policed, because they also count list positions.
+- A date or figure a withheld draft failed on may not reappear in any text that cites the withheld event's reports, unless a page that text cites states it (`grit.report.withheld`). The same date about another event is not a leak, and neither is a date another report of the same event gives. Bare one- and two-digit numbers are not policed, because they also count list positions.
 - A leak keeps a reasoned report from READY, and the older path writes the files without submitting them.
 
 - Every figure appears in a cited source, or in a source's publication date.

@@ -101,6 +101,8 @@ def test_a_withheld_date_may_not_return_through_the_withheld_event_s_own_reports
     assert any("v2.look_ahead[0].event" in line for line in found) and any("v2.risk_window[0]" in line for line in found)
     # The same date about another event, from other reports, is not a leak.
     assert not any("escalating" in line for line in found)
+    # Nor is a date a cited page states: another report of the same event can give it.
+    assert leaks(brief, {_etihad: "Etihad has cancelled Abu Dhabi flights until November 30."}) == []
     brief["v2"]["look_ahead"], brief["v2"]["risk_window"] = [], []
     assert leaks(brief) == []
 
