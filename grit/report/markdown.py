@@ -49,10 +49,19 @@ EXPOSURE_TABLES = (
 )
 
 
+def not_supplied(snapshot: Mapping[str, Any]) -> str:
+    """The exposure line for a business area the internal staff log has no staff for."""
+    area = snapshot.get("businessArea") or "This business area's"
+    return (f"{area} exposure: not supplied. The internal staff log, as of {snapshot.get('asOf')}, records no {area} "
+            "headcount or travellers, so this report lists no staff. Other business areas' staff are not this business area's exposure.")
+
+
 def _exposure(snapshot: Mapping[str, Any] | None) -> list[str]:
     """The approved exposure snapshot (URS methodology, section 15.2), or a statement that there was none."""
     if not snapshot:
         return ["No approved internal exposure snapshot this week. Staff, site and project exposure rests on public sources only."]
+    if snapshot.get("notSupplied"):
+        return [not_supplied(snapshot)]
     lines = [f"Approved internal data as of {snapshot.get('asOf')}, approved by {snapshot.get('approvedBy')}. "
              f"Sources: {'; '.join(snapshot.get('sources') or []) or 'not stated'}.", ""]
     for key, title, headers, fields in EXPOSURE_TABLES:

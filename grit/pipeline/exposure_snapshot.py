@@ -122,13 +122,16 @@ def snapshot_summary(document: Mapping[str, Any]) -> dict[str, Any]:
     """What the agents and the report show of the snapshot: every section, without the references."""
     keep = {key: [{field: value for field, value in row.items() if field != "reference"} for row in document.get(key) or []]
             for key in SECTIONS if document.get(key)}
-    return {"asOf": document.get("asOf"), "preparedBy": document.get("preparedBy"), "sources": list(document.get("sources") or []), **keep}
+    extra = {key: document[key] for key in ("businessArea", "notSupplied") if key in document}
+    return {"asOf": document.get("asOf"), "preparedBy": document.get("preparedBy"), "sources": list(document.get("sources") or []), **extra, **keep}
 
 
 def merge_summaries(first: Mapping[str, Any] | None, second: Mapping[str, Any] | None) -> dict[str, Any] | None:
     """One report snapshot from two summaries, such as the staff log and a reviewer-approved snapshot. Rows are joined,
     the approvers and sources are listed together, and asOf is the later date."""
     parts = [part for part in (first, second) if part]
+    # A staff log with none of this business area's staff adds nothing to a reviewer's snapshot.
+    parts = [part for part in parts if not part.get("notSupplied")] or parts[:1]
     if len(parts) < 2:
         return dict(parts[0]) if parts else None
     a, b = parts

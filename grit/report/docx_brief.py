@@ -107,6 +107,9 @@ def posture_pointer(plan: Sequence[tuple[str, str, Any]], first: int) -> str:
 def posture_lines(brief: Mapping[str, Any]) -> list[tuple[str, str]]:
     """The action posture's principal ask and RED rule, as (label, text)."""
     lines = [("Principal ask. ", brief["bottom_line"].get("escalation") or NO_ASK)]
+    basis = brief["bottom_line"].get("ask_basis")
+    if isinstance(basis, Mapping):
+        lines.append(("Why this ask. ", f"It rests on \"{basis.get('title')}\", which {'; and '.join(basis.get('links') or [])}."))
     triggers = [label[:1].lower() + label[1:] for label in (brief.get("red_triggers") or {}).values()]
     if triggers:
         lines.append(("When to raise to RED. ", f"The status is {brief['v2']['status']}. It becomes RED only when R&A confirms that one of these "
@@ -984,6 +987,11 @@ def _exposure(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool)
     snapshot = brief["v2"].get("exposure")
     if not snapshot:
         document.add_paragraph("No approved internal exposure snapshot this week. Staff, site and project exposure rests on public sources only.")
+        return True
+    if snapshot.get("notSupplied"):
+        from grit.report.markdown import not_supplied
+
+        document.add_paragraph(not_supplied(snapshot))
         return True
     document.add_paragraph(f"Approved internal data as of {snapshot.get('asOf')}, approved by {snapshot.get('approvedBy')}. "
                            f"Sources: {'; '.join(snapshot.get('sources') or []) or 'not stated'}.")

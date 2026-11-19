@@ -87,7 +87,14 @@ a passing mention. The item Reporter reports only news that touches the item's r
 
 ## 3. The EventAssessor
 
-For each elevated event, `grit agents` asks the EventAssessor (prompt `event-row-1`) for an item label, a summary, implications for the business area, and a suggested response with an owner. The row is kept only when it passes these checks. Otherwise the row is withheld and logged in the QA log. The table then shows the event without a draft.
+For each elevated event, `grit agents` asks the EventAssessor (prompt `event-row-1`) for an item label, a summary, implications for the business area, and a suggested response with an owner. The row is kept only when it passes these checks. Otherwise the row is withheld and logged in the QA log, with the event's reports. The table then shows the event without a draft.
+
+The QA log blocks what it withholds:
+
+- Each `grit agents` pass clears the run's earlier withheld entries, so the log lists only what the latest drafts withheld.
+- A withheld event's reports feed no table: not the look-ahead, the status line's dated items, the coverage matrix or the jurisdictions.
+- A date or figure a withheld draft failed on may not reappear in any text that cites the withheld event's reports (`grit.report.withheld`). The same date about another event is not a leak. Bare one- and two-digit numbers are not policed, because they also count list positions.
+- A leak keeps a reasoned report from READY, and the older path writes the files without submitting them.
 
 - Every figure appears in a cited source, or in a source's publication date.
 - The summary states a date, and a figure when its sources give one (specificity).
@@ -119,6 +126,7 @@ A wire dateline, such as "Riyadh, November 3 (ANI):" or "WASHINGTON, Nov 3 (Reut
 - The completeness gate answers eight questions by rule. Five are critical: macro and financial items checked, every line of business searched, competitors checked, export controls and the supply chain checked, and every jurisdiction searched. Three are not critical: every nil backed by a search of its own scope, named suppliers and customers searched, and sources in conflict.
 - A critical question answered "No" blocks release. The brief records the blocking questions and every other limitation under `method.weekly.completeness`. A reasoned weekly report with a blocker is `INCOMPLETE` even when the Critic raises no issue. The rendered gate marks each critical question and states when the brief is not ready for release.
 - A risk's category comes from words in its name. "Economic slowdown" and "recession" count as financial and macro, so a macro risk named that way satisfies the financial check.
+- The macro and financial check needs content, not only searches. It answers Yes when a financial search was answered and the report carries a macro or financial item: one on a financial risk, or one matched to a financial management topic. Searches with no such item answer Partly.
 - A conflict is two members of one event that give different counts for the same thing (killed, injured, flights, missiles and similar).
 
 ## 6. Source tiers

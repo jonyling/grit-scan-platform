@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
+from functools import lru_cache
 from datetime import date
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -107,23 +108,74 @@ def staff_log_path() -> Path | None:
     return None
 
 
-def staff_snapshot(path: Path | None = None) -> dict[str, Any] | None:
+def _names(pack: Any) -> set[str]:
+    manifest = getattr(pack, "manifest", None) or {}
+    return {str(name).casefold() for name in (getattr(pack, "pack", None), getattr(pack, "label", None), manifest.get("shortLabel")) if name}
+
+
+@lru_cache(maxsize=1)
+def _registers() -> tuple[tuple[str, frozenset[str], tuple[str, ...]], ...]:
+    """(pack id, the pack's own names, its registered entity names) for every business-area pack."""
+    from grit.ontology.pack import load_ontology_pack, manifests
+    from grit.settings import CONFIG_DIR
+
+    found = []
+    for name in manifests():
+        try:
+            pack = load_ontology_pack(CONFIG_DIR, name)
+        except (OSError, ValueError, KeyError):
+            continue
+        if pack.level != "BA":
+            continue
+        entities = tuple(str(row.get("entityName") or "").casefold() for row in (pack.exposure or {}).get("entities") or [] if row.get("entityName"))
+        found.append((name, frozenset(_names(pack)), entities))
+    return tuple(found)
+
+
+def business_areas_of(entity: Any, tag: Any = None) -> set[str]:
+    """The business-area packs an entity's staff belong to: the staff log's own business_area tag, else every pack whose
+    entity register names the entity ("TransCore" is in Urban Solutions' register). Empty when no register names it."""
+    registers = _registers()
+    if tag:
+        wanted = str(tag).casefold()
+        return {name for name, own, _ in registers if wanted in own}
+    if not str(entity or "").strip():
+        return set()
+    word = re.compile(rf"(?<![\w]){re.escape(str(entity or '').casefold())}(?![\w])")
+    return {name for name, own, entities in registers if str(entity or "").casefold() in own or any(word.search(item) for item in entities)}
+
+
+def staff_snapshot(path: Path | None = None, *, pack: Any = None) -> dict[str, Any] | None:
     """The staff log in the exposure-snapshot shape (grit.pipeline.exposure_snapshot): local staff and named entities as
-    sites, travellers and assignees as travel. None when there is no staff log or it has no counts."""
+    sites, travellers and assignees as travel. None when there is no staff log or it has no counts.
+
+    With a business-area pack, only that business area's rows are kept (business_areas_of). A row no register or tag
+    attributes, such as travellers counted by country only, goes to the Group pack alone. When nothing is left, the
+    snapshot says so: "notSupplied" is true and sites and travel are empty."""
     path = path or staff_log_path()
     if path is None or not path.is_file():
         return None
     data = json.loads(path.read_text(encoding="utf-8"))
     reference = f"Internal staff log ({path.name})"
+    group = pack is None or getattr(pack, "level", None) == "GROUP"
+
+    def kept(entity: Any, *tags: Any) -> bool:
+        return group or getattr(pack, "pack", None) in business_areas_of(entity, next((tag for tag in tags if tag), None))
+
     sites: list[dict[str, Any]] = []
     travel: list[dict[str, Any]] = []
     dates: list[str] = []
     sources: list[str] = []
+    found = False
 
-    def site(row: Mapping[str, Any], headcount: Any, as_at: str | None, safe: bool, source: Any) -> None:
+    def site(row: Mapping[str, Any], headcount: Any, as_at: str | None, safe: bool, source: Any, block: Mapping[str, Any]) -> None:
+        nonlocal found
         country = canonical_country(row.get("country"))
         count = int(headcount or 0)
         if not country or not row.get("entity") or count <= 0:
+            return
+        found = True
+        if not kept(row["entity"], row.get("business_area"), block.get("business_area")):
             return
         sites.append({"entity": str(row["entity"]), "city": _city(country, row.get("country")) or _city(country, row.get("city")) or "Not stated",
                       "country": country, "headcount": count, "reference": str(source or reference),
@@ -133,18 +185,23 @@ def staff_snapshot(path: Path | None = None) -> dict[str, Any] | None:
     local_date = str(local.get("as_at") or data.get("asOf") or "")[:10] or None
     local_safe = "safe" in str(local.get("status") or "").casefold()
     for row in local.get("entries") or []:
-        site(row, row.get("headcount"), local_date, local_safe, local.get("source"))
+        site(row, row.get("headcount"), local_date, local_safe, local.get("source"), local)
     for row in data.get("entity_level_examples") or []:
-        site(row, row.get("staff") or row.get("headcount"), None, False, row.get("source"))
+        site(row, row.get("staff") or row.get("headcount"), None, False, row.get("source"), data)
     for row in data.get("personnel") or []:
-        site(row, row.get("headcount"), str(data.get("asOf") or "")[:10] or None, False, row.get("source"))
+        site(row, row.get("headcount"), str(data.get("asOf") or "")[:10] or None, False, row.get("source"), data)
     traveller = data.get("middle_east_travellers_and_assignees") or {}
     travel_date = str(traveller.get("as_at") or "")[:10] or None
     counts: dict[str, int] = {}
-    for country, count in (traveller.get("by_country") or {}).items():
-        counts[canonical_country(country)] = counts.get(canonical_country(country), 0) + int(count or 0)
+    if traveller.get("by_country"):
+        found = True
+    if kept(None, traveller.get("business_area")):
+        for country, count in (traveller.get("by_country") or {}).items():
+            counts[canonical_country(country)] = counts.get(canonical_country(country), 0) + int(count or 0)
     for row in data.get("travel") or []:
-        counts[canonical_country(row.get("country"))] = counts.get(canonical_country(row.get("country")), 0) + 1
+        found = True
+        if kept(None, row.get("business_area"), data.get("business_area")):
+            counts[canonical_country(row.get("country"))] = counts.get(canonical_country(row.get("country")), 0) + 1
     for country, count in counts.items():
         if country and count > 0:
             travel.append({"destination": country, "country": country, "travellers": count,
@@ -154,10 +211,14 @@ def staff_snapshot(path: Path | None = None) -> dict[str, Any] | None:
             dates.append(when)
         if part.get("source"):
             sources.append(str(part["source"]))
-    if not sites and not travel:
+    if not found:
         return None
-    return {"asOf": min(dates) if dates else (str(data.get("asOf") or "")[:10] or date.today().isoformat()),
-            "preparedBy": "R&A", "sources": [reference, *dict.fromkeys(sources)], "sites": sites, "travel": travel}
+    snapshot = {"asOf": min(dates) if dates else (str(data.get("asOf") or "")[:10] or date.today().isoformat()),
+                "preparedBy": "R&A", "sources": [reference, *dict.fromkeys(sources)], "sites": sites, "travel": travel}
+    if not group:
+        snapshot["businessArea"] = str((getattr(pack, "manifest", None) or {}).get("shortLabel") or getattr(pack, "label", "") or pack.pack)
+        snapshot["notSupplied"] = not sites and not travel
+    return snapshot
 
 
 def load_people(path: Path | None = None, *, today: date | None = None, addresses: Mapping[str, tuple[str, str]] | None = None) -> dict[str, Any] | None:

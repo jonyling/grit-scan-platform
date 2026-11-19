@@ -350,7 +350,8 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         correction = render(row["correction"])
         if not correction["sources"]:
             correction["sources"] = [source_ref(signal_id) for signal_id in row.get("source_ids") or [] if signal_id in signals]
-        qa_rows.append({"item": row["item"], "prior": row["prior"], "correction": correction, "origin": row["origin"]})
+        qa_rows.append({"item": row["item"], "prior": row["prior"], "correction": correction, "origin": row["origin"],
+                        "source_ids": list(row.get("source_ids") or [])})
 
     # Format v2 (spec 44): Wilson's tables, by rule, from the same rows.
     from grit.pipeline.reader_scan import graph_pack

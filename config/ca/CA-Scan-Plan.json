@@ -184,7 +184,7 @@
       "requestId": "CA-MR-04",
       "title": "Geopolitical fragmentation prolongs supply and cost pressure",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "keywords": [
         "aerospace supply chain + sanctions",
         "aircraft parts + tariffs"
@@ -198,7 +198,7 @@
       "requestId": "CA-MR-05",
       "title": "Aviation growth collides with capacity, talent and cost constraints",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "keywords": [
         "MRO capacity shortage",
         "aircraft technician shortage",
@@ -208,6 +208,34 @@
         "MRO capacity constraint technician shortage"
       ],
       "source": "CA workbook, 10. Management Focus, Others from the R&A team 2"
+    },
+    {
+      "requestId": "CA-MR-R01",
+      "title": "Financial and macro exposure: interest rates, currency and airline credit",
+      "kind": "TOPIC",
+      "status": "ACTIVE",
+      "keywords": [
+        "Federal Reserve",
+        "Fed + interest rate",
+        "interest rate + decision",
+        "exchange rate",
+        "US dollar + currency",
+        "Singapore dollar",
+        "MAS + monetary policy",
+        "rate cut + central bank",
+        "rate hike + central bank",
+        "airline + insolvency",
+        "airline + bankruptcy",
+        "lessor + credit",
+        "jet fuel + price"
+      ],
+      "queries": [
+        "Federal Reserve interest rate decision US dollar",
+        "Singapore dollar US dollar exchange rate outlook",
+        "airline insolvency credit risk lessor"
+      ],
+      "source": "Added because the completeness gate needs macro and financial coverage (URS methodology, section 8) and the CA scan plan had no financial topic.",
+      "requestedBy": "GRIT-Scan (URS methodology, section 8)"
     }
   ],
   "namedItems": {

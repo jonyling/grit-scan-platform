@@ -191,7 +191,7 @@ def test_staff_log_becomes_internal_evidence_without_an_approver(tmp_path: Path)
     assert "URS: 52 staff in Qatar" in titles and "iDirect: 9 staff in Dubai" in titles
 
 
-def test_weekly_sources_tag_pages_that_name_a_staffed_country(tmp_path: Path, monkeypatch) -> None:
+def test_weekly_sources_tag_only_the_business_area_s_own_staffed_countries(tmp_path: Path, monkeypatch) -> None:
     import grit.core.people as people_module
     from grit.pipeline.weekly import WeeklyCoordinator, WeeklyStore, add_staff_log
     from grit.pool import Pool
@@ -199,17 +199,22 @@ def test_weekly_sources_tag_pages_that_name_a_staffed_country(tmp_path: Path, mo
     path = _staff_file(tmp_path)
     people = load_people(path, today=date(2026, 11, 19), addresses={})
     monkeypatch.setattr(people_module, "load_people", lambda *args, **kwargs: people)
-    pool = Pool(tmp_path / "grit.sqlite")
-    pool.start_run("R", run_date="2026-11-19", pack="marine", kind="READER_SCAN", config={"weekly_mode": "reasoned", "window_days": 7})
-    page = pool.add_signal(url="https://example.com/doha", title="Drone strike near Doha port", text="Air defences engaged over Qatar.",
-                           publisher="example.com", published_at="2026-11-18", lane="THEME", content_hash="doha")
-    pool.add_sighting(page, "R", query_id="q", query="q", lane="THEME", target_id=None, rank=1)
-    add_staff_log(pool, "R", path=path)
-    coordinator = WeeklyCoordinator(WeeklyStore(pool, "R", search_limit=0), client=None, model="offline")
-    found = coordinator.sources
-    assert found[page]["staff_countries"] == ["Qatar"]
-    internal = [row for row in found.values() if row.get("internal_exposure")]
-    assert len(internal) == 4 and all("staff_countries" not in row for row in internal)
+    monkeypatch.setattr(people_module, "staff_log_path", lambda: path)
+    tagged = {}
+    for pack in ("urs", "marine"):
+        pool = Pool(tmp_path / f"{pack}.sqlite")
+        pool.start_run("R", run_date="2026-11-19", pack=pack, kind="READER_SCAN", config={"weekly_mode": "reasoned", "window_days": 7})
+        page = pool.add_signal(url="https://example.com/doha", title="Drone strike near Doha port", text="Air defences engaged over Qatar.",
+                               publisher="example.com", published_at="2026-11-18", lane="THEME", content_hash="doha")
+        pool.add_sighting(page, "R", query_id="q", query="q", lane="THEME", target_id=None, rank=1)
+        from grit.pipeline.reader_scan import _load_pack
+
+        add_staff_log(pool, "R", path=path, pack=_load_pack(pack))
+        coordinator = WeeklyCoordinator(WeeklyStore(pool, "R", search_limit=0), client=None, model="offline")
+        found = coordinator.sources
+        tagged[pack] = (found[page].get("staff_countries"), sum(bool(row.get("internal_exposure")) for row in found.values()))
+    # URS's register names URS, so its Qatar staff count. Marine has none in the log: no tag, no internal records.
+    assert tagged == {"urs": (["Qatar"], 1), "marine": (None, 0)}
 
 
 def test_every_run_reports_the_staff_log_in_its_exposure_snapshot(tmp_path: Path, monkeypatch) -> None:
@@ -232,3 +237,38 @@ def test_every_run_reports_the_staff_log_in_its_exposure_snapshot(tmp_path: Path
     # Only the reasoned run gets internal evidence records for the agents.
     counts = {row["run_id"]: row["n"] for row in pool.rows("SELECT run_id, COUNT(*) AS n FROM weekly_evidence GROUP BY run_id")}
     assert counts == {"REASONED": 4}
+
+
+def test_a_business_area_without_staff_in_the_log_reads_not_supplied(tmp_path: Path) -> None:
+    from grit.core.people import staff_snapshot
+    from grit.pipeline.reader_scan import _load_pack
+    from grit.report.markdown import _exposure
+
+    path = _staff_file(tmp_path)
+    urs = staff_snapshot(path, pack=_load_pack("urs"))
+    assert [(row["entity"], row["country"]) for row in urs["sites"]] == [("URS", "Qatar")] and not urs["travel"] and not urs["notSupplied"]
+    marine = staff_snapshot(path, pack=_load_pack("marine"))
+    assert marine["notSupplied"] and not marine["sites"]
+    assert _exposure(marine)[0].startswith("Marine exposure: not supplied.")
+    group = staff_snapshot(path, pack=_load_pack("ste"))
+    assert {row["entity"] for row in group["sites"]} == {"URS", "iDirect"} and group["travel"], "the Group pack sees the whole log"
+
+
+def test_the_principal_ask_rests_only_on_a_strict_business_area_link():
+    from grit.core.ba_link import links, register
+    from grit.pipeline.reader_scan import _load_pack
+    from grit.pipeline.weekly import ask_basis_problems
+
+    area = register(_load_pack("marine"))
+    # A Navantia steel supplier links only through a supplier class: no link.
+    assert links("Liberty Steel's difficulties threaten 34,000 mt Royal Navy steel plate order",
+                 "Dalzell plate mill supplies Navantia's Fleet Solid Support ships.", area) == []
+    gulf = links("ADNOC L&S vessel attacked in the Strait of Hormuz", "One crew member missing and 11 injured off the United Arab Emirates.", area)
+    assert any("ST Engineering Marine Ltd. - Abu Dhabi Branch" in item for item in gulf)
+    kuwait = links("Iran attacks Kuwait air base", "Drones attacked Ali Al Salem air base in Kuwait.", area)
+    assert any("Kuwait Naval Force" in item for item in kuwait)
+
+    basis = [{"signal_id": "SIG-a", "title": "t", "links": gulf}]
+    assert ask_basis_problems({"basis_id": "SIG-a"}, basis) == []
+    assert ask_basis_problems({"basis_id": "SIG-dalzell"}, basis) and ask_basis_problems({}, basis)
+    assert ask_basis_problems({"basis_id": None}, []) == [] and ask_basis_problems({"basis_id": "SIG-a"}, [])

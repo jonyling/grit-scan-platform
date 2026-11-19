@@ -846,6 +846,8 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
     from grit.core.conditions import import_scan, rank, revise
 
     pack = _load_pack(run.pack)
+    # Every drafting stage below runs again, so the QA log keeps only what this pass withholds.
+    pool.clear_check_qa(run.run_id)
     items = standing_items(pack)
     by_id = {item["id"]: item for item in items}
     rows = _kept(pool, run)

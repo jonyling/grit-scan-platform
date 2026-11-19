@@ -437,7 +437,8 @@ def draft_rows(pool: Pool, run: Any, *, client: Any, model: str, log: Callable[[
             }
         else:
             pool.add_qa(run.run_id, item=f"Event: {event['lead'].get('title')}", prior=None,
-                        correction="Escalating-items row withheld: the draft failed its checks twice. " + "; ".join(result["violations"][:2]), origin="CHECK")
+                        correction="Escalating-items row withheld: the draft failed its checks twice. " + "; ".join(result["violations"][:2]),
+                        source_ids=list(event["signal_ids"]), origin="CHECK")
         log(f"  EventAssessor {event['event_id'][:20]:20} {result['status']}")
     withheld = [event["event_id"] for event in events if event["event_id"] not in saved]
     merges = label_merges(events, saved)

@@ -167,13 +167,24 @@ def _admit_staff_log(pool: Any, run: Any, *, reasoned: bool) -> dict[str, Any] |
     from grit.pipeline.exposure_snapshot import snapshot_summary
     from grit.pipeline.weekly import add_staff_log
 
+    pack = _staff_pack(getattr(run, "pack", None))
     try:
         if reasoned:
-            return add_staff_log(pool, run.run_id)
-        document = staff_snapshot()
+            return add_staff_log(pool, run.run_id, pack=pack)
+        document = staff_snapshot(pack=pack)
     except ValueError as exc:
         raise SystemExit(f"The internal staff log cannot be admitted: {exc}") from None
     return {**snapshot_summary(document), "approvedBy": STAFF_LOG_APPROVER} if document else None
+
+
+def _staff_pack(name: str | None) -> Any:
+    """The run's pack, so the staff log shows only its business area's staff. None (the whole log) when it has no config."""
+    from grit.pipeline.reader_scan import _load_pack
+
+    try:
+        return _load_pack(str(name)) if name else None
+    except (FileNotFoundError, KeyError, ValueError):
+        return None
 
 
 def _admit_approved_evidence(pool: Any, run: Any, args: argparse.Namespace) -> dict[str, Any] | None:

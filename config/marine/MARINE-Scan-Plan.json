@@ -126,9 +126,24 @@
       "queries": [
         "shipowner insolvency credit risk offshore vessel",
         "Singapore dollar US dollar exchange rate outlook",
-        "shipping finance interest rates newbuild orders"
+        "shipping finance interest rates newbuild orders",
+        "Federal Reserve interest rate decision US dollar"
       ],
-      "keywords": []
+      "keywords": [
+        "Federal Reserve",
+        "Fed + interest rate",
+        "interest rate + decision",
+        "exchange rate",
+        "US dollar + currency",
+        "Singapore dollar",
+        "MAS + monetary policy",
+        "rate cut + central bank",
+        "rate hike + central bank",
+        "shipowner + insolvency",
+        "shipping finance",
+        "newbuild + financing",
+        "credit risk + shipowner"
+      ]
     },
     {
       "requestId": "MARINE-MR-F01",
@@ -152,7 +167,7 @@
       "source": "Workbook sheet 10, focus item 2 (Research draft)",
       "title": "Commercial newbuild execution and margins",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "queries": [
         "Walk-to-Work vessel newbuild shipyard"
       ],
@@ -181,7 +196,7 @@
       "source": "Workbook sheet 10, focus item 4 (Research draft)",
       "title": "Decarbonisation retrofits and green conversions",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "queries": [
         "methanol dual-fuel conversion retrofit shipyard order"
       ],
@@ -195,7 +210,7 @@
       "source": "Workbook sheet 10, focus item 5 (Research draft)",
       "title": "Offshore wind vessel repair and modifications",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "queries": [
         "wind turbine installation vessel upgrade repair shipyard"
       ],
@@ -241,7 +256,7 @@
       "source": "Workbook sheet 10, focus item 8 (Research draft)",
       "title": "Supply chain and equipment lead times",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "queries": [
         "marine propulsion equipment lead time shortage"
       ],
@@ -286,7 +301,7 @@
       "source": "Workbook sheet 10, focus item 11 (Research draft)",
       "title": "US marine business performance",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "queries": [
         "Halter Marine shipyard Pascagoula"
       ],
@@ -314,7 +329,7 @@
       "source": "Workbook sheet 10, focus items 13 to 16 (Strategic focus area, per P25)",
       "title": "Capability development: digital twin, unmanned, condition-based maintenance and AI",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "queries": [
         "naval digital twin condition-based maintenance unmanned vessel"
       ],
@@ -329,7 +344,7 @@
       "source": "Workbook sheet 10, focus item 17 (Strategic focus area, per P25)",
       "title": "Alternative energy for naval and commercial vessels",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "queries": [
         "alternative fuel naval vessel hybrid propulsion"
       ],
@@ -343,7 +358,7 @@
       "source": "Workbook sheet 10, focus items 19 and 20 (Strategic focus area, per P25)",
       "title": "International business and offshore renewables",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "queries": [
         "international naval shipbuilding tender Asia Middle East"
       ],

@@ -73,7 +73,13 @@ def write_pack(pool: Pool, run_id: str, profile: Profile, *, folder: Path | None
     (folder / f"{stem}.brief.json").write_text(json.dumps(brief, indent=2, ensure_ascii=False, default=str) + "\n", encoding="utf-8")
     files["md"] = str(folder / f"{stem}.md")
     result: dict[str, Any] = {"profile": profile.profile_id, "files": files, "content_hash": brief["content_hash"], "members": len(brief["membership"])}
-    if submit and brief["membership"]:
+    from grit.report.withheld import leaks
+
+    leaked = leaks(brief)
+    if submit and leaked:
+        # A date or figure the QA log withheld reached the reader: the files are written for checking, not submitted.
+        result["package"] = {"skipped": "Not submitted. The QA log withheld these, but the report still shows them: " + " ".join(leaked)}
+    elif submit and brief["membership"]:
         try:
             result["package"] = submit_package(pool, run_id=run_id, profile=profile, members=brief["membership"], brief_hash=brief["content_hash"], files=files)
         except ValueError as exc:

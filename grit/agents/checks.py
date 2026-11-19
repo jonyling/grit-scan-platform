@@ -61,6 +61,45 @@ _ANY_CITE = re.compile(
 _DAY_TOKEN = re.compile(r"\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\b", re.I)
 
 
+# Actors whose statements are claims, not established facts: armed groups and the people behind cyberattacks.
+CLAIMANT = (r"houthis?|huthis?|ansar allah|(?:iran's |islamic )?revolutionary guards?(?: corps)?|irgc|hamas|hezbollah|hizbollah|"
+            r"(?:[A-Z][\w-]+ )?ransomware (?:group|gang|operators?)|threat actors?|hacker (?:group|collective)s?|hacktivists?")
+_CLAIMANT = re.compile(rf"\b(?:{CLAIMANT})\b", re.IGNORECASE)
+# The claimant as the one acting: "Houthis targeted", "the ransomware group stole".
+_CLAIMANT_ACTS = re.compile(
+    rf"\b(?:{CLAIMANT})\b(?:\s+(?:forces|fighters|militants|rebels|group|gang|members|operators))?\s+(?:have\s+|has\s+)?"
+    r"(?:fired|launched|targeted|struck|hit|attacked|seized|captured|downed|shot|destroyed|sank|breached|stole|exfiltrated|leaked|encrypted|"
+    r"compromised|took|carried out)\b", re.IGNORECASE)
+_CLAIM_WORD = re.compile(r"\b(?:claim(?:s|ed|ing)?|said|says|say|stated|states|according to|alleg(?:e|es|ed|edly|ing)|announced|"
+                         r"purport(?:s|ed|edly)?|asserted)\b", re.IGNORECASE)
+_CONFIRMS_CLAIM = re.compile(rf"\b(?:{CLAIMANT})\b\W+(?:\w+\W+){{0,3}}?confirm\w*", re.IGNORECASE)
+# A deal the page says is near, written as done.
+_NEAR_DEAL = re.compile(r"\b(?:nears?|nearing|close to (?:a |an |the )?(?:deal|agreement|contract|signing)|in (?:advanced |final )?talks|"
+                        r"poised to|set to (?:sign|win|award|clinch)|expected to (?:sign|award|win)|edges? closer|on the verge of|"
+                        r"in negotiations?|negotiating|shortlisted|preferred (?:bidder|supplier))\b", re.IGNORECASE)
+_DONE_DEAL = re.compile(r"\b(signed|awarded|won|secured|clinched|sealed|finali[sz]ed|concluded|inked)\b", re.IGNORECASE)
+_DONE_STEM = {"signed": "sign", "awarded": "award", "won": "win", "secured": "secur", "clinched": "clinch", "sealed": "seal",
+              "finalized": "finali", "finalised": "finali", "concluded": "conclu", "inked": "ink"}
+
+
+def claim_problems(claim: str, pages: str, where: str) -> list[str]:
+    """A claimant's statement written as fact, or confirmed; a deal the cited page calls near, written as done."""
+    found: list[str] = []
+    acting = _CLAIMANT_ACTS.search(claim)
+    if acting and not _CLAIM_WORD.search(claim):
+        found.append(f"CLAIM_AS_FACT: {where}: '{acting.group(0)}' states as fact what an armed group or attacker says it did. "
+                     "Label it as their claim: 'X claimed it ...', 'X said ...' or 'according to X'.")
+    confirmed = _CONFIRMS_CLAIM.search(claim)
+    if confirmed:
+        found.append(f"CLAIM_CONFIRMED: {where}: '{confirmed.group(0)}' calls a claim confirmed. Write 'claimed' unless an "
+                     "independent party confirms it, and name that party.")
+    done = _DONE_DEAL.search(claim)
+    if done and _NEAR_DEAL.search(pages) and _DONE_STEM[done.group(1).casefold()] not in pages.casefold():
+        found.append(f"NEAR_DEAL_AS_DONE: {where}: '{done.group(0)}' writes as done a deal the cited page says is only near or in "
+                     "talks. Write it as the page does: 'nears', 'in talks', 'expected to'.")
+    return found
+
+
 def sentence_cite_problems(text: str, sources: Mapping[str, Mapping[str, Any]], where: str) -> list[str]:
     """Each cited sentence must be supported by the page(s) it cites: dates, numbers, and distinctive names."""
     from grit.core.headlines import distinctive_terms, identifiers
@@ -84,6 +123,7 @@ def sentence_cite_problems(text: str, sources: Mapping[str, Mapping[str, Any]], 
             found.append(f"INTERNAL_CLAIM_CITED: {where}: '{claim[:80]}' states the business's own status or the RED rule, which no news "
                          "page can confirm. Write it without a citation, or cite only the news fact it rests on.")
             continue
+        found += claim_problems(claim, pages, where)
         folded = normalise(pages)
         if not folded:
             found.append(f"UNSUPPORTED_CITE: {where}: '{claim[:80]}' cites {', '.join(refs)}, which have no stored text.")

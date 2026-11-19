@@ -246,6 +246,9 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     # A row whose draft failed its checks is not a finding: it is neither listed nor ranked, and the QA log records it.
     recorded = "event_rows_withheld" in config
     withheld = set(config.get("event_rows_withheld") or [])
+    # The QA log withholds these events, so their reports feed no table, the look-ahead, or the status line either.
+    hidden = {signal_id for event in events if event["event_id"] in withheld for signal_id in event["signal_ids"]}
+    visible = [row for row in shown if row["signal_id"] not in hidden]
     elevated = [event for event in events if event["elevated"] and event["event_id"] not in withheld and (not recorded or event["event_id"] in drafted)][:8]
     from grit.core.financial_band import financial_size as _financial_size
 
@@ -285,7 +288,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
                             "now": f"Trend {row['trend']}", "direction": f"{arrow} {row['trend']}", "signal_ids": []})
 
     # 3. Look-ahead, from sources linked to the business area only.
-    linked = [row for row in shown if row.get("rung") or row.get("condition_ids") or (row.get("route") or {}).get("request_id")]
+    linked = [row for row in visible if row.get("rung") or row.get("condition_ids") or (row.get("route") or {}).get("request_id")]
     look = look_ahead(linked, run_date, event_of=event_of, relevance=lambda row: risk_labels([str(item) for item in row.get("condition_ids") or []], names) or str(row.get("rung") or "").title())
 
     # 4. Prioritisation.
@@ -316,7 +319,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     scope = _searched(pool, run_id, names, lookup)
     searched, scoped = scope["counts"], scope["scoped"]
     cells: dict[tuple[str, str], list[Mapping[str, Any]]] = defaultdict(list)
-    for row in sorted(shown, key=lambda item: (item.get("tier") or 9, -(item.get("corroboration") or 1))):
+    for row in sorted(visible, key=lambda item: (item.get("tier") or 9, -(item.get("corroboration") or 1))):
         lob = lob_of(row, lookup)
         cells[(lob if lob in lobs else BA_WIDE, category_of(row, names))].append(row)
     coverage = []
@@ -343,7 +346,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     for country, rows in sorted(_country_entities(pack).items(), key=lambda pair: (-len(pair[1]), pair[0])):
         entities = [name for name, _ in rows]
         entity_ids = {entity_id for _, entity_id in rows if entity_id}
-        found = [row for row in shown if _mentions(country, row)]
+        found = [row for row in visible if _mentions(country, row)]
         found.sort(key=lambda item: (item.get("tier") or 9, -(item.get("corroboration") or 1)))
         country_searched = any(str(query.get("target_id") or "") in entity_ids or _names_country(country, str(query.get("query") or ""))
                                for query in scope["queries"])
@@ -405,12 +408,20 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     unsearched_countries = [row["country"] for row in jurisdictions if row["finding"] == NO_COUNTRY_SEARCH]
     competitor_names = [item for item in named.get("Competitor", [])]
 
+    macro_topics = {row["request_id"] for row in pool.management_requests() if category_of_name(str(row.get("title") or "")) == FINANCIAL}
+    macro_items = [row for row in visible if category_of(row, names) == FINANCIAL or (row.get("route") or {}).get("request_id") in macro_topics]
+
     def answer(ok: bool, partly: bool = False) -> str:
         return "Yes" if ok else "Partly" if partly else "No"
 
     gate = [
-        {"question": "Checked macro and financial items (rates, FX, inflation), not just operations?", "answer": answer(bool(searched.get(FINANCIAL))), "critical": True,
-         "note": f"{searched.get(FINANCIAL, 0)} financial searches were answered." if searched.get(FINANCIAL) else "No financial search was answered this week."},
+        # Searches alone do not pass the check: the report must also carry a macro or financial item.
+        {"question": "Checked macro and financial items (rates, FX, inflation), not just operations?",
+         "answer": answer(bool(searched.get(FINANCIAL)) and bool(macro_items), bool(searched.get(FINANCIAL))), "critical": True,
+         "note": (f"{searched.get(FINANCIAL, 0)} financial searches were answered; {len(macro_items)} macro or financial items were found."
+                  if searched.get(FINANCIAL) and macro_items else
+                  f"{searched.get(FINANCIAL, 0)} financial searches were answered, but no macro or financial item (rates, FX, inflation, "
+                  "credit) was found this week." if searched.get(FINANCIAL) else "No financial search was answered this week.")},
         {"question": "Searched every line of business?", "answer": answer(not unswept, len(unswept) < len(lines)), "critical": True,
          "note": f"No search aimed at, and no item for: {', '.join(unswept)}. Only business-area-wide searches cover them." if unswept
          else "Every line of business had an aimed search or an item."},
@@ -469,11 +480,13 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         completeness["limitations"].append(f"{banding['question']} {banding['answer']}: {banding['note']}")
     # Internal intelligence first (URS methodology, section 4): say whether an approved exposure snapshot was supplied.
     exposure = (run.get("config") or {}).get("exposure_snapshot")
-    supplied = {"question": "Was approved internal exposure data supplied?", "critical": False, "answer": "Yes" if exposure else "No",
-                "note": (f"Exposure snapshot as of {exposure.get('asOf')}, approved by {exposure.get('approvedBy')}." if exposure else
+    own = bool(exposure) and not exposure.get("notSupplied")
+    supplied = {"question": "Was approved internal exposure data supplied?", "critical": False, "answer": "Yes" if own else "No",
+                "note": (f"Exposure snapshot as of {exposure.get('asOf')}, approved by {exposure.get('approvedBy')}." if own else
+                         f"{exposure.get('businessArea') or short} exposure: not supplied. The internal staff log has no {exposure.get('businessArea') or short} staff." if exposure else
                          "No approved exposure snapshot this week, so staff, site and project exposure rests on public sources only.")}
     gate.append(supplied)
-    if not exposure:
+    if not own:
         completeness["limitations"].append(f"{supplied['question']} {supplied['answer']}: {supplied['note']}")
     return {
         "status": status, "arrows": arrows, "risk_window": window, "escalating": escalating_rows, "changes": changes,

@@ -6,10 +6,10 @@ confidence, the trend label, the priority, and every citation are computed outsi
 
 from __future__ import annotations
 
-ASSESSOR_VERSION = "reader-assessor-7"
-CRITIC_VERSION = "reader-critic-3"
-REPORTER_VERSION = "reader-reporter-4"
-PROPOSER_VERSION = "reader-proposer-2"
+ASSESSOR_VERSION = "reader-assessor-8"
+CRITIC_VERSION = "reader-critic-4"
+REPORTER_VERSION = "reader-reporter-5"
+PROPOSER_VERSION = "reader-proposer-3"
 BASELINER_VERSION = "group-baseliner-1"
 STRATEGIST_VERSION = "group-strategist-bmw-1"
 KEYWORDER_VERSION = "signpost-keywords-1"
@@ -23,6 +23,7 @@ Rules that always apply:
 - Do not use the words severity, likelihood, probability, risk score, or risk rating. Describe what happened.
 - Write plain, short sentences for a Group Head of Risk & Assurance. No hype, no filler.
 - Attribute state media: "Beijing state messaging states ..." when a source is state-controlled media.
+- Label claims as claims. What an armed group (such as the Houthis or Iran's Revolutionary Guard) or an attacker (a ransomware group, a threat actor) says it did is their claim: write "X claimed ..." or "according to X", never as fact and never "confirmed" unless an independent party confirms it, named. A deal a source says is near or in talks is not signed, awarded or won: write it as the source does.
 - Return only one JSON object.
 """
 
@@ -262,7 +263,7 @@ Rules:
 - Return only one JSON object. If you receive violations, fix exactly those.
 """
 
-EVENT_ROW_VERSION = "event-row-2"
+EVENT_ROW_VERSION = "event-row-3"
 EVENT_ROW_SYSTEM = """You are the Assessor in GRIT-Scan. You write one row of the "Escalating and elevated items" table at the top of a
 business area's weekly risk brief, for one news event. Senior managers read it. A person reviews it before anyone acts.
 
@@ -287,6 +288,7 @@ Rules:
 - Be specific. Give the date of the development (such as 27 Oct) and the figures a source states (counts, amounts, percentages).
   Copy each figure exactly as the source gives it. Name the actor and the place. "Tensions rose" is not a summary.
 - Use only facts in the sources. Do not add background you know from elsewhere.
+- Label claims as claims. What an armed group (such as the Houthis or Iran's Revolutionary Guard) or an attacker (a ransomware group, a threat actor) says it did is their claim: write "X claimed ..." or "according to X", never as fact and never "confirmed" unless an independent party confirms it, named. A deal a source says is near or in talks is not signed, awarded or won: write it as the source does.
 - Do not use the words severity, likelihood, probability, risk score or risk rating, and do not write a URL.
 - Do not use an ellipsis. Do not write must.
 - Return only one JSON object. If you receive violations, fix exactly those.

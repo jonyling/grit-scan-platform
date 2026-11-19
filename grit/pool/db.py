@@ -365,6 +365,12 @@ class Pool:
     def qa_log(self, run_id: str) -> list[dict[str, Any]]:
         return self.rows("SELECT * FROM qa_log WHERE run_id = ? ORDER BY qa_id", (run_id,))
 
+    def clear_check_qa(self, run_id: str) -> int:
+        """Drop the run's withheld-draft entries (origin CHECK) before the drafting stages run again, so the QA log
+        lists only what the latest drafts withheld. The execution log keeps every earlier call."""
+        with self.transaction() as conn:
+            return conn.execute("DELETE FROM qa_log WHERE run_id = ? AND origin = 'CHECK'", (run_id,)).rowcount
+
     # Watchpoints ----------------------------------------------------------------------------------------------
 
     def watchpoints(self, pack: str, *, open_only: bool = True) -> list[dict[str, Any]]:

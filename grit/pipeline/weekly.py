@@ -460,11 +460,22 @@ class WeeklyCoordinator:
         self._people: Any = None
 
     def staff(self, run_date: date) -> Mapping[str, Any] | None:
-        """The internal staff log by country, read once per coordinator. None when there is no staff log."""
+        """The internal staff log by country, for this business area's staff only, read once per coordinator. None when
+        the staff log has none of this business area's staff."""
         if self._people is None:
-            from grit.core.people import load_people
+            from grit.core.people import load_people, staff_snapshot
+            from grit.pipeline.reader_scan import _load_pack
 
-            self._people = load_people(today=run_date) or {}
+            people = load_people(today=run_date) or {}
+            try:
+                pack = _load_pack(str((self.pool.run(self.run_id) or {}).get("pack") or ""))
+            except (FileNotFoundError, KeyError, ValueError):
+                pack = None  # a pack with no config, as in tests, sees the whole staff log
+            own = staff_snapshot(pack=pack) or {}
+            countries = {row["country"] for key in ("sites", "travel") for row in own.get(key) or []}
+            if people:
+                people = {**people, "countries": {name: row for name, row in people["countries"].items() if name in countries}}
+            self._people = people if people and people["countries"] else {}
         return self._people or None
 
     @property
@@ -1482,11 +1493,40 @@ class WeeklyCoordinator:
                                   for row in conflicts if isinstance(row, Mapping)],
             "red_triggers": self._red_triggers(),
             "front_page": front,
+            "ask_basis": self.ask_basis(sources, front),
             "owner_roles": list(self._weekly_context().get("owner_roles") or []),
             "human_feedback": [row["membership"].get("review") for row in self.pool.rows(
                 "SELECT * FROM packages WHERE run_id = ? AND profile_id = ? AND status IN ('RETURNED_FOR_REWORK', 'REJECTED') ORDER BY version",
                 (self.run_id, profile_id))],
         }
+
+    def ask_basis(self, sources: Mapping[str, Mapping[str, Any]], front: Sequence[Mapping[str, Any]] = ()) -> list[dict[str, Any]]:
+        """The reviewed findings the principal ask may rest on: each has a strict link to this business area, a named
+        entity, counterparty or project, or a threat to people where it has an entity or staff (grit.core.ba_link).
+        Front-page findings first, then other included ones, then watched ones."""
+        from grit.core.ba_link import links, register
+        from grit.core.people import staff_snapshot
+        from grit.pipeline.reader_scan import _load_pack
+        from grit.report.format_v2 import clean_title
+
+        try:
+            pack = _load_pack(str((self.pool.run(self.run_id) or {}).get("pack") or ""))
+        except (FileNotFoundError, KeyError, ValueError):
+            return []
+        area = register(pack, staff_snapshot(pack=pack))
+        decisions = {row["signal_id"]: (row.get("editorial") or {}).get("decision") for row in self.pool.weekly_assessments(self.run_id)}
+        lead = [str(item["signal_id"]) for item in front]
+        order = sorted((key for key, decision in decisions.items() if decision in {"INCLUDE", "WATCH"} and key in sources),
+                       key=lambda key: (key not in lead, decisions[key] != "INCLUDE", lead.index(key) if key in lead else 0, key))
+        basis = []
+        for key in order:
+            row = sources[key]
+            found = links(str(row.get("title") or ""), str(row.get("text") or ""), area)
+            if found:
+                basis.append({"signal_id": key, "title": clean_title(str(row.get("title") or key)), "decision": decisions[key], "links": found[:3]})
+            if len(basis) >= ASK_BASIS_LIMIT:
+                break
+        return basis
 
     def report(self, profile: Any, draft: Mapping[str, Any], routed: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         """Write, critique and decide one report. Several reports are decided together, after every final Critic."""
@@ -1580,6 +1620,7 @@ class WeeklyCoordinator:
                         problems.append("bottom_line.text must cite only the front-page findings when a DeepSeek rank is stored: "
                                         f"cite only {', '.join(sorted(front_ids))}, not {', '.join(sorted(set(refs) - front_ids))}.")
                     if edit.get("path") == "bottom_line.escalation":
+                        problems.extend(ask_basis_problems(edit, payload.get("ask_basis") or []))
                         problems.extend(escalation_problems(edit["text"], owners=owners, forum=forum, forum_date=forum_date,
                                                             triggers=triggers))
                     for conflict in payload.get("settled_conflicts") or []:
@@ -1594,6 +1635,9 @@ class WeeklyCoordinator:
             response, _ = self._report_response(task, payload, validate_edits)
             for edit in response["edits"]:
                 apply_edit(brief, edit, sources)
+                if edit["path"] == "bottom_line.escalation":
+                    chosen = str(edit.get("basis_id") or "")
+                    brief["bottom_line"]["ask_basis"] = next((dict(row) for row in payload.get("ask_basis") or [] if row["signal_id"] == chosen), None)
             brief["evidence_ids"] = sorted(set(brief.get("evidence_ids", [])) | set(brief["membership"]))
             selected = {row["signal_id"] for row in self.pool.weekly_assessments(self.run_id)}
             brief["membership"] = sorted(set(brief["membership"]) & selected)
@@ -1630,9 +1674,11 @@ class WeeklyCoordinator:
         decided after all of them are critiqued: a later final Critic can resolve an objection to an earlier report."""
         sources = self.sources
         unreviewed = sorted(set(brief["evidence_ids"]) - set(sources) - scenario_history(self.pool, self.run_id, brief))
+        from grit.report.withheld import leaks
         # Every reason is stated, so an INCOMPLETE report always says what keeps it from READY.
         blocked_by = [
             *(f"Completeness: {item}" for item in brief["method"]["weekly"]["completeness"]["blocking"]),
+            *(f"QA log: {item}" for item in leaks(brief)),
             *(f"Open material issue {key}: {str(row['issue'].get('problem') or '')[:200]}"
               for key, row in self.store.issues().items() if row["issue"].get("material")),
             *(["No reviewed sources."] if not sources else []),
@@ -1729,6 +1775,22 @@ def narrative_fields(brief: Mapping[str, Any]) -> dict[str, Any]:
         if isinstance((row.get("response") or {}).get("action"), str):
             fields[f"v2.escalating.{index}.response.action"] = row["response"]["action"]
     return fields
+
+
+ASK_BASIS_LIMIT = 8
+
+
+def ask_basis_problems(edit: Mapping[str, Any], basis: Sequence[Mapping[str, Any]]) -> list[str]:
+    """The principal ask rests on one ask_basis finding, named by basis_id. With no such finding, it names none."""
+    chosen = edit.get("basis_id")
+    ids = [str(row["signal_id"]) for row in basis]
+    if ids and str(chosen or "") not in ids:
+        return [f"bottom_line.escalation: set basis_id to the ask_basis finding the principal ask rests on, one of {', '.join(ids)}. "
+                "A finding outside ask_basis has no confirmed link to this business area's people, programmes or contracts."]
+    if not ids and chosen:
+        return ["bottom_line.escalation: ask_basis is empty, so no finding has a confirmed link to this business area. Set basis_id "
+                "to null and make the ask a confirmation of exposure, not a response to one finding."]
+    return []
 
 
 def apply_edit(brief: dict[str, Any], edit: Mapping[str, Any], sources: Mapping[str, Any]) -> None:
@@ -2099,16 +2161,18 @@ def add_internal_evidence(pool: Pool, run_id: str, records: Any, approver: Any) 
     return _admit_internal(pool, run_id, records, approver.profile_id)
 
 
-def add_staff_log(pool: Pool, run_id: str, *, path: Any = None) -> dict[str, Any] | None:
+def add_staff_log(pool: Pool, run_id: str, *, path: Any = None, pack: Any = None) -> dict[str, Any] | None:
     """Admit the internal staff log (secrets/internal-context.json) as internal evidence, with no named approver: R&A
-    maintains it for every report. Returns the report summary, or None when there is no staff log."""
+    maintains it for every report. With a business-area pack, only that business area's staff are admitted
+    (grit.core.people.staff_snapshot). Returns the report summary, or None when there is no staff log."""
     from grit.core.people import STAFF_LOG_APPROVER, staff_snapshot
     from grit.pipeline.exposure_snapshot import snapshot_records, snapshot_summary
 
-    document = staff_snapshot(path)
+    document = staff_snapshot(path, pack=pack)
     if document is None:
         return None
-    _admit_internal(pool, run_id, snapshot_records(document), STAFF_LOG_APPROVER)
+    if not document.get("notSupplied"):
+        _admit_internal(pool, run_id, snapshot_records(document), STAFF_LOG_APPROVER)
     return {**snapshot_summary(document), "approvedBy": STAFF_LOG_APPROVER}
 
 

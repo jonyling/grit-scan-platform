@@ -167,12 +167,17 @@
       "lob": "Smart Sustainable Utilities",
       "queries": [
         "Israeli shekel dollar exchange rate",
-        "Qatari riyal exchange rate"
+        "Qatari riyal exchange rate",
+        "Federal Reserve interest rate decision US dollar"
       ],
       "keywords": [
         "shekel + dollar",
         "shekel + exchange rate",
-        "Qatari riyal + Singapore dollar"
+        "Qatari riyal + Singapore dollar",
+        "Federal Reserve",
+        "Fed + interest rate",
+        "Singapore dollar",
+        "US dollar + currency"
       ]
     },
     {
@@ -275,7 +280,7 @@
       "source": "Workbook sheet 10, focus item 4 (Research draft)",
       "title": "Operations and maintenance contract performance",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "lob": "Mobility Road & Services",
       "queries": [
         "transit operations and maintenance contract"
@@ -289,7 +294,7 @@
       "source": "Workbook sheet 10, focus item 5 (Research draft)",
       "title": "Energy, district cooling and EV-charging growth",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "lob": "Smart Sustainable Utilities",
       "queries": [
         "district cooling contract",
@@ -305,7 +310,7 @@
       "source": "Workbook sheet 10, focus item 6 (Research draft)",
       "title": "Robotics commercialisation and scale-up",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "lob": "Healthcare Robotics & Automation",
       "queries": [
         "hospital robots deployment"
@@ -320,7 +325,7 @@
       "source": "Workbook sheet 10, focus item 7 (Research draft)",
       "title": "Integrated security project execution",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "lob": "Smart Security & Automation",
       "queries": [
         "integrated security system contract"
@@ -366,7 +371,7 @@
       "source": "Workbook sheet 10, focus item 10 (Research draft)",
       "title": "Supply chain and component availability",
       "kind": "TOPIC",
-      "status": "PROPOSED",
+      "status": "ACTIVE",
       "queries": [
         "chip shortage transport equipment"
       ],

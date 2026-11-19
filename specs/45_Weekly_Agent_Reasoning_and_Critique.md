@@ -166,6 +166,14 @@ become travel, by country. The records are recorded as approved by
 - The report's exposure section shows the staff log. When a reviewer also
   supplies a snapshot, the two are shown together.
 
+A business area's report shows only its own staff. A row counts for a business
+area when its entity register names the entity ("TransCore" is in Urban
+Solutions' register), or when the staff log tags the row with `business_area`.
+The Group pack sees the whole log. A row no register or tag attributes, such as
+travellers counted by country only, goes to the Group pack alone. When nothing
+is left, the exposure section reads "Marine exposure: not supplied", the agents
+receive no staff records, and pages carry no `staff_countries`.
+
 Presence is not harm. A role says staff are exposed, not that they were affected.
 
 ### Action posture
@@ -174,6 +182,23 @@ Presence is not harm. A role says staff are exposed, not that they were affected
 section 15): one principal ask, saying who should do what by when, then the
 development that would raise the status. Reports label it "Recommended action
 posture".
+
+The ask rests on one finding with a strict link to the business area
+(`grit.core.ba_link`): the finding names a registered entity, a named customer
+or supplier, or a registered project, or it reports a threat to people in a
+country where the business area has a registered entity, staff in the staff log,
+or a named customer such as Kuwait Naval Force. A class of suppliers or a third
+party's contract is not a link. Reporting receives the qualifying findings as
+`ask_basis` and names the one it uses in `basis_id`. With none, `basis_id` is
+null and the ask is to confirm exposure. The report prints the basis under
+"Why this ask".
+
+### Claims
+
+What an armed group or an attacker says it did is a claim. A sentence must say
+so ("claimed", "said", "according to") and must not call it confirmed. A deal a
+cited page calls near or in talks is not written as signed, awarded or won.
+`grit.agents.checks.claim_problems` enforces these on every cited sentence.
 
 ## Budgets and release
 

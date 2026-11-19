@@ -353,6 +353,8 @@ def normalize_report_edits(raw: Mapping[str, Any], editable: Mapping[str, Any] |
             continue
         order.append(path)
         merged[path] = {"path": path, "text": text, "source_ids": _cited_ids(text)}
+        if "basis_id" in edit:
+            merged[path]["basis_id"] = edit.get("basis_id")
         if edit.get("text") != text or edit.get("source_ids") != merged[path]["source_ids"]:
             changed = True
     value["edits"] = [merged[path] for path in order]
@@ -397,7 +399,7 @@ def ground_report_edits(raw: Mapping[str, Any], sources: Mapping[str, Any]) -> d
         if not accepted:
             continue
         text = " ".join(accepted)
-        kept.append({"path": edit["path"], "text": text, "source_ids": _cited_ids(text)})
+        kept.append({"path": edit["path"], "text": text, "source_ids": _cited_ids(text), **({"basis_id": edit["basis_id"]} if "basis_id" in edit else {})})
     value["edits"] = kept
     if trimmed:
         value["edits_trimmed"] = trimmed[:12]
@@ -443,6 +445,9 @@ def _report_rules(payload: Mapping[str, Any]) -> str:
         rules.append("bottom_line.escalation makes one ask"
                      + (f" that names one of these roles exactly as written: {'; '.join(roles)}," if roles else ",")
                      + " uses the word confirm, reconfirm, or check, and gives a time with before, by, or the next cycle.")
+    basis = [str(row.get("signal_id")) for row in payload.get("ask_basis") or [] if isinstance(row, Mapping) and row.get("signal_id")]
+    rules.append(f"The bottom_line.escalation edit sets basis_id to the ask_basis finding the ask rests on, one of: {', '.join(basis)}."
+                 if basis else "No finding is in ask_basis: set basis_id to null on bottom_line.escalation and ask the owner to confirm exposure.")
     if payload.get("settled_conflicts"):
         rules.append("Quote only the chosen figure of each settled_conflicts row.")
     return " ".join(rules)

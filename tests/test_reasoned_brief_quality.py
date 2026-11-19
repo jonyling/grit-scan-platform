@@ -81,3 +81,49 @@ def test_common_red_trigger_phrasings_stand_without_a_citation():
         assert INTERNAL_CLAIM.search(sentence), sentence
     for sentence in ("Iran raised its air-defence alert to red after the strike.", "The tanker turned red-hot after the blast."):
         assert not INTERNAL_CLAIM.search(sentence), sentence
+
+
+def _withheld_brief():
+    etihad, other = "SIG-0000000000000001", "SIG-0000000000000002"
+    qa = [{"item": "Event: Etihad extends cancellations", "origin": "CHECK", "source_ids": [etihad],
+           "correction": {"plain": "Escalating-items row withheld: the draft failed its checks twice. UNSUPPORTED_DATE: summary: "
+                                   "'30 November' is not on the cited page(s) S1."}}]
+    look = [{"date": "2026-11-30", "event": "Etihad cancelled flights until November 30.", "signal_ids": [etihad]}]
+    return etihad, other, {"qa": qa, "v2": {"look_ahead": look, "risk_window": ["30 Nov: Etihad cancelled flights until November 30."],
+                                          "escalating": [{"signal_ids": [other], "summary": {"runs": [{"text": "Riyadh was hit on 30 Nov."}]}}]}}
+
+
+def test_a_withheld_date_may_not_return_through_the_withheld_event_s_own_reports():
+    from grit.report.withheld import leaks
+
+    _etihad, _other, brief = _withheld_brief()
+    found = leaks(brief)
+    assert any("v2.look_ahead[0].event" in line for line in found) and any("v2.risk_window[0]" in line for line in found)
+    # The same date about another event, from other reports, is not a leak.
+    assert not any("escalating" in line for line in found)
+    brief["v2"]["look_ahead"], brief["v2"]["risk_window"] = [], []
+    assert leaks(brief) == []
+
+
+def test_a_new_agents_pass_clears_the_withheld_entries_of_the_last_one(tmp_path):
+    from grit.pool import Pool
+
+    pool = Pool(tmp_path / "grit.sqlite")
+    pool.add_qa("R", item="Event: old", correction="Escalating-items row withheld.", origin="CHECK")
+    pool.add_qa("R", item="SIG-1", correction="Critic note.", origin="WEEKLY_CRITIC")
+    assert pool.clear_check_qa("R") == 1
+    assert [row["origin"] for row in pool.qa_log("R")] == ["WEEKLY_CRITIC"]
+
+
+def test_claims_read_as_claims():
+    from grit.agents.checks import claim_problems
+
+    page = "Yemen's Houthis said they fired two ballistic missiles. Hanwha nears a contract for the FLNG project."
+    codes = lambda claim: [problem.split(":")[0] for problem in claim_problems(claim, page, "summary")]  # noqa: E731
+    assert codes("Houthis targeted Saudi forces with two ballistic missiles") == ["CLAIM_AS_FACT"]
+    assert codes("The WhiteArmor ransomware group stole 100GB of data") == ["CLAIM_AS_FACT"]
+    assert codes("The Revolutionary Guard confirmed six drones hit the radar") == ["CLAIM_CONFIRMED"]
+    assert codes("Hanwha Ocean signed the FLNG contract") == ["NEAR_DEAL_AS_DONE"]
+    for fine in ("Yemen's Houthis said they fired two ballistic missiles", "Coalition forces intercepted two Houthi missiles fired at Riyadh",
+                 "Maersk confirmed hackers extracted 100GB", "Hanwha Ocean nears the FLNG contract"):
+        assert codes(fine) == [], fine

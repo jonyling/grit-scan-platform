@@ -102,7 +102,7 @@ def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
     run = _run(pool, "urs")
 
     requests = {row["request_id"]: row for row in pool.management_requests()}
-    assert requests["MR-URS-WB-R1"]["status"] == "ACTIVE" and requests["MR-URS-WB-F04"]["status"] == "PROPOSED", "status follows the workbook's own wording"
+    assert requests["MR-URS-WB-R1"]["status"] == "ACTIVE" and requests["MR-URS-WB-F04"]["status"] == "ACTIVE", "every workbook topic is switched on"
     rows = {row["title"]: row for row in pool.assessments(run.run_id, kept_only=True)}
     lta = rows["Land Transport Authority awards new rail contract in Singapore"]
     assert any(hit["item_type"] == "CUSTOMER" and hit["strong"] for hit in lta["exposure"]), "a BA pack names customers through the typed graph"
