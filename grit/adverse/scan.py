@@ -787,7 +787,7 @@ def currency_check(pool: Pool, scan_id: str, items: Mapping[str, list[dict[str, 
 
 
 def load_internal_context(path: Path | None = None, *, today: date | None = None) -> dict[str, Any] | None:
-    """Where STE people are, from secrets/adverse/internal-context.json (grit.adverse.people). None when not supplied."""
+    """Where STE people are, from secrets/internal-context.json (grit.core.people). None when not supplied."""
     return staff.load_people(path, today=today)
 
 

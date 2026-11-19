@@ -1,7 +1,7 @@
 """Where ST Engineering people are, from the internal context R&A supplies (spec 46, section 2).
 
 Shared across adverse, weekly, daily and WSH. Pure apart from reading the staff file and (optionally) the
-people-risk lexicon. The file is secrets/adverse/internal-context.json. Country-level only: a match names the
+people-risk lexicon. The file is secrets/internal-context.json. Country-level only: a match names the
 country, not a city or site, unless a city is already derivable from the log or a registered address.
 """
 
@@ -93,13 +93,78 @@ def registered_addresses() -> dict[str, tuple[str, str]]:
     return found
 
 
+STAFF_LOG_FILE = "internal-context.json"
+STAFF_LOG_APPROVER = "R&A (internal staff log)"
+
+
+def staff_log_path() -> Path | None:
+    """secrets/internal-context.json. The old secrets/adverse/ location is still read until the file is moved."""
+    from grit.settings import SECRETS_DIR
+
+    for path in (SECRETS_DIR / STAFF_LOG_FILE, SECRETS_DIR / "adverse" / STAFF_LOG_FILE):
+        if path.is_file():
+            return path
+    return None
+
+
+def staff_snapshot(path: Path | None = None) -> dict[str, Any] | None:
+    """The staff log in the exposure-snapshot shape (grit.pipeline.exposure_snapshot): local staff and named entities as
+    sites, travellers and assignees as travel. None when there is no staff log or it has no counts."""
+    path = path or staff_log_path()
+    if path is None or not path.is_file():
+        return None
+    data = json.loads(path.read_text(encoding="utf-8"))
+    reference = f"Internal staff log ({path.name})"
+    sites: list[dict[str, Any]] = []
+    travel: list[dict[str, Any]] = []
+    dates: list[str] = []
+    sources: list[str] = []
+
+    def site(row: Mapping[str, Any], headcount: Any, as_at: str | None, safe: bool, source: Any) -> None:
+        country = canonical_country(row.get("country"))
+        count = int(headcount or 0)
+        if not country or not row.get("entity") or count <= 0:
+            return
+        sites.append({"entity": str(row["entity"]), "city": _city(country, row.get("country")) or _city(country, row.get("city")) or "Not stated",
+                      "country": country, "headcount": count, "reference": str(source or reference),
+                      **({"safetyConfirmed": as_at} if safe and as_at else {})})
+
+    local = data.get("middle_east_local_staff") or {}
+    local_date = str(local.get("as_at") or data.get("asOf") or "")[:10] or None
+    local_safe = "safe" in str(local.get("status") or "").casefold()
+    for row in local.get("entries") or []:
+        site(row, row.get("headcount"), local_date, local_safe, local.get("source"))
+    for row in data.get("entity_level_examples") or []:
+        site(row, row.get("staff") or row.get("headcount"), None, False, row.get("source"))
+    for row in data.get("personnel") or []:
+        site(row, row.get("headcount"), str(data.get("asOf") or "")[:10] or None, False, row.get("source"))
+    traveller = data.get("middle_east_travellers_and_assignees") or {}
+    travel_date = str(traveller.get("as_at") or "")[:10] or None
+    counts: dict[str, int] = {}
+    for country, count in (traveller.get("by_country") or {}).items():
+        counts[canonical_country(country)] = counts.get(canonical_country(country), 0) + int(count or 0)
+    for row in data.get("travel") or []:
+        counts[canonical_country(row.get("country"))] = counts.get(canonical_country(row.get("country")), 0) + 1
+    for country, count in counts.items():
+        if country and count > 0:
+            travel.append({"destination": country, "country": country, "travellers": count,
+                           "reference": str(traveller.get("source") or reference)})
+    for part, when in ((local, local_date), (traveller, travel_date)):
+        if part and when:
+            dates.append(when)
+        if part.get("source"):
+            sources.append(str(part["source"]))
+    if not sites and not travel:
+        return None
+    return {"asOf": min(dates) if dates else (str(data.get("asOf") or "")[:10] or date.today().isoformat()),
+            "preparedBy": "R&A", "sources": [reference, *dict.fromkeys(sources)], "sites": sites, "travel": travel}
+
+
 def load_people(path: Path | None = None, *, today: date | None = None, addresses: Mapping[str, tuple[str, str]] | None = None) -> dict[str, Any] | None:
     """The staff by country, or None when R&A supplied no file. Reads the R&A summary layout (middle_east_local_staff,
     middle_east_travellers_and_assignees, entity_level_examples) and the record layout (travel, personnel, staff_safety)."""
-    from grit.settings import SECRETS_DIR
-
-    path = path or SECRETS_DIR / "adverse" / "internal-context.json"
-    if not path.is_file():
+    path = path or staff_log_path()
+    if path is None or not path.is_file():
         return None
     data = json.loads(path.read_text(encoding="utf-8"))
     countries: dict[str, dict[str, Any]] = {}

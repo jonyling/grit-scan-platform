@@ -147,10 +147,36 @@ def plan_step(pool: Any, args: argparse.Namespace, pack: str) -> int:
 
 
 def _admit_supplied_evidence(pool: Any, run: Any, args: argparse.Namespace) -> None:
-    if not getattr(args, "internal_evidence", None):
-        return
-    if not getattr(args, "evidence_approved_by", None) or ((pool.run(run.run_id) or {}).get("config") or {}).get("weekly_mode") != "reasoned":
-        raise SystemExit("--internal-evidence needs --reasoned and --evidence-approved-by PROFILE.")
+    """The internal staff log on every run, then any reviewer-approved evidence the command supplies. Both reach the
+    report's exposure snapshot. The agents read them as internal evidence in a reasoned run."""
+    from grit.pipeline.exposure_snapshot import merge_summaries
+
+    reasoned = ((pool.run(run.run_id) or {}).get("config") or {}).get("weekly_mode") == "reasoned"
+    summary = _admit_staff_log(pool, run, reasoned=reasoned)
+    if getattr(args, "internal_evidence", None):
+        if not getattr(args, "evidence_approved_by", None) or not reasoned:
+            raise SystemExit("--internal-evidence needs --reasoned and --evidence-approved-by PROFILE.")
+        summary = merge_summaries(summary, _admit_approved_evidence(pool, run, args))
+    if summary:
+        context = dict(((pool.run(run.run_id) or {}).get("config") or {}).get("weekly_context") or {})
+        pool.update_run_config(run.run_id, exposure_snapshot=summary, weekly_context={**context, "exposure_snapshot": summary})
+
+
+def _admit_staff_log(pool: Any, run: Any, *, reasoned: bool) -> dict[str, Any] | None:
+    from grit.core.people import STAFF_LOG_APPROVER, staff_snapshot
+    from grit.pipeline.exposure_snapshot import snapshot_summary
+    from grit.pipeline.weekly import add_staff_log
+
+    try:
+        if reasoned:
+            return add_staff_log(pool, run.run_id)
+        document = staff_snapshot()
+    except ValueError as exc:
+        raise SystemExit(f"The internal staff log cannot be admitted: {exc}") from None
+    return {**snapshot_summary(document), "approvedBy": STAFF_LOG_APPROVER} if document else None
+
+
+def _admit_approved_evidence(pool: Any, run: Any, args: argparse.Namespace) -> dict[str, Any] | None:
     from pathlib import Path
     from grit.pipeline.exposure_snapshot import is_snapshot, snapshot_records, snapshot_summary
     from grit.pipeline.weekly import add_internal_evidence
@@ -163,11 +189,9 @@ def _admit_supplied_evidence(pool: Any, run: Any, args: argparse.Namespace) -> N
         except ValueError as exc:
             raise SystemExit(str(exc)) from None
         add_internal_evidence(pool, run.run_id, records, approver)
-        summary = {**snapshot_summary(document), "approvedBy": approver.profile_id}
-        context = dict(((pool.run(run.run_id) or {}).get("config") or {}).get("weekly_context") or {})
-        pool.update_run_config(run.run_id, exposure_snapshot=summary, weekly_context={**context, "exposure_snapshot": summary})
-        return
+        return {**snapshot_summary(document), "approvedBy": approver.profile_id}
     add_internal_evidence(pool, run.run_id, document, approver)
+    return None
 
 
 def scan_step(pool: Any, args: argparse.Namespace, pack: str) -> int:

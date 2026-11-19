@@ -31,7 +31,7 @@ RELATED_LIMIT = 30
 INTERNAL_LIMIT = 20
 MAX_PAYLOAD_CHARS = 2_000_000
 INDEX_FIELDS = ("signal_id", "title", "publisher", "source_band", "published_at", "event_dates", "time_scope", "decision", "drop_reason",
-                "tier", "condition_ids", "red", "assessment_missing", "internal_exposure", "hindsight_checks")
+                "tier", "condition_ids", "red", "assessment_missing", "internal_exposure", "staff_countries", "hindsight_checks")
 EVENT_LEAD_CHARS, EVENT_DATES_MAX = 600, 3
 # The included findings that must each have a recorded contradiction search before release.
 TOP_FINDINGS = 5
@@ -457,12 +457,24 @@ class WeeklyCoordinator:
         self.reasoner = reasoner if reasoner == "deepseek" else None
         self.harness = harness
         self.harness_model = harness_model or HARNESS_MODEL
+        self._people: Any = None
+
+    def staff(self, run_date: date) -> Mapping[str, Any] | None:
+        """The internal staff log by country, read once per coordinator. None when there is no staff log."""
+        if self._people is None:
+            from grit.core.people import load_people
+
+            self._people = load_people(today=run_date) or {}
+        return self._people or None
 
     @property
     def sources(self) -> dict[str, dict[str, Any]]:
+        from grit.core.people import LEAD_CHARS, countries_named
+
         run = self.pool.run(self.run_id)
         sources = {}
         run_date = date.fromisoformat(run["run_date"])
+        people = self.staff(run_date)
         for row in evidence_snapshot(self.pool, self.run_id):
             sources[row["signal_id"]] = {**row, "text": evidence_text(row, run["run_date"]),
                                         "time_scope": time_scope(row.get("published_at"), run_date, int(run["config"].get("window_days") or 7))}
@@ -473,6 +485,11 @@ class WeeklyCoordinator:
                         if entry.get("status") == "SUCCEEDED" and entry.get("scope") == "APPROVED_INTERNAL" and entry.get("exposure")]
             if exposure:
                 sources[row["signal_id"]]["internal_exposure"] = exposure
+            elif people:
+                # Countries where the internal staff log records STE staff, named in the title or lead.
+                staffed = countries_named(f"{row.get('title') or ''}\n{str(row.get('text') or '')[:LEAD_CHARS]}", people)
+                if staffed:
+                    sources[row["signal_id"]]["staff_countries"] = staffed
             if any(late_evidence(entry, run["run_date"]) for entry in row.get("evidence_records", [])):
                 sources[row["signal_id"]]["hindsight_checks"] = True
         return sources
@@ -2069,6 +2086,23 @@ def admit_memory(pool: Pool, memory_id: int, reviewer: Any, intent: str) -> dict
 def add_internal_evidence(pool: Pool, run_id: str, records: Any, approver: Any) -> list[str]:
     if approver.review_role not in {"REVIEWER", "BA_HEAD"}:
         raise PermissionError("Internal evidence needs a named reviewer or BA head.")
+    return _admit_internal(pool, run_id, records, approver.profile_id)
+
+
+def add_staff_log(pool: Pool, run_id: str, *, path: Any = None) -> dict[str, Any] | None:
+    """Admit the internal staff log (secrets/internal-context.json) as internal evidence, with no named approver: R&A
+    maintains it for every report. Returns the report summary, or None when there is no staff log."""
+    from grit.core.people import STAFF_LOG_APPROVER, staff_snapshot
+    from grit.pipeline.exposure_snapshot import snapshot_records, snapshot_summary
+
+    document = staff_snapshot(path)
+    if document is None:
+        return None
+    _admit_internal(pool, run_id, snapshot_records(document), STAFF_LOG_APPROVER)
+    return {**snapshot_summary(document), "approvedBy": STAFF_LOG_APPROVER}
+
+
+def _admit_internal(pool: Pool, run_id: str, records: Any, approved_by: str) -> list[str]:
     if not isinstance(records, list) or not all(isinstance(row, dict) for row in records):
         raise ValueError("Internal evidence must be a JSON list of records.")
     for row in records:
@@ -2093,7 +2127,7 @@ def add_internal_evidence(pool: Pool, run_id: str, records: Any, approver: Any) 
         if not pool.one("SELECT 1 FROM weekly_evidence WHERE run_id = ? AND signal_id = ? AND kind = 'HUMAN_APPROVED'", (run_id, signal_id)):
             pool.insert("weekly_evidence", {"run_id": run_id, "signal_id": signal_id, "kind": "HUMAN_APPROVED",
                 "provenance_json": {"status": "SUCCEEDED", "scope": "APPROVED_INTERNAL", "reference": row["reference"],
-                                    "approved_by": approver.profile_id, "approved_at": utc_now(),
+                                    "approved_by": approved_by, "approved_at": utc_now(),
                                     **({"exposure": dict(row["exposure"])} if row.get("exposure") else {})}, "created_at": utc_now()})
         ids.append(signal_id)
     return ids

@@ -150,6 +150,24 @@ The report's first section shows the snapshot. The quality check
 says whether one was supplied. `docs/templates/` holds an example and the
 M365 Copilot prompt that prepares it.
 
+### Internal staff log
+
+Every weekly run also reads the internal staff log, `secrets/internal-context.json`.
+It needs no named approver: R&A maintains it for all reports. GRIT turns it into
+internal records in the snapshot shape (`grit.core.people.staff_snapshot`).
+Local staff become sites, by entity and country. Travellers and assignees
+become travel, by country. The records are recorded as approved by
+"R&A (internal staff log)".
+
+- In a reasoned run, the records go to every review batch, like the snapshot.
+  A role that cites one can call STE staff presence in that country confirmed.
+- Each page that names a staffed country in its title or lead carries
+  `staff_countries`, so a role can link the event to the matching record.
+- The report's exposure section shows the staff log. When a reviewer also
+  supplies a snapshot, the two are shown together.
+
+Presence is not harm. A role says staff are exposed, not that they were affected.
+
 ### Action posture
 
 `bottom_line.escalation` is the recommended action posture (URS methodology,

@@ -164,3 +164,71 @@ def test_weekly_rank_orders_staffed_items_first_without_changing_score_or_label(
     assert [item["developmentId"] for item in ranked] == ["staffed", "plain"]
     assert {(item["priorityScore"], item["priorityLabel"]) for item in ranked} == {(4, "MEDIUM")}
     assert ranked[0]["staffCountries"] == ["Qatar"]
+
+
+def test_staff_log_becomes_internal_evidence_without_an_approver(tmp_path: Path) -> None:
+    from grit.core.people import STAFF_LOG_APPROVER, staff_snapshot
+    from grit.pipeline.exposure_snapshot import check_snapshot
+    from grit.pipeline.weekly import add_staff_log
+    from grit.pool import Pool
+
+    path = _staff_file(tmp_path)
+    document = staff_snapshot(path)
+    assert check_snapshot(document) == []
+    assert {(row["entity"], row["country"], row["city"], row["headcount"]) for row in document["sites"]} == {
+        ("URS", "Qatar", "Not stated", 52), ("iDirect", "United Arab Emirates", "Dubai", 9)}
+    assert {(row["country"], row["travellers"]) for row in document["travel"]} == {("Qatar", 21), ("United Arab Emirates", 4)}
+
+    pool = Pool(tmp_path / "grit.sqlite")
+    pool.start_run("R", run_date="2026-11-19", pack="marine", kind="READER_SCAN", config={"weekly_mode": "reasoned"})
+    summary = add_staff_log(pool, "R", path=path)
+    assert summary["approvedBy"] == STAFF_LOG_APPROVER and len(summary["sites"]) == 2
+    add_staff_log(pool, "R", path=path)  # a second admission adds nothing
+    approved = pool.rows("SELECT provenance_json FROM weekly_evidence WHERE run_id = 'R' AND kind = 'HUMAN_APPROVED'")
+    assert len(approved) == 4
+    assert {row["provenance"]["approved_by"] for row in approved} == {STAFF_LOG_APPROVER}
+    titles = {row["title"] for row in pool.signals_for_run("R")}
+    assert "URS: 52 staff in Qatar" in titles and "iDirect: 9 staff in Dubai" in titles
+
+
+def test_weekly_sources_tag_pages_that_name_a_staffed_country(tmp_path: Path, monkeypatch) -> None:
+    import grit.core.people as people_module
+    from grit.pipeline.weekly import WeeklyCoordinator, WeeklyStore, add_staff_log
+    from grit.pool import Pool
+
+    path = _staff_file(tmp_path)
+    people = load_people(path, today=date(2026, 11, 19), addresses={})
+    monkeypatch.setattr(people_module, "load_people", lambda *args, **kwargs: people)
+    pool = Pool(tmp_path / "grit.sqlite")
+    pool.start_run("R", run_date="2026-11-19", pack="marine", kind="READER_SCAN", config={"weekly_mode": "reasoned", "window_days": 7})
+    page = pool.add_signal(url="https://example.com/doha", title="Drone strike near Doha port", text="Air defences engaged over Qatar.",
+                           publisher="example.com", published_at="2026-11-18", lane="THEME", content_hash="doha")
+    pool.add_sighting(page, "R", query_id="q", query="q", lane="THEME", target_id=None, rank=1)
+    add_staff_log(pool, "R", path=path)
+    coordinator = WeeklyCoordinator(WeeklyStore(pool, "R", search_limit=0), client=None, model="offline")
+    found = coordinator.sources
+    assert found[page]["staff_countries"] == ["Qatar"]
+    internal = [row for row in found.values() if row.get("internal_exposure")]
+    assert len(internal) == 4 and all("staff_countries" not in row for row in internal)
+
+
+def test_every_run_reports_the_staff_log_in_its_exposure_snapshot(tmp_path: Path, monkeypatch) -> None:
+    import argparse
+
+    import grit.core.people as people_module
+    from grit.cli import _admit_supplied_evidence
+    from grit.pool import Pool
+
+    path = _staff_file(tmp_path)
+    monkeypatch.setattr(people_module, "staff_log_path", lambda: path)
+    pool = Pool(tmp_path / "grit.sqlite")
+    for run_id, mode in (("REASONED", "reasoned"), ("PLAIN", None)):
+        pool.start_run(run_id, run_date="2026-11-19", pack="marine", kind="READER_SCAN", config={"weekly_mode": mode})
+        run = argparse.Namespace(run_id=run_id)
+        _admit_supplied_evidence(pool, run, argparse.Namespace())
+        config = pool.run(run_id)["config"]
+        assert config["exposure_snapshot"]["approvedBy"] == people_module.STAFF_LOG_APPROVER
+        assert config["weekly_context"]["exposure_snapshot"]["sites"]
+    # Only the reasoned run gets internal evidence records for the agents.
+    counts = {row["run_id"]: row["n"] for row in pool.rows("SELECT run_id, COUNT(*) AS n FROM weekly_evidence GROUP BY run_id")}
+    assert counts == {"REASONED": 4}

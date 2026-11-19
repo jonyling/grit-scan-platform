@@ -450,6 +450,10 @@ Judge staleness by the event, not the publication. Text labelled "Extracted sour
 text" is newer than "Text first stored"; prefer it and say when they differ.
 internal_exposure, when present, is approved internal evidence of the business's own site, staff, contract, travel or
 asset exposure. Only it can make exposure CONFIRMED or NOT_EXPOSED; public reporting alone is at most POSSIBLE.
+staff_countries, when present, lists countries the page names where the internal staff log records ST Engineering
+staff or travellers. The staff log's internal records are among the related sources. When the event threatens people
+in such a country, cite the matching internal record by its id: STE staff presence there is then CONFIRMED, and say
+the headcount and as-at date. Presence is not harm: say the staff are exposed, not that they were affected.
 A CORRECTION in admitted_corrections, reader_memory or report.corrections was corrected by a named person: never repeat
 its earlier statement as fact, use the corrected fact, and never write a phrase it retires.
 """

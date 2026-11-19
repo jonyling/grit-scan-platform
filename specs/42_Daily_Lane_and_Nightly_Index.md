@@ -137,7 +137,7 @@ A 7-day catch-up read 274 pages from 11 feeds and 28 Currents queries. The rules
 
 ## 7. Staff-log grounding (added 17 November 2026)
 
-When `secrets/adverse/internal-context.json` is present, the daily assessment uses `grit.core.people` to match people-risk lexicon terms in the title or lead against staffed countries. A match elevates the signal within its briefing tier (`staff_priority` on `priority_json`), appends the staff summary and as-at to `relevance_basis` / "Why kept", and feeds the SharePoint `Adverse` column (spec 48). It does not invent a `PEOPLE` rung or Direct exposure from people alone — those stay adverse-only (spec 46).
+When `secrets/internal-context.json` is present, the daily assessment uses `grit.core.people` to match people-risk lexicon terms in the title or lead against staffed countries. A match elevates the signal within its briefing tier (`staff_priority` on `priority_json`), appends the staff summary and as-at to `relevance_basis` / "Why kept", and feeds the SharePoint `Adverse` column (spec 48). It does not invent a `PEOPLE` rung or Direct exposure from people alone — those stay adverse-only (spec 46).
 
 ## 8. Not yet built
 

@@ -89,8 +89,10 @@ def snapshot_records(document: Mapping[str, Any]) -> list[dict[str, Any]]:
                         "published_at": as_of, "exposure": {"type": kind, "status": status, "entity": entity}})
 
     for row in document.get("sites") or []:
-        add(f"{row['entity']}: {row['headcount']} staff in {row['city']}",
-            f"{row['entity']} has {row['headcount']} staff at its site in {row['city']}, {row['country']}." + _safety(row),
+        known = str(row.get("city") or "").strip() not in {"", "Not stated"}
+        place, where = (row["city"], f"at its site in {row['city']}, {row['country']}") if known else (row["country"], f"in {row['country']}")
+        add(f"{row['entity']}: {row['headcount']} staff in {place}",
+            f"{row['entity']} has {row['headcount']} staff {where}." + _safety(row),
             str(row["reference"]), "SITE", "CONFIRMED", str(row["entity"]))
     for row in document.get("travel") or []:
         until = f" until {row['until']}" if row.get("until") else ""
@@ -121,3 +123,23 @@ def snapshot_summary(document: Mapping[str, Any]) -> dict[str, Any]:
     keep = {key: [{field: value for field, value in row.items() if field != "reference"} for row in document.get(key) or []]
             for key in SECTIONS if document.get(key)}
     return {"asOf": document.get("asOf"), "preparedBy": document.get("preparedBy"), "sources": list(document.get("sources") or []), **keep}
+
+
+def merge_summaries(first: Mapping[str, Any] | None, second: Mapping[str, Any] | None) -> dict[str, Any] | None:
+    """One report snapshot from two summaries, such as the staff log and a reviewer-approved snapshot. Rows are joined,
+    the approvers and sources are listed together, and asOf is the later date."""
+    parts = [part for part in (first, second) if part]
+    if len(parts) < 2:
+        return dict(parts[0]) if parts else None
+    a, b = parts
+    merged: dict[str, Any] = {
+        "asOf": max(str(a.get("asOf") or ""), str(b.get("asOf") or "")) or None,
+        "preparedBy": "; ".join(dict.fromkeys(str(part["preparedBy"]) for part in parts if part.get("preparedBy"))) or None,
+        "approvedBy": "; ".join(dict.fromkeys(str(part["approvedBy"]) for part in parts if part.get("approvedBy"))) or None,
+        "sources": list(dict.fromkeys([*(a.get("sources") or []), *(b.get("sources") or [])])),
+    }
+    for key in SECTIONS:
+        rows = [*(a.get(key) or []), *(row for row in b.get(key) or [] if row not in (a.get(key) or []))]
+        if rows:
+            merged[key] = rows
+    return merged
