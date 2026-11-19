@@ -244,7 +244,7 @@ A RED candidate that the review excluded is omitted from the report. The status 
 
 ## Run the Thursday schedule
 
-`grit scheduled` runs the packs due that Thursday, then the adverse news scan. The cadence and the planned query counts live in `grit/schedule.py`. `tests/test_schedule.py` locks these planned counts. A run's count moves with the names due that week. The table gives the high end of that rotation on the plans as of 9 November 2026.
+`grit scheduled` runs the packs due that Thursday, then the adverse news scan. Every scheduled weekly report is reasoned with fast review: it runs `grit weekly --reasoned --fast --countersearch-limit 5`. Each pack can spend up to 5 more Brave queries on countersearches, on top of the planned counts below. A fast review of about 2,000 candidates takes about 120 model calls. The cadence and the planned query counts live in `grit/schedule.py`. `tests/test_schedule.py` locks these planned counts. A run's count moves with the names due that week. The table gives the high end of that rotation on the plans as of 9 November 2026.
 
 | Pack | Due | Planned Brave queries a run | Planned queries a month |
 |---|---|---|---|

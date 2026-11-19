@@ -29,3 +29,15 @@ def test_a_year_of_the_schedule_stays_within_the_planned_query_ceiling() -> None
         spent.append(sum(PLANNED[pack] for day in days if day.month == month for pack in due_packs(day)) + 16)
     assert min(spent) == 1032, "a four-Thursday month at the high end of each pack, plus the source sweep"
     assert max(spent) == 1183, "a five-Thursday month; above the free Brave credit, under the default monthly guard"
+
+
+def test_the_scheduled_weekly_run_is_reasoned(monkeypatch) -> None:
+    import grit.cli
+    from grit.schedule import main
+
+    calls: list[list[str]] = []
+    monkeypatch.setattr(grit.cli, "main", lambda argv: calls.append(argv) or 0)
+    assert main(["--date", "2026-11-19", "--no-adverse"]) == 0
+    (weekly,) = calls
+    assert weekly[:2] == ["weekly", "--pack"] and "urs" in weekly
+    assert weekly[-4:] == ["--reasoned", "--fast", "--countersearch-limit", "5"]

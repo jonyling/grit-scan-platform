@@ -13,6 +13,8 @@
 
 The schedule test adds one 16-query source sweep for the month. A four-Thursday month of these high-end counts is 1,032 queries. A five-Thursday month is 1,183, above Brave's free credit of about 1,000, before the adverse scan. `BRAVE_MONTHLY_LIMIT` defaults to 2000.
 
+Every scheduled weekly report is reasoned with fast review (`REASONED`): agents review the whole pool, and the internal staff log reaches them as internal evidence. Each pack can also spend up to `COUNTERSEARCH_LIMIT` Brave countersearches. That is 5 more queries per pack, on top of the planned counts.
+
 Packs due on the same day run in one process, entity packs first. Every Thursday, after those scans, the adverse news scan can send up to 40 more Brave queries. That extra spend sits outside the planned-count check. Raise `BRAVE_MONTHLY_LIMIT` to match the Brave plan, or pass `--no-adverse`.
 """
 
@@ -23,6 +25,8 @@ from datetime import date
 
 WEEKLY, FORTNIGHTLY, MONTHLY = "weekly", "fortnightly", "monthly"
 THURSDAY = 3
+COUNTERSEARCH_LIMIT = 5
+REASONED = ("--reasoned", "--fast", "--countersearch-limit", str(COUNTERSEARCH_LIMIT))
 SCHEDULE = {"dsc": MONTHLY, "urs": WEEKLY, "urs-tw": MONTHLY, "ste": MONTHLY, "ca": MONTHLY, "marine": MONTHLY}
 
 
@@ -55,7 +59,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"{args.date} ({args.date.strftime('%A')}): " + (f"due {', '.join(due)}." if due else "no scan due.") + (" Adverse news scan due." if adverse else ""))
     if args.dry_run:
         return 0
-    status = grit_main(["weekly", "--pack", *due, "--date", args.date.isoformat()]) if due else 0
+    status = grit_main(["weekly", "--pack", *due, "--date", args.date.isoformat(), *REASONED]) if due else 0
     if adverse:
         status = grit_main(["adverse", "--date", args.date.isoformat(), "--quiet"]) or status
     return status
