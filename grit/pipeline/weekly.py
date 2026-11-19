@@ -1658,9 +1658,16 @@ ABBREVIATIONS = frozenset({
 })
 
 
+# The policy status and its basis in the reviewed findings: "The report status is ELEVATED based on five included findings."
+# Policy sets it from the selections, so no news page can attest to it. A status sentence that names news events is cited.
+STATUS_BASIS = re.compile(r"^\s*the report status is [A-Z_]+\b[^.!?]*\b(?:findings?|selections?)\b[^.!?]*[.!?]?\s*$", re.IGNORECASE)
+
+
 def without_internal_claims(text: str) -> str:
-    """The text without its sentences on the business's own status or the RED rule, which stand without a citation."""
-    return " ".join(part for part in re.split(r"(?<=[.!?])\s+", text.strip()) if not INTERNAL_CLAIM.search(part))
+    """The text without its sentences on the business's own status, the policy status, or the RED rule, which stand
+    without a citation."""
+    return " ".join(part for part in re.split(r"(?<=[.!?])\s+", text.strip())
+                    if not INTERNAL_CLAIM.search(part) and not STATUS_BASIS.match(part))
 
 
 def sentence_break(text: str) -> str | None:

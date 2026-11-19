@@ -558,7 +558,9 @@ a page that states that sentence's dates, numbers, and distinctive names. A sent
 internal impact is confirmed") or on what would raise the status to RED cites nothing: no news page can confirm it.
 Call exposure confirmed only when a cited selection has exposure_status CONFIRMED; otherwise write possible exposure.
 The report status (v2.status) is set by policy from the reviewed selections; state it and its basis, and never call
-the business's position RED unless the status is RED. Only the Risk & Assurance operator confirms a RED impact; a RED
+the business's position RED unless the status is RED. A status sentence whose basis is the reviewed findings ("The
+report status is ELEVATED based on five included findings.") cites nothing; put each news fact in its own cited
+sentence. Only the Risk & Assurance operator confirms a RED impact; a RED
 candidate or an assessed CONFIRMED impact without that decision awaits R&A confirmation and is not RED.
 Use a number only when it appears in the cited source text; otherwise omit it. Write each number with its unit (%, $,
 bps, units); if the source gives a number without its unit, leave the number out rather than guess the unit. The previous output, if supplied

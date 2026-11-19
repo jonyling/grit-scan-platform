@@ -60,3 +60,13 @@ def test_a_statement_on_the_business_own_status_carries_no_news_citation():
     runs, _ = citations(f"Two airlines were affected [{signal}]. No internal impact is confirmed [{signal}].",
                         {signal: {"publisher": "thethaiger.com", "published_at": "2026-11-12T03:10:00Z", "url": "https://thethaiger.com/a", "title": "t"}})
     assert plain(runs) == "Two airlines were affected (thethaiger.com, 12 Nov 2026). No internal impact is confirmed."
+
+
+def test_a_policy_status_sentence_needs_no_citation_but_a_news_basis_does():
+    from grit.pipeline.weekly import sentence_break, without_internal_claims
+
+    policy = ("The report status is ELEVATED based on five included findings combining identifiable exposure, credible evidence, "
+              "and near-term timing across regional security flashpoints. An ADNOC Logistics & Services vessel was attacked")
+    assert sentence_break(without_internal_claims(policy)) is None
+    news = "The report status is ELEVATED based on missile strikes across the Gulf. An ADNOC Logistics & Services vessel was attacked"
+    assert sentence_break(without_internal_claims(news)) is not None
