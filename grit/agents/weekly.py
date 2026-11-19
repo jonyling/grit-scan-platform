@@ -552,6 +552,7 @@ could be affected, and that no impact is confirmed unless a cited selection says
 elevated rows stay in the escalating table; do not promote them into the status sentence.
 bottom_line.escalation is the recommended action posture (URS methodology, section 15): one principal ask, saying who
 should do what by when, then the specific development that would raise the status. Keep it to two or three sentences.
+It is a recommendation, not a news fact, so it may cite nothing. If it states a news fact, cite that sentence.
 When authority.action_posture names next_forum and next_forum_date, the ask must name that meeting and that date, one
 action, and one RED trigger from red_triggers. Do not invent a meeting. Do not list several asks. Do not
 name only the readers. When the meeting fields are blank, name one owner_roles role, a confirmation verb (confirm,
@@ -564,8 +565,7 @@ Call exposure confirmed only when a cited selection has exposure_status CONFIRME
 The report status (v2.status) is set by policy from the reviewed selections; state it and its basis, and never call
 the business's position RED unless the status is RED. A status sentence whose basis is the reviewed findings ("The
 report status is ELEVATED based on the reviewed findings.") cites nothing; put each news fact in its own cited
-sentence. Give a count only in status_basis's own words, with its qualifier ("4 included findings combine identifiable
-exposure ..."), never shortened to a bare "four included findings". Only the Risk & Assurance operator confirms a RED impact; a RED
+sentence. Do not give a count in the status sentence: no news page states how many findings were reviewed. Only the Risk & Assurance operator confirms a RED impact; a RED
 candidate or an assessed CONFIRMED impact without that decision awaits R&A confirmation and is not RED.
 Use a number only when it appears in the cited source text; otherwise omit it. Write each number with its unit (%, $,
 bps, units); if the source gives a number without its unit, leave the number out rather than guess the unit. The previous output, if supplied

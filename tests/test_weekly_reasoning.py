@@ -2007,3 +2007,26 @@ def test_an_unsupported_objection_is_settled_once_the_candidate_is_excluded(week
                                           "problem": "The stored text is only a journalist bio.", "source_ids": [excluded]})
     coordinator.settle_false_positives()
     assert "BIO" not in store.issues()
+
+
+@pytest.mark.parametrize("ask, error", [
+    ("Operations should confirm Alpha remains open before the next cycle. A site closure would be raised to RED.", None),
+    ("Operations should confirm 12 staff are safe before the next cycle.", "12 is not in the cited sources"),
+])
+def test_the_action_posture_may_cite_nothing_but_still_faces_the_number_check(weekly, ask, error):
+    from grit.agents.weekly import PROMPTS
+    pool, store, coordinator, ids, original = weekly
+    coordinator.reconcile_pool(search=None, reassess=lambda: None)
+    def uncited(*args, system, payload, **kwargs):
+        if system != PROMPTS["Reporting"]:
+            return original(*args, system=system, payload=payload, **kwargs)
+        return {"edits": [
+            {"path": "bottom_line.text", "text": f"Alpha operations are reported open [{ids[0]}].", "source_ids": [ids[0]]},
+            {"path": "bottom_line.escalation", "text": ask, "source_ids": []},
+        ]}
+    coordinator.call = uncited
+    if error is None:
+        coordinator.report(_profile(), _draft(ids[0]), [])
+    else:
+        with pytest.raises(ContractError, match=error):
+            coordinator.report(_profile(), _draft(ids[0]), [])

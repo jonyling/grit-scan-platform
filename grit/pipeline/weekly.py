@@ -1552,7 +1552,10 @@ class WeeklyCoordinator:
                                         f"write the corrected fact instead ({row['corrected']})" for row in retired)
                     refs = source_ids(edit.get("source_ids"), sources)
                     marks = {ref.strip() for group in CITE.findall(edit["text"]) for ref in group.split(",")}
-                    if set(refs) != marks or (sources and not refs):
+                    # The action posture is a recommendation and a RED rule, not a news fact, so it may cite nothing.
+                    # Uncited, it still faces the number and date checks below, so no news fact slips in.
+                    uncited_posture = edit["path"] == "bottom_line.escalation" and not refs and not marks
+                    if set(refs) != marks or (sources and not refs and not uncited_posture):
                         problems.append(f"{edit['path']}: every narrative edit needs matching evidence citations.")
                         continue
                     if refs:
@@ -1739,7 +1742,7 @@ def apply_edit(brief: dict[str, Any], edit: Mapping[str, Any], sources: Mapping[
         current[key] = {"runs": runs, "plain": plain(runs), "sources": refs}
     else:
         current[key] = plain(runs)
-    brief["membership"] = sorted(set(brief["membership"]) | set(edit["source_ids"]))
+    brief["membership"] = sorted(set(brief["membership"]) | set(edit.get("source_ids") or []))
     if parts[0] == "conditions" and key == "basis":
         from grit.report.brief import text_only
         current["development"] = text_only(runs)
