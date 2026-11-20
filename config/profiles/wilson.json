@@ -41,20 +41,6 @@
       "title": "GRIT-Scan: Urban Solutions",
       "subtitle": "Business Area Weekly Risk Scan",
       "preparedFor": "Group Head, Risk & Assurance",
-      "sections": [
-        "BOTTOM_LINE",
-        "CONDITIONS",
-        "MANAGEMENT_REQUESTS",
-        "ENTITY_PACKS",
-        "ENTITIES",
-        "CUSTOMERS",
-        "SUPPLIERS",
-        "COMPETITORS",
-        "PRIORITY_FINDINGS",
-        "QA_LOG",
-        "WATCHPOINTS"
-      ],
-      "maxFindings": 8,
       "formats": [
         "docx",
         "pptx",
@@ -65,18 +51,6 @@
       "title": "GRIT-Scan: URS Taiwan",
       "subtitle": "Geopolitical Risk & Infrastructure Tracker — Weekly Scan",
       "preparedFor": "Group Head, Risk & Assurance",
-      "sections": [
-        "BOTTOM_LINE",
-        "ORDER_BOOK",
-        "PROJECTS",
-        "SUPPLIERS",
-        "CUSTOMERS",
-        "HAZARDS",
-        "CONDITIONS",
-        "QA_LOG",
-        "WATCHPOINTS"
-      ],
-      "maxFindings": 8,
       "formats": [
         "docx",
         "pptx",
@@ -87,20 +61,6 @@
       "title": "GRIT-Scan: Digital Systems & Cybersecurity",
       "subtitle": "Business Area Weekly Risk Scan",
       "preparedFor": "Group Head, Risk & Assurance",
-      "sections": [
-        "BOTTOM_LINE",
-        "CONDITIONS",
-        "MANAGEMENT_REQUESTS",
-        "ENTITIES",
-        "CUSTOMERS",
-        "SUPPLIERS",
-        "COMPETITORS",
-        "PRIORITY_FINDINGS",
-        "QA_LOG",
-        "WATCHPOINTS",
-        "RESPONSE_OPTIONS"
-      ],
-      "maxFindings": 8,
       "formats": [
         "docx",
         "pptx",
@@ -111,20 +71,6 @@
       "title": "GRIT-Scan: Commercial Aerospace",
       "subtitle": "Business Area Weekly Risk Scan",
       "preparedFor": "Group Head, Risk & Assurance",
-      "sections": [
-        "BOTTOM_LINE",
-        "CONDITIONS",
-        "MANAGEMENT_REQUESTS",
-        "ENTITIES",
-        "CUSTOMERS",
-        "SUPPLIERS",
-        "COMPETITORS",
-        "PRIORITY_FINDINGS",
-        "QA_LOG",
-        "WATCHPOINTS",
-        "RESPONSE_OPTIONS"
-      ],
-      "maxFindings": 8,
       "formats": [
         "docx",
         "pptx",
@@ -135,20 +81,6 @@
       "title": "GRIT-Scan: Marine",
       "subtitle": "Business Area Weekly Risk Scan",
       "preparedFor": "Group Head, Risk & Assurance",
-      "sections": [
-        "BOTTOM_LINE",
-        "CONDITIONS",
-        "MANAGEMENT_REQUESTS",
-        "ENTITIES",
-        "CUSTOMERS",
-        "SUPPLIERS",
-        "COMPETITORS",
-        "PRIORITY_FINDINGS",
-        "QA_LOG",
-        "WATCHPOINTS",
-        "RESPONSE_OPTIONS"
-      ],
-      "maxFindings": 8,
       "formats": [
         "docx",
         "pptx",

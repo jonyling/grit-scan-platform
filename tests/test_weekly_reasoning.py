@@ -106,12 +106,14 @@ def weekly(tmp_path, request):
                 result.update(reviewed_ids=list(payload["candidates"]), issues=[], resolved_issue_ids=[])
             return result
         if system == PROMPTS["Reporting"]:
-            return {"edits": [
+            edits = [
                 {"path": "bottom_line.text", "text": f"Alpha operations are reported open [{ids[0]}].", "source_ids": [ids[0]]},
                 {"path": "bottom_line.escalation",
                  "text": f"Operations should confirm Alpha remains open before the next cycle [{ids[0]}].",
                  "source_ids": [ids[0]]},
-            ]}
+            ]
+            # A business-area brief has no escalation field to edit.
+            return {"edits": [edit for edit in edits if edit["path"] in payload["editable_fields"]]}
         if system == PROMPTS["Critic"]:
             return {"reviewed_ids": payload["targets"], "issues": [], "resolved_issue_ids": []}
         if system == PROMPTS["Memory"]:
@@ -618,7 +620,8 @@ def test_full_coordinator_uses_actual_section_drafting_and_brief_assembly(weekly
     assert pool.run("R")["status"] == "COMPLETE"
     from grit.pipeline.weekly import frozen_report
     snapshot = frozen_report(pool, "R", "reader")
-    assert snapshot["brief"]["meta"]["sections"] == ["OTHER_SIGNALS", "QA_LOG", "WATCHPOINTS"]
+    assert snapshot["brief"]["meta"]["layout"] == "BA"
+    assert "bottom_line.escalation" not in snapshot["brief"]["bottom_line"]
     assert ids[0] in snapshot["brief"]["membership"]
     assert snapshot["brief"]["method"]["weekly"]["completeness"]["blocking"] == []
 

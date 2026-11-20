@@ -40,9 +40,9 @@ Work in rounds. Reply only with plain JSON text, never a function call. Each rou
   {"final": ANSWER}.
 
 Lookups you can request, with their args:
-- "get_state", args "pack" and optional "run_id": a pack's latest brief: bottom line, standing conditions or risk themes
-  with trend, summary, implication and response options, and open watchpoints. Start here for "what is escalating", "why",
-  "what should we do".
+- "get_state", args "pack" and optional "run_id": a pack's latest brief: bottom line, standing conditions with trend,
+  summary, implication and response options (Group radar), this_week_items by table with summary, impact and response
+  (business areas), and open watchpoints. Start here for "what is escalating", "why", "what should we do".
 - "condition_history", args "item_id" and optional "since" (YYYY-MM-DD): one standing item's trend and summary at each
   run, with turning points.
 - "search_signals", args "query" and optional "include_dropped": news events in the reader's packs, one per story, with

@@ -217,7 +217,6 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
           named: Mapping[str, Sequence[Mapping[str, Any]]], registers: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     """The v2 tables. routed: the brief's routed rows; conditions: the brief's condition rows; named: the brief's supplier,
     customer and competitor rows."""
-    from grit.ontology.matchers.credibility_lookup import credibility_lookup
     from grit.pipeline.events import risk_names
     from grit.report.lookahead import look_ahead
 
@@ -341,34 +340,10 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         coverage.append(line)
 
     # 6. Jurisdictions. A nil needs a search that named the country or one of its registered entities.
-    jurisdictions = []
-    up_ids = {signal_id for event in events if event["band"] == UP for signal_id in event["signal_ids"]}
-    for country, rows in sorted(_country_entities(pack).items(), key=lambda pair: (-len(pair[1]), pair[0])):
-        entities = [name for name, _ in rows]
-        entity_ids = {entity_id for _, entity_id in rows if entity_id}
-        found = [row for row in visible if _mentions(country, row)]
-        found.sort(key=lambda item: (item.get("tier") or 9, -(item.get("corroboration") or 1)))
-        country_searched = any(str(query.get("target_id") or "") in entity_ids or _names_country(country, str(query.get("query") or ""))
-                               for query in scope["queries"])
-        headline = english_headlines(found, 1)
-        jurisdictions.append({
-            "country": country, "entities": entities[:6], "more_entities": max(0, len(entities) - 6),
-            "finding": headline[0][0] if headline else (NO_ENGLISH if found else NO_FINDING if country_searched else NO_COUNTRY_SEARCH),
-            "signal_ids": [headline[0][1]["signal_id"]] if headline else [], "searched": country_searched,
-            "trend": UP if any(row["signal_id"] in up_ids for row in found) else SAME if found else "–",
-        })
+    jurisdictions = jurisdiction_rows(pack, visible, events, scope["queries"])
 
     # 7. Named supplier, customer and partner watch.
-    # A passing mention says nothing about the item, so it stays in the exposure checks and out of the report.
-    # A summary that opens "Nothing was found ..." is a passing mention whatever its status says.
-    def passing_only(item: Mapping[str, Any]) -> bool:
-        text = item.get("text")
-        text = text.get("plain") or "" if isinstance(text, Mapping) else str(text or "")
-        return item.get("status") == "NOTHING_FOUND" or bool(_NOTHING.match(text))
-
-    watch = [{"name": item["name"], "type": kind, "text": item["text"], "status": item["status"]}
-             for kind, items in named.items() for item in items if item.get("text") and not passing_only(item)]
-    passing = sum(1 for items in named.values() for item in items if item.get("text") and passing_only(item))
+    watch, passing = named_watch(named)
     targets = {str(row.get("target_id")) for row in scope["queries"] if row.get("lane") in {"SUPPLIER", "CUSTOMER", "COMPETITOR", "ENTITY"}}
     total = sum(len(items) for items in named.values())
     not_searched = sum(1 for items in named.values() for item in items if item.get("item_id") not in targets and not item.get("text"))
@@ -454,14 +429,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     window = [f"{item['date'].day} {item['date'].strftime('%b')}: {short_text(item['event'])}" for item in look[:2]]
 
     # Source tiers for every signal the brief may cite.
-    tiers = {}
-    for row in routed:
-        best = None
-        for register in registers:
-            found = credibility_lookup(str(row.get("url") or ""), register)
-            if best is None or found.get("credibilityRating") in {"HIGH", "MEDIUM", "LOW"}:
-                best = found
-        tiers[row["signal_id"]] = source_tier(row.get("url"), (best or {}).get("credibilityRating"), row.get("publisher"), (best or {}).get("sourceClass"))
+    tiers = source_tiers(routed, registers)
     # Outlets R&A has not banded. A reader sees which reports need verification. R&A sees what to band next.
     from collections import Counter
 
@@ -496,3 +464,56 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         "tiers": tiers, "short": short, "unrated_outlets": [{"domain": domain, "signals": count} for domain, count in unrated],
         "exposure": exposure,
     }
+
+
+def jurisdiction_rows(pack: Any, visible: Sequence[Mapping[str, Any]], events: Sequence[Mapping[str, Any]],
+                      queries: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Each country with a registered entity or asset, with the best kept signal that names it. A nil needs a search that
+    named the country or one of its entities."""
+    rows_out = []
+    up_ids = {signal_id for event in events if event["band"] == UP for signal_id in event["signal_ids"]}
+    for country, rows in sorted(_country_entities(pack).items(), key=lambda pair: (-len(pair[1]), pair[0])):
+        entities = [name for name, _ in rows]
+        entity_ids = {entity_id for _, entity_id in rows if entity_id}
+        found = [row for row in visible if _mentions(country, row)]
+        found.sort(key=lambda item: (item.get("tier") or 9, -(item.get("corroboration") or 1)))
+        country_searched = any(str(query.get("target_id") or "") in entity_ids or _names_country(country, str(query.get("query") or ""))
+                               for query in queries)
+        headline = english_headlines(found, 1)
+        rows_out.append({
+            "country": country, "entities": entities[:6], "more_entities": max(0, len(entities) - 6),
+            "finding": headline[0][0] if headline else (NO_ENGLISH if found else NO_FINDING if country_searched else NO_COUNTRY_SEARCH),
+            "signal_ids": [headline[0][1]["signal_id"]] if headline else [], "searched": country_searched,
+            "trend": UP if any(row["signal_id"] in up_ids for row in found) else SAME if found else "–",
+        })
+    return rows_out
+
+
+def named_watch(named: Mapping[str, Sequence[Mapping[str, Any]]]) -> tuple[list[dict[str, Any]], int]:
+    """The named supplier, customer and competitor rows with item-specific news, and the count of passing mentions left out.
+    A passing mention says nothing about the item, so it stays in the exposure checks and out of the report. A summary that
+    opens "Nothing was found ..." is a passing mention whatever its status says."""
+    def passing_only(item: Mapping[str, Any]) -> bool:
+        text = item.get("text")
+        text = text.get("plain") or "" if isinstance(text, Mapping) else str(text or "")
+        return item.get("status") == "NOTHING_FOUND" or bool(_NOTHING.match(text))
+
+    watch = [{"name": item["name"], "type": kind, "text": item["text"], "status": item["status"], "lesson": item.get("lesson")}
+             for kind, items in named.items() for item in items if item.get("text") and not passing_only(item)]
+    passing = sum(1 for items in named.values() for item in items if item.get("text") and passing_only(item))
+    return watch, passing
+
+
+def source_tiers(routed: Sequence[Mapping[str, Any]], registers: Sequence[Mapping[str, Any]]) -> dict[str, str]:
+    """The source band of every signal the brief may cite."""
+    from grit.ontology.matchers.credibility_lookup import credibility_lookup
+
+    tiers = {}
+    for row in routed:
+        best = None
+        for register in registers:
+            found = credibility_lookup(str(row.get("url") or ""), register)
+            if best is None or found.get("credibilityRating") in {"HIGH", "MEDIUM", "LOW"}:
+                best = found
+        tiers[row["signal_id"]] = source_tier(row.get("url"), (best or {}).get("credibilityRating"), row.get("publisher"), (best or {}).get("sourceClass"))
+    return tiers

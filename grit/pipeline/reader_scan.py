@@ -842,36 +842,66 @@ def owner_roles(pack: OntologyPack) -> list[str]:
 
 
 def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Callable[[str], None] = print, condition_critique: bool = True) -> dict[str, Any]:
+    """The agents for one reader pack and week. The Group radar's standing conditions get the Assessor, the Critic and the
+    Proposer. A business area's brief is event-led: the EventAssessor drafts each section's rows, and the bottom line
+    reads them."""
     from grit.agents import reader as agents
-    from grit.core.conditions import import_scan, rank, revise
 
     pack = _load_pack(run.pack)
     # Every drafting stage below runs again, so the QA log keeps only what this pass withholds.
     pool.clear_check_qa(run.run_id)
-    items = standing_items(pack)
-    by_id = {item["id"]: item for item in items}
     rows = _kept(pool, run)
-    previous_run, priors = _prior(pool, run)
-    registers = [pack.source_register, graph_pack(pack).source_register]
-    by_signal = {row["signal_id"]: row for row in rows}
 
     def write_log(entry: agents.CallLog) -> None:
         if not condition_critique:
             entry.reasoning = None
         pool.log(actor_type="AGENT", run_id=run.run_id, **entry.as_record())
 
+    if pack.level not in {"BA", "ENTITY"}:
+        drafts, accepted, options = _assess_standing(pool, run, pack, rows, client=client, model=model, write_log=write_log, log=log, condition_critique=condition_critique)
+    else:
+        drafts, accepted, options = {}, [], {}
+        with pool.transaction() as conn:
+            conn.execute("DELETE FROM condition_assessments WHERE run_id = ?", (run.run_id,))  # left by an earlier layout
+    checks = _item_checks(pool, run, pack, rows, client=client, model=model, write_log=write_log, log=log)
+    watch = update_watchpoints(pool, run, rows)
+    from grit.pipeline.events import draft_rows
+
+    events = draft_rows(pool, run, client=client, model=model, log=log)
+    bottom = _bottom_line(pool, run, client=client, model=model, write_log=write_log)
+    from grit.pipeline.scenarios import judge_run
+
+    try:
+        signposts = judge_run(pool, run.run_id, pack, client=client, model=model, log=log)
+    except Exception as exc:  # embeddings or the model might be unavailable, and keyword matching still stands
+        signposts = {"skipped": f"{type(exc).__name__}: {str(exc)[:80]}"}
+        log(f"  SignpostJudge skipped: {signposts['skipped']}")
+    return {
+        "events": events, "signposts": signposts,
+        "standing": {key: draft["status"] for key, draft in drafts.items()}, "critic_accepted": len(accepted),
+        "implications": sum(1 for draft in drafts.values() if draft.get("implication")), "options": {key: len(rows) for key, rows in options.items()},
+        "items": checks, "watchpoints": watch, "bottom_line": bottom["status"],
+    }
+
+
+def _assess_standing(pool: Pool, run: ReaderRun, pack: OntologyPack, rows: Sequence[Mapping[str, Any]], *, client: Any, model: str,
+                     write_log: Callable[[Any], None], log: Callable[[str], None], condition_critique: bool) -> tuple[dict[str, Any], list[Any], dict[str, Any]]:
+    """The Group radar's standing conditions: Assessor drafts, one Critic pass, Proposer options, and the governed cascade."""
+    from grit.agents import reader as agents
+    from grit.core.conditions import import_scan, rank, revise
+
+    items = standing_items(pack)
+    by_id = {item["id"]: item for item in items}
+    previous_run, priors = _prior(pool, run)
+    registers = [pack.source_register, graph_pack(pack).source_register]
+    by_signal = {row["signal_id"]: row for row in rows}
+
     def prior_view(key: str) -> dict[str, Any] | None:
         prior = priors.get(key)
         return {"trend": prior.get("trend_label"), "summary": prior.get("summary"), "run_date": previous_run["run_date"]} if prior and previous_run else None
 
-    # Assessor: one draft per standing item. A theme an entity pack covers draws on that pack's signals for the same date.
-    # A key risk also gets an implication for the business area (spec 36).
-    # A Group pack's conditions get it too, with the opportunity and the counter-indicator (spec 37).
-    group = pack.level == "GROUP"
-    area = business_area_context(pack) if standing_set(pack) == "themes" or group else None
-
-    def area_for(item: Mapping[str, Any]) -> dict[str, Any] | None:
-        return area if area is not None and (item.get("tier") == "KEY" or group) else None
+    # Assessor: one draft per condition, with the implication, the opportunity and the counter-indicator (spec 37).
+    area = business_area_context(pack)
 
     drafts: dict[str, dict[str, Any]] = {}
     tables: dict[str, tuple[dict[str, dict[str, Any]], dict[str, str]]] = {}
@@ -880,7 +910,7 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
         by_signal.update({row["signal_id"]: row for row in sources})
         table, back = agents.source_table(sources)
         tables[item["id"]] = (table, back)
-        draft, call = agents.assess_condition(client, model, condition=item, prior=prior_view(item["id"]), sources=table, business_area=area_for(item))
+        draft, call = agents.assess_condition(client, model, condition=item, prior=prior_view(item["id"]), sources=table, business_area=area)
         write_log(call)
         drafts[item["id"]] = draft
         log(f"  Assessor {item['id']:16} {draft['status']:12} {draft.get('movement') or '-':20} sources {len(table)}")
@@ -907,7 +937,7 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
             back[local] = str(source_signal)
         fixed_issue = dict(issue) | {"source_id": local, "correction": _renumber(str(issue.get("correction") or ""), combined_back, back)}
         item = by_id[key]
-        refined, call = agents.assess_condition(client, model, condition=item, prior=prior_view(key), sources=table, issues=[fixed_issue], previous=drafts[key], business_area=area_for(item))
+        refined, call = agents.assess_condition(client, model, condition=item, prior=prior_view(key), sources=table, issues=[fixed_issue], previous=drafts[key], business_area=area)
         write_log(call)
         before = drafts[key].get("summary")
         if refined["status"] in {"VALIDATED", "NO_EVIDENCE"}:
@@ -916,33 +946,32 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
         else:
             pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=str(issue.get("problem")), correction="Raised by the Critic. The redraft failed its checks, so the earlier draft stands.", source_ids=[str(source_signal)] if source_signal else [], origin="CRITIC")
 
-    # Proposer: options for each key risk whose validated assessment cites a development this week (spec 36). The report
-    # also carries one principal ask in its action posture (URS methodology, section 15).
+    # Proposer: options for each condition whose validated assessment cites a development this period (spec 37).
+    # The report also carries one principal ask in its action posture (URS methodology, section 15).
     options: dict[str, list[dict[str, Any]]] = {}
-    if area is not None:
-        owners = owner_roles(pack)
-        for item in items:
-            key = item["id"]
-            draft = drafts[key]
-            if (item.get("tier") != "KEY" and not group) or draft["status"] != "VALIDATED":
-                continue
-            table, back = tables[key]
-            cited = [ref for ref in draft.get("source_ids") or [] if ref in table]
-            if not cited:
-                log(f"  Proposer {key:16} SKIPPED      no development this week")
-                continue
-            # A Group condition has no register of key controls: its transmission text is not a control, so it is not offered as one.
-            theme = {**item, "transmission": None} if group else item
-            result, call = agents.propose_options(
-                client, model, theme=theme, assessment={"movement": draft.get("movement"), "summary": draft.get("summary"), "implication": draft.get("implication")},
-                sources={ref: table[ref] for ref in cited}, owners=owners,
-            )
-            write_log(call)
-            log(f"  Proposer {key:16} {result['status']:12} options {len(result['options'])}")
-            if result["status"] == "VALIDATED":
-                options[key] = [{**option, "source_ids": [back[ref] for ref in option["source_ids"] if ref in back]} for option in result["options"]]
-            else:
-                pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=None, correction="Response options withheld: the Proposer's draft failed its checks twice. " + "; ".join(result["violations"][:2]), origin="CHECK")
+    owners = owner_roles(pack)
+    for item in items:
+        key = item["id"]
+        draft = drafts[key]
+        if draft["status"] != "VALIDATED":
+            continue
+        table, back = tables[key]
+        cited = [ref for ref in draft.get("source_ids") or [] if ref in table]
+        if not cited:
+            log(f"  Proposer {key:16} SKIPPED      no development this week")
+            continue
+        # A Group condition has no register of key controls: its transmission text is not a control, so it is not offered as one.
+        theme = {**item, "transmission": None}
+        result, call = agents.propose_options(
+            client, model, theme=theme, assessment={"movement": draft.get("movement"), "summary": draft.get("summary"), "implication": draft.get("implication")},
+            sources={ref: table[ref] for ref in cited}, owners=owners,
+        )
+        write_log(call)
+        log(f"  Proposer {key:16} {result['status']:12} options {len(result['options'])}")
+        if result["status"] == "VALIDATED":
+            options[key] = [{**option, "source_ids": [back[ref] for ref in option["source_ids"] if ref in back]} for option in result["options"]]
+        else:
+            pool.add_qa(run.run_id, item=f"{key}: {item['name']}", prior=None, correction="Response options withheld: the Proposer's draft failed its checks twice. " + "; ".join(result["violations"][:2]), origin="CHECK")
 
     # Persist the standing items. For conditions, run the governed weekly cascade for themes, descent and priority.
     scan: list[dict[str, Any]] = []
@@ -981,26 +1010,7 @@ def run_agents(pool: Pool, run: ReaderRun, *, client: Any, model: str, log: Call
                 (json.dumps({"kind": "CONDITION", **item, **ranking.get(item["conditionId"], {})}, default=str), run.run_id, item["conditionId"]),
             )
         pool.conn.commit()
-
-    checks = _item_checks(pool, run, pack, rows, client=client, model=model, write_log=write_log, log=log)
-    watch = update_watchpoints(pool, run, rows)
-    bottom = _bottom_line(pool, run, client=client, model=model, write_log=write_log)
-    from grit.pipeline.events import draft_rows
-
-    events = draft_rows(pool, run, client=client, model=model, log=log)
-    from grit.pipeline.scenarios import judge_run
-
-    try:
-        signposts = judge_run(pool, run.run_id, pack, client=client, model=model, log=log)
-    except Exception as exc:  # embeddings or the model might be unavailable, and keyword matching still stands
-        signposts = {"skipped": f"{type(exc).__name__}: {str(exc)[:80]}"}
-        log(f"  SignpostJudge skipped: {signposts['skipped']}")
-    return {
-        "events": events, "signposts": signposts,
-        "standing": {key: draft["status"] for key, draft in drafts.items()}, "critic_accepted": len(accepted),
-        "implications": sum(1 for draft in drafts.values() if draft.get("implication")), "options": {key: len(rows) for key, rows in options.items()},
-        "items": checks, "watchpoints": watch, "bottom_line": bottom["status"],
-    }
+    return drafts, accepted, options
 
 
 def _combined_table(tables: Mapping[str, tuple[dict[str, Any], dict[str, str]]], drafts: Mapping[str, Mapping[str, Any]]) -> tuple[dict[str, Any], dict[str, str]]:
@@ -1106,9 +1116,11 @@ def _item_checks(pool: Pool, run: ReaderRun, pack: OntologyPack, rows: Sequence[
     for item_type, item_id, name in item_rows:
         result = results.get(item_id)
         weak = weak_by_item.get(item_id, [])
+        lesson = None
         if result and result["status"] == "VALIDATED":
             back = backs[item_id]
             status, summary, cited = "FOUND", _cite(result["summary"], back), [back[s] for s in result["source_ids"] if s in back]
+            lesson = result.get("lesson")
         elif result:
             status, summary, cited = "WITHHELD", None, []
             pool.add_qa(run.run_id, item=f"{item_type.title()}: {name}", correction="Withheld: the Reporter's entry failed its checks. " + "; ".join(result["violations"][:2]), origin="CHECK")
@@ -1118,7 +1130,7 @@ def _item_checks(pool: Pool, run: ReaderRun, pack: OntologyPack, rows: Sequence[
         else:
             status, summary, cited = "NOTHING_FOUND", None, []
         counts[status] += 1
-        pool.save_exposure_check({"run_id": run.run_id, "pack": run.pack, "item_type": item_type, "item_id": item_id, "item_name": name, "signal_ids_json": cited, "summary": summary, "status": status})
+        pool.save_exposure_check({"run_id": run.run_id, "pack": run.pack, "item_type": item_type, "item_id": item_id, "item_name": name, "signal_ids_json": cited, "summary": summary, "status": status, "lesson": lesson})
     log(f"  Reporter items {dict(counts)}")
     return dict(counts)
 
@@ -1187,6 +1199,11 @@ def bottom_line_facts(pool: Pool, run: ReaderRun) -> dict[str, Any]:
             {"name": row["condition_name"], "kind": (row.get("ranking") or {}).get("kind") or "CONDITION", "trend": row["trend_label"], "confidence": row["confidence"], "summary": strip_marks(row["summary"] or "") or None}
             for row in pool.conditions(run.run_id)
         ],
+        # A business area's brief is event-led: its bottom line reads the drafted rows of each section.
+        "this_week_items": [
+            {"section": row.get("section"), "item": row["item"], "summary": strip_marks(row["summary"]), "impact": strip_marks(row.get("implications") or "")}
+            for row in ((pool.run(run.run_id) or {}).get("config") or {}).get("event_rows", {}).values() if row.get("section")
+        ],
         "management_requests": [
             {"title": requests[key]["title"], "status": requests[key]["status"], "signals_this_week": [item["title"] for item in matches.get(key, [])[:3]]}
             for key in requests if requests[key]["status"] == "ACTIVE"
@@ -1223,6 +1240,8 @@ def findings(pool: Pool, run: ReaderRun, *, client: Any, model: str, top: int = 
     from grit.agents.loop.tools import FollowUpTool
 
     reader = _load_pack(run.pack)
+    if reader.level in {"BA", "ENTITY"}:
+        return {"findings": 0}  # a business-area brief is event-led and has no finding cards
     business = graph_pack(reader)
     graph = pack_graph(reader)
     index = LinkIndex(graph, business.lob_profiles)

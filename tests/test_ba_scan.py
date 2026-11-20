@@ -6,13 +6,13 @@ from datetime import date
 from pathlib import Path
 
 from grit.acquisition.brave_plan import BraveResponse
-from grit.agents.reader_prompts import ASSESSOR_SYSTEM, CRITIC_SYSTEM, PROPOSER_SYSTEM, REPORTER_BOTTOM_LINE_SYSTEM, REPORTER_ITEMS_SYSTEM
+from grit.agents.reader_prompts import EVENT_ROW_SYSTEM, REPORTER_BOTTOM_LINE_SYSTEM, REPORTER_ITEMS_SYSTEM
 from grit.pipeline import reader_scan
 from grit.pool import Pool
 from tests.test_reader_scan import ARTICLES, _Embedder
 
 RUN_DATE = date(2026, 10, 7)
-REASONING = "PROPOSER-WORKING-NOT-FOR-THE-BRIEF."
+REASONING = "EVENT-ASSESSOR-WORKING-NOT-FOR-THE-BRIEF."
 BA_ARTICLES = {
     "CBTC resignalling project delay": [
         {"title": "CBTC resignalling of the North-South line delayed again", "url": "https://www.straitstimes.com/singapore/cbtc-resignalling-delay",
@@ -40,41 +40,23 @@ def _getter(url: str, params: dict[str, str]) -> BraveResponse:
 
 
 def _model(system: str, payload: dict) -> dict:
-    if system == ASSESSOR_SYSTEM:
-        sources = payload["sources"]
-        if payload["item"]["id"] == "URS-KEY-04" and sources:
-            lob = payload["business_area"]["lines_of_business"][0]
-            return {"movement": "ESCALATING", "summary": "A ransomware cyberattack disrupted ticketing at a European rail operator. [S1]", "source_ids": ["S1"],
-                    "quotes": [{"source_id": "S1", "quote": "A ransomware cyberattack disrupted ticketing systems"}], "change_from_prior": "First assessment.",
-                    "sequence": [
-                        {"date": sources["S1"].get("date", "1 Oct"), "text": "A ransomware cyberattack disrupted ticketing systems.", "source_id": "S1"},
-                        {"date": sources["S1"].get("date", "1 Oct"), "text": "A European rail operator was hit.", "source_id": "S1"},
-                    ],
-                    "implication": f"A similar attack could disrupt systems that {lob} delivers to rail operators. [S1]"}
-        return {"movement": "NO_MATERIAL_CHANGE", "summary": "No new development was found this week in the checked sources.", "source_ids": [], "quotes": []}
-    if system == CRITIC_SYSTEM:
-        return {"issues": []}
-    if system == PROPOSER_SYSTEM:
-        owners, controls = payload["owner_roles"], payload["theme"]["key_controls"]
-        return {
-            "reasoning": f"{REASONING} The attack tests the key controls.",
-            "options": [
-                {"kind": "STRENGTHEN_CONTROL", "option": "Consider testing rail ticketing systems against ransomware. [S1]", "owner": owners[0],
-                 "builds_on": controls[:40].strip(), "trigger": "", "source_ids": ["S1"]},
-                {"kind": "ADDRESS_GAP", "option": "Consider asking key suppliers to confirm their ransomware recovery plans.", "owner": "Group Information Security Officer (GISO)",
-                 "builds_on": "", "trigger": "", "source_ids": ["S1"]},
-                {"kind": "MONITOR", "option": "Consider continuing to monitor ransomware reports from rail operators.", "owner": "R&A business partner",
-                 "builds_on": "", "trigger": "A rail operator in a URS market reports an attack.", "source_ids": []},
-            ],
-        }
+    if system == EVENT_ROW_SYSTEM:
+        source = payload["sources"]["S1"]
+        anchor = next(iter(payload["business_area"].get("lines_of_business") or []), payload["business_area"]["name"])
+        step = {"date": source["date"], "text": f"{source['title']}.", "source_id": "S1"}
+        return {"reasoning": REASONING, "item": source["title"][:60].rsplit(" ", 1)[0], "summary": f"On {source['date']}, the report said: {source['title']}. [S1]",
+                "sequence": [step, step], "implications": f"A similar development could affect {anchor}. [S1]", "opportunity": None,
+                "response": {"action": "Consider checking the exposure with the business.", "owner": payload["owners"][0]}, "source_ids": ["S1"]}
     if system == REPORTER_ITEMS_SYSTEM:
         items = []
         for item in payload["items"]:
             source = payload["sources"][item["source_ids"][0]]
             items.append({"item_id": item["item_id"], "summary": f"{source['title']}. [{item['source_ids'][0]}]", "source_ids": [item["source_ids"][0]],
+                          "lesson": "Consider reviewing how the business tracks this customer's awards.",
                           "quotes": [{"source_id": item["source_ids"][0], "quote": source["title"]}]})
         return {"items": items}
     if system == REPORTER_BOTTOM_LINE_SYSTEM:
+        assert "this_week_items" in payload["facts"]
         return {"bottom_line": f"Bottom line for {payload['facts']['brief']}.", "escalation": "Nothing warrants escalation."}
     raise AssertionError(system[:40])
 
@@ -93,7 +75,6 @@ def _run(pool: Pool, pack: str) -> reader_scan.ReaderRun:
 def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
     from docx import Document
 
-    from grit.profiles import load_profiles
     from grit.report.package import write_pack
 
     monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
@@ -111,120 +92,57 @@ def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
     cbtc = rows["CBTC resignalling of the North-South line delayed again"]
     assert any(hit["item_type"] == "REQUEST" for hit in cbtc["link"]["reader_hits"])
 
-    themes = {row["condition_id"]: row for row in pool.conditions(run.run_id)}
-    assert len(themes) == 14
-    assert themes["URS-KEY-04"]["trend_label"] == "Escalating"
-    assert themes["URS-TIER_2-01"]["ranking"]["coveredBy"] == "urs-tw"
+    assert pool.conditions(run.run_id) == [], "a business-area brief is event-led: no per-risk Assessor runs"
     checks = {row["item_id"]: row for row in pool.exposure_checks(run.run_id)}
     assert checks["CUSTOMER-land-transport-authority"]["status"] == "FOUND"
+    assert checks["CUSTOMER-land-transport-authority"]["lesson"].startswith("Consider")
     assert sum(1 for row in checks.values() if row["item_type"] == "ENTITY") >= 41, "every STE entity is listed, quiet or not"
+    drafted = pool.run(run.run_id)["config"]["event_rows"]
+    sections = {row["item"]: row["section"] for row in drafted.values()}
+    assert sections[next(item for item in sections if item.startswith("CBTC"))] == "MANAGEMENT_FOCUS", "a request match goes to Management Focus"
+    assert sections[next(item for item in sections if item.startswith("European rail"))] == "REGISTER_RISK", "a register risk goes to table 2a"
+    assert not any(row["actor"] in {"Assessor", "Proposer"} for row in pool.execution_log(run.run_id))
 
-    key = themes["URS-KEY-04"]
-    assert key["implication"] and "could" in key["implication"] and "[SIG-" in key["implication"], "a key risk carries a cited implication"
-    assert [option["kind"] for option in key["options"]] == ["STRENGTHEN_CONTROL", "ADDRESS_GAP", "MONITOR"]
-    assert all(source.startswith("SIG-") for option in key["options"] for source in option["source_ids"]), "option sources are stored as signal ids"
-    assert not themes["URS-KEY-01"]["options"], "the Proposer runs only on a key risk with validated, escalating or material evidence"
-    proposer = [row for row in pool.execution_log(run.run_id) if row["actor"] == "Proposer"]
-    assert len(proposer) == 1 and proposer[0]["status"] == "VALIDATED"
-    assert REASONING in proposer[0]["detail"]["reasoning"], "the chain of thought is kept in the execution log"
-    assert REASONING not in str(pool.conditions(run.run_id)), "and nowhere else"
-
-    import dataclasses
-
-    from grit.report.brief import build_brief
+    from grit.profiles import load_profiles
+    from grit.report.docx_brief import SECTION_HEADERS, WATCH_HEADERS
 
     profiles = load_profiles()
-    plain = build_brief(pool, run.run_id, profiles["wilson"])
-    entry = next(row for row in plain["conditions"] if row["condition_id"] == "URS-KEY-04")
-    assert entry["full"] and entry["implication"]["plain"] and entry["options"] == [], "a profile without RESPONSE_OPTIONS sees no options"
-    assert not next(row for row in plain["conditions"] if row["condition_id"] == "URS-TIER_2-01")["full"], "a quiet tier-2 theme stays one row"
-    briefs = dict(profiles["wilson"].briefs)
-    briefs["urs"] = {**briefs["urs"], "sections": [*briefs["urs"]["sections"], "RESPONSE_OPTIONS"], "formats": ["docx", "pptx", "xlsx"]}
-    with_options = dataclasses.replace(profiles["wilson"], briefs=briefs)
-    rich = write_pack(pool, run.run_id, with_options, folder=tmp_path / "wilson-options", submit=False)
-    short = build_brief(pool, run.run_id, with_options)["meta"]["pack_short"]
-    headers = ["News/Developments", "News/Information Source", "Date and Time", f"Relevance/Potential Impact to {short}", "Proposed Response/Management Consideration", "Priority/Trend"]
-
-    document = Document(rich["files"]["docx"])
-    table = next([[cell.text for cell in row.cells] for row in table.rows] for table in document.tables if table.rows[0].cells[0].text == "News/Developments")
-    assert table[0] == headers, "the key risks keep the R&A reviewer's six columns"
-    cyber = next(row for row in table[1:] if row[3] and "could disrupt" in row[3])
-    assert cyber[1].startswith("1. ") and "4 Oct 2026" in cyber[2]
-    assert "Consider testing rail ticketing systems" in cyber[4] and "Owner: R&A business partner" in cyber[4]
-    assert "Trend: Escalating" in cyber[5] and "Key risk" in cyber[5]
-    assert any(section.page_width > section.page_height for section in document.sections), "the six-column table sits on a landscape page"
+    pool.add_qa(run.run_id, item="REPORT:gareth", correction="An objection to an earlier draft of another report.", origin="WEEKLY_CRITIC")
+    wilson = write_pack(pool, run.run_id, profiles["wilson"], folder=tmp_path / "wilson")
+    assert set(wilson["files"]) == {"docx", "pptx", "xlsx"}, "a business-area pack writes no Markdown or JSON file"
+    document = Document(wilson["files"]["docx"])
+    assert document.tables[0].rows[0].cells[0].paragraphs[0].text == "SUMMARY"
+    assert "Bottom line for Urban Solutions weekly risk scan" in document.tables[0].rows[0].cells[0].text
+    headings = [paragraph.text for paragraph in document.paragraphs if paragraph.style.name.startswith("Heading")]
+    assert headings == ["1. Management Focus Topics", "2. URS Risks", "a. Key, T2 & Emerging", "b. Other Risk Themes", "3. Trends/Developments",
+                        "Appendix A", "1. Look-ahead: the next 30 days", "2. Scenario outlook: best, medium and worst case", "3. Jurisdiction coverage",
+                        "4. Named supplier, customer and competitor watch", "Appendix B: Source Register"]
+    tables = [[[cell.text for cell in row.cells] for row in table.rows] for table in document.tables[1:]]
+    sections = [table for table in tables if table[0] == list(SECTION_HEADERS)]
+    assert len(sections) == 4, "the four tables share one set of columns"
+    focus = sections[0]
+    assert any("CBTC" in row[1] and "[MF: Rail signalling and CBTC project delivery]" in row[1] for row in focus[1:])
+    assert all(row[4].startswith("Consider") and "Owner: " in row[4] and row[5].startswith("S") for table in sections for row in table[1:])
+    watch = next(table for table in tables if table[0] == list(WATCH_HEADERS))
+    assert any(row[0] == "LAND TRANSPORT AUTHORITY" and row[3].startswith("Consider") for row in watch[1:])
     text = "\n".join([paragraph.text for paragraph in document.paragraphs] + [cell.text for table in document.tables for row in table.rows for cell in row.cells])
-    assert "Not reviewed advice." in text and REASONING not in text
-    markdown = Path(rich["files"]["md"]).read_text(encoding="utf-8")
-    assert "| " + " | ".join(headers) + " |" in markdown and REASONING not in markdown
+    assert REASONING not in text and "earlier draft of another report" not in text
+    for gone in ("Exposure snapshot", "Coverage matrix", "Completeness gate", "Recommended action posture", "Entity reader packs", "QA and correction log"):
+        assert gone not in text, gone
 
     from openpyxl import load_workbook
 
-    sheet = load_workbook(rich["files"]["xlsx"])["Key risks"]
-    assert [cell.value for cell in sheet[1]] == headers
+    workbook = load_workbook(wilson["files"]["xlsx"])
+    assert workbook.sheetnames[:4] == ["Management Focus Topics", "Key, T2 & Emerging", "Other Risk Themes", "Trends-Developments"]
+    assert [cell.value for cell in workbook["Named watch"][1]] == list(WATCH_HEADERS)
 
     from pptx import Presentation
 
-    from grit.report.deck_template import CONTENT_LAYOUT, COVER_LAYOUT
-    from grit.report.office import deck_items
-
-    deck = Presentation(rich["files"]["pptx"])
-    slides = list(deck.slides)
-    deck_brief = build_brief(pool, run.run_id, with_options)
-    items = deck_items(deck_brief)
-    from grit.report.office import summary_slide_count
-
-    summaries = summary_slide_count(len(items))
-    extra = int(bool(deck_brief["v2"]["escalating"])) + int(bool((deck_brief.get("scenarios") or {}).get("shifts")))
-    assert len(slides) == 1 + summaries + extra + len(items), "a cover, one to three summary slides, the escalating-items and scenario slides when present, and one appendix slide per key risk or escalating theme"
-    assert slides[0].slide_layout.name == COVER_LAYOUT and all(slide.slide_layout.name == CONTENT_LAYOUT for slide in slides[1:])
-    texts = ["\n".join(shape.text_frame.text for shape in slide.shapes if shape.has_text_frame) for slide in slides]
-    assert "GRIT-Scan" in texts[0] and "SCAN WINDOW" in texts[0] and "REPORT OWNER" in texts[0]
-    assert "AI-generated suggestions for consideration" in texts[0]
-    summary = "\n".join(texts[1:1 + summaries])
-    assert "Weekly Risk Radar" in texts[1] and "BOTTOM LINE" in texts[1] and "NEW & ESCALATING" in summary
-    assert "What it means for" in summary
-    detail = next(text for text in texts[1 + summaries:] if "Consider testing rail ticketing systems" in text)
-    for label in ("WHAT IT MEANS FOR", "WHAT HAPPENED", "OPTIONS FOR MANAGEMENT CONSIDERATION", "RISK LINKAGE", "OWNER", "SOURCES", "Back to Executive Summary"):
-        assert label in detail, label
-    targets = lambda slide: {deck.slides.index(shape.click_action.target_slide) for shape in slide.shapes if shape.click_action.target_slide is not None}  # noqa: E731
-    first = 1 + summaries + extra
-    assert first in targets(slides[1]) and all(targets(slide) == {1} for slide in slides[first:]), "summary links to the appendix, and each appendix slide links back"
+    texts = ["\n".join(shape.text_frame.text for shape in slide.shapes if shape.has_text_frame) for slide in Presentation(wilson["files"]["pptx"]).slides]
+    assert "GRIT-Scan" in texts[0] and "SCAN WINDOW" in texts[0] and "AI-generated suggestions for consideration" in texts[0]
+    assert "SUMMARY" in texts[1] and "Bottom line for Urban Solutions" in texts[1]
+    assert any("MANAGEMENT FOCUS TOPICS" in text for text in texts[2:])
     assert not any(REASONING in text for text in texts)
-
-    pool.record_correction(pack="urs", earlier="Taiwan opportunity loss S$600m", why="Item 5 final v2 revised the figure", corrected="S$645m opportunity loss",
-                           source="Item 5 final v2", recorded_by="Jony Ling", phrase="S$600m")
-    pool.add_qa(run.run_id, item="REPORT:gareth", correction="An objection to an earlier draft of another report.", origin="WEEKLY_CRITIC")
-    wilson = write_pack(pool, run.run_id, profiles["wilson"], folder=tmp_path / "wilson")
-    markdown = Path(wilson["files"]["md"]).read_text(encoding="utf-8")
-    headings = [line.split(". ", 1)[1] for line in markdown.splitlines() if line.startswith("## ")]
-    order = ["Exposure snapshot", "What changed since the last report", "Look-ahead: the next 30 days", "Escalating and elevated items", "Coverage matrix",
-             "Jurisdiction coverage", "Recommended action posture", "Quality and completeness check", "STE entities by line of business", "QA and correction log"]
-    present = [title for title in order if title in headings]
-    assert [title for title in headings if title in present] == present, "the URS methodology's order, then the appendix"
-    assert {"Look-ahead: the next 30 days", "Recommended action posture", "QA and correction log"} <= set(present)
-    assert "## Appendix B. QA and correction log" in markdown, "audit material goes to the appendix"
-    posture = 1 + headings.index("Recommended action posture")
-    assert f"The principal ask and when to raise to RED are in section {posture}, Recommended action posture." in markdown
-    assert "**Principal ask.**" in markdown and "**When to raise to RED.** The status is" in markdown
-    assert "| COR-urs-001 | Taiwan opportunity loss S$600m |" in markdown, "the quality check carries the open corrections"
-    assert "earlier draft of another report" not in markdown, "a report's QA log leaves out objections to report drafts"
-    document = Document(wilson["files"]["docx"])
-    key_table = next(table for table in document.tables if table.rows[0].cells[0].text == "News/Developments")
-    assert "Proposed Response/Management Consideration" not in [cell.text for cell in key_table.rows[0].cells], "no response column without RESPONSE_OPTIONS"
-    text = "\n".join([paragraph.text for paragraph in document.paragraphs] + [cell.text for table in document.tables for row in table.rows for cell in row.cells])
-    assert "GRIT-Scan: Urban Solutions" in text
-    for heading in ("Standing risk themes (URS annual risks)", "Management-requested topics", "Entity reader packs", "STE entities by line of business", "Named supplier, customer and competitor watch",
-                    "Escalating and elevated items", "Coverage matrix", "Completeness gate", "Source register", "Recommended action posture", "Corrections ledger"):
-        assert heading in text, heading
-    word_headings = [paragraph.text for paragraph in document.paragraphs if paragraph.style.name == "Heading 1"]
-    register = next(index for index, title in enumerate(word_headings) if title.endswith("Source register"))
-    assert all(title.startswith("Appendix") for title in word_headings[register + 1:]) and word_headings[-1] == "Appendix B. QA and correction log"
-    assert "are in section" in document.tables[0].rows[0].cells[0].text, "the bottom line points to the action posture"
-    assert "COR-urs-001" in text
-    assert "CBTC resignalling of the North-South line delayed again" in text, "a P1 request match is listed under its request"
-    assert "Bottom line for URS Taiwan weekly risk scan" in text, "the BA brief carries the entity pack's bottom line"
-    assert "Rail signalling and CBTC project delivery" in text
     assert write_pack(pool, run.run_id, profiles["ksyong"], folder=tmp_path / "ksyong").get("skipped"), "the URS Taiwan head receives no business-area brief"
     assert write_pack(pool, run.run_id, profiles["gareth"], folder=tmp_path / "gareth")["package"]["package_id"] == f"PKG-{run.run_id}-gareth"
 

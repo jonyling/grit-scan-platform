@@ -174,9 +174,13 @@ def check_sequence(value: Any, cited_ids: Sequence[str], sources: Mapping[str, M
     return cleaned, []
 
 
+_TRAILING_MARK = re.compile(r"\s*\[[^\]]*\]\s*[.!?]?\s*$")
+
+
 def format_timeline(sequence: Sequence[Mapping[str, str]], implication: str) -> str:
     """The Implications column: dated steps first, then the conditional sentence."""
-    steps = [f"{step['date']}: {step['text'].rstrip(' .')} [{step['source_id']}]." for step in sequence]
+    # A step that already ends with its own mark keeps that mark only, so the citation is not printed twice.
+    steps = [f"{step['date']}: {_TRAILING_MARK.sub('', step['text'].strip()).rstrip(' .')} [{step['source_id']}]." for step in sequence]
     return (" ".join(steps) + " " + implication.strip()).strip()
 
 
@@ -517,7 +521,8 @@ def report_items(client: Any, model: str, *, items: Sequence[Mapping[str, Any]],
                 retry.append({"item_id": item["item_id"], "violations": problems})
                 results[str(item["item_id"])] = {"status": "WITHHELD", "summary": None, "source_ids": [], "violations": problems}
             else:
-                results[str(item["item_id"])] = {"status": "VALIDATED", "summary": summary.strip(), "source_ids": ids, "violations": []}
+                results[str(item["item_id"])] = {"status": "VALIDATED", "summary": summary.strip(), "source_ids": ids, "violations": [],
+                                                 "lesson": checked_lesson(entry.get("lesson"), haystack(sources, ids))}
                 pending.pop(str(item["item_id"]))
         if not pending:
             break
@@ -527,6 +532,16 @@ def report_items(client: Any, model: str, *, items: Sequence[Mapping[str, Any]],
         results.setdefault(key, {"status": "WITHHELD", "summary": None, "source_ids": [], "violations": ["NO_DRAFT: the Reporter returned no entry for this item."]})
     log.status = "VALIDATED" if not pending else "PARTIAL"
     return results, log
+
+
+def checked_lesson(value: Any, grounding: str) -> str | None:
+    """A named item's lessons-learnt response, or None when it fails its checks. A failed lesson never withholds the item."""
+    from grit.adverse.checks import _DEFICIENCY
+
+    text = strip_marks(str(value or "")).strip()
+    if not text or text.casefold() == "null" or not text.startswith("Consider") or _MUST.search(text) or _DEFICIENCY.search(text):
+        return None
+    return None if text_problems(text, grounding, "lesson") else text
 
 
 def bottom_line(client: Any, model: str, *, facts: Mapping[str, Any]) -> tuple[dict[str, Any], CallLog]:
@@ -897,6 +912,9 @@ def check_event_row(draft: Any, sources: Mapping[str, Mapping[str, Any]], anchor
     steps, sequence_problems = check_sequence(draft.get("sequence"), ids, sources)
     found += sequence_problems
     found += check_implication(draft.get("implications"), ids, sources, anchors, "implications")
+    opportunity = draft.get("opportunity")
+    if opportunity not in (None, "", "null"):
+        found += check_implication(opportunity, ids, sources, anchors, "opportunity")
     response = draft.get("response") if isinstance(draft.get("response"), Mapping) else {}
     action, owner = str(response.get("action") or ""), response.get("owner")
     if not action.startswith("Consider"):
@@ -907,19 +925,20 @@ def check_event_row(draft: Any, sources: Mapping[str, Mapping[str, Any]], anchor
         found.append(f"UNKNOWN_OWNER: response.owner: '{str(owner)[:40]}' is not one of owners.")
     found += text_problems(strip_marks(action), haystack(sources, ids), "response.action")
     if not found and steps and isinstance(draft, dict):
-        draft["implications"] = format_timeline(steps, str(draft.get("implications") or ""))
         draft["sequence"] = steps
     return found
 
 
 def draft_event_row(
     client: Any, model: str, *, event_id: str, business_area: Mapping[str, Any], owners: Sequence[str], risks: Sequence[Mapping[str, Any]],
-    requests: Sequence[str], sources: Mapping[str, Mapping[str, Any]],
+    requests: Sequence[str], sources: Mapping[str, Mapping[str, Any]], section: str | None = None,
 ) -> tuple[dict[str, Any], CallLog]:
-    """Returns {status, item, summary, implications, response, source_ids, violations}. status is VALIDATED or WITHHELD."""
+    """Returns {status, item, summary, sequence, implications, opportunity, response, source_ids, violations}. status is
+    VALIDATED or WITHHELD. section: the business-area table the row goes in; None for the Group radar."""
     anchors = [str(item) for item in business_area.get("anchors") or []]
     payload: dict[str, Any] = {
         "business_area": {key: value for key, value in business_area.items() if key != "anchors"}, "owners": list(owners),
+        **({"section": section} if section else {}),
         "risks": [dict(item) for item in risks], "requests": list(requests), "sources": sources,
     }
     log = CallLog("EventAssessor", EVENT_ROW_VERSION, model, event_id, canonical_hash(payload))
@@ -936,6 +955,7 @@ def draft_event_row(
             return {
                 "status": "VALIDATED", "item": draft["item"].strip(), "summary": draft["summary"].strip(),
                 "implications": draft["implications"].strip(), "sequence": draft.get("sequence") or [],
+                "opportunity": str(draft["opportunity"]).strip() if draft.get("opportunity") not in (None, "", "null") else None,
                 "response": {"action": strip_marks(draft["response"]["action"]), "owner": draft["response"]["owner"]},
                 "source_ids": [ref for ref in draft["source_ids"] if ref in sources], "violations": [],
             }, log

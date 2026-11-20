@@ -135,8 +135,8 @@ class Toolbox:
     # Tools --------------------------------------------------------------------------------------------------------
 
     def get_state(self, pack: str, run_id: str | None = None) -> dict[str, Any]:
-        """The brief's state for a pack: bottom line, standing items with trend, summary, implication and options, and open
-        watchpoints. Default: the pack's latest completed run."""
+        """The brief's state for a pack: bottom line, standing items with trend, summary, implication and options, a business
+        area's rows by table, and open watchpoints. Default: the pack's latest completed run."""
         refused = self._allowed(pack)
         if refused:
             return {"error": refused}
@@ -167,6 +167,18 @@ class Toolbox:
         out["standing_items"] = items
         if len(conditions) > MAX_STATE_ROWS:
             out["more_items"] = len(conditions) - MAX_STATE_ROWS
+        # A business-area brief is event-led: its rows, by table, stand in for the standing items.
+        week = []
+        for key, row in ((run.get("config") or {}).get("event_rows") or {}).items():
+            if not row.get("section") or len(week) >= MAX_STATE_ROWS:
+                continue
+            summary, impact = self._cite_signals(row.get("summary")), self._cite_signals(row.get("implications"))
+            response = row.get("response") or {}
+            source = self._state(f"ROW:{run['run_id']}:{key}", " ".join(filter(None, [row["item"], summary, impact, response.get("action")])), label, kind="brief row")
+            week.append({"id": source.source_id, "table": row["section"], "item": row["item"], "summary": summary, "impact": impact or None,
+                         "response": response.get("action"), "owner": response.get("owner")})
+        if week:
+            out["this_week_items"] = week
         watch = []
         for row in self.pool.watchpoints(pack)[:8]:
             source = self._state(f"WP:{row['watchpoint_id']}", f"{row['title']} {row.get('detail') or ''}", f"{self.scope.label(pack)} watchpoint", watchpoint=row["watchpoint_id"])

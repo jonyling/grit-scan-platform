@@ -547,7 +547,9 @@ Raise an issue only for a material problem you can show from the supplied record
     "Reporting": COMMON + """Synthesize the existing report without changing its layout or controlled fields.
 Return {"edits":[{"path":"one supplied editable field path", "text":"concise prose [SIGNAL-ID]",
 "source_ids":["SIGNAL-ID"]}]}. The bottom_line.escalation edit also carries "basis_id" (see below).
-Include one edit each for bottom_line.text and bottom_line.escalation; edit other fields only when needed.
+Include one edit each for bottom_line.text and bottom_line.escalation; edit other fields only when needed. A business-area
+brief has no bottom_line.escalation in editable_fields: its summary box carries no action posture, so edit
+bottom_line.text only, and ignore the rules on the escalation, ask_basis and the meeting below.
 When front_page lists findings, bottom_line.text covers only those (at most three): what happened, who in the business
 could be affected, and that no impact is confirmed unless a cited selection says so. Cite only those signal ids. Other
 elevated rows stay in the escalating table; do not promote them into the status sentence.

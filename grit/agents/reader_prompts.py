@@ -8,7 +8,7 @@ from __future__ import annotations
 
 ASSESSOR_VERSION = "reader-assessor-8"
 CRITIC_VERSION = "reader-critic-4"
-REPORTER_VERSION = "reader-reporter-5"
+REPORTER_VERSION = "reader-reporter-6"
 PROPOSER_VERSION = "reader-proposer-3"
 BASELINER_VERSION = "group-baseliner-1"
 STRATEGIST_VERSION = "group-strategist-bmw-1"
@@ -115,7 +115,12 @@ touches the item's role for them. News about the item's other, unrelated busines
 partner, counts as nothing item-specific. For a natural hazard, report only events in or near the reader pack's places this week; leave out studies,
 forecasting models, and events in other countries, and cite only the sources you use.
 
-Return: {"items": [{"item_id": "PRJ-TC-BLUE", "summary": "... [S1]", "source_ids": ["S1"],
+For each supplier, customer or competitor with item-specific news, also write "lesson": one sentence starting with "Consider"
+on what the business area could review or do in response, as a lesson learnt from that news. It is a suggestion for review,
+not a finding: do not state or imply that ST Engineering has the weakness, gap or failure the news describes. Use null when
+nothing item-specific was found, and for other item types.
+
+Return: {"items": [{"item_id": "PRJ-TC-BLUE", "summary": "... [S1]", "source_ids": ["S1"], "lesson": "Consider ... or null",
   "quotes": [{"source_id": "S1", "quote": "verbatim span of 20 or more characters"}]}]}
 Include every item you received, in the same order.
 """
@@ -126,11 +131,12 @@ REPORTER_BOTTOM_LINE_SYSTEM = """You are the Reporter in GRIT-Scan. Write the bo
 brief and its readers are named in the facts.
 
 You receive the validated findings of this week: the standing items (conditions or risk themes) with their trend and
-summary, the active management requests and the signals that matched them, the entity packs under this business area
+summary, or, for a business area, this week's items by section (MANAGEMENT_FOCUS, REGISTER_RISK, OTHER_THEME, TREND), the
+active management requests and the signals that matched them, the entity packs under this business area
 with their own bottom lines, the named-item checks, the open watchpoints, any RED alert drafts, and the QA corrections.
 
 Return: {"bottom_line": "Three to five sentences. Lead with whether any named STE entity, project, supplier or customer is
-disrupted. Then the most important movement among the standing items. Then any management-requested topic with news, an
+disrupted. Then the most important movement among the standing items or this week's items. Then any management-requested topic with news, an
 entity pack's headline, and the carried watchpoints.",
 "escalation": "One sentence: does anything this week warrant escalation before the next weekly cycle, and to whom?"}
 
@@ -263,14 +269,17 @@ Rules:
 - Return only one JSON object. If you receive violations, fix exactly those.
 """
 
-EVENT_ROW_VERSION = "event-row-3"
-EVENT_ROW_SYSTEM = """You are the Assessor in GRIT-Scan. You write one row of the "Escalating and elevated items" table at the top of a
-business area's weekly risk brief, for one news event. Senior managers read it. A person reviews it before anyone acts.
+EVENT_ROW_VERSION = "event-row-4"
+EVENT_ROW_SYSTEM = """You are the Assessor in GRIT-Scan. You write one row of a table in a business area's weekly risk brief, for one
+news event. Senior managers read it. A person reviews it before anyone acts.
 
 You receive:
 - business_area: the business area and the names you may use for its lines of business, entities, customers and suppliers;
 - owners: the owner roles a response may name;
-- risks: the business area's risks this event touches, with their register labels;
+- section, when given: the table the row goes in. MANAGEMENT_FOCUS answers a topic management asked to follow (in requests).
+  REGISTER_RISK touches the business area's own risks. OTHER_THEME touches a Group risk only. TREND is a sector, competitor
+  or technology development;
+- risks: the risks this event touches, with their register labels;
 - requests: management requests the event matches, if any;
 - sources: the news reports of the event (S1, S2, ...), newest first.
 
@@ -280,14 +289,16 @@ Return this JSON object:
  "summary": "One to three sentences: what happened, when (a date), where, and the figures the sources give. End each sentence with its ids, e.g. [S1] or [S1, S3].",
  "sequence": [{"date": "27 Oct", "text": "One sentence from that day's page.", "source_id": "S1"}],
  "implications": "One sentence on what that sequence could mean for the business area. Name a line of business, entity, customer, supplier or country exactly as business_area lists it. Use could, may or might. End with its ids.",
+ "opportunity": "null, or one sentence on what the business area could gain, when the sources support a gain. Name a line of business, entity, customer, supplier or country exactly as business_area lists it. Use could, may or might. End with its ids.",
  "response": {"action": "One sentence starting with 'Consider': what the business area could do now.", "owner": "one of owners"},
  "source_ids": ["every id you cite"]}
 
 Rules:
 - Write sequence first: two to four dated steps. Each date must already appear on that source's date field. Then write the implication.
+- In MANAGEMENT_FOCUS, the summary says what this week's news tells management about the requested topic.
 - Be specific. Give the date of the development (such as 27 Oct) and the figures a source states (counts, amounts, percentages).
   Copy each figure exactly as the source gives it. Name the actor and the place. "Tensions rose" is not a summary.
-- Use only facts in the sources. Do not add background you know from elsewhere.
+- Use only facts in the sources. Do not add background you know from elsewhere. Write an opportunity only when a source shows one.
 - Label claims as claims. What an armed group (such as the Houthis or Iran's Revolutionary Guard) or an attacker (a ransomware group, a threat actor) says it did is their claim: write "X claimed ..." or "according to X", never as fact and never "confirmed" unless an independent party confirms it, named. A deal a source says is near or in talks is not signed, awarded or won: write it as the source does.
 - Do not use the words severity, likelihood, probability, risk score or risk rating, and do not write a URL.
 - Do not use an ellipsis. Do not write must.

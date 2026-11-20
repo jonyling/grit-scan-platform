@@ -26,6 +26,7 @@ MIGRATIONS = {
     "condition_assessments": {"implication": "TEXT", "options_json": "TEXT NOT NULL DEFAULT '[]'", "opportunity": "TEXT", "counter_indicator": "TEXT"},
     "assessments": {"source_band": "TEXT", "outlets_json": "TEXT NOT NULL DEFAULT '[]'"},
     "red_decisions": {"trigger_id": "TEXT"},
+    "exposure_checks": {"lesson": "TEXT"},
 }
 _JSON_SUFFIX = "_json"
 # Schema defaults and call-site shapes: empty recovered cells become these instead of crashing json.loads("").

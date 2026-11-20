@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from grit.report.docx_brief import (
-    APPENDIX_LETTERS, CORRECTIONS_HEADERS, CORRECTIONS_NOTE, FOLLOW_UPS_LABEL, FOLLOW_UPS_NOTE, NO_CORRECTIONS, OPTIONS_NOTE, POSTURE_TITLE,
-    SCENARIO_HEADERS, SCENARIO_NOTE, SECTION_TITLES, V2_APPENDIX, V2_NOTE, V2_REPLACES, correction_cells, follow_ups, implication_text,
-    key_risk_headers, posture_lines, priority_trend, radar_cells, radar_headers, red_line, response_lines, scenario_cells, section_title, v2_title,
+    CORRECTIONS_HEADERS, CORRECTIONS_NOTE, FOLLOW_UPS_LABEL, FOLLOW_UPS_NOTE, NO_CORRECTIONS, NO_ITEM, OPTIONS_NOTE, POSTURE_TITLE,
+    SCENARIO_HEADERS, SCENARIO_NOTE, SECTION_HEADERS, SECTION_TITLES, V2_NOTE, WATCH_HEADERS, ba_headings, correction_cells, follow_ups,
+    posture_lines, radar_cells, radar_headers, red_line, response_text, scenario_cells, scenario_headers, section_title, v2_title,
 )
 from grit.report.notices import DISCLAIMER
 from grit.pipeline.indicators import indicator_line
@@ -132,8 +132,10 @@ def _v2_tail(brief: Mapping[str, Any], number: int) -> list[str]:
 def _source_register_lines(brief: Mapping[str, Any]) -> list[str]:
     """Cited membership rows as a markdown source register, so the appendix sits after it."""
     seen: dict[str, Mapping[str, Any]] = {}
-    for table in ("escalating", "changes", "priorities", "look_ahead", "jurisdictions"):
-        for row in (brief.get("v2") or {}).get(table) or []:
+    v2 = brief.get("v2") or {}
+    tables = [*(v2.get("sections") or {}).values(), *((v2.get(table) or []) for table in ("escalating", "changes", "priorities", "look_ahead", "jurisdictions"))]
+    for rows in tables:
+        for row in rows:
             for ref in row.get("sources") or []:
                 key = str(ref.get("signal_id") or ref.get("url") or ref.get("title") or "")
                 if key and key not in seen:
@@ -159,10 +161,57 @@ def _source_register_lines(brief: Mapping[str, Any]) -> list[str]:
     return lines
 
 
+def _ba_rows(rows: Any) -> list[str]:
+    if not rows:
+        return [f"*{NO_ITEM}*"]
+    body = _table(SECTION_HEADERS, [])
+    for number, row in enumerate(rows, start=1):
+        impact = _md(row.get("impact"), "Not established from the cited sources.")
+        if row.get("opportunity"):
+            impact += f"<br>**Opportunity:** {_md(row['opportunity'])}"
+        body.append("| " + " | ".join(_cell(value) for value in (
+            number, f"**{row['band']} {row['item']}**<br>[{row['risk']}]", _md(row.get("summary")), impact, "<br>".join(response_text(row)),
+            _refs(row.get("sources")))) + " |")
+    return body
+
+
+def render_business_area(brief: Mapping[str, Any]) -> str:
+    """The business-area report (Wilson, 19 November 2026), for the dashboard preview."""
+    meta, v2 = brief["meta"], brief["v2"]
+    lines = [
+        f"# {meta['title']}", "", f"{meta['subtitle']}", "",
+        f"*Scan window: {meta['window']} | Prepared for: {meta['prepared_for']}" + (" | Status: draft for review, not approved.*" if meta.get("show_review_status", True) else "*"),
+        "", DISCLAIMER, "", f"> **SUMMARY.** {brief['bottom_line']['text']}", "",
+    ]
+    for level, title, key in ba_headings(brief):
+        lines += [f"{'#' * (level + 1)} {title}", ""]
+        if key:
+            lines += [*_ba_rows(v2["sections"].get(key)), ""]
+    lines += [f"*{V2_NOTE}*", "", "## Appendix A", "", "### 1. Look-ahead: the next 30 days", ""]
+    lines += _table(("Date", "Event, as the source states it", f"Relevance to {v2['short']}", "Sources"),
+                    [(row["date"], row["event"], row["relevance"] or "Linked by the scan", _refs(row.get("sources"))) for row in v2["look_ahead"]]) \
+        if v2["look_ahead"] else ["No source linked to the business area states a dated event in the next 30 days."]
+    lines += ["", "### 2. Scenario outlook: best, medium and worst case", ""]
+    outlook = brief.get("scenarios") or {}
+    lines += _table(scenario_headers(v2["short"]), [["<br>".join(cell) for cell in scenario_cells(reading)] for reading in outlook.get("shifts") or []]) \
+        if outlook.get("shifts") else ["No reviewed scenario register for this business area yet."]
+    lines += ["", "### 3. Jurisdiction coverage", ""]
+    lines += _table(("Jurisdiction", f"{v2['short']} entities", "In-window finding", "Trend"),
+                    [(row["country"], "; ".join(row["entities"]) + (f"; and {row['more_entities']} more" if row["more_entities"] else ""), row["finding"], row["trend"])
+                     for row in v2["jurisdictions"]])
+    lines += ["", "### 4. Named supplier, customer and competitor watch", ""]
+    lines += _table(WATCH_HEADERS, [(row["name"], row["type"], _md(row["text"]), row.get("lesson") or "Not drafted.") for row in v2["watch"]]) \
+        if v2["watch"] else ["No named supplier, customer or competitor had item-specific news this week."]
+    lines += ["", "## Appendix B: Source Register", "", *_source_register_lines(brief), "", f"*Content hash {brief['content_hash'][:16]}. Run {meta['run_id']}.*"]
+    return "\n".join(lines) + "\n"
+
+
 def render_markdown(brief: Mapping[str, Any]) -> str:
     from grit.report.script import latin_copy
 
     brief = latin_copy(brief)
+    if brief["meta"].get("layout") == "BA":
+        return render_business_area(brief)
     meta = brief["meta"]
     bottom = brief["bottom_line"]
     lines = [
@@ -173,42 +222,16 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
     ]
     v2 = brief.get("v2")
     sections: list[tuple[str, str, list[str]]] = []  # (key, title, body)
-    appendix: list[tuple[str, str, list[str]]] = []
     if v2:
         basis = (v2.get("status_basis") or {}).get("basis")
         status = f"**STATUS: {v2['status']}.**" + (f" {basis}" if basis else "") + (f" Trend: {'; '.join(v2['arrows'])}." if v2["arrows"] else "") + (f" Next dated items: {'; '.join(v2['risk_window'])}." if v2["risk_window"] else "")
         lines[lines.index(DISCLAIMER) + 2:lines.index(DISCLAIMER) + 2] = [status, ""]
         sections += [(title, title, body) for title, body in _v2(brief)]
     for key in meta["sections"]:
-        if key == "BOTTOM_LINE" or key not in SECTION_TITLES or (v2 and key in V2_REPLACES):
+        if key == "BOTTOM_LINE" or key not in SECTION_TITLES:
             continue
         body: list[str] = []
-        if key == "ORDER_BOOK" and brief.get("order_book"):
-            book = brief["order_book"]
-            body += [f"- {item['label']}: {item['value']}" for item in book.get("anchors") or []]
-            body += [f"- {item['label']}: {item['value']}" for item in book.get("contracts") or []]
-        elif key == "PROJECTS":
-            for group in brief.get("projects") or []:
-                body.append(f"**{group['heading']}**")
-                body += [f"- {item['name']}: {_md(item['text'])}" for item in group["items"]]
-        elif key == "MANAGEMENT_REQUESTS":
-            for row in [item for item in brief.get("management_requests") or [] if item["status"] == "ACTIVE"]:
-                body.append(f"- **{row['title']}** ({row['source'] or row['requested_by']}): " + ("; ".join(f"[{item['title']}]({item['url']}) ({item['outlet']}, {item['date'] or 'n.d.'}{', ' + item['via'] if item.get('via') else ''})" for item in row["signals"]) or "no signal matched this week."))
-        elif key == "ENTITY_PACKS":
-            for row in brief.get("entity_packs") or []:
-                body.append(f"- **{row['label']}**: {row['bottom_line'] or 'no validated bottom line on this date.'}" + (f" Moved: {'; '.join(row['moved'])}." if row.get("moved") else ""))
-        elif key == "ENTITIES":
-            for group in brief.get("entities") or []:
-                body.append(f"**{group['heading']}**")
-                body += [f"- {item['name']}: {_md(item['text'])}" for item in group["items"] if item["text"]]
-                quiet = [item["name"] for item in group["items"] if not item["text"]]
-                if quiet:
-                    body.append(f"- No new item found: {', '.join(quiet)}.")
-        elif key == "COMPETITORS":
-            body += [f"- {item['name']}: {_md(item['text'])}" for item in brief.get("competitors") or [] if item["status"] == "FOUND"] or ["- No registered competitor was named this week."]
-        elif key in {"SUPPLIERS", "CUSTOMERS", "HAZARDS"}:
-            body += [f"- {item['name']}: {_md(item['text'])}" for item in brief.get(key.lower()) or []]
-        elif key == "SCENARIOS" and (brief.get("scenarios") or {}).get("shifts"):
+        if key == "SCENARIOS" and (brief.get("scenarios") or {}).get("shifts"):
             outlook = brief["scenarios"]
             body += ["| " + " | ".join(SCENARIO_HEADERS) + " |", "|" + "---|" * len(SCENARIO_HEADERS)]
             for reading in outlook["shifts"]:
@@ -225,7 +248,7 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
                     ba = "; ".join(f"{item['id']} {item['name']}" for item in row["ba"]) or ""
                     lob = "; ".join(item["name"] for item in row["lob"]) or ""
                     body.append(f"| {row['group_risk']} {row['name']} | {ba} | {lob} | {row['status']} |".replace("\n", " "))
-        elif key == "CONDITIONS" and brief.get("conditions") and meta.get("level") == "GROUP":
+        elif key == "CONDITIONS" and brief.get("conditions"):
             options = any(row.get("options") for row in brief["conditions"]) or "RESPONSE_OPTIONS" in meta["sections"]
             headers = radar_headers(options=options)
             body += ["| " + " | ".join(headers) + " |", "|" + "---|" * len(headers)]
@@ -235,33 +258,6 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
                 body.append("| " + " | ".join(cell.replace("|", "/").replace("\n", " ") for cell in cells) + " |")
             if options:
                 body += ["", f"*{OPTIONS_NOTE}*"]
-        elif key == "CONDITIONS" and brief.get("conditions"):
-            full = [row for row in brief["conditions"] if row.get("full")]
-            if full:
-                options = any(row.get("options") for row in full) or "RESPONSE_OPTIONS" in meta["sections"]
-                headers = key_risk_headers(meta, options=options)
-                body += ["| " + " | ".join(headers) + " |", "|" + "---|" * len(headers)]
-                for row in full:
-                    refs = row.get("sources") or []
-                    cells = [
-                        f"**{row['number']}. {row['name']}**<br>{row['development']}",
-                        "<br>".join(f"{number}. [{ref['outlet']}]({ref['url']})" if ref.get("url") else f"{number}. {ref['outlet']}" for number, ref in enumerate(refs, start=1)) or "No source this week.",
-                        "<br>".join(f"{number}. {ref.get('when') or ref.get('date') or 'Date not stated'}" for number, ref in enumerate(refs, start=1)) or "Not applicable.",
-                        implication_text(row),
-                    ]
-                    if options:
-                        cells.append("<br>".join(f"• {option} *{detail}*" for option, detail in response_lines(row)) or "No option proposed.")
-                    cells.append("<br>".join(priority_trend(row)))
-                    body.append("| " + " | ".join(cell.replace("|", "/").replace("\n", " ") for cell in cells) + " |")
-                if options:
-                    body += ["", f"*{OPTIONS_NOTE}*"]
-                body.append("")
-            rest = [row for row in brief["conditions"] if row not in full]
-            if rest:
-                if full:
-                    body += ["### Other risk themes", ""]
-                body += ["| # | Condition | Trend | Confidence | Basis |", "|---|---|---|---|---|"]
-                body += [f"| {row['number']} | {row['name']}{' (' + row['group'] + ')' if row.get('group') else ''} | {row['trend']} | {row['confidence']} | {_md(row['basis'])} |" for row in rest]
         elif key == "PRIORITY_FINDINGS":
             for item in brief.get("findings") or []:
                 parts = [line for line in item["why"] if line]
@@ -272,16 +268,12 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
                     parts.append(f"Hypothesis, not a forecast: {card['hypothesis']} Link confidence: {card['confidence']}.")
                 parts.extend(suggestions_for_signal(brief, item["signal_id"]))
                 body.append(f"- [{item['priority'] + ' · ' if item['priority'] else ''}tier {item['tier']}] [{item['title']}]({item['url']}) ({item['outlet']}, {item['date'] or 'n.d.'}). {' '.join(parts)}".rstrip())
-        elif key == "OTHER_SIGNALS":
-            body += [f"- {'[' + item['priority'] + '] ' if item['priority'] else ''}[{item['title']}]({item['url']}) ({item['outlet']}, {item['date'] or 'n.d.'})" for item in brief.get("other_signals") or []]
-        elif key == "QA_LOG":
-            body += [f"- **{row['item']}**: {row['prior'] or ''} → {_md(row['correction'])}" for row in brief.get("qa") or []] or ["- No supported issue this week."]
         elif key == "WATCHPOINTS":
             body += [f"- **{row['title']}** ({row['status'].lower()}): {row['detail']} {_md(row['update'], '')}" for row in brief.get("watchpoints") or [] if row["status"] != "CLOSED"]
             if not v2:
                 body.append(f"\nRecommended action posture: {bottom.get('escalation') or ''}")
         if body:
-            (appendix if v2 and key in V2_APPENDIX else sections).append((key, v2_title(key, meta) if v2 else section_title(meta, key), body))
+            sections.append((key, v2_title(key, meta) if v2 else section_title(meta, key), body))
     number = 1 if v2 else 0
     if v2:
         sections += [(title, title, body) for title, body in _v2_closing(brief)]
@@ -293,7 +285,5 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
         number += 1
     if v2:
         lines += _v2_tail(brief, number)
-    for letter, (key, title, body) in zip(APPENDIX_LETTERS, appendix):
-        lines += [f"## Appendix {letter}. {title}", "", *body, ""]
     lines += [DISCLAIMER, "", f"*Content hash {brief['content_hash'][:16]}. Run {meta['run_id']}.*"]
     return dedupe_markdown("\n".join(lines) + "\n")

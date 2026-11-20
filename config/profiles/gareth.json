@@ -29,15 +29,6 @@
       "title": "GRIT-Scan: Urban Solutions",
       "subtitle": "Business Area Weekly Risk Scan",
       "preparedFor": "Head, Urban Solutions",
-      "sections": [
-        "BOTTOM_LINE",
-        "CONDITIONS",
-        "MANAGEMENT_REQUESTS",
-        "ENTITY_PACKS",
-        "PRIORITY_FINDINGS",
-        "WATCHPOINTS"
-      ],
-      "maxFindings": 6,
       "formats": [
         "docx",
         "pptx"
@@ -47,14 +38,6 @@
       "title": "GRIT-Scan: URS Taiwan",
       "subtitle": "Geopolitical Risk & Infrastructure Tracker — Weekly Scan",
       "preparedFor": "Head, Urban Solutions",
-      "sections": [
-        "BOTTOM_LINE",
-        "ORDER_BOOK",
-        "PROJECTS",
-        "CONDITIONS",
-        "WATCHPOINTS"
-      ],
-      "maxFindings": 6,
       "formats": [
         "docx",
         "pptx"

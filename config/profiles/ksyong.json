@@ -30,17 +30,6 @@
       "title": "GRIT-Scan: URS Taiwan",
       "subtitle": "Geopolitical Risk & Infrastructure Tracker — Weekly Scan",
       "preparedFor": "Head, URS Taiwan",
-      "sections": [
-        "BOTTOM_LINE",
-        "ORDER_BOOK",
-        "PROJECTS",
-        "SUPPLIERS",
-        "CUSTOMERS",
-        "HAZARDS",
-        "CONDITIONS",
-        "WATCHPOINTS"
-      ],
-      "maxFindings": 6,
       "formats": [
         "docx",
         "xlsx"

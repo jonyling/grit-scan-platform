@@ -1573,8 +1573,8 @@ class WeeklyCoordinator:
                 if not isinstance(edits, list) or not all(isinstance(item, Mapping) for item in edits):
                     raise ContractError("Reporting needs an edits list.")
                 paths = [edit.get("path") for edit in edits]
-                if not all(isinstance(path, str) for path in paths) or len(paths) != len(set(paths)) or not {"bottom_line.text", "bottom_line.escalation"}.issubset(paths):
-                    raise ContractError("Reporting must synthesize both bottom-line fields once.")
+                if not all(isinstance(path, str) for path in paths) or len(paths) != len(set(paths)) or not {path for path in ("bottom_line.text", "bottom_line.escalation") if path in editable}.issubset(paths):
+                    raise ContractError("Reporting must synthesize each bottom-line field once.")
                 posture = (self._weekly_context().get("action_posture") or {}) if isinstance(self._weekly_context(), Mapping) else {}
                 forum = str(posture.get("next_forum") or "").strip()
                 forum_date = str(posture.get("next_forum_date") or "").strip()
@@ -1754,7 +1754,10 @@ def selection_hash(pool: Pool, run_id: str) -> str:
 
 
 def narrative_fields(brief: Mapping[str, Any]) -> dict[str, Any]:
-    fields: dict[str, Any] = {"bottom_line.text": brief["bottom_line"]["text"], "bottom_line.escalation": brief["bottom_line"]["escalation"]}
+    fields: dict[str, Any] = {"bottom_line.text": brief["bottom_line"]["text"]}
+    # A business-area brief has no action posture, so its bottom line has no escalation field.
+    if "escalation" in brief["bottom_line"]:
+        fields["bottom_line.escalation"] = brief["bottom_line"]["escalation"]
     def visit(value: Any, path: str) -> None:
         if isinstance(value, Mapping):
             if {"runs", "plain", "sources"}.issubset(value):
@@ -1774,6 +1777,10 @@ def narrative_fields(brief: Mapping[str, Any]) -> dict[str, Any]:
     for index, row in enumerate((brief.get("v2") or {}).get("escalating") or []):
         if isinstance((row.get("response") or {}).get("action"), str):
             fields[f"v2.escalating.{index}.response.action"] = row["response"]["action"]
+    for key, rows in ((brief.get("v2") or {}).get("sections") or {}).items():
+        for index, row in enumerate(rows):
+            if isinstance((row.get("response") or {}).get("action"), str):
+                fields[f"v2.sections.{key}.{index}.response.action"] = row["response"]["action"]
     return fields
 
 

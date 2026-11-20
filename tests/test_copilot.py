@@ -69,16 +69,16 @@ def test_toolbox_reads_state_and_turns_brief_citations_into_source_ids(scanned) 
     pool, run = scanned
     tools = Toolbox(pool, scope_for(_profile(), today=TODAY, labels=LABELS))
     state = tools.call("get_state", {"pack": "urs-tw"})
-    strait = next(item for item in state["standing_items"] if item["item_id"] == "TW-GLOBAL-03")
-    assert strait["trend"] == "Easing" and strait["summary"].endswith("[S1]") and tools.sources.get("S1").kind == "SIGNAL"
+    assert state["standing_items"] == [], "a business-area pack has no per-risk assessments"
+    row = next(item for item in state["this_week_items"] if item["table"] == "REGISTER_RISK")
+    assert row["summary"].endswith("[S1]") and tools.sources.get("S1").kind == "SIGNAL"
     assert state["bottom_line"]["id"].startswith("B")
     assert tools.call("get_state", {"pack": "urs"})["error"].startswith("urs is outside")
     assert "Unknown tool" in tools.call("drop_tables", {})["error"]
     assert "Unknown argument" in tools.call("get_state", {"pack": "urs-tw", "sql": "x"})["error"]
     assert "must be text" in tools.call("condition_history", {"item_id": ["x"]})["error"]
     assert "must be text" in tools.call("lookup_register", {"kind": 5})["error"]
-    history_rows = tools.call("condition_history", {"item_id": "TW-GLOBAL-03"})
-    assert len(history_rows["runs"]) == 1 and "no trend history" in history_rows["note"]
+    assert tools.call("condition_history", {"item_id": "TW-GLOBAL-03"})["error"].startswith("No assessment of TW-GLOBAL-03")
 
 
 def _sources() -> dict[str, Source]:

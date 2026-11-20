@@ -93,8 +93,10 @@ def scorecard(brief: Mapping[str, Any], corrections: Any = None) -> dict[str, An
         "the narrative's trend words match the trends": not trend_mismatch,
         "top findings were contradiction-searched": contradiction in (None, "Yes"),
         "no phrase the corrections ledger retired": not retired,
-        "every open correction appears on the brief": len(brief.get("corrections") or []) >= len(ledger),
     }
+    # A business-area brief carries no corrections ledger; the Group radar lists every open correction.
+    if (brief.get("meta") or {}).get("layout") != "BA":
+        checks["every open correction appears on the brief"] = len(brief.get("corrections") or []) >= len(ledger)
     return {"metrics": metrics, "checks": checks, "passed": sum(checks.values()), "of": len(checks)}
 
 

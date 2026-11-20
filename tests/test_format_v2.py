@@ -10,7 +10,13 @@ import pytest
 from grit.agents.reader import check_event_row, specificity_problems
 from grit.pipeline.events import DOWN, SAME, UP, event_register, risk_labels
 from grit.pool import Pool
-from grit.report.format_v2 import NIL, NOT_SEARCHED, category_of_name, clean_title, source_tier
+from grit.report.format_v2 import (
+    NIL,
+    NOT_SEARCHED,
+    category_of_name,
+    clean_title,
+    source_tier,
+)
 from grit.report.lookahead import dates_in, look_ahead
 
 SOURCES = {"S1": {"title": "Houthis fire five missiles at Riyadh",
@@ -45,6 +51,55 @@ def test_an_escalating_row_passes_only_when_specific_grounded_and_conditional() 
     assert any(item.startswith("UNKNOWN_OWNER") for item in check_event_row(_row(response={"action": "Consider it.", "owner": "CEO"}), SOURCES, ANCHORS, OWNERS))
     assert any(item.startswith("BAD_ITEM") for item in check_event_row(_row(item="One two three four five six seven eight nine ten eleven"), SOURCES, ANCHORS, OWNERS))
     assert specificity_problems("Riyadh was hit on 2026-10-27 by 5 missiles [S1].", SOURCES, ["S1"]) == [], "an ISO date counts"
+
+
+def test_an_opportunity_is_checked_like_the_impact_and_may_be_left_out() -> None:
+    assert check_event_row(_row(opportunity=None), SOURCES, ANCHORS, OWNERS) == []
+    assert check_event_row(_row(opportunity="Mobility Rail could offer air-defence integration [S1]."), SOURCES, ANCHORS, OWNERS) == []
+    loose = check_event_row(_row(opportunity="The business will win new work."), SOURCES, ANCHORS, OWNERS)
+    assert any(item.startswith("OPPORTUNITY_UNCITED") for item in loose) and any("NO_ANCHOR: opportunity" in item for item in loose)
+
+
+def test_a_dated_step_that_carries_its_own_mark_is_cited_once() -> None:
+    from grit.agents.reader import format_timeline
+
+    text = format_timeline([{"date": "18 Nov", "text": "The pilot started [SIG-1].", "source_id": "SIG-1"}], "")
+    assert text == "18 Nov: The pilot started [SIG-1]."
+
+
+def test_each_event_goes_to_the_first_table_it_qualifies_for() -> None:
+    from grit.pipeline.events import (
+        MANAGEMENT_FOCUS,
+        MAX_SECTION_ROWS,
+        OTHER_THEME,
+        REGISTER_RISK,
+        TREND,
+        section_events,
+        section_of,
+    )
+
+    event = {"requests": ["MR-1"], "risks": ["URS-KEY-05"], "group_risks": ["Earning volatility"], "members": [{}]}
+    assert section_of(event, {"MR-1"}) == MANAGEMENT_FOCUS, "a management topic comes first"
+    assert section_of(event, set()) == REGISTER_RISK, "an inactive request does not count"
+    assert section_of({**event, "risks": []}, set()) == OTHER_THEME, "a Group risk alone goes to the other risk themes"
+    assert section_of({**event, "risks": [], "group_risks": []}, set()) == TREND
+    names = {"URS-KEY-01": "Competition", "URS-KEY-05": "Geopolitical impact"}
+    assert section_of({**event, "members": [{"rung": "SECTOR"}]}, set(), names) == TREND, "sector news is a trend even with a register risk"
+    assert section_of({**event, "risks": ["URS-KEY-01"]}, set(), names) == TREND, "a market risk such as Competition is a trend"
+    assert section_of({**event, "risks": ["URS-KEY-01"], "members": [{"rung": "DIRECT"}]}, set(), names) == REGISTER_RISK, "named exposure stays a risk"
+    many = [{**event, "requests": [], "event_id": str(number)} for number in range(MAX_SECTION_ROWS + 3)]
+    tables = section_events([*many, {**event, "members": []}], set())
+    assert len(tables[REGISTER_RISK]) == MAX_SECTION_ROWS and not tables[MANAGEMENT_FOCUS], "each table is capped, and a quiet event has no row"
+
+
+def test_a_lessons_learnt_response_never_says_ste_has_the_weakness() -> None:
+    from grit.agents.reader import checked_lesson
+
+    grounding = "Siemens Mobility won a CBTC contract in Sydney."
+    assert checked_lesson("Consider reviewing CBTC bid pricing against Siemens Mobility.", grounding) == "Consider reviewing CBTC bid pricing against Siemens Mobility."
+    assert checked_lesson("Consider that ST Engineering has the same weakness in CBTC bids.", grounding) is None
+    assert checked_lesson("Review CBTC bids.", grounding) is None, "a lesson starts with Consider"
+    assert checked_lesson("null", grounding) is None
 
 
 def test_risk_labels_follow_the_register_numbering() -> None:
@@ -137,25 +192,6 @@ def test_the_word_brief_moves_links_to_a_numbered_source_register(tmp_path: Path
     assert document.paragraphs[0]._p.find(".//{http://schemas.openxmlformats.org/wordprocessingml/2006/main}hyperlink") is None, "no link in the body"
 
 
-def test_a_management_request_signal_links_to_its_page_with_the_url_intact() -> None:
-    from docx import Document
-
-    from grit.report import docx_brief
-    from grit.report.script import latin_copy
-
-    url = "https://example.com/news/2026/11/typhoon/"
-    signals = [{"signal_id": "SIG-1", "title": "Typhoon nears Taiwan", "outlet": "example.com", "date": "11 Nov 2026", "url": url},
-               {"signal_id": "SIG-2", "title": "No page", "outlet": "example.org", "date": "11 Nov 2026", "url": "example.org/a"}]
-    brief = latin_copy({"management_requests": [{"title": "Typhoon", "status": "ACTIVE", "source": None, "requested_by": "Hwaimay", "signals": signals}]})
-    document = Document()
-    docx_brief._REGISTER = {"numbers": {}, "refs": {}, "tiers": {}}
-    docx_brief._requests(document, brief, "10. Management-requested topics", dry=False)
-    docx_brief._REGISTER = None
-    targets = [rel.target_ref for rel in document.part.rels.values() if rel.is_external]
-    assert targets == [url], "the page opens from its title, and a URL a reader cannot open gets no link"
-    assert any(item.text.startswith("Typhoon nears Taiwan [S1] (example.com") for item in document.paragraphs)
-
-
 def test_a_signpost_match_needs_a_candidate_a_verbatim_quote_and_a_shared_specific_word() -> None:
     from grit.agents.reader import check_signpost_matches
 
@@ -238,7 +274,13 @@ def test_countries_are_named_by_common_name_and_alias() -> None:
 
 
 def test_coverage_counts_answered_searches_and_scopes_them_to_the_line_they_aim_at(tmp_path: Path) -> None:
-    from grit.report.format_v2 import COMPETITOR, FINANCIAL, SUPPLY, _names_country, _searched
+    from grit.report.format_v2 import (
+        COMPETITOR,
+        FINANCIAL,
+        SUPPLY,
+        _names_country,
+        _searched,
+    )
 
     pool = Pool(tmp_path / "pool.db")
     pool.start_run("R", run_date="2026-11-02", pack="urs", kind="READER_SCAN", config={})
@@ -321,9 +363,9 @@ def test_a_headline_is_never_cut_by_the_first_use_filter() -> None:
     document = Document()
     document.add_paragraph("Node.js Plans High-Severity Security Fixes for Nov. 11 patches are due next week.")
     title = "Node.js Plans High-Severity Security Fixes for Nov. 11"
-    brief = {"management_requests": [{"title": "Bugs", "status": "ACTIVE", "source": "MR-1", "requested_by": "Yikai",
-                                      "signals": [{"signal_id": "SIG-1", "title": title, "outlet": "esecurityplanet.com", "date": "9 Nov 2026", "url": None}]}]}
-    docx_brief._requests(document, brief, "10. Management-requested topics", dry=False)
+    brief = {"findings": [{"signal_id": "SIG-1", "title": title, "outlet": "esecurityplanet.com", "date": "9 Nov 2026", "url": None,
+                           "priority": "P3", "tier": 2, "why": [], "card": None, "risks": [], "harm": "", "red": False}]}
+    docx_brief._findings(document, brief, "10. Priority findings", dry=False)
     docx_brief._apply_first_use(document)
     docx_brief._WHOLE.clear()
-    assert any(item.text.startswith(title) for item in document.paragraphs)
+    assert any(title in item.text for item in document.paragraphs)

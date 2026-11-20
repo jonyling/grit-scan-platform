@@ -7,7 +7,7 @@ from datetime import date
 from pathlib import Path
 
 from grit.acquisition.brave_plan import BraveResponse
-from grit.agents.reader_prompts import ASSESSOR_SYSTEM, CRITIC_SYSTEM, REPORTER_BOTTOM_LINE_SYSTEM, REPORTER_ITEMS_SYSTEM
+from grit.agents.reader_prompts import ASSESSOR_SYSTEM, CRITIC_SYSTEM, EVENT_ROW_SYSTEM, REPORTER_BOTTOM_LINE_SYSTEM, REPORTER_ITEMS_SYSTEM
 from grit.pipeline import reader_scan
 from grit.pool import Pool
 
@@ -58,6 +58,13 @@ def _model(system: str, payload: dict) -> dict:
     if system == REPORTER_ITEMS_SYSTEM:
         return {"items": [{"item_id": item["item_id"], "summary": "Bids for the BC21 civil package close on 12 October. [S1]", "source_ids": ["S1"],
                            "quotes": [{"source_id": "S1", "quote": "civil package BC21, worth NT$13.9bn"}]} for item in payload["items"]]}
+    if system == EVENT_ROW_SYSTEM:
+        source = payload["sources"]["S1"]
+        anchor = next(iter(payload["business_area"].get("lines_of_business") or payload["business_area"].get("entities") or []), payload["business_area"]["name"])
+        step = {"date": source["date"], "text": f"{source['title']}.", "source_id": "S1"}
+        return {"item": "Week's development", "summary": f"On {source['date']}, the report said: {source['title']}. [S1]",
+                "sequence": [step, step], "implications": f"This could affect {anchor}. [S1]", "opportunity": None,
+                "response": {"action": "Consider checking the exposure with the business.", "owner": payload["owners"][0]}, "source_ids": ["S1"]}
     if system == REPORTER_BOTTOM_LINE_SYSTEM:
         return {"bottom_line": "No named URS Taiwan project is disrupted. PLA activity eased.", "escalation": "Nothing warrants escalation."}
     raise AssertionError(system[:40])
@@ -93,15 +100,14 @@ def test_reader_scan_end_to_end(tmp_path: Path, monkeypatch) -> None:
     from grit.pipeline.reader_scan import stub_client
 
     outcome = reader_scan.run_agents(pool, run, client=stub_client(_model), model="stub", log=lambda _m: None)
-    conditions = {row["condition_id"]: row for row in pool.conditions(run.run_id)}
-    assert len(conditions) == 10
-    strait = conditions["TW-GLOBAL-03"]
-    assert strait["status"] == "VALIDATED" and strait["trend_label"] == "Easing"
-    assert strait["confidence"] == "MEDIUM", "one HIGH-rated outlet is MEDIUM by rule; the model never grades evidence"
-    assert strait["source_ids"] == [rows["Taiwan reports 25 PLA aircraft near Taiwan Strait this week"]["signal_id"]]
-    assert strait["summary"].endswith(f"[{strait['source_ids'][0]}]"), "citations are stored as signal ids for the renderer"
-    assert conditions["TW-GLOBAL-05"]["status"] == "NO_EVIDENCE"
-    assert outcome["critic_accepted"] == 0, "an issue without a verbatim quote is rejected"
+    assert pool.conditions(run.run_id) == [], "a business-area pack is event-led: no per-risk Assessor runs"
+    assert outcome["standing"] == {}
+    rows_by_section = {row["section"] for row in pool.run(run.run_id)["config"]["event_rows"].values()}
+    strait_id = rows["Taiwan reports 25 PLA aircraft near Taiwan Strait this week"]["signal_id"]
+    drafted = pool.run(run.run_id)["config"]["event_rows"]
+    assert outcome["events"]["VALIDATED"] == 2
+    assert "REGISTER_RISK" in rows_by_section, "the Strait report touches a standing condition"
+    assert any(strait_id in row["source_ids"] for row in drafted.values())
     checks = {row["item_id"]: row for row in pool.exposure_checks(run.run_id)}
     assert checks["PRJ-TC-BLUE"]["status"] == "FOUND"
     assert checks["PRJ-RK"]["status"] == "NOTHING_FOUND"
@@ -109,7 +115,8 @@ def test_reader_scan_end_to_end(tmp_path: Path, monkeypatch) -> None:
     assert watch["WP-TW-RKC02"]["cycles_without_update"] == 1
     assert (pool.run(run.run_id)["config"]["bottom_line"]["status"]) == "VALIDATED"
     agents = {row["actor"] for row in pool.execution_log(run.run_id)}
-    assert {"Researcher", "Assessor", "Critic", "Reporter", "ReaderAssess"} <= agents
+    assert {"Researcher", "EventAssessor", "Reporter", "ReaderAssess"} <= agents
+    assert "Assessor" not in agents
 
 
 def test_assessor_rejects_an_ungrounded_number() -> None:
@@ -146,9 +153,9 @@ def test_reader_pack_review_and_airis_handoff(tmp_path: Path, monkeypatch) -> No
     pack = write_pack(pool, run.run_id, wilson, folder=tmp_path / "wilson")
     document = Document(pack["files"]["docx"])
     text = "\n".join([paragraph.text for paragraph in document.paragraphs] + [cell.text for table in document.tables for row in table.rows for cell in row.cells])
-    assert "GRIT-Scan: URS Taiwan" in text and "Bottom Line" in text
-    assert "Direct disruption to named Taiwan rail projects" in text
-    assert "Kaohsiung RK Line" in text, "a project with nothing found is still listed"
+    assert "GRIT-Scan: URS Taiwan" in text and "SUMMARY" in text
+    assert "1. Management Focus Topics" in text and "Appendix B: Source Register" in text
+    assert not any(path.endswith((".md", ".json")) for path in pack["files"].values()), "a business-area pack is Word, PowerPoint and Excel"
     assert Path(pack["files"]["pptx"]).is_file() and Path(pack["files"]["xlsx"]).is_file()
     package = pack["package"]
     from grit.workflow.packages import execution_for

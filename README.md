@@ -123,13 +123,13 @@ Run these commands from the repository root. `DATE` is the run date, `YYYY-MM-DD
 
    To run the stages one at a time, use `grit scan`, `grit agents`, and `grit report` with the same `--date` and `--pack`. `grit assess` reruns the deterministic assessment with no network call. An interrupted scan resumes from queries already stored for that run. The run folder's `searches.jsonl` keeps every answer. A database that lacks a logged query's pages can reload them from that log.
 
-3. Open the packs. Each reader's files are in `output/runs/DATE-PACK/PROFILE/vN/`: a Word brief, a PowerPoint executive summary, an Excel signal list, a Markdown copy, and the brief model as JSON. The deck follows `docs/reference/GRIT-Scan_Executive_Summary.pptx`. RED drafts are in `output/runs/DATE-PACK/alerts/`.
+3. Open the packs. Each reader's files are in `output/runs/DATE-PACK/PROFILE/vN/`: a Word brief, a PowerPoint executive summary, and an Excel workbook. The Group radar also writes a Markdown copy and the brief model as JSON. The deck follows `docs/reference/GRIT-Scan_Executive_Summary.pptx`. RED drafts are in `output/runs/DATE-PACK/alerts/`.
 
-A business-area brief follows Wilson's layout in [spec 44](specs/44_Brief_Format_v2.md). It has a status line, the bottom line, escalating and elevated items, what changed, a 30-day look-ahead, a priority table, coverage, jurisdictions, and the named supplier, customer, and competitor watch. A quality check and a numbered source register close it. The body cites sources as [S1], [S2]. Approved scenarios appear after `grit scenarios` and `grit scenarios-approve` for that pack.
+A business-area brief follows Wilson's layout of 19 November 2026 in [spec 49](specs/49_Business_Area_Weekly_Layout.md). It opens with a summary box. Four tables follow: Management Focus Topics; Key, T2 & Emerging risks; Other Risk Themes; and Trends/Developments. Each event appears in one table only. Appendix A holds the 30-day look-ahead, the scenario outlook, jurisdiction coverage, and the named supplier, customer, and competitor watch. Appendix B is the numbered source register. The body cites sources as [S1], [S2]. Approved scenarios appear after `grit scenarios` and `grit scenarios-approve` for that pack. The Group radar keeps the layout in [spec 44](specs/44_Brief_Format_v2.md).
 
 Each Word brief, Markdown preview, and slide says the content is GRIT-Scan AI-generated suggestions for consideration. It also says that a named person reviews the content before anyone acts on it. A suggestion appears only when a proposed option or a triggered scenario response already cites that signal. It is marked "Suggestion for the business area to consider."
 
-The URS Taiwan brief follows the 2 October 2026 reference in `docs/reference/`. The Urban Solutions brief uses the same style at business-area level, including the URS Taiwan summary when that entity pack ran on the same date. Each reader's profile chooses the sections.
+Every business-area and entity pack, including URS Taiwan, uses this layout for every reader. A profile chooses the packs, the aperture, and the formats. It does not choose sections.
 
 One weekly run has six stages. Each stage reads and writes the signal pool. You can rerun one stage alone.
 
@@ -137,8 +137,8 @@ One weekly run has six stages. Each stage reads and writes the signal pool. You 
 2. **Acquire.** Brave News answers each query once per run. A query Brave leaves empty goes to Currents, up to the fallback cap. Each page becomes one signal, keyed by its canonical URL.
 3. **Embed.** Gemini embeds each page once. Vectors are cached by text hash.
 4. **Assess.** The deterministic rules in `grit/core/` and the ontology linkers score each page. This stage calls no model.
-5. **Agents.** The Assessor drafts each standing condition or theme. The Critic reviews the drafts. The Reporter writes the named-item entries and the bottom line. The finding loop writes cards for the strongest register-linked signals.
-6. **Report.** Each reader's routing picks the signals. The reader profile orders them. The brief renders to Word, PowerPoint, Excel, and Markdown. Then it enters review.
+5. **Agents.** For a business area, the EventAssessor drafts one row per event in each table. The Reporter writes the named-item entries, their lessons-learnt responses, and the summary. For the Group radar, the Assessor drafts each standing condition and the Critic reviews the drafts. The finding loop writes cards for the radar's strongest signals.
+6. **Report.** Each reader's routing picks the signals. The reader profile orders them. The brief renders to Word, PowerPoint, and Excel. Then it enters review.
 
 ## Use weekly reasoning
 
@@ -171,7 +171,7 @@ To shorten the review, add `--fast`.
 
 With `--fast`, the Critic screens deterministic drops from compact records, about 80 per call. Only the drops it doubts receive the full Assessment and Critic review. Up to six calls run at once. `--workers N` changes that number. Batches whose input has not changed reuse their earlier answers. A pool of about 2,000 candidates takes about 120 calls, roughly 10 to 15 minutes. Compare a fast review with a full reasoned run on the same date before you rely on it. Switching modes starts a new analysis version.
 
-Assessment and an independent Critic account for deterministic keeps and drops, including acquired counterevidence. The Critic can rescue or exclude candidates. Reporting revises the existing sections. A final Critic checks the exact per-reader snapshot. Up to two reconciliation rounds are shared across the run and survive resume. Each report also gets one rewrite when the final Critic raises a material objection, even if the pool used both rounds. The Critic treats a missing internal check as material only when the report claims confirmed exposure or impact. An unresolved material objection blocks submission. A critical completeness-gate answer of "No" also blocks submission. The report is then `INCOMPLETE`. The rendered gate names the blocker.
+Assessment and an independent Critic account for deterministic keeps and drops, including acquired counterevidence. The Critic can rescue or exclude candidates. Reporting revises the existing sections. A final Critic checks the exact per-reader snapshot. Up to two reconciliation rounds are shared across the run and survive resume. Each report also gets one rewrite when the final Critic raises a material objection, even if the pool used both rounds. The Critic treats a missing internal check as material only when the report claims confirmed exposure or impact. An unresolved material objection blocks submission. On the Group radar, a critical completeness-gate answer of "No" also blocks submission. The report is then `INCOMPLETE`. The rendered gate names the blocker. A business-area brief has no completeness gate. Its Reporting edits the summary only.
 
 `grit report --pack PACK --date YYYY-MM-DD --no-submit` can render an incomplete preview. Word, PowerPoint, Excel, Markdown, and JSON use the frozen report. An incomplete analysis returns exit code 2 even when the preview is written.
 
@@ -525,7 +525,7 @@ Profiles are JSON files in `config/profiles/`. A profile changes what a reader s
 | `vschong` | Chief Executive Officer | Material | Reader | The monthly Group Strategic Radar, after Wilson approves it. |
 | `mkteo` | Chairman | Material | Reader | The monthly Group Strategic Radar. |
 
-A profile lists its packs in `packs` and one brief per pack under `briefs`. Add `RESPONSE_OPTIONS` to a brief's `sections` to show the Proposer's options under each key risk.
+A profile lists its packs in `packs` and one brief per pack under `briefs`. A business-area brief has a fixed layout. On the Group radar, add `RESPONSE_OPTIONS` to the brief's `sections` to show the Proposer's options under each condition.
 
 A wide-aperture reader sees every kept signal. A material-aperture reader sees a signal only with P1, P2, or P4 priority, or a standing-condition match ([spec 24](specs/24_Reader_Profile_and_Aperture_Routing_Specification.md)). News priority is P1 for an active management request, P2 for a direct exposure path, P3 for a competitor, sector, footprint, or theme match, and P4 for a customer ([spec 29](specs/29_News_Priority_and_Management_Request_Model.md)).
 
@@ -577,7 +577,7 @@ Every source gets a band by rule: T1 official, T2 rated HIGH, T3 rated MEDIUM or
 .venv/bin/python -m grit scorecard --pack urs --date 2026-11-02
 ```
 
-**Carry corrections forward.** Record a correction once. Every later report of the pack lists it until you close it. `--phrase` retires exact wording, such as `S$600m`.
+**Carry corrections forward.** Record a correction once. Every later Group radar lists it until you close it. Reporting on the Group radar never reuses a retired phrase. `--phrase` retires exact wording, such as `S$600m`.
 
 ```bash
 .venv/bin/python -m grit corrections add --pack urs --earlier "Taiwan opportunity loss S\$600m" \

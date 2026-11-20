@@ -14,7 +14,7 @@ from typing import Any, Mapping, Sequence
 
 from grit.core.canonical import canonical_hash
 from grit.core.corrections import ledger_view
-from grit.core.routing import aperture_routing, request_in_pack
+from grit.core.routing import aperture_routing
 from grit.ontology.pack import load_ontology_pack
 from grit.pool import Pool
 from grit.profiles import Profile
@@ -178,6 +178,8 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
     if brief_config is None:
         raise ValueError(f"{profile.label} receives no brief for the {pack_name} pack.")
     pack = load_ontology_pack(CONFIG_DIR, pack_name)
+    if pack.level in {"BA", "ENTITY"}:
+        return business_area_brief(pool, run, pack, profile, brief_config)
     plan_config = pack.scan_plan or {}
     run_date = date.fromisoformat(run["run_date"])
     from grit.pipeline.reader_scan import scan_window
@@ -293,38 +295,6 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             "corroboration": row.get("corroboration"), "red": row.get("red_status") == "CONFIRMED", "red_status": row.get("red_status"), "harm": _harm_line(row), "preference": row["preference"]["reasons"],
             "card": _card_summary(card) if card else None,
         })
-    others = [row for row in shown if row not in priority_rows][:25] if "OTHER_SIGNALS" in sections else []
-    other_signals = [
-        {"signal_id": row["signal_id"], "title": clean_title(row["title"]) or row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"], "priority": row["route"]["priority"], "tier": row.get("tier"), "rung": row.get("rung")}
-        for row in others
-    ]
-
-    request_rows = []
-    if "MANAGEMENT_REQUESTS" in sections:
-        matched: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
-        for row in shown:
-            if row["route"].get("request_id"):
-                matched[row["route"]["request_id"]].append(row)
-        requests = [request for request in pool.management_requests()
-                    if request_in_pack(request, pack_name) and request["status"] in {"ACTIVE", "PROPOSED"}]
-        # A request this pack's signals did not answer may be answered by a child pack it covers, such as URS Taiwan.
-        from_child = child_request_hits(pool, run_date, pack, [request for request in requests if not matched.get(request["request_id"])])
-        for request in requests:
-            hits = (matched.get(request["request_id"]) or from_child.get(request["request_id"]) or [])[:5]
-            request_rows.append({
-                "request_id": request["request_id"], "title": request["title"], "status": request["status"], "requested_by": request["requested_by"], "source": request.get("source"),
-                "signals": [{"signal_id": row["signal_id"], "title": clean_title(row["title"]) or row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"],
-                             **({"via": row["via"]} if row.get("via") else {})} for row in hits],
-            })
-        request_rows.sort(key=lambda row: (row["status"] != "ACTIVE", not row["signals"], row["request_id"]))
-    request_ids = {item["signal_id"] for row in request_rows for item in row["signals"]}
-
-    entity_packs = []
-    if "ENTITY_PACKS" in sections:
-        from grit.pipeline.reader_scan import ReaderRun, child_summaries
-
-        entity_packs = child_summaries(pool, ReaderRun(run_id, run_date, pack_name), pack)
-
     watch_rows = []
     for row in watchpoints:
         update = updates.get(row["watchpoint_id"])
@@ -413,7 +383,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             sections.insert(sections.index("CONDITIONS") + 1 if "CONDITIONS" in sections else len(sections), "SCENARIOS")
     seen_ids = {signal_id for shift in (scenarios or {}).get("shifts") or [] for case in shift["cases"]
                 for item in [*case["signposts_seen"], *case["counter_indicators_seen"]] for signal_id in item["signal_ids"]}
-    membership = sorted({*ids, *v2_ids, *request_ids, *(row["signal_id"] for row in priority_rows), *(row["signal_id"] for row in others), *seen_ids})
+    membership = sorted({*ids, *v2_ids, *(row["signal_id"] for row in priority_rows), *seen_ids})
     counts = pool.one("SELECT COUNT(*) AS signals, SUM(decision = 'KEEP') AS kept FROM assessments WHERE run_id = ?", (run_id,)) or {}
     queries = pool.one("SELECT COUNT(DISTINCT query_id) AS queries FROM sightings WHERE run_id = ?", (run_id,)) or {}
     agents = pool.rows("SELECT actor, version, model, status, COUNT(*) AS calls FROM execution_log WHERE run_id = ? AND actor_type = 'AGENT' GROUP BY actor, version, model, status ORDER BY actor", (run_id,))
@@ -429,8 +399,7 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         "bottom_line": {"label": label, "text": bottom_text, "escalation": escalation, "drafted_by": "Reporter (validated)" if bottom.get("status") == "VALIDATED" else "rule (the Reporter's draft was withheld or absent)"},
         "order_book": pack.order_book,
         "projects": groups, "suppliers": suppliers, "customers": customers, "hazards": hazards, "entities": entities, "competitors": competitors,
-        "management_requests": request_rows, "entity_packs": entity_packs,
-        "conditions": condition_rows, "scenarios": scenarios, "findings": findings, "other_signals": other_signals, "qa": qa_rows, "watchpoints": watch_rows, "red": red, "red_triggers": red_trigger_labels(),
+        "conditions": condition_rows, "scenarios": scenarios, "findings": findings, "qa": qa_rows, "watchpoints": watch_rows, "red": red, "red_triggers": red_trigger_labels(),
         "corrections": [ledger_view(row) for row in pool.corrections(pack_name)],
         "method": {
             "queries": queries.get("queries") or 0, "queries_label": "queries returned pages", "signals": counts.get("signals") or 0, "kept": counts.get("kept") or 0, "shown_to_reader": len(shown),
@@ -442,6 +411,172 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
     }
     model["content_hash"] = canonical_hash({key: value for key, value in model.items() if key != "method"})
     return model
+
+
+SECTION_TITLES = {
+    "MANAGEMENT_FOCUS": "Management Focus Topics", "REGISTER_RISK": "Key, T2 & Emerging", "OTHER_THEME": "Other Risk Themes",
+    "TREND": "Trends/Developments",
+}
+
+
+def meta_for(run: Mapping[str, Any], pack: Any, profile: Profile, brief_config: Mapping[str, Any]) -> dict[str, Any]:
+    from grit.pipeline.reader_scan import scan_window
+
+    run_date = date.fromisoformat(run["run_date"])
+    return {
+        "title": brief_config.get("title") or f"GRIT-Scan: {pack.pack}", "subtitle": brief_config.get("subtitle") or "Weekly scan",
+        "prepared_for": brief_config.get("preparedFor") or profile.role, "reader": profile.label, "profile_id": profile.profile_id, "aperture": profile.aperture,
+        "run_id": run["run_id"], "run_date": run["run_date"], "window": window_label(run_date, scan_window(pack)),
+        "grounded_in": _grounded_in(pack), "status": STATUS, "show_review_status": bool(brief_config.get("showReviewStatus", True)),
+        "pack": pack.pack, "pack_label": pack.label, "pack_short": str((pack.manifest or {}).get("shortLabel") or pack.label), "level": pack.level,
+    }
+
+
+def business_area_brief(pool: Pool, run: Mapping[str, Any], pack: Any, profile: Profile, brief_config: Mapping[str, Any]) -> dict[str, Any]:
+    """A business area's weekly brief (Wilson's layout of 19 November 2026): the summary, four event tables (management
+    focus topics; key, tier-2 and emerging risks; other risk themes; trends and developments), then Appendix A (look-ahead,
+    scenarios, jurisdictions, named watch) and Appendix B (the source register). The EventAssessor drafted each row and
+    chose nothing: the section of an event follows the rule in grit.pipeline.events.section_of."""
+    from grit.agents.reader import format_timeline
+    from grit.pipeline.events import (
+        MANAGEMENT_FOCUS,
+        MAX_SECTION_ROWS,
+        OTHER_THEME,
+        SECTIONS,
+        event_register,
+        label_merges,
+        risk_names,
+    )
+    from grit.pipeline.reader_scan import graph_pack
+    from grit.pipeline.scenarios import outlook
+    from grit.report.format_v2 import jurisdiction_rows, named_watch, source_tiers
+    from grit.report.lookahead import look_ahead
+
+    run_id, run_date = run["run_id"], date.fromisoformat(run["run_date"])
+    config = run.get("config") or {}
+    routed = routed_signals(pool, run_id, profile)
+    shown = [row for row in routed if row["shown"]]
+    names = risk_names(pack)
+    drafted = config.get("event_rows") or {}
+    merges = dict(config.get("event_merges") or {})
+    events = event_register(pool, run_id, rows=shown, names=names, merges=merges)
+    # Drafted rows of one story that the recorded merges missed, for example after a merge rule changed, join here too.
+    extra = {key: value for key, value in label_merges([event for event in events if event["members"]], drafted).items() if key not in merges}
+    if extra:
+        events = event_register(pool, run_id, rows=shown, names=names, merges={**merges, **extra})
+    withheld = set(config.get("event_rows_withheld") or [])
+    # The QA log withholds these events, so their reports feed no table and no look-ahead.
+    hidden = {signal_id for event in events if event["event_id"] in withheld for signal_id in event["signal_ids"]}
+    visible = [row for row in shown if row["signal_id"] not in hidden]
+    titles = {row["request_id"]: row["title"] for row in pool.management_requests()}
+
+    checks = pool.exposure_checks(run_id)
+    qa = pool.qa_log(run_id)
+    ids = {signal_id for row in drafted.values() for signal_id in row.get("source_ids") or []}
+    ids |= _cited_ids(*(row.get("summary") for row in checks)) | {signal_id for row in checks for signal_id in row.get("signal_ids") or []}
+    ids |= {signal_id for row in qa for signal_id in row.get("source_ids") or []}
+    signals = _signals(pool, ids)
+
+    def render(text: str | None) -> dict[str, Any] | None:
+        if not text:
+            return None
+        runs, cited = citations(text, signals)
+        return {"runs": runs, "plain": plain(runs), "sources": cited}
+
+    def source_ref(signal_id: str) -> dict[str, Any]:
+        signal = signals[signal_id]
+        return {"signal_id": signal_id, "outlet": signal["publisher"], "date": fmt_date(signal["published_at"]), "url": signal["url"], "title": signal["title"]}
+
+    sections: dict[str, list[dict[str, Any]]] = {key: [] for key in SECTIONS}
+    for event in events:
+        row = drafted.get(event["event_id"])
+        section = (row or {}).get("section")
+        if not row or section not in sections or event["event_id"] in withheld or len(sections[section]) >= MAX_SECTION_ROWS:
+            continue
+        if section == MANAGEMENT_FOCUS:
+            risk = "; ".join(f"MF: {titles.get(item, item)}" for item in event["requests"][:2] if item in titles)
+        elif section == OTHER_THEME:
+            risk = "; ".join(f"Group: {name}" for name in event["group_risks"][:2])
+        else:
+            risk = event["risk_label"] or "Trend"
+        summary = row["summary"] + (" " + format_timeline(row["sequence"], "") if row.get("sequence") else "")
+        sections[section].append({
+            "event_id": event["event_id"], "band": event["band"], "item": row["item"], "risk": risk, "summary": render(summary),
+            "impact": render(row.get("implications")), "opportunity": render(row.get("opportunity")), "response": row.get("response"),
+            "signal_ids": list(row.get("source_ids") or []),
+            "sources": [source_ref(signal_id) for signal_id in row.get("source_ids") or [] if signal_id in signals],
+        })
+
+    # Appendix A: look-ahead from sources linked to the business area only, scenarios, jurisdictions and the named watch.
+    event_of = {signal_id: event["event_id"] for event in events for signal_id in event["signal_ids"]}
+    linked = [row for row in visible if row.get("rung") or row.get("condition_ids") or (row.get("route") or {}).get("request_id")]
+    look = look_ahead(linked, run_date, event_of=event_of,
+                      relevance=lambda row: risk_labels_for(row, names))
+    jurisdictions = jurisdiction_rows(pack, visible, events, pool.answered_searches(run_id))
+    named: dict[str, list[dict[str, Any]]] = {"Supplier": [], "Customer": [], "Competitor": []}
+    kinds = {"SUPPLIER": "Supplier", "CUSTOMER": "Customer", "COMPETITOR": "Competitor"}
+    for row in checks:
+        if row["item_type"] in kinds:
+            named[kinds[row["item_type"]]].append({"item_id": row["item_id"], "name": row["item_name"], "status": row["status"],
+                                                    "text": render(row["summary"]), "lesson": row.get("lesson")})
+    watch, _passing = named_watch(named)
+    scenarios = outlook(pool, run_id, pack)
+    if scenarios:
+        scenarios.pop("risk_links", None)  # the Group radar's register cascade; a business-area brief does not show it
+    more = {signal_id for row in look for signal_id in row["signal_ids"]} | {signal_id for row in jurisdictions for signal_id in row["signal_ids"]}
+    signals.update(_signals(pool, more - set(signals)))
+    look_rows = [{**item, "date": item["date"].isoformat(),
+                  "sources": [source_ref(signal_id) for signal_id in item["signal_ids"] if signal_id in signals]} for item in look]
+    for row in jurisdictions:
+        row["sources"] = [source_ref(signal_id) for signal_id in row["signal_ids"] if signal_id in signals]
+
+    red = red_items(routed)
+    rows = [row for table in sections.values() for row in table]
+    status = "RED" if any(item["status"] == "CONFIRMED" for item in red) else "ELEVATED" if any(row["band"] == "\u25b2" for row in rows) else "STABLE"
+    bottom = config.get("bottom_line") or {}
+    validated = bottom.get("status") == "VALIDATED"
+    seen_ids = {signal_id for shift in (scenarios or {}).get("shifts") or [] for case in shift["cases"]
+                for item in [*case["signposts_seen"], *case["counter_indicators_seen"]] for signal_id in item["signal_ids"]}
+    watch_ids = {ref["signal_id"] for item in watch for ref in (item["text"] or {}).get("sources") or []}
+    membership = sorted({*(signal_id for row in rows for signal_id in row["signal_ids"]), *more, *watch_ids, *seen_ids})
+    counts = pool.one("SELECT COUNT(*) AS signals, SUM(decision = 'KEEP') AS kept FROM assessments WHERE run_id = ?", (run_id,)) or {}
+    model = {
+        "meta": {**meta_for(run, pack, profile, brief_config), "layout": "BA", "section_titles": dict(SECTION_TITLES)},
+        "bottom_line": {"label": status, "text": bottom.get("bottom_line") if validated else ba_fallback_summary(sections, watch, red, pack.label),
+                        "drafted_by": "Reporter (validated)" if validated else "rule (the Reporter's draft was withheld or absent)"},
+        "v2": {"status": status, "sections": sections, "look_ahead": look_rows, "jurisdictions": jurisdictions, "watch": watch,
+               "tiers": source_tiers(routed, [pack.source_register, graph_pack(pack).source_register]),
+               "short": str((pack.manifest or {}).get("shortLabel") or pack.label)},
+        "scenarios": scenarios, "red": red,
+        # Not shown to the reader: the QA log lets the release check find a withheld date that reappears.
+        "qa": [{"item": row["item"], "prior": row["prior"], "correction": row["correction"], "origin": row["origin"],
+                "source_ids": list(row.get("source_ids") or [])} for row in qa if not str(row["item"]).startswith("REPORT:")],
+        "method": {"signals": counts.get("signals") or 0, "kept": counts.get("kept") or 0, "shown_to_reader": len(shown), "profile": profile.in_force,
+                   "hidden_by_routing": sum(1 for row in routed if not row["route"]["include"]),
+                   "moved_by_profile": sum(1 for row in shown if row["preference"]["affinity"])},
+        "membership": membership,
+    }
+    model["content_hash"] = canonical_hash({key: value for key, value in model.items() if key != "method"})
+    return model
+
+
+def risk_labels_for(row: Mapping[str, Any], names: Mapping[str, str]) -> str:
+    from grit.pipeline.events import risk_labels
+
+    return risk_labels([str(item) for item in row.get("condition_ids") or []], names) or str(row.get("rung") or "").title()
+
+
+def ba_fallback_summary(sections: Mapping[str, Sequence[Mapping[str, Any]]], watch: Sequence[Mapping[str, Any]], red: Sequence[Any], label: str) -> str:
+    """A rule-written summary, used when the Reporter's draft is withheld."""
+    counts = [f"{len(rows)} {SECTION_TITLES[key].lower()}" for key, rows in sections.items() if rows]
+    parts = [f"This week's {label} items: {', '.join(counts)}." if counts else f"No {label} item passed its checks this week."]
+    rising = [row["item"] for rows in sections.values() for row in rows if row["band"] == "\u25b2"]
+    if rising:
+        parts.append(f"New or rising: {'; '.join(rising[:3])}.")
+    if watch:
+        parts.append(f"Named watch: {', '.join(item['name'] for item in watch[:4])}.")
+    parts += [line for line in [red_summary(red)] if line]
+    return " ".join(parts)
 
 
 def clean_title(title: Any) -> str:
@@ -496,31 +631,6 @@ def fallback_bottom_line(conditions: Sequence[Mapping[str, Any]], checks: Sequen
         parts.append(f"Watchpoints carried: {'; '.join(open_items)}.")
     parts += [line for line in [red_summary(red)] if line]
     return " ".join(parts)
-
-
-def child_request_hits(pool: Pool, run_date: date, pack: Any, requests: Sequence[Mapping[str, Any]]) -> dict[str, list[dict[str, Any]]]:
-    """Kept signals of the pack's child runs for the same date that answer a request, by the same keyword rule as routing.
-    Each carries the child pack's label in "via"."""
-    from grit.core.routing import match_request
-    from grit.pipeline.reader_scan import _load_pack, run_id_for
-
-    found: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    active = [request for request in requests if request.get("status") == "ACTIVE"]
-    for child in (getattr(pack, "children", None) or []) if active else []:
-        child_run = run_id_for(run_date, child)
-        if not pool.run(child_run):
-            continue
-        label = _load_pack(child).label
-        for row in pool.weekly_assessments(child_run):
-            hit = match_request({**row, "pack": pack.pack}, active, [pack.pack])
-            if hit:
-                found[hit[0]].append({**row, "via": f"{label} pack"})
-    # A keyword alone is loose ("Typhoon" also hits a weather guide), so reports sharing more of the request's own words lead.
-    words = {request["request_id"]: set(re.findall(r"[a-z]{5,}", str(request.get("title") or "").casefold())) for request in active}
-    for request_id, rows in found.items():
-        rows.sort(key=lambda row: (-len(words[request_id] & set(re.findall(r"[a-z]{5,}", str(row.get("title") or "").casefold()))),
-                                   row.get("tier") or 9, str(row.get("signal_id"))))
-    return found
 
 
 def red_trigger_labels() -> dict[str, str]:

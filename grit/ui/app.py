@@ -115,7 +115,7 @@ def main() -> None:
         st.markdown(
             # The box is always light, so its text is set dark. In the dark theme the default text is near-white.
             f"<div style='background:{BOX.get(bottom['label'], '#FFF2CC')};color:#1A1A1A;padding:14px 18px;border-radius:6px;border:1px solid #1F3864'>"
-            f"<b style='color:#1F3864'>{html.escape(str(bottom['label']))} — Bottom line</b><br>"
+            f"<b style='color:#1F3864'>{'SUMMARY' if meta.get('layout') == 'BA' else html.escape(str(bottom['label'])) + ' — Bottom line'}</b><br>"
             f"<span style='color:#1A1A1A'>{html.escape(str(bottom['text']))} {html.escape(str(bottom.get('escalation') or ''))}</span></div>",
             unsafe_allow_html=True,
         )
@@ -127,36 +127,41 @@ def main() -> None:
         active_tab = next((name for name, tab in zip(tab_names, (dashboard, signals_tab, packs_tab, requests_tab, alerts_tab)) if getattr(tab, "open", False)), tab_names[0])
 
         with dashboard:
-            st.subheader("Standing risk themes" if meta.get("standing_label") == "risk theme" else "Standing conditions")
-            st.caption("Choose a row to focus the Co-Pilot on it. Escalating is red, Easing is green, and Unchanged is neutral. The word is the label.")
-            condition_rows = [{"#": row["number"], "Item": row["name"] + (f" ({row['group']})" if row.get("group") else ""), "Trend": row["trend"], "Confidence": row["confidence"], "Basis": row["basis"]["plain"], "id": row["condition_id"]} for row in brief["conditions"]]
-            show_table(condition_rows, ["#", "Item", "Trend", "Confidence", "Basis"])
-            screens["Dashboard"] = screen_context("Dashboard", condition_rows)
-            focus_labels = ["None", *[f"{row['#']}. {row['Item']}" for row in condition_rows]]
-            picked_item = st.selectbox("Focus the Co-Pilot on", focus_labels, key=f"conditions-{profile.profile_id}-{run_id}")
-            st.session_state["copilot_focus"] = condition_rows[focus_labels.index(picked_item) - 1]["id"] if picked_item != "None" else None
-            left, right = st.columns(2)
-            with left:
-                st.subheader("Named items")
-                named = [item for group in brief["projects"] + brief["entities"] for item in group["items"]] + brief["suppliers"] + brief["customers"] + brief["hazards"] + brief["competitors"]
-                named_rows = [{"Item": item["name"], "This week": item["text"]["plain"] if item["text"] else "Nothing found"} for item in named]
-                show_table(named_rows)
-            with right:
-                if brief["management_requests"]:
-                    st.subheader("Management-requested topics")
-                    for row in brief["management_requests"]:
-                        if row["status"] == "ACTIVE":
-                            st.markdown(f"**{row['title']}**: " + ("; ".join(f"[{item['title']}]({item['url']})" for item in row["signals"][:3]) or "no signal matched this week."))
-                for row in brief["entity_packs"]:
-                    st.subheader(row["label"])
-                    st.write(row["bottom_line"] or "No validated bottom line on this date.")
-                st.subheader("Watchpoints")
-                for row in brief["watchpoints"]:
-                    st.markdown(f"**{row['title']}** ({row['status'].lower()}, quiet for {row['cycles']} cycle(s))  \n{row['update']['plain'] if row['update'] else row['detail']}")
-                if brief["qa"]:
-                    st.subheader("QA and correction log")
-                    for row in brief["qa"]:
-                        st.markdown(f"- **{row['item']}**: {row['correction']['plain']}")
+            if meta.get("layout") == "BA":
+                from grit.report.brief import SECTION_TITLES as BA_SECTIONS
+
+                st.subheader("This week's items")
+                item_rows = [{"Section": BA_SECTIONS[key], "Item": f"{row['band']} {row['item']}", "Risk": row["risk"], "Summary": (row.get("summary") or {}).get("plain") or ""}
+                             for key, rows in brief["v2"]["sections"].items() for row in rows]
+                show_table(item_rows)
+                screens["Dashboard"] = screen_context("Dashboard", item_rows)
+                st.session_state["copilot_focus"] = None
+                st.subheader("Named supplier, customer and competitor watch")
+                show_table([{"Name": row["name"], "Type": row["type"], "This week": (row.get("text") or {}).get("plain") or "", "Lessons learnt": row.get("lesson") or "Not drafted."}
+                            for row in brief["v2"]["watch"]])
+            else:
+                st.subheader("Standing risk themes" if meta.get("standing_label") == "risk theme" else "Standing conditions")
+                st.caption("Choose a row to focus the Co-Pilot on it. Escalating is red, Easing is green, and Unchanged is neutral. The word is the label.")
+                condition_rows = [{"#": row["number"], "Item": row["name"] + (f" ({row['group']})" if row.get("group") else ""), "Trend": row["trend"], "Confidence": row["confidence"], "Basis": row["basis"]["plain"], "id": row["condition_id"]} for row in brief["conditions"]]
+                show_table(condition_rows, ["#", "Item", "Trend", "Confidence", "Basis"])
+                screens["Dashboard"] = screen_context("Dashboard", condition_rows)
+                focus_labels = ["None", *[f"{row['#']}. {row['Item']}" for row in condition_rows]]
+                picked_item = st.selectbox("Focus the Co-Pilot on", focus_labels, key=f"conditions-{profile.profile_id}-{run_id}")
+                st.session_state["copilot_focus"] = condition_rows[focus_labels.index(picked_item) - 1]["id"] if picked_item != "None" else None
+                left, right = st.columns(2)
+                with left:
+                    st.subheader("Named items")
+                    named = [item for group in brief["projects"] + brief["entities"] for item in group["items"]] + brief["suppliers"] + brief["customers"] + brief["hazards"] + brief["competitors"]
+                    named_rows = [{"Item": item["name"], "This week": item["text"]["plain"] if item["text"] else "Nothing found"} for item in named]
+                    show_table(named_rows)
+                with right:
+                    st.subheader("Watchpoints")
+                    for row in brief["watchpoints"]:
+                        st.markdown(f"**{row['title']}** ({row['status'].lower()}, quiet for {row['cycles']} cycle(s))  \n{row['update']['plain'] if row['update'] else row['detail']}")
+                    if brief["qa"]:
+                        st.subheader("QA and correction log")
+                        for row in brief["qa"]:
+                            st.markdown(f"- **{row['item']}**: {row['correction']['plain']}")
 
         with signals_tab:
             only_shown = st.toggle("Only what your profile shows", value=True)

@@ -1,6 +1,9 @@
-"""The week's events for brief format v2 (spec 44): the week's kept signals grouped into events, each with its risk linkage
-and a band against the previous report. Deterministic, apart from the escalating-items rows, which the EventAssessor drafts
-and the checks decide.
+"""The week's events: the week's kept signals grouped into events, each with its risk linkage and a band against the
+previous report. Deterministic, apart from the rows, which the EventAssessor drafts and the checks decide.
+
+A business-area brief (spec 49) puts each event in one table: Management Focus when it answers an active management
+request, else Trends/Developments when it is competitor, sector or technology news, else Key, T2 & Emerging when it touches
+a register risk, else Other Risk Themes when it touches a Group risk, else Trends/Developments. Each table holds at most MAX_SECTION_ROWS rows. The Group radar (spec 44) shows its elevated events.
 
 | Band | Rule |
 |---|---|
@@ -10,7 +13,7 @@ and the checks decide.
 
 A material event is RED, or tier 1, or tier 2 with a risk linkage and either two or more independent publishers or a direct or
 counterparty link to the business area. An elevated event is a ▲ event, or a continuing material event that is tier 1 or
-RED. The escalating-items table shows the elevated events, at most MAX_ROWS.
+RED. The Group radar's escalating-items table shows the elevated events, at most MAX_ROWS.
 
 In a reasoned run the reviewed selection decides instead (URS methodology, section 13). A material event has a member with
 a significance score of 8 or more, an immediate threat, or RED impact confirmed by R&A, and every material event is elevated.
@@ -26,8 +29,11 @@ from typing import Any, Callable, Mapping, Sequence
 from grit.pool import Pool
 
 UP, SAME, DOWN = "▲", "=", "▼"
-MAX_ROWS = 8  # escalating and elevated rows drafted per run
+MAX_ROWS = 8  # escalating and elevated rows drafted per Group run
+MAX_SECTION_ROWS = 10  # rows drafted per section of a business-area brief
 MAX_SOURCES = 6  # reports per event shown to the EventAssessor
+# The sections of a business-area brief, in reading order. Each event goes to the first section it qualifies for.
+MANAGEMENT_FOCUS, REGISTER_RISK, OTHER_THEME, TREND = SECTIONS = ("MANAGEMENT_FOCUS", "REGISTER_RISK", "OTHER_THEME", "TREND")
 _THEME_ID = re.compile(r"-(KEY|TIER_2|EMERGING)-(\d+)$")
 _KIND = {"KEY": "Key Risk", "TIER_2": "Tier-2 Risk", "EMERGING": "Emerging Risk"}
 
@@ -44,6 +50,58 @@ def risk_labels(ids: Sequence[str], names: Mapping[str, str]) -> str:
             others.append(names[item])
     parts = [f"{_KIND[kind]}{'s' if len(numbers) > 1 else ''} {', '.join(numbers)}" for kind, numbers in grouped.items()]
     return "; ".join([*parts, *others])
+
+
+def _group_risks(row: Mapping[str, Any]) -> list[str]:
+    return [str(hit["name"]) for hit in row.get("risk_cascade") or [] if isinstance(hit, Mapping) and hit.get("level") == "GROUP" and hit.get("name")]
+
+
+def _request_ids(row: Mapping[str, Any]) -> list[str]:
+    """The management requests a signal answers: its reader route, or the keyword rule recorded at assessment."""
+    found = [str((row.get("route") or {}).get("request_id"))] if (row.get("route") or {}).get("request_id") else []
+    found += [str(hit["item_id"]) for hit in (row.get("link") or {}).get("reader_hits") or [] if isinstance(hit, Mapping) and hit.get("item_type") == "REQUEST"]
+    return found
+
+
+# A register risk with one of these names is about the market, not the business area's own exposure.
+_MARKET_RISK = re.compile(r"competi|emerging technolog", re.IGNORECASE)
+_EXPOSED, _MARKET = frozenset({"DIRECT", "COUNTERPARTY"}), frozenset({"COMPETITOR", "SECTOR"})
+
+
+def is_trend(event: Mapping[str, Any], names: Mapping[str, str]) -> bool:
+    """Competitor, sector and technology news: no member names the business area's own exposure, and a member is a
+    competitor or sector report, or every risk the event touches is a market risk such as Competition."""
+    rungs = {str(row.get("rung") or "") for row in event.get("members") or []}
+    if rungs & _EXPOSED:
+        return False
+    risks = event.get("risks") or []
+    return bool(rungs & _MARKET) or (bool(risks) and all(_MARKET_RISK.search(names.get(item, "")) for item in risks))
+
+
+def section_of(event: Mapping[str, Any], active_requests: set[str], names: Mapping[str, str] | None = None) -> str:
+    """Management Focus when it answers an active request, else a trend when it is competitor, sector or technology news,
+    else a register risk, else a Group risk only, else a trend."""
+    if active_requests & set(event.get("requests") or []):
+        return MANAGEMENT_FOCUS
+    if is_trend(event, names or {}):
+        return TREND
+    if event.get("risks"):
+        return REGISTER_RISK
+    if event.get("group_risks"):
+        return OTHER_THEME
+    return TREND
+
+
+def section_events(events: Sequence[Mapping[str, Any]], active_requests: set[str], names: Mapping[str, str] | None = None) -> dict[str, list[Mapping[str, Any]]]:
+    """This week's events per section, in event order, at most MAX_SECTION_ROWS each. Events without a report this week are left out."""
+    found: dict[str, list[Mapping[str, Any]]] = {key: [] for key in SECTIONS}
+    for event in events:
+        if not event["members"]:
+            continue
+        rows = found[section_of(event, active_requests, names)]
+        if len(rows) < MAX_SECTION_ROWS:
+            rows.append(event)
+    return found
 
 
 def _strong_themes(row: Mapping[str, Any]) -> list[str]:
@@ -202,7 +260,8 @@ def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]]
             "publishers": len(outlet_groups([str(row.get("publisher") or row.get("url") or "") for row in reports])),
             "first_date": dates[0] if dates else None, "last_date": dates[-1] if dates else None,
             "risks": risks, "risk_label": risk_labels(risks, names),
-            "requests": list(dict.fromkeys(str((row.get("route") or {}).get("request_id")) for row in members if (row.get("route") or {}).get("request_id"))),
+            "group_risks": list(dict.fromkeys(name for row in members for name in _group_risks(row))),
+            "requests": list(dict.fromkeys(item for row in members for item in _request_ids(row))),
             "previous_lead": (min(before[event_id], key=lambda row: (row.get("tier") or 9)) if not new else None),
         })
     for event_id, members in before.items():
@@ -213,7 +272,7 @@ def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]]
         events.append({
             "event_id": event_id, "band": DOWN, "new": False, "score": None, "elevated": False, "tier": lead.get("tier") or 9, "red": False, "red_candidate": False, "lead": lead, "members": [], "reports": [],
             "signal_ids": [], "publishers": 0, "first_date": None, "last_date": None, "risks": risks, "risk_label": risk_labels(risks, names),
-            "requests": [], "previous_lead": lead,
+            "group_risks": [], "requests": [], "previous_lead": lead,
         })
     events = _merge_stories(events, names, _places(run.get("pack")))
     events = apply_merges(events, merges or {}, names)
@@ -288,6 +347,7 @@ def _combine(parts: Sequence[dict[str, Any]], names: Mapping[str, str], words: f
         "publishers": len(outlet_groups([str(row.get("publisher") or row.get("url") or "") for row in reports])),
         "first_date": dates[0] if dates else None, "last_date": dates[-1] if dates else None,
         "requests": list(dict.fromkeys(item for event in parts for item in event["requests"])),
+        "group_risks": list(dict.fromkeys(item for event in parts for item in event.get("group_risks") or [])),
         "merged_events": [event_id for event in parts for event_id in event.get("merged_events") or [event["event_id"]]],
         "cited": [item for event in parts for item in event.get("cited") or []],
     }
@@ -367,10 +427,10 @@ def label_merges(events: Sequence[Mapping[str, Any]], rows: Mapping[str, Mapping
 
 
 def apply_merges(events: list[dict[str, Any]], merges: Mapping[str, str], names: Mapping[str, str]) -> list[dict[str, Any]]:
-    """Recorded label merges (label_merges), applied where both events are present and elevated."""
+    """Recorded label merges (label_merges), applied where both events are present with a report this week."""
     from grit.core.headlines import distinctive_terms
 
-    present = {event["event_id"]: event for event in events if event["elevated"] and event["members"]}
+    present = {event["event_id"]: event for event in events if event["members"]}
     groups: dict[str, list[dict[str, Any]]] = {}
     for event_id, seed_id in merges.items():
         if event_id in present and seed_id in present and event_id != seed_id:
@@ -396,12 +456,20 @@ def risk_names(pack: Any) -> dict[str, str]:
     return {item["id"]: item["name"] for item in standing_items(pack)}
 
 
+def active_requests(pool: Pool, pack: str) -> set[str]:
+    from grit.core.routing import request_in_pack
+
+    return {str(row["request_id"]) for row in pool.management_requests(active_only=True) if request_in_pack(row, pack)}
+
+
 def draft_rows(pool: Pool, run: Any, *, client: Any, model: str, log: Callable[[str], None] = print) -> dict[str, Any]:
-    """The EventAssessor drafts a row for each elevated event, up to MAX_ROWS. Rows are saved on the run, keyed by event id.
-    A withheld row is logged to the QA log, and the brief shows the event with its lead report only."""
+    """The EventAssessor drafts the rows. A business area gets one row per event in each section, at most MAX_SECTION_ROWS
+    a section. The Group radar gets its elevated events, at most MAX_ROWS. Rows are saved on the run, keyed by event id,
+    with their section. A withheld row is logged to the QA log and left out of the brief."""
     from grit.agents import reader as agents
     from grit.daily.index import cluster_events
     from grit.pipeline.reader_scan import _load_pack, business_area_context, graph_pack, owner_roles
+    from grit.report.brief import out_of_scope
 
     try:
         cluster_events(pool)
@@ -409,19 +477,32 @@ def draft_rows(pool: Pool, run: Any, *, client: Any, model: str, log: Callable[[
         log(f"  Events: clustering skipped ({type(exc).__name__}).")
     pack = _load_pack(run.pack)
     names = risk_names(pack)
-    rising = [row["condition_id"] for row in pool.conditions(run.run_id) if row.get("trend_label") == "Escalating"]
-    events = [event for event in event_register(pool, run.run_id, names=names, escalating=rising) if event["elevated"]][:MAX_ROWS]
+    titles = {row["request_id"]: row["title"] for row in pool.management_requests()}
+    if pack.level not in {"BA", "ENTITY"}:
+        rising = [row["condition_id"] for row in pool.conditions(run.run_id) if row.get("trend_label") == "Escalating"]
+        jobs: list[tuple[str | None, Mapping[str, Any]]] = [
+            (None, event) for event in [event for event in event_register(pool, run.run_id, names=names, escalating=rising) if event["elevated"]][:MAX_ROWS]]
+    else:
+        off_scope = out_of_scope(run.pack)
+        rows = [row for row in pool.weekly_assessments(run.run_id)
+                if (row.get("editorial") or {}).get("decision", "INCLUDE") in {"INCLUDE", "WATCH"}
+                and (row.get("red") or not off_scope or not off_scope.search(str(row.get("title") or "")))]
+        active = active_requests(pool, run.pack)
+        sections = section_events(event_register(pool, run.run_id, rows=rows, names=names), active, names)
+        jobs = [(section, event) for section in SECTIONS for event in sections[section]]
+    events = [event for _section, event in jobs]
     area = business_area_context(pack)
     owners = owner_roles(pack)
     themes = {row["themeId"]: row for row in (graph_pack(pack).themes or {}).get("themes") or []}
-    titles = {row["request_id"]: row["title"] for row in pool.management_requests()}
     saved: dict[str, Any] = {}
     counts = {"VALIDATED": 0, "WITHHELD": 0}
-    for event in events:
+    for section, event in jobs:
         table, back = agents.source_table((event.get("reports") or event["members"])[:MAX_SOURCES])
         risks = [{"label": risk_labels([item], names), "name": names.get(item, item), "drivers": (themes.get(item) or {}).get("sheetDetail")} for item in event["risks"][:4]]
+        if section == OTHER_THEME:
+            risks = [{"label": f"Group: {name}", "name": name} for name in event["group_risks"][:4]]
         result, call = agents.draft_event_row(client, model, event_id=event["event_id"], business_area=area, owners=owners, risks=risks,
-                                              requests=[titles.get(item, item) for item in event["requests"]], sources=table)
+                                              requests=[titles.get(item, item) for item in event["requests"] if section != OTHER_THEME], sources=table, section=section)
         pool.log(actor_type="AGENT", run_id=run.run_id, **call.as_record())
         counts[result["status"]] = counts.get(result["status"], 0) + 1
         if result["status"] == "VALIDATED":
@@ -430,16 +511,19 @@ def draft_rows(pool: Pool, run: Any, *, client: Any, model: str, log: Callable[[
                 {"date": step["date"], "text": swap(step["text"]), "source_id": back.get(step["source_id"], step["source_id"])}
                 for step in result.get("sequence") or [] if isinstance(step, Mapping)
             ]
+            implications = swap(result["implications"])
             saved[event["event_id"]] = {
-                "item": result["item"], "summary": swap(result["summary"]), "implications": swap(result["implications"]),
-                "sequence": sequence, "response": result["response"],
+                "item": result["item"], "summary": swap(result["summary"]), "sequence": sequence, "response": result["response"],
+                # The Group radar's Implications column leads with the dated steps. A business-area row shows them under its summary.
+                "implications": agents.format_timeline(sequence, implications) if section is None else implications,
+                "opportunity": swap(result["opportunity"]) if result.get("opportunity") else None, "section": section,
                 "source_ids": [back[ref] for ref in result["source_ids"] if ref in back],
             }
         else:
             pool.add_qa(run.run_id, item=f"Event: {event['lead'].get('title')}", prior=None,
-                        correction="Escalating-items row withheld: the draft failed its checks twice. " + "; ".join(result["violations"][:2]),
+                        correction="Event row withheld: the draft failed its checks twice. " + "; ".join(result["violations"][:2]),
                         source_ids=list(event["signal_ids"]), origin="CHECK")
-        log(f"  EventAssessor {event['event_id'][:20]:20} {result['status']}")
+        log(f"  EventAssessor {str(section or 'GROUP')[:16]:16} {event['event_id'][:20]:20} {result['status']}")
     withheld = [event["event_id"] for event in events if event["event_id"] not in saved]
     merges = label_merges(events, saved)
     if merges:

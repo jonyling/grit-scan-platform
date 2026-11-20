@@ -15,7 +15,10 @@ from pptx.enum.shapes import MSO_CONNECTOR, MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
-from grit.report.docx_brief import implication_text, key_risk_headers, opportunity_text, priority_trend, radar_cells, radar_headers, response_lines, SCENARIO_HEADERS, SCENARIO_NOTE, scenario_cells
+from grit.report.docx_brief import (
+    SCENARIO_HEADERS, SCENARIO_NOTE, ba_headings, implication_text, opportunity_text, radar_cells, radar_headers, response_lines, response_text,
+    scenario_cells, scenario_headers,
+)
 from grit.report.notices import DISCLAIMER
 from grit.report.repetition import FirstUse
 
@@ -143,14 +146,8 @@ def _blank(deck: Any, layout: str) -> Any:
 
 
 def deck_items(brief: Mapping[str, Any]) -> list[Mapping[str, Any]]:
-    """The items the deck details: key risks and escalating themes for a business area, moved conditions for an entity
-    pack. Escalating first, then key risks, then register order."""
-    rows = brief.get("conditions") or []
-    themes = brief["meta"].get("standing_label") == "risk theme"
-    if brief["meta"].get("level") == "GROUP":
-        chosen = [row for row in rows if row.get("status") == "VALIDATED"]  # every condition with evidence this period (spec 37)
-    else:
-        chosen = [row for row in rows if row.get("full")] if themes else [row for row in rows if row["trend"] in TRENDS]
+    """The Group radar's conditions the deck details: every condition with evidence this period (spec 37), escalating first."""
+    chosen = [row for row in brief.get("conditions") or [] if row.get("status") == "VALIDATED"]
     return sorted(chosen, key=lambda row: (row["trend"] != "Escalating", row.get("tier") != "KEY", row["number"]))
 
 
@@ -234,24 +231,8 @@ def _escalation_slide(slide: Any, rows: Sequence[Mapping[str, Any]], short: str)
         _words(slide, 0.5, 6.0, 12.3, 0.3, [(f"{len(rows) - len(shown)} more in the Word brief.", 10, False, MUTED)])
 
 
-def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
-    """The executive summary in the reference deck's format: a cover, one to three summary slides, and one appendix slide per item."""
-    from grit.report.deck_template import CONTENT_LAYOUT, COVER_LAYOUT, TEMPLATE
-
-    meta, bottom = brief["meta"], brief["bottom_line"]
+def _cover(deck: Any, cover: Any, meta: Mapping[str, Any]) -> None:
     short, label = meta.get("pack_short") or meta["pack_label"], meta["pack_label"]
-    deck = Presentation(str(TEMPLATE))
-    items = deck_items(brief)
-    groups = summary_groups(items)
-    cover = _blank(deck, COVER_LAYOUT)
-    summaries = [_blank(deck, CONTENT_LAYOUT) for _ in groups]
-    elevated_rows = (brief.get("v2") or {}).get("escalating") or []
-    escalation_slide = _blank(deck, CONTENT_LAYOUT) if elevated_rows else None
-    outlook = brief.get("scenarios")
-    scenario_slide = _blank(deck, CONTENT_LAYOUT) if outlook and outlook.get("shifts") else None
-    appendix = [_blank(deck, CONTENT_LAYOUT) for _ in items]
-
-    # Cover.
     _shape(cover, 0.5, 1.1, 0.1, 1.5, GOLD)
     _words(cover, 0.75, 1.1, 9.0, 0.3, [(f"GROUP RISK & ASSURANCE   \u00b7   {short.upper()}", 13, True, EYEBROW)])
     _words(cover, 0.75, 1.4, 10.0, 1.0, [("GRIT-Scan", 54, True, INK)])
@@ -271,6 +252,28 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
         (DISCLAIMER, 10, False, MUTED),
     ])
     _notice(cover, deck)
+
+
+def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
+    """The executive summary in the reference deck's format: a cover, one to three summary slides, and one appendix slide per item."""
+    from grit.report.deck_template import CONTENT_LAYOUT, COVER_LAYOUT, TEMPLATE
+
+    if brief["meta"].get("layout") == "BA":
+        return _business_area_pptx(brief, path)
+    meta, bottom = brief["meta"], brief["bottom_line"]
+    short, label = meta.get("pack_short") or meta["pack_label"], meta["pack_label"]
+    deck = Presentation(str(TEMPLATE))
+    items = deck_items(brief)
+    groups = summary_groups(items)
+    cover = _blank(deck, COVER_LAYOUT)
+    summaries = [_blank(deck, CONTENT_LAYOUT) for _ in groups]
+    elevated_rows = (brief.get("v2") or {}).get("escalating") or []
+    escalation_slide = _blank(deck, CONTENT_LAYOUT) if elevated_rows else None
+    outlook = brief.get("scenarios")
+    scenario_slide = _blank(deck, CONTENT_LAYOUT) if outlook and outlook.get("shifts") else None
+    appendix = [_blank(deck, CONTENT_LAYOUT) for _ in items]
+
+    _cover(deck, cover, meta)
 
     shown = [row for group in groups for row in group]
     overflow = [row for row in items if row not in shown]
@@ -415,10 +418,7 @@ def _sheet(workbook: Workbook, title: str, headers: Sequence[str], rows: Sequenc
     sheet.auto_filter.ref = sheet.dimensions
 
 
-def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], path: Path) -> Path:
-    """signals: routed_signals() rows for this reader, shown and hidden, so a reviewer can see what was cut and why."""
-    workbook = Workbook()
-    workbook.remove(workbook.active)
+def _signals_sheet(workbook: Workbook, signals: Sequence[Mapping[str, Any]]) -> None:
     _sheet(
         workbook, "Signals",
         ("Shown", "Priority", "Tier", "Rung", "RED", "Title", "Outlet", "Published", "Outlets", "Conditions", "Named items", "Risk register", "Harm verdict", "Evidence", "Why", "Not shown because", "URL", "Signal id"),
@@ -437,6 +437,15 @@ def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], 
         ],
         (7, 8, 6, 13, 6, 60, 22, 20, 8, 16, 24, 40, 18, 10, 50, 30, 40, 22),
     )
+
+
+def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], path: Path) -> Path:
+    """signals: routed_signals() rows for this reader, shown and hidden, so a reviewer can see what was cut and why."""
+    if brief["meta"].get("layout") == "BA":
+        return business_area_xlsx(brief, signals, path)
+    workbook = Workbook()
+    workbook.remove(workbook.active)
+    _signals_sheet(workbook, signals)
     _sheet(
         workbook, "Standing items", ("#", "Item", "Tier", "Trend", "Confidence", "Status", "Basis", "Implication"),
         [
@@ -446,27 +455,10 @@ def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], 
         (4, 40, 14, 12, 12, 14, 100, 60),
     )
     full = [row for row in brief.get("conditions") or [] if row.get("full")]
-    if full and brief["meta"].get("level") == "GROUP":
+    if full:
         options = any(row.get("options") for row in full) or "RESPONSE_OPTIONS" in (brief["meta"].get("sections") or [])
         rows = [["\n".join(lines) for lines in radar_cells(row, options=options)] for row in full]
         _sheet(workbook, "Group radar", radar_headers(options=options), rows, (60, 40, 70, 24, 50, 70, 22) if options else (60, 40, 70, 24, 50, 22))
-    elif full:
-        options = any(row.get("options") for row in full) or "RESPONSE_OPTIONS" in (brief["meta"].get("sections") or [])
-        rows = []
-        for row in full:
-            refs = row.get("sources") or []
-            values = [
-                f"{row['number']}. {row['name']}\n{row['development']}",
-                "\n".join(f"{number}. {ref['outlet']}: {ref.get('title') or ''} {ref.get('url') or ''}".strip() for number, ref in enumerate(refs, start=1)),
-                "\n".join(f"{number}. {ref.get('when') or ref.get('date') or 'Date not stated'}" for number, ref in enumerate(refs, start=1)),
-                implication_text(row),
-            ]
-            if options:
-                values.append("\n".join(f"\u2022 {option} ({detail})" for option, detail in response_lines(row)))
-            values.append("\n".join(priority_trend(row)))
-            rows.append(values)
-        widths = (60, 40, 22, 50, 70, 22) if options else (70, 45, 22, 60, 22)
-        _sheet(workbook, "Key risks", key_risk_headers(brief["meta"], options=options), rows, widths)
     outlook = brief.get("scenarios") or {}
     if outlook.get("shifts"):
         _sheet(workbook, "Scenario outlook", SCENARIO_HEADERS, [["\n".join(lines) for lines in scenario_cells(reading)] for reading in outlook["shifts"]], (50, 40, 90, 60, 60, 60))
@@ -480,11 +472,6 @@ def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], 
         _sheet(workbook, "Risk links", ("Group risk", "BA risks", "LOB risks", "Status"),
                [(f"{row['group_risk']} {row['name']}".strip(), "; ".join(f"{item['id']} {item['name']}" for item in row["ba"]), "; ".join(item["name"] for item in row["lob"]), row["status"]) for row in outlook["risk_links"]],
                (40, 50, 30, 14))
-    if brief.get("management_requests"):
-        _sheet(
-            workbook, "Management requests", ("Request", "Status", "Source", "Signals this week"),
-            [(row["title"], row["status"], row["source"] or row["requested_by"], "; ".join(f"{item['title']} ({item['url']})" for item in row["signals"])) for row in brief["management_requests"]], (50, 12, 30, 100),
-        )
     named = [("Project", item) for group in brief.get("projects") or [] for item in group["items"]]
     named += [("Entity", item) for group in brief.get("entities") or [] for item in group["items"]]
     named += [("Competitor", item) for item in brief.get("competitors") or []]
@@ -492,6 +479,113 @@ def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], 
     _sheet(workbook, "Named items", ("Type", "Item", "Status", "This week"), [(kind, item["name"], item["status"], item["text"]["plain"] if item["text"] else "No new item found") for kind, item in named], (10, 40, 16, 100))
     _sheet(workbook, "Watchpoints", ("Watchpoint", "Status", "Quiet cycles", "Detail", "This week"), [(row["title"], row["status"], row["cycles"], row["detail"], row["update"]["plain"] if row["update"] else "") for row in brief.get("watchpoints") or []], (40, 12, 12, 60, 60))
     _sheet(workbook, "QA log", ("Item", "Prior", "Correction", "Origin"), [(row["item"], row["prior"], row["correction"]["plain"], row["origin"]) for row in brief.get("qa") or []], (40, 50, 80, 10))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    workbook.save(str(path))
+    return path
+
+
+# Business-area layout (Wilson, 19 November 2026) ---------------------------------------------------------------------
+
+SECTION_SLIDE_ROWS = 4
+
+
+def section_cells(row: Mapping[str, Any]) -> list[str]:
+    """One business-area row as plain text, per column after "#": item and risk, summary, impact and opportunity,
+    response with its owner, and sources."""
+    impact = (row.get("impact") or {}).get("plain") or "Not established from the cited sources."
+    if row.get("opportunity"):
+        impact += f" Opportunity: {row['opportunity']['plain']}"
+    return [f"{row['band']} {row['item']}\n[{row['risk']}]", (row.get("summary") or {}).get("plain") or "", impact,
+            "\n".join(response_text(row)), ", ".join(dict.fromkeys(str(ref.get("outlet")) for ref in row.get("sources") or []))]
+
+
+def _section_slide(slide: Any, title: str, rows: Sequence[Mapping[str, Any]], page: int, pages: int) -> None:
+    from pptx.util import Pt as PptPt
+
+    eyebrow = title.upper() + (f"  \u00b7  {page} OF {pages}" if pages > 1 else "") + "  \u00b7  GRIT-SCAN"
+    _words(slide, 0.5, 0.22, 12.3, 0.28, [(eyebrow, 13, True, EYEBROW)])
+    _words(slide, 0.5, 0.5, 12.3, 0.45, [(title, 22, True, INK)])
+    table = slide.shapes.add_table(len(rows) + 1, 4, Inches(0.5), Inches(1.15), Inches(12.33), Inches(0.4 + 1.1 * len(rows))).table
+    for column, width in enumerate((2.4, 3.7, 3.4, 2.83)):
+        table.columns[column].width = Inches(width)
+    for column, text in enumerate(("Item and Risk", "Summary", "Potential Impact/Opportunities", "Proposed Response (Owner)")):
+        cell = table.cell(0, column)
+        cell.text = text
+        cell.text_frame.paragraphs[0].runs[0].font.size = PptPt(11)
+        cell.text_frame.paragraphs[0].runs[0].font.bold = True
+    for number, row in enumerate(rows, start=1):
+        item, summary, impact, response, _sources = section_cells(row)
+        for column, text in enumerate((item, whole_sentences(summary, 330), whole_sentences(impact, 300), whole_sentences(response, 220))):
+            cell = table.cell(number, column)
+            cell.text = text
+            for paragraph in cell.text_frame.paragraphs:
+                for run in paragraph.runs:
+                    run.font.size = PptPt(9.5)
+
+
+def _business_area_pptx(brief: Mapping[str, Any], path: Path) -> Path:
+    """The business-area deck: a cover, the summary, one table slide per section with items, and the scenario outlook."""
+    from grit.report.deck_template import CONTENT_LAYOUT, COVER_LAYOUT, TEMPLATE
+
+    meta, bottom = brief["meta"], brief["bottom_line"]
+    deck = Presentation(str(TEMPLATE))
+    _cover(deck, _blank(deck, COVER_LAYOUT), meta)
+    summary = _blank(deck, CONTENT_LAYOUT)
+    _words(summary, 0.5, 0.22, 8.0, 0.28, [("SUMMARY  \u00b7  GRIT-SCAN", 13, True, EYEBROW)])
+    title = f"{meta['pack_label']} \u2014 Weekly Risk Scan"
+    _words(summary, 0.5, 0.48, 12.3, 0.55, [(title, 28 if len(title) <= 40 else 22, True, INK)])
+    _words(summary, 0.5, 1.05, 12.3, 0.28, [(f"Scan window: {meta['window']}   \u00b7   Prepared for {meta['prepared_for']}", 12, False, MUTED)])
+    _rule(summary, 1.42)
+    _shape(summary, 0.5, 1.6, 12.33, 3.0, AMBER_FILL)
+    _words(summary, 0.75, 1.7, 11.8, 2.8, [(whole_sentences(bottom["text"], 900), 14, False, INK)], middle=True)
+    sections = brief["v2"]["sections"]
+    counts = [f"{title.split('. ', 1)[-1]}: {len(sections.get(key) or [])}" for _level, title, key in ba_headings(brief) if key]
+    _words(summary, 0.5, 4.8, 12.3, 0.5, [("Items this week \u2014 " + "   \u00b7   ".join(counts), 12, True, BODY)])
+    _notice(summary, deck)
+    for _level, title, key in ba_headings(brief):
+        rows = list(sections.get(key) or []) if key else []
+        pages = [rows[start:start + SECTION_SLIDE_ROWS] for start in range(0, len(rows), SECTION_SLIDE_ROWS)]
+        for page, chunk in enumerate(pages, start=1):
+            slide = _blank(deck, CONTENT_LAYOUT)
+            _section_slide(slide, title.split(". ", 1)[-1], chunk, page, len(pages))
+            _notice(slide, deck)
+    outlook = brief.get("scenarios")
+    if outlook and outlook.get("shifts"):
+        slide = _blank(deck, CONTENT_LAYOUT)
+        _scenario_slide(slide, outlook)
+        _notice(slide, deck)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    deck.save(str(path))
+    return path
+
+
+def business_area_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], path: Path) -> Path:
+    """One sheet per table of the business-area report, the source list, and the reviewer's signal list."""
+    workbook = Workbook()
+    workbook.remove(workbook.active)
+    v2 = brief["v2"]
+    for _level, title, key in ba_headings(brief):
+        if key:
+            rows = [[number, *section_cells(row)] for number, row in enumerate(v2["sections"].get(key) or [], start=1)]
+            _sheet(workbook, title.split(". ", 1)[-1].replace("/", "-")[:31], ("#", "Item and Risk", "Summary", "Potential Impact/Opportunities",
+                   "Proposed Response/Management Consideration (Owner)", "Sources"), rows, (4, 40, 80, 70, 50, 30))
+    _sheet(workbook, "Look-ahead", ("Date", "Event, as the source states it", f"Relevance to {v2['short']}", "Sources"),
+           [(row["date"], row["event"], row["relevance"] or "Linked by the scan", "; ".join(f"{ref['outlet']} {ref.get('url') or ''}".strip() for ref in row.get("sources") or []))
+            for row in v2["look_ahead"]], (12, 90, 30, 60))
+    outlook = brief.get("scenarios") or {}
+    if outlook.get("shifts"):
+        _sheet(workbook, "Scenario outlook", scenario_headers(v2["short"]), [["\n".join(lines) for lines in scenario_cells(reading)] for reading in outlook["shifts"]], (50, 40, 90, 60, 60, 60))
+    _sheet(workbook, "Jurisdictions", ("Jurisdiction", f"{v2['short']} entities", "In-window finding", "Trend"),
+           [(row["country"], "; ".join(row["entities"]) + (f"; and {row['more_entities']} more" if row["more_entities"] else ""), row["finding"], row["trend"]) for row in v2["jurisdictions"]],
+           (16, 60, 80, 8))
+    _sheet(workbook, "Named watch", ("Name", "Type", "This week", "Proposed Response from Lessons Learnt"),
+           [(row["name"], row["type"], (row["text"] or {}).get("plain") or "", row.get("lesson") or "Not drafted.") for row in v2["watch"]], (40, 12, 90, 60))
+    refs = {ref["signal_id"]: ref for rows in v2["sections"].values() for row in rows for ref in row.get("sources") or []}
+    refs |= {ref["signal_id"]: ref for row in [*v2["look_ahead"], *v2["jurisdictions"]] for ref in row.get("sources") or []}
+    _sheet(workbook, "Sources", ("Outlet", "Title", "Date", "Tier", "URL"),
+           [(ref["outlet"], ref.get("title") or "", ref.get("date") or "", (v2.get("tiers") or {}).get(key, "T4"), ref.get("url") or "") for key, ref in refs.items()],
+           (24, 70, 14, 10, 60))
+    _signals_sheet(workbook, signals)
     path.parent.mkdir(parents=True, exist_ok=True)
     workbook.save(str(path))
     return path

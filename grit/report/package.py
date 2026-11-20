@@ -1,6 +1,6 @@
 """Write one reader's weekly pack and put it into review.
 
-For each format in the profile (docx, pptx, xlsx), plus Markdown and the JSON brief model, the files go to
+For each format in the profile (docx, pptx, xlsx), plus Markdown and the JSON brief model for the Group radar, the files go to
 `output/runs/RUN_ID/PROFILE_ID/vN/`. Each package version has its own folder, so an approved version's files never change. The
 package then enters the governed workflow as PENDING_REVIEW. An unchanged brief reuses the version already pending.
 A changed brief needs the pending version returned for rework first. `ReviewGate()` is the only way to return it.
@@ -69,9 +69,11 @@ def write_pack(pool: Pool, run_id: str, profile: Profile, *, folder: Path | None
         files["pptx"] = str(render_pptx(brief, folder / f"{stem}.pptx"))
     if "xlsx" in formats:
         files["xlsx"] = str(render_xlsx(brief, snapshot["routed"] if snapshot else routed_signals(pool, run_id, profile), folder / f"{stem}.xlsx"))
-    (folder / f"{stem}.md").write_text(render_markdown(brief), encoding="utf-8")
-    (folder / f"{stem}.brief.json").write_text(json.dumps(brief, indent=2, ensure_ascii=False, default=str) + "\n", encoding="utf-8")
-    files["md"] = str(folder / f"{stem}.md")
+    if brief["meta"].get("layout") != "BA":
+        # A business-area pack is Word, PowerPoint and Excel only. The dashboard renders its Markdown from the brief model.
+        (folder / f"{stem}.md").write_text(render_markdown(brief), encoding="utf-8")
+        (folder / f"{stem}.brief.json").write_text(json.dumps(brief, indent=2, ensure_ascii=False, default=str) + "\n", encoding="utf-8")
+        files["md"] = str(folder / f"{stem}.md")
     result: dict[str, Any] = {"profile": profile.profile_id, "files": files, "content_hash": brief["content_hash"], "members": len(brief["membership"])}
     from grit.report.withheld import leaks
 

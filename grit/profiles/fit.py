@@ -155,11 +155,20 @@ def fit_report(pool: Pool, run_id: str, profile: Any) -> str:
     lines.append("")
     # Gaps
     lines += ["## Gaps", ""]
-    empty = [row["name"] for row in brief["conditions"] if row.get("status") != "VALIDATED"]
-    lines.append(f"- Standing items without a validated assessment: {', '.join(empty) if empty else 'none'}.")
-    named = [item for group in brief["projects"] + brief["entities"] for item in group["items"]] + brief["suppliers"] + brief["customers"]
-    quiet = [item["name"] for item in named if not item.get("text")]
-    lines.append(f"- Named items with nothing found: {len(quiet)} of {len(named)}.")
+    if brief["meta"].get("layout") == "BA":
+        # A business-area brief is event-led: say which tables had no row, and how many named items had news.
+        from grit.report.brief import SECTION_TITLES
+
+        empty = [SECTION_TITLES[key] for key, table in brief["v2"]["sections"].items() if not table]
+        lines.append(f"- Tables with no item this week: {', '.join(empty) if empty else 'none'}.")
+        checks = pool.exposure_checks(run_id)
+        lines.append(f"- Named items with nothing found: {sum(1 for row in checks if not row.get('summary'))} of {len(checks)}.")
+    else:
+        empty = [row["name"] for row in brief["conditions"] if row.get("status") != "VALIDATED"]
+        lines.append(f"- Standing items without a validated assessment: {', '.join(empty) if empty else 'none'}.")
+        named = [item for group in brief["projects"] + brief["entities"] for item in group["items"]] + brief["suppliers"] + brief["customers"]
+        quiet = [item["name"] for item in named if not item.get("text")]
+        lines.append(f"- Named items with nothing found: {len(quiet)} of {len(named)}.")
     if reader is not None:
         shown_text = [f"{row.get('title') or ''} {str(row.get('text') or '')[:400]}" for row in rows if row["shown"]]
         for question in _section_lines(reader.body, "standing questions"):

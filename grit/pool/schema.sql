@@ -267,6 +267,7 @@ CREATE TABLE IF NOT EXISTS exposure_checks (
     signal_ids_json TEXT NOT NULL DEFAULT '[]',
     summary         TEXT,
     status          TEXT NOT NULL,            -- FOUND, NOTHING_FOUND, WITHHELD
+    lesson          TEXT,                     -- the Reporter's lessons-learnt response, for the named watch
     PRIMARY KEY (run_id, item_type, item_id)
 );
 

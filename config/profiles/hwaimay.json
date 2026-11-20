@@ -29,21 +29,6 @@
       "title": "GRIT-Scan: Urban Solutions",
       "subtitle": "Business Area Weekly Risk Scan",
       "preparedFor": "R&A Business Partner, Urban Solutions",
-      "sections": [
-        "BOTTOM_LINE",
-        "CONDITIONS",
-        "MANAGEMENT_REQUESTS",
-        "ENTITY_PACKS",
-        "ENTITIES",
-        "CUSTOMERS",
-        "SUPPLIERS",
-        "COMPETITORS",
-        "PRIORITY_FINDINGS",
-        "OTHER_SIGNALS",
-        "QA_LOG",
-        "WATCHPOINTS"
-      ],
-      "maxFindings": 12,
       "formats": [
         "docx",
         "pptx",
@@ -54,19 +39,6 @@
       "title": "GRIT-Scan: URS Taiwan",
       "subtitle": "Geopolitical Risk & Infrastructure Tracker — Weekly Scan",
       "preparedFor": "R&A Business Partner, Urban Solutions",
-      "sections": [
-        "BOTTOM_LINE",
-        "ORDER_BOOK",
-        "PROJECTS",
-        "SUPPLIERS",
-        "CUSTOMERS",
-        "HAZARDS",
-        "CONDITIONS",
-        "PRIORITY_FINDINGS",
-        "QA_LOG",
-        "WATCHPOINTS"
-      ],
-      "maxFindings": 12,
       "formats": [
         "docx",
         "pptx",

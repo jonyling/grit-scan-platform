@@ -23,21 +23,6 @@
       "title": "GRIT-Scan: Digital Systems & Cyber",
       "subtitle": "Weekly risk scan, business-area level",
       "preparedFor": "Goh Eng Choon, President, Cybersecurity",
-      "sections": [
-        "BOTTOM_LINE",
-        "CONDITIONS",
-        "MANAGEMENT_REQUESTS",
-        "ENTITIES",
-        "CUSTOMERS",
-        "SUPPLIERS",
-        "COMPETITORS",
-        "PRIORITY_FINDINGS",
-        "OTHER_SIGNALS",
-        "QA_LOG",
-        "WATCHPOINTS",
-        "RESPONSE_OPTIONS"
-      ],
-      "maxFindings": 8,
       "formats": [
         "docx",
         "xlsx"

@@ -87,7 +87,7 @@ def _brief(claim: str) -> dict:
     rows = []
     for number in range(1, 6):
         rows.append({
-            "number": number, "name": f"Theme {number}", "group": "operations", "trend": "Escalating", "tier": "KEY",
+            "number": number, "name": f"Theme {number}", "group": "operations", "trend": "Escalating", "tier": "KEY", "status": "VALIDATED",
             "confidence": "Not established", "full": True, "development": f"{claim} Item {number} adds its own sentence about the week.",
             "implication": {"runs": [{"text": f"Item {number} can affect the business area if it continues."}], "plain": "x"},
             "signal_ids": [], "links": [], "sources": [], "options": [],
@@ -95,7 +95,7 @@ def _brief(claim: str) -> dict:
     return {
         "meta": {
             "title": "GRIT-Scan: DS&C", "subtitle": "Weekly scan", "grounded_in": ["open sources"],
-            "pack_label": "Digital Systems & Cyber", "pack_short": "DS&C", "level": "BA", "standing_label": "risk theme",
+            "pack_label": "Digital Systems & Cyber", "pack_short": "DS&C", "level": "GROUP", "standing_label": "risk theme",
             "run_id": "run-d", "window": "1 October 2026", "prepared_for": "Reader", "reader": "Reader",
             "sections": ["WATCHPOINTS"], "show_review_status": True,
         },

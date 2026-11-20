@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 from typing import Any, Mapping, Sequence
-from urllib.parse import urlparse
 
 from docx import Document
 from docx.enum.section import WD_ORIENT, WD_SECTION
@@ -30,20 +29,9 @@ _REGISTER: dict[str, Any] | None = None
 _WHOLE: set[Any] = set()
 # Defaults. A pack's scan plan can rename any section through sectionTitles.
 SECTION_TITLES = {
-    "ORDER_BOOK": "Order-book baseline and context",
-    "PROJECTS": "Direct disruption to named projects",
-    "MANAGEMENT_REQUESTS": "Management-requested topics",
-    "ENTITY_PACKS": "Entity reader packs",
-    "ENTITIES": "STE entities",
-    "SUPPLIERS": "Disruption to named suppliers",
-    "CUSTOMERS": "Customer relationships and upcoming award decisions",
-    "COMPETITORS": "Competitor and industry watch",
-    "HAZARDS": "Natural disasters and public health",
     "CONDITIONS": "Findings mapped to the standing items",
     "SCENARIOS": "Scenario outlook: best, medium and worst case for STE",
     "PRIORITY_FINDINGS": "Priority findings for this reader",
-    "OTHER_SIGNALS": "Other signals in this reader's scope",
-    "QA_LOG": "QA and correction log",
     "WATCHPOINTS": "Bottom line and watchpoints",
 }
 
@@ -60,9 +48,6 @@ def section_title(meta: Mapping[str, Any], key: str) -> str:
 NOTHING = "No new item found this week in the checked sources."
 
 # Format v2 report layout (URS methodology, sections 15, 22 and 24) -------------------------------------------------------
-# The scan is wide, but the report is narrow. Audit material goes to an appendix after the source register.
-V2_APPENDIX = frozenset({"QA_LOG", "ENTITIES", "OTHER_SIGNALS"})
-APPENDIX_LETTERS = "ABCDEFGH"
 POSTURE_TITLE = "Recommended action posture"
 NO_ASK = "Nothing new this week independently warrants escalation before the next weekly cycle."
 FOLLOW_UPS_LABEL = "Follow-ups by owner, without escalation. "
@@ -78,25 +63,23 @@ def v2_title(key: str, meta: Mapping[str, Any]) -> str:
     return "Watchpoints" if key == "WATCHPOINTS" else section_title(meta, key)
 
 
-def section_plan(brief: Mapping[str, Any], renders: Any) -> tuple[list[tuple[str, str, Any]], list[tuple[str, str, Any]]]:
-    """The body sections and the appendix sections that render, in reading order, as (key, title, renderer).
+def section_plan(brief: Mapping[str, Any], renders: Any) -> list[tuple[str, str, Any]]:
+    """The Group radar's sections that render, in reading order, as (key, title, renderer).
     renders(key, title, renderer) says whether a section has content."""
     meta, v2 = brief["meta"], brief.get("v2")
     plan: list[tuple[str, str, Any]] = []
-    appendix: list[tuple[str, str, Any]] = []
     if v2:
         plan += [(title, title, renderer) for title, renderer in V2_SECTIONS]
     for key in meta["sections"]:
-        if key == "BOTTOM_LINE" or (v2 and key in V2_REPLACES):
+        if key == "BOTTOM_LINE":
             continue
         renderer = _v2_watchpoints if v2 and key == "WATCHPOINTS" else _SECTIONS.get(key)
         if renderer is None:
             continue
-        (appendix if v2 and key in V2_APPENDIX else plan).append((key, v2_title(key, meta) if v2 else section_title(meta, key), renderer))
+        plan.append((key, v2_title(key, meta) if v2 else section_title(meta, key), renderer))
     if v2:
         plan += [(title, title, renderer) for title, renderer in V2_CLOSING]
-    keep = lambda rows: [row for row in rows if renders(*row)]  # noqa: E731
-    return keep(plan), keep(appendix)
+    return [row for row in plan if renders(*row)]
 
 
 def posture_pointer(plan: Sequence[tuple[str, str, Any]], first: int) -> str:
@@ -173,17 +156,6 @@ def _hyperlink(paragraph: Any, text: str, url: str, *, size: float | None = None
     paragraph._p.append(link)
 
 
-def _viable_url(url: Any) -> str | None:
-    """The URL when a reader can open it: http or https, a dotted host, and no whitespace."""
-    text = str(url or "").strip()
-    if not text or any(char.isspace() for char in text):
-        return None
-    parts = urlparse(text)
-    if parts.scheme not in {"http", "https"} or "." not in (parts.hostname or ""):
-        return None
-    return text
-
-
 def _number(ref: Mapping[str, Any]) -> str:
     """The source's number in the register, given on first use."""
     numbers, refs = _REGISTER["numbers"], _REGISTER["refs"]
@@ -209,7 +181,7 @@ def _source_link(paragraph: Any, text: str, ref: Mapping[str, Any], *, size: flo
 
 
 def _marks(refs: Sequence[Mapping[str, Any]]) -> str:
-    return ", ".join(_number(ref) for ref in refs) if _REGISTER is not None else ""
+    return ", ".join(dict.fromkeys(_number(ref) for ref in refs)) if _REGISTER is not None else ""
 
 
 def _runs(paragraph: Any, rendered: Mapping[str, Any] | None, *, size: float | None = None, fallback: str = NOTHING) -> None:
@@ -269,11 +241,7 @@ def _row(table: Any, values: Sequence[Any], widths: Sequence[float]) -> None:
             run.font.size = Pt(9)
 
 
-def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
-    from grit.report.script import latin_copy
-
-    brief = latin_copy(brief)
-    meta = brief["meta"]
+def _document() -> Any:
     document = Document()
     for section in document.sections:
         section.left_margin = section.right_margin = Cm(2.0)
@@ -281,7 +249,10 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
     normal = document.styles["Normal"]
     normal.font.name = "Calibri"
     normal.font.size = Pt(11)
+    return document
 
+
+def _masthead(document: Any, meta: Mapping[str, Any]) -> None:
     title = document.add_paragraph()
     run = title.add_run(meta["title"])
     run.bold, run.font.size, run.font.color.rgb = True, Pt(22), NAVY
@@ -299,6 +270,17 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
     notice = document.add_paragraph()
     run = notice.add_run(DISCLAIMER)
     run.italic, run.font.size, run.font.color.rgb = True, Pt(9), LIGHT
+
+
+def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
+    from grit.report.script import latin_copy
+
+    brief = latin_copy(brief)
+    if brief["meta"].get("layout") == "BA":
+        return _render_business_area(brief, path)
+    meta = brief["meta"]
+    document = _document()
+    _masthead(document, meta)
 
     global _REGISTER
     v2 = brief.get("v2")
@@ -318,7 +300,7 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
             run = line.add_run("  " + " ".join(detail))
             run.font.size = Pt(9.5)
 
-    plan, appendix = section_plan(brief, lambda key, title, renderer: renderer(document, brief, title, dry=True))
+    plan = section_plan(brief, lambda key, title, renderer: renderer(document, brief, title, dry=True))
     number = 1 if v2 else 0
     bottom = brief["bottom_line"]
     box = document.add_table(rows=1, cols=1)
@@ -347,8 +329,6 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
     _method(document, brief)
     if v2:
         _source_register(document, brief, f"{number}. Source register")
-    for letter, (key, title, renderer) in zip(APPENDIX_LETTERS, appendix):
-        renderer(document, brief, f"Appendix {letter}. {title}", dry=False)
     _REGISTER = None
     _apply_first_use(document)
     _WHOLE.clear()
@@ -356,86 +336,6 @@ def render_docx(brief: Mapping[str, Any], path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     document.save(str(path))
     return path
-
-
-def _order_book(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
-    book = brief.get("order_book")
-    if not book:
-        return False
-    if dry:
-        return True
-    _heading(document, title)
-    document.add_paragraph(f"Per the {book['source']}, the internal materiality anchors for Taiwan rail concentration risk are:")
-    for anchor in book.get("anchors") or []:
-        text = f"{anchor['label']}: {anchor['value']}" + (f" — {anchor['note']}" if anchor.get("note") else "")
-        document.add_paragraph(text, style="List Bullet")
-    if book.get("contracts"):
-        consortium = f" ({book['consortium']})" if book.get("consortium") else ""
-        document.add_paragraph(f"Confirmed existing turnkey contracts{consortium}:")
-        for contract in book["contracts"]:
-            awarded = f" (awarded {contract['awarded']})" if contract.get("awarded") else ""
-            document.add_paragraph(f"{contract['label']} — {contract['value']}{awarded}", style="List Bullet")
-    note = document.add_paragraph()
-    run = note.add_run(
-        "These figures anchor materiality for any finding below. A development is escalated only where it credibly connects to one of these named lines, "
-        f"suppliers, or figures. Register status: {book.get('status')}; a named BA owner must confirm the figures."
-    )
-    run.font.size = Pt(9)
-    return True
-
-
-def _projects(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
-    if dry:
-        return bool(brief.get("projects"))
-    _heading(document, title)
-    for group in brief["projects"]:
-        _heading(document, group["heading"], level=3)
-        found = [item for item in group["items"] if item["text"]]
-        for item in found:
-            _bullet(document, f"{item['name']} ({item['tier']})", item["text"])
-        quiet = [item["name"] for item in group["items"] if not item["text"]]
-        if quiet:
-            document.add_paragraph(f"{', '.join(quiet)}: no new disruption found this week.", style="List Bullet")
-    return True
-
-
-def _named(document: Any, items: Sequence[Mapping[str, Any]], title: str, intro: str) -> None:
-    _heading(document, title)
-    document.add_paragraph(intro)
-    found = [item for item in items if item["text"]]
-    for item in found:
-        _bullet(document, item["name"], item["text"])
-    quiet = [item["name"] for item in items if not item["text"]]
-    if quiet:
-        document.add_paragraph(f"{', '.join(quiet)}: nil adverse change found this week.", style="List Bullet")
-
-
-def _suppliers(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
-    if dry:
-        return bool(brief.get("suppliers"))
-    names = ", ".join(item["name"] for item in brief["suppliers"])
-    _named(document, brief["suppliers"], title, f"Checked individually against the reader pack's supplier list ({names}).")
-    note = document.add_paragraph()
-    run = note.add_run("Smaller suppliers are thinly covered in English-language press. Cross-check Sphera supplier-risk alerts directly.")
-    run.font.size = Pt(9)
-    return True
-
-
-def _customers(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
-    if dry:
-        return bool(brief.get("customers"))
-    _named(document, brief["customers"], title, "Checked for award decisions, payment, corruption or fraud news, and operating incidents.")
-    return True
-
-
-def _hazards(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
-    if dry:
-        return bool(brief.get("hazards"))
-    _heading(document, title)
-    for item in brief["hazards"]:
-        _heading(document, item["name"], level=3)
-        _bullet(document, None, item["text"], fallback="No item found this week that places this hazard near a project site or warehouse.")
-    return True
 
 
 OPTIONS_NOTE = "Proposed by GRIT-Scan for management consideration. Not reviewed advice."
@@ -453,13 +353,6 @@ def option_line(option: Mapping[str, Any]) -> str:
     if option.get("trigger"):
         parts.append(f"Trigger: {option['trigger']}")
     return ". ".join(parts) + "."
-
-
-def key_risk_headers(meta: Mapping[str, Any], *, options: bool) -> tuple[str, ...]:
-    """The key-risk table's columns, in the R&A reviewer's wording. The response column needs RESPONSE_OPTIONS in the profile."""
-    short = meta.get("pack_short") or meta.get("pack_label") or "the business area"
-    headers = ("News/Developments", "News/Information Source", "Date and Time", f"Relevance/Potential Impact to {short}")
-    return headers + (("Proposed Response/Management Consideration",) if options else ()) + ("Priority/Trend",)
 
 
 def priority_trend(row: Mapping[str, Any]) -> list[str]:
@@ -527,43 +420,6 @@ def _orient(document: Any, landscape: bool) -> None:
     section.page_width, section.page_height = width, height
 
 
-def _key_risk_table(document: Any, brief: Mapping[str, Any], rows: Sequence[Mapping[str, Any]]) -> None:
-    options = any(row.get("options") for row in rows) or "RESPONSE_OPTIONS" in (brief["meta"].get("sections") or [])
-    headers = key_risk_headers(brief["meta"], options=options)
-    widths = (5.6, 3.6, 2.6, 5.0, 6.0, 2.9) if options else (7.4, 4.2, 2.8, 7.6, 3.7)
-    table = _table(document, headers, widths)
-    for row in rows:
-        cells = table.add_row().cells
-        for cell, width in zip(cells, widths):
-            cell.width = Cm(width)
-        _cell_lines(cells[0], [f"{row['number']}. {row['name']}", row["development"]], bold_first=True)
-        for number, ref in enumerate(row.get("sources") or [], start=1):
-            paragraph = cells[1].paragraphs[0] if number == 1 else cells[1].add_paragraph()
-            paragraph.add_run(f"{number}. ").font.size = Pt(8.5)
-            _source_link(paragraph, str(ref["outlet"]), ref, size=8.5)
-            if ref.get("title"):
-                title = paragraph.add_run(f": {str(ref['title'])[:90]}")
-                title.font.size, title.italic = Pt(8), True
-        if not row.get("sources"):
-            _cell_lines(cells[1], ["No source this week."])
-        _cell_lines(cells[2], [f"{number}. {ref.get('when') or ref.get('date') or 'Date not stated'}" for number, ref in enumerate(row.get("sources") or [], start=1)] or ["Not applicable."])
-        _cell_lines(cells[3], [implication_text(row)])
-        if options:
-            lines = response_lines(row)
-            for number, (option, detail) in enumerate(lines):
-                paragraph = cells[4].paragraphs[0] if number == 0 else cells[4].add_paragraph()
-                paragraph.add_run(f"\u2022 {option} ").font.size = Pt(8.5)
-                meta = paragraph.add_run(detail)
-                meta.font.size, meta.font.color.rgb = Pt(7.5), GREY
-            if not lines:
-                _cell_lines(cells[4], ["No option proposed: the risk is not escalating and cites no material source." if row.get("tier") == "KEY" else "Options are proposed for key risks only."])
-        _cell_lines(cells[-1], priority_trend(row))
-    if options:
-        note = document.add_paragraph()
-        run = note.add_run(OPTIONS_NOTE)
-        run.italic, run.font.size, run.font.color.rgb = True, Pt(8), LIGHT
-
-
 def _radar_table(document: Any, brief: Mapping[str, Any], rows: Sequence[Mapping[str, Any]]) -> None:
     options = any(row.get("options") for row in rows) or "RESPONSE_OPTIONS" in (brief["meta"].get("sections") or [])
     headers = radar_headers(options=options)
@@ -583,126 +439,13 @@ def _radar_table(document: Any, brief: Mapping[str, Any], rows: Sequence[Mapping
 
 
 def _conditions(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    """The Group Strategic Radar's conditions table (spec 37)."""
     if dry:
         return bool(brief.get("conditions"))
-    if brief["meta"].get("level") == "GROUP":
-        _orient(document, landscape=True)
-        _heading(document, title)
-        _radar_table(document, brief, brief["conditions"])
-        _orient(document, landscape=False)
-        return True
-    prior = brief["meta"].get("prior_run_date")
-    widths = (0.8, 3.6, 2.2, 2.0, 8.6)
-    themes = brief["meta"].get("standing_label") == "risk theme"
-    full = [row for row in brief["conditions"] if row.get("full")] if themes else []
-    rest = [row for row in brief["conditions"] if row not in full]
-    if full:
-        _orient(document, landscape=True)
+    _orient(document, landscape=True)
     _heading(document, title)
-    if full:
-        _heading(document, "Key risks" if all(row.get("tier") == "KEY" for row in full) else "Key risks and escalating themes", level=2)
-        _key_risk_table(document, brief, full)
-    if rest:
-        if full:
-            _heading(document, "Other risk themes", level=2)
-        label = "Risk theme" if themes else "Condition"
-        table = _table(document, ("#", label, f"Trend vs {prior}" if prior else "Trend", "Confidence", "Basis / source and date"), widths)
-        for row in rest:
-            name = f"{row['name']} ({row['group']})" if row.get("group") else row["name"]
-            if row.get("covered_by"):
-                name += f". Draws on the {row['covered_by']} entity pack."
-            _row(table, (row["number"], name, row["trend"], row["confidence"], row["basis"]), widths)
-    note = document.add_paragraph()
-    run = note.add_run("Trend is the Assessor's proposal, validated against the cited sources. Confidence is computed by rule from the cited outlets and their register ratings.")
-    run.font.size, run.font.color.rgb = Pt(8), LIGHT
-    if full:
-        _orient(document, landscape=False)
-    return True
-
-
-def _requests(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
-    rows = brief.get("management_requests") or []
-    if dry:
-        return bool(rows)
-    _heading(document, title)
-    document.add_paragraph("A signal matches a request by its approved keywords in the title or lead. A match is news priority P1 (spec 29).")
-    for row in [item for item in rows if item["status"] == "ACTIVE"]:
-        paragraph = document.add_paragraph(style="List Bullet")
-        paragraph.add_run(row["title"]).bold = True
-        paragraph.add_run(f" ({row['source'] or row['requested_by']})")
-        if not row["signals"]:
-            paragraph.add_run(": no signal matched this week.")
-            continue
-        for item in row["signals"]:
-            line = document.add_paragraph()
-            line.paragraph_format.left_indent = Cm(1.0)
-            _WHOLE.add(line._p)
-            url = _viable_url(item.get("url"))
-            if url:
-                _hyperlink(line, item["title"], url, size=10)
-                if _REGISTER is not None:
-                    line.add_run(f" [{_number(item)}]").font.size = Pt(10)
-            else:
-                _source_link(line, item["title"], item, size=10)
-            line.add_run(f" ({item['outlet']}, {item['date'] or 'date not stated'}{', ' + item['via'] if item.get('via') else ''})").font.size = Pt(10)
-    proposed = [row["title"] for row in rows if row["status"] == "PROPOSED"]
-    if proposed:
-        note = document.add_paragraph()
-        run = note.add_run("Proposed and not yet active, so not searched and no P1: " + "; ".join(proposed) + ". A reviewer activates a request on the dashboard.")
-        run.font.size = Pt(9)
-    return True
-
-
-def _entity_packs(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
-    rows = brief.get("entity_packs") or []
-    if dry:
-        return bool(rows)
-    _heading(document, title)
-    for row in rows:
-        _heading(document, row["label"], level=3)
-        if not row["run_id"]:
-            document.add_paragraph(f"No {row['label']} run on this date.")
-            continue
-        document.add_paragraph(row["bottom_line"] or "The entity pack's bottom line was withheld this week. See its brief.")
-        if row.get("moved"):
-            document.add_paragraph("Moved this week: " + "; ".join(row["moved"]) + ".", style="List Bullet")
-        note = document.add_paragraph()
-        run = note.add_run(f"The full detail is in the {row['label']} weekly scan, run {row['run_id']}.")
-        run.font.size = Pt(9)
-    return True
-
-
-def _entities(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
-    groups = brief.get("entities") or []
-    if dry:
-        return bool(groups)
-    _heading(document, title)
-    for group in groups:
-        _heading(document, group["heading"], level=3)
-        for item in [entry for entry in group["items"] if entry["text"]]:
-            _bullet(document, f"{item['name']}" + (f" ({item['lob']})" if item.get("lob") else ""), item["text"])
-        quiet = [entry["name"] for entry in group["items"] if not entry["text"]]
-        if quiet:
-            paragraph = document.add_paragraph(style="List Bullet")
-            run = paragraph.add_run(f"No new item found this week: {', '.join(quiet)}.")
-            run.font.size = Pt(10)
-    return True
-
-
-def _competitors(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
-    rows = brief.get("competitors") or []
-    if dry:
-        return True
-    _heading(document, title)
-    found = [row for row in rows if row["status"] == "FOUND"]
-    if not rows:
-        document.add_paragraph("No registered competitor was named in this week's signals. Competitor names are searched on an eight-week rotation.")
-        return True
-    for row in found:
-        _bullet(document, row["name"], row["text"])
-    passing = [row["name"] for row in rows if row["status"] != "FOUND"]
-    if passing:
-        document.add_paragraph(f"Named in passing only: {', '.join(passing)}.")
+    _radar_table(document, brief, brief["conditions"])
+    _orient(document, landscape=False)
     return True
 
 
@@ -735,37 +478,6 @@ def _findings(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool)
             lines.append(RED_LINES[item["red_status"]])
         run = detail.add_run(" ".join(lines))
         run.font.size = Pt(9)
-    return True
-
-
-def _others(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
-    if dry:
-        return bool(brief.get("other_signals"))
-    _heading(document, title)
-    for item in brief["other_signals"]:
-        paragraph = document.add_paragraph(style="List Bullet")
-        paragraph.add_run((f"[{item['priority']}] " if item['priority'] else ""))
-        _WHOLE.add(paragraph._p)
-        _source_link(paragraph, item["title"], item, size=10)
-        paragraph.add_run(f" ({item['outlet']}, {item['date'] or 'date not stated'})").font.size = Pt(10)
-    return True
-
-
-def _qa(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
-    """Per-signal QA lines and the research-coverage list: appendix only, after the source register."""
-    if dry:
-        return True
-    _heading(document, title)
-    if not brief["qa"]:
-        document.add_paragraph("The Critic raised no supported issue this week, and every draft passed its checks.")
-        return True
-    document.add_paragraph(
-        "What changed or was withheld as a direct result of this week's checks and the Critic's review, "
-        "including research-coverage notes.")
-    widths = (4.0, 5.0, 8.2)
-    table = _table(document, ("Item", "Prior version stated", "Correction after this QA pass"), widths)
-    for row in brief["qa"]:
-        _row(table, (row["item"], row["prior"] or "", row["correction"]), widths)
     return True
 
 
@@ -940,20 +652,9 @@ def _footers(document: Any) -> None:
 
 
 _SECTIONS = {
-    "ORDER_BOOK": _order_book,
-    "MANAGEMENT_REQUESTS": _requests,
-    "ENTITY_PACKS": _entity_packs,
-    "ENTITIES": _entities,
-    "COMPETITORS": _competitors,
-    "PROJECTS": _projects,
-    "SUPPLIERS": _suppliers,
-    "CUSTOMERS": _customers,
-    "HAZARDS": _hazards,
     "CONDITIONS": _conditions,
     "SCENARIOS": _scenarios,
     "PRIORITY_FINDINGS": _findings,
-    "OTHER_SIGNALS": _others,
-    "QA_LOG": _qa,
     "WATCHPOINTS": _watchpoints,
 }
 
@@ -1238,10 +939,8 @@ def _source_register(document: Any, brief: Mapping[str, Any], title: str) -> Non
             _hyperlink(paragraph, str(ref["url"]), str(ref["url"]), size=8)
 
 
-# The named watch table replaces these prose sections in a format v2 brief.
-V2_REPLACES = frozenset({"SUPPLIERS", "CUSTOMERS", "COMPETITORS"})
-# A format v2 report follows the URS methodology's order (section 15), as Wilson's report does: these sections, then the
-# reader's own sections, then V2_CLOSING, the quality check and the source register. Audit material goes to an appendix.
+# The Group radar follows the URS methodology's order (section 15): these sections, then the reader's own sections, then
+# V2_CLOSING, the quality check and the source register.
 V2_SECTIONS = (
     ("Exposure snapshot", _exposure),
     ("What changed since the last report", _changes),
@@ -1255,3 +954,132 @@ V2_CLOSING = (
     ("Named supplier, customer and competitor watch", _watch),
     (POSTURE_TITLE, _posture),
 )
+
+
+# Business-area layout (Wilson, 19 November 2026) ---------------------------------------------------------------------
+
+SECTION_HEADERS = ("#", "Item and Risk", "Summary", "Potential Impact/Opportunities", "Proposed Response/Management Consideration (Owner)", "Sources")
+SECTION_WIDTHS = (0.7, 2.3, 4.5, 5.1, 3.6, 1.4)
+NO_ITEM = "No item this week."
+WATCH_HEADERS = ("Name", "Type", "This week", "Proposed Response from Lessons Learnt")
+
+
+def ba_headings(brief: Mapping[str, Any]) -> list[tuple[int, str, str | None]]:
+    """The business-area report's body, as (heading level, title, section key or None for a heading alone)."""
+    short = brief["v2"]["short"]
+    return [
+        (1, "1. Management Focus Topics", "MANAGEMENT_FOCUS"),
+        (1, f"2. {short} Risks", None),
+        (2, "a. Key, T2 & Emerging", "REGISTER_RISK"),
+        (2, "b. Other Risk Themes", "OTHER_THEME"),
+        (1, "3. Trends/Developments", "TREND"),
+    ]
+
+
+def response_text(row: Mapping[str, Any]) -> list[str]:
+    response = row.get("response") or {}
+    return [str(response.get("action") or ""), f"Owner: {response.get('owner') or 'to assign'}."]
+
+
+def _section_table(document: Any, rows: Sequence[Mapping[str, Any]]) -> None:
+    table = _table(document, SECTION_HEADERS, SECTION_WIDTHS)
+    for number, row in enumerate(rows, start=1):
+        cells = table.add_row().cells
+        for cell, width in zip(cells, SECTION_WIDTHS):
+            cell.width = Cm(width)
+        _text_cell(cells[0], str(number))
+        _cell_lines(cells[1], [f"{row['band']} {row['item']}", f"[{row['risk']}]"], bold_first=True)
+        _runs(cells[2].paragraphs[0], row["summary"], size=8.5)
+        _runs(cells[3].paragraphs[0], row["impact"], size=8.5, fallback="Not established from the cited sources.")
+        if row.get("opportunity"):
+            paragraph = cells[3].add_paragraph()
+            label = paragraph.add_run("Opportunity: ")
+            label.bold, label.font.size = True, Pt(8.5)
+            _runs(paragraph, row["opportunity"], size=8.5)
+        _cell_lines(cells[4], response_text(row))
+        _marks_cell(cells[5], row.get("sources") or [])
+    if not rows:
+        _note(document, NO_ITEM)
+
+
+def _ba_look_ahead(document: Any, brief: Mapping[str, Any], title: str) -> None:
+    _heading(document, title)
+    rows = brief["v2"]["look_ahead"]
+    if not rows:
+        document.add_paragraph("No source linked to the business area states a dated event in the next 30 days.")
+        return
+    widths = (2.2, 9.4, 3.8, 1.7)
+    table = _table(document, ("Date", "Event, as the source states it", f"Relevance to {brief['v2']['short']}", "Sources"), widths)
+    for row in rows:
+        when = date.fromisoformat(row["date"])
+        _row(table, [f"{when.strftime('%a')} {when.day} {when.strftime('%b')}", row["event"], row["relevance"] or "Linked by the scan", _marks(row["sources"])], widths)
+    _note(document, "Dates come only from the week's sources, as stated. Nothing here is a forecast.")
+
+
+def scenario_headers(short: str) -> tuple[str, ...]:
+    return (*SCENARIO_HEADERS[:-1], f"Where {short} could gain")
+
+
+def _ba_scenarios(document: Any, brief: Mapping[str, Any], title: str) -> None:
+    outlook = brief.get("scenarios") or {}
+    _heading(document, title)
+    if not outlook.get("shifts"):
+        document.add_paragraph("No reviewed scenario register for this business area yet.")
+        return
+    widths = (3.2, 2.2, 4.2, 2.6, 2.6, 2.8)
+    table = _table(document, scenario_headers(brief["v2"]["short"]), widths)
+    for reading in outlook["shifts"]:
+        cells = table.add_row().cells
+        for cell, width, lines in zip(cells, widths, scenario_cells(reading)):
+            cell.width = Cm(width)
+            _cell_lines(cell, lines, bold_first=cell is cells[0])
+    _note(document, f"{SCENARIO_NOTE} Scenarios v{outlook['version']}, reviewed by {outlook['reviewed_by']} on {outlook['reviewed_on']}.")
+
+
+def _ba_watch(document: Any, brief: Mapping[str, Any], title: str) -> None:
+    _heading(document, title)
+    rows = brief["v2"]["watch"]
+    if not rows:
+        document.add_paragraph("No named supplier, customer or competitor had item-specific news this week.")
+        return
+    widths = (3.6, 1.8, 7.0, 5.2)
+    table = _table(document, WATCH_HEADERS, widths)
+    for row in rows:
+        _row(table, [row["name"], row["type"], row["text"], row.get("lesson") or "Not drafted."], widths)
+
+
+def _render_business_area(brief: Mapping[str, Any], path: Path) -> Path:
+    global _REGISTER
+    document = _document()
+    _masthead(document, brief["meta"])
+    _REGISTER = {"numbers": {}, "refs": {}, "tiers": brief["v2"].get("tiers") or {}}
+    box = document.add_table(rows=1, cols=1)
+    box.style = "Table Grid"
+    cell = box.rows[0].cells[0]
+    _shade(cell, BOX_FILL.get(brief["bottom_line"].get("label"), "FFF2CC"))
+    run = cell.paragraphs[0].add_run("SUMMARY")
+    run.bold, run.font.color.rgb = True, NAVY
+    cell.add_paragraph().add_run(brief["bottom_line"]["text"] or "")
+    sections = brief["v2"]["sections"]
+    for level, title, key in ba_headings(brief):
+        _heading(document, title, level=level)
+        if key:
+            _section_table(document, sections.get(key) or [])
+    _note(document, V2_NOTE)
+    _heading(document, "Appendix A")
+    _ba_look_ahead(document, brief, "1. Look-ahead: the next 30 days")
+    _ba_scenarios(document, brief, "2. Scenario outlook: best, medium and worst case")
+    if not _jurisdictions(document, brief, "3. Jurisdiction coverage", dry=True):
+        _heading(document, "3. Jurisdiction coverage")
+        document.add_paragraph("The register holds no entity with a country.")
+    else:
+        _jurisdictions(document, brief, "3. Jurisdiction coverage", dry=False)
+    _ba_watch(document, brief, "4. Named supplier, customer and competitor watch")
+    _source_register(document, brief, "Appendix B: Source Register")
+    _REGISTER = None
+    _apply_first_use(document)
+    _WHOLE.clear()
+    _footers(document)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    document.save(str(path))
+    return path

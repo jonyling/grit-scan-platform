@@ -1,5 +1,8 @@
 # 44 Brief format v2: Wilson's BA-wide layout
 
+> **Note:** Since 20 November 2026, this layout applies to the Group (STE) radar only. Business-area and entity packs
+> use [spec 49](49_Business_Area_Weekly_Layout.md).
+
 Status: built on 30 October 2026. This spec records requests 1 to 5 of 30 October 2026 and the plan in [Wilson-Format-Gap-and-Plan_2026-10-30.md](../docs/progress/Wilson-Format-Gap-and-Plan_2026-10-30.md). Request 6, internal facts from a business partner's notes, is not built.
 
 The opt-in [weekly reasoning extension](45_Weekly_Agent_Reasoning_and_Critique.md)
