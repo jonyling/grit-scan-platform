@@ -61,6 +61,18 @@ def test_date_exceptions_preserve_hindsight():
     assert time_scope(None, date(2026, 11, 2), 7) == "DATE_NOT_ESTABLISHED"
 
 
+def test_business_area_reporting_may_edit_only_the_summary_box():
+    from grit.pipeline.weekly import narrative_fields
+
+    brief = {
+        "meta": {"layout": "BA"},
+        "bottom_line": {"text": "Summary"},
+        "v2": {"watch": [{"text": {"plain": "Named watch text"}}]},
+    }
+
+    assert narrative_fields(brief) == {"bottom_line.text": "Summary"}
+
+
 def test_reasoned_selection_does_not_change_baseline(tmp_path):
     pool = Pool(tmp_path / "pool.sqlite")
     pool.start_run("R", run_date="2026-11-02", pack="test", kind="READER_SCAN")

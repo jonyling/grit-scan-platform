@@ -1642,7 +1642,11 @@ class WeeklyCoordinator:
                 problems: list[str] = []
                 for edit in edits:
                     if edit.get("path") not in editable or not isinstance(edit.get("text"), str) or not edit["text"].strip():
-                        problems.append("Reporting attempted an unknown narrative edit.")
+                        allowed = ", ".join(sorted(editable))
+                        problems.append(
+                            f"Reporting attempted an unknown narrative edit. "
+                            f"Return edits only for supplied editable_fields paths: {allowed}."
+                        )
                         continue
                     retired = retired_in(edit["text"], ledger)
                     if retired:
@@ -1813,7 +1817,9 @@ def selection_hash(pool: Pool, run_id: str) -> str:
 
 def narrative_fields(brief: Mapping[str, Any]) -> dict[str, Any]:
     fields: dict[str, Any] = {"bottom_line.text": brief["bottom_line"]["text"]}
-    # A business-area brief has no action posture, so its bottom line has no escalation field.
+    # Spec 49 freezes every BA table row. Reporting may synthesize only the summary box.
+    if (brief.get("meta") or {}).get("layout") == "BA":
+        return fields
     if "escalation" in brief["bottom_line"]:
         fields["bottom_line.escalation"] = brief["bottom_line"]["escalation"]
     def visit(value: Any, path: str) -> None:
