@@ -252,6 +252,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     from grit.core.financial_band import financial_size as _financial_size
 
     from grit.agents.weekly import order_in_band_of, reach_fields_of
+    from grit.core.challenges import challenge_open
     from grit.core.overrides import BAND_ESCALATING, band_sort_key, reader_band_of
 
     pack_bands = ((getattr(pack, "manifest", None) or {}) if hasattr(pack, "manifest") else {}).get("severityBands")
@@ -271,6 +272,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
             "override_rule_id": priority.get("override_rule_id"),
             "order_in_band": reach.get("order_in_band"), "reach_channel": reach.get("reach_channel"),
             "urs_reach_reason": reach.get("urs_reach_reason"),
+            "challenge_open": challenge_open(lead),
             "row": drafted.get(event["event_id"]), "lead": lead["signal_id"], "signal_ids": event["signal_ids"][:6], "publishers": event["publishers"],
             "financial_size": size,
             # The event's best-banded reports (T1 to T3) beyond its lead, listed with the drafted row's own sources.
@@ -316,6 +318,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         priorities.append({"item": label(event), "reader_band": reader_band,
                            "order_in_band": reach.get("order_in_band"), "reach_channel": reach.get("reach_channel"),
                            "urs_reach_reason": reach.get("urs_reach_reason"),
+                           "challenge_open": challenge_open(lead),
                            "trend": f"{event['band']} {'New' if event['new'] else 'Escalating' if event['band'] == UP else 'Elevated'}",
                            "risk": event["risk_label"], "owner": (row.get("response") or {}).get("owner") or "To assign", "signal_ids": [event["lead"]["signal_id"]]})
     priorities.sort(key=lambda row: (band_sort_key(row.get("reader_band")), order_in_band_of(row), str((row.get("signal_ids") or [""])[0])))

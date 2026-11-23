@@ -133,7 +133,44 @@ class Pool:
             for column, definition in columns.items():
                 if column not in present:
                     self.conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+        self._migrate_misses_band_rule_gap()
         self.conn.commit()
+
+    def _migrate_misses_band_rule_gap(self) -> None:
+        """Existing pools keep the pre-P2 misses CHECK; rebuild when BAND_RULE_GAP is absent."""
+        row = self.conn.execute("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'misses'").fetchone()
+        sql = (row[0] if row else "") or ""
+        if "BAND_RULE_GAP" in sql:
+            return
+        self.conn.execute("ALTER TABLE misses RENAME TO misses_pre_p2")
+        self.conn.execute(
+            """CREATE TABLE misses (
+                miss_row_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+                pack          TEXT NOT NULL,
+                miss_id       TEXT NOT NULL,
+                kind          TEXT NOT NULL CHECK (kind IN ('KEYWORD_DROP', 'RANK_REJECT', 'REPORT_RETURN', 'BAND_RULE_GAP')),
+                text          TEXT NOT NULL,
+                keyword       TEXT,
+                signal_id     TEXT,
+                recorded_by   TEXT NOT NULL,
+                recorded_at   TEXT NOT NULL
+            )"""
+        )
+        self.conn.execute(
+            """INSERT INTO misses (miss_row_id, pack, miss_id, kind, text, keyword, signal_id, recorded_by, recorded_at)
+               SELECT miss_row_id, pack, miss_id, kind, text, keyword, signal_id, recorded_by, recorded_at FROM misses_pre_p2"""
+        )
+        self.conn.execute("DROP TABLE misses_pre_p2")
+        self.conn.execute("CREATE INDEX IF NOT EXISTS misses_by_pack ON misses (pack, miss_row_id)")
+        # Recreate append-only triggers dropped with the old table.
+        self.conn.execute(
+            """CREATE TRIGGER IF NOT EXISTS misses_no_update BEFORE UPDATE ON misses
+               BEGIN SELECT RAISE(ABORT, 'misses is append-only'); END"""
+        )
+        self.conn.execute(
+            """CREATE TRIGGER IF NOT EXISTS misses_no_delete BEFORE DELETE ON misses
+               BEGIN SELECT RAISE(ABORT, 'misses is append-only'); END"""
+        )
 
     def close(self) -> None:
         self.conn.close()
@@ -487,8 +524,8 @@ class Pool:
     def record_miss(self, *, pack: str, kind: str, text: str, recorded_by: str, keyword: str | None = None,
                     signal_id: str | None = None) -> dict[str, Any]:
         """Record a review miss a named person accepted. The next run can read it. It does not change a score."""
-        if kind not in {"KEYWORD_DROP", "RANK_REJECT", "REPORT_RETURN"}:
-            raise ValueError("A miss kind is KEYWORD_DROP, RANK_REJECT, or REPORT_RETURN.")
+        if kind not in {"KEYWORD_DROP", "RANK_REJECT", "REPORT_RETURN", "BAND_RULE_GAP"}:
+            raise ValueError("A miss kind is KEYWORD_DROP, RANK_REJECT, REPORT_RETURN, or BAND_RULE_GAP.")
         if not text.strip() or not recorded_by.strip():
             raise ValueError("A miss needs the text and your name.")
         count = (self.one("SELECT COUNT(*) AS n FROM misses WHERE pack = ?", (pack,)) or {}).get("n") or 0
@@ -501,6 +538,91 @@ class Pool:
     def misses(self, pack: str) -> list[dict[str, Any]]:
         """A pack's accepted misses, oldest first."""
         return self.rows("SELECT * FROM misses WHERE pack = ? ORDER BY miss_row_id", (pack,))
+
+    # Band challenges (ranking quality P2) ---------------------------------------------------------------------
+
+    def append_band_challenge(
+        self,
+        *,
+        challenge_id: str,
+        run_id: str,
+        signal_id: str,
+        band: str,
+        challenged_band: str,
+        challenge_reason: str,
+        status: str,
+        override_rule_id: str | None = None,
+        package_id: str | None = None,
+        package_version: int | None = None,
+        decided_by: str | None = None,
+        decided_at: str | None = None,
+        decision_note: str | None = None,
+        detail: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Append a band-challenge row. Latest row per challenge_id is the standing status."""
+        row = {
+            "challenge_id": challenge_id,
+            "run_id": run_id,
+            "signal_id": signal_id,
+            "package_id": package_id,
+            "package_version": package_version,
+            "band": band,
+            "challenged_band": challenged_band,
+            "challenge_reason": challenge_reason,
+            "override_rule_id": override_rule_id,
+            "status": status,
+            "challenge_json": dict(detail or {}),
+            "created_at": utc_now(),
+            "decided_by": decided_by,
+            "decided_at": decided_at,
+            "decision_note": decision_note,
+        }
+        row["challenge_row_id"] = self.insert("band_challenges", row)
+        return row
+
+    def band_challenge(self, run_id: str, signal_id: str) -> dict[str, Any] | None:
+        """Latest challenge status for a run and signal, or None."""
+        return self.one(
+            """SELECT * FROM band_challenges WHERE run_id = ? AND signal_id = ?
+               ORDER BY challenge_row_id DESC LIMIT 1""",
+            (run_id, signal_id),
+        )
+
+    def band_challenge_by_id(self, challenge_id: str) -> dict[str, Any] | None:
+        """Latest row for a challenge_id."""
+        return self.one(
+            """SELECT * FROM band_challenges WHERE challenge_id = ?
+               ORDER BY challenge_row_id DESC LIMIT 1""",
+            (challenge_id,),
+        )
+
+    def band_challenges_for_package(
+        self, package_id: str, version: int, *, open_only: bool = False
+    ) -> list[dict[str, Any]]:
+        """Latest status per challenge_id for a package version."""
+        rows = self.rows(
+            """SELECT * FROM band_challenges WHERE package_id = ? AND package_version = ?
+               ORDER BY challenge_row_id""",
+            (package_id, version),
+        )
+        latest: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            latest[row["challenge_id"]] = row
+        found = list(latest.values())
+        if open_only:
+            found = [row for row in found if row["status"] == "OPEN"]
+        return sorted(found, key=lambda row: (row.get("band") or "", row.get("signal_id") or ""))
+
+    def open_band_challenges(self, run_id: str) -> list[dict[str, Any]]:
+        """OPEN challenges for a run (latest status per signal)."""
+        rows = self.rows(
+            "SELECT * FROM band_challenges WHERE run_id = ? ORDER BY challenge_row_id",
+            (run_id,),
+        )
+        latest: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            latest[row["signal_id"]] = row
+        return [row for row in latest.values() if row["status"] == "OPEN"]
 
     def management_requests(self, *, active_only: bool = False) -> list[dict[str, Any]]:
         """Each request carries "scope": the packs it belongs to. A request raised in chat has no pack, so it belongs to the

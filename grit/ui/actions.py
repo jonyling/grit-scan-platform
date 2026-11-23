@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from grit.core.challenges import RESOLUTIONS, resolve_challenge
 from grit.pool import Pool, utc_now
 from grit.profiles import Profile
 from grit.workflow.packages import review_package
@@ -19,6 +20,19 @@ def record_feedback(pool: Pool, profile: Profile, signal_id: str, decision: str,
 def review(pool: Pool, profile: Profile, package_id: str, version: int, intent: str) -> dict[str, Any]:
     """ReviewGate() through the Supervisor. A reader-only profile is refused before the gate."""
     return review_package(pool, package_id=package_id, version=version, reviewer=profile, intent=intent)
+
+
+def resolve_band_challenge(
+    pool: Pool, profile: Profile, challenge_id: str, resolution: str, note: str | None = None
+) -> dict[str, Any]:
+    """Named human upholds, dismisses, or accepts a band challenge as a rule gap. Never moves band."""
+    if profile.review_role not in {"REVIEWER", "BA_HEAD"}:
+        raise PermissionError(f"{profile.label} is a reader, not a reviewer.")
+    if resolution not in RESOLUTIONS:
+        raise ValueError(f"Resolution must be one of {', '.join(sorted(RESOLUTIONS))}.")
+    return resolve_challenge(
+        pool, challenge_id=challenge_id, resolution=resolution, reviewer_id=profile.profile_id, note=note,
+    )
 
 
 def set_request_status(pool: Pool, profile: Profile, request_id: str, status: str) -> None:

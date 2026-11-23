@@ -103,10 +103,15 @@ class Supervisor:
         self.approvals: list[dict[str, Any]] = []
         self.accepted_proposals: list[dict[str, Any]] = []
         self._packages: dict[str, Package] = {}
+        self._review_extras: dict[str, dict[str, Any]] = {}
         self._projection: dict[tuple[str, str], str] = {}
         for row in sorted(self.ledger.rows(), key=lambda item: item.sequence):
             self._projection[(row.signal_id, row.execution_id)] = row.row_id
         self.theme_register = ThemeRegister(self._token)
+
+    def set_review_extras(self, package_id: str, extras: dict[str, Any]) -> None:
+        """Attach ReviewGate context extras (e.g. open band challenges) for the next submit_review."""
+        self._review_extras[package_id] = dict(extras)
 
     def package(self, package_id: str) -> Package:
         return self._packages[package_id]
@@ -347,7 +352,7 @@ class Supervisor:
         missing_signal_ids: list[str] | None = None,
     ) -> dict[str, Any]:
         package = self._packages[package_id]
-        return {
+        context = {
             "review_package_id": package.package_id,
             "review_package_version": package.version,
             "review_package_hash": package.content_hash,
@@ -370,6 +375,15 @@ class Supervisor:
             "configuration_version": self.configuration_version,
             "function_version": REVIEW_GATE_VERSION,
         }
+        # Optional P2 challenge gating fields (set by review_package before submit_review).
+        for key in (
+            "unresolved_escalating_challenge_ids",
+            "require_escalating_challenges_resolved",
+            "open_challenge_ids",
+        ):
+            if key in self._review_extras.get(package_id, {}):
+                context[key] = self._review_extras[package_id][key]
+        return context
 
     def submit_review(
         self,

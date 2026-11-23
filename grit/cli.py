@@ -467,6 +467,60 @@ def cmd_feedback(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_challenges(args: argparse.Namespace) -> int:
+    """Band challenges: list OPEN flags, or resolve as a named reviewer. Never moves the core band."""
+    from grit.core.challenges import (
+        STATUS_ACCEPT_RULE_GAP,
+        STATUS_DISMISS,
+        STATUS_UPHOLD,
+        package_challenges,
+    )
+    from grit.ui.actions import resolve_band_challenge
+
+    pool = _pool()
+    if args.action == "list":
+        if args.package and args.version is not None:
+            package = args.package if args.package.startswith("PKG-") else f"PKG-{args.package}"
+            rows = package_challenges(pool, package, args.version, open_only=not args.all)
+        elif args.run:
+            rows = pool.open_band_challenges(args.run) if not args.all else [
+                row for row in (
+                    pool.band_challenge(args.run, signal_id)
+                    for signal_id in {r["signal_id"] for r in pool.rows(
+                        "SELECT DISTINCT signal_id FROM band_challenges WHERE run_id = ?", (args.run,)
+                    )}
+                )
+                if row
+            ]
+        else:
+            raise SystemExit("challenges list needs --run, or --package and --version.")
+        if not rows:
+            print("No band challenges.")
+            return 0
+        for row in rows:
+            decided = f" by {row['decided_by']}" if row.get("decided_by") else ""
+            print(
+                f"{row['challenge_id']}  {row['status']}{decided}  "
+                f"{row['band']} → {row['challenged_band']}  {row['signal_id']}"
+            )
+            print(f"    {row['challenge_reason']}")
+        return 0
+    if not (args.id or "").strip() or not (args.profile or "").strip():
+        raise SystemExit(f"challenges {args.action} needs --id and --profile.")
+    resolution = {
+        "uphold": STATUS_UPHOLD,
+        "dismiss": STATUS_DISMISS,
+        "accept-gap": STATUS_ACCEPT_RULE_GAP,
+    }[args.action]
+    reviewer = _profiles([args.profile])[0]
+    try:
+        row = resolve_band_challenge(pool, reviewer, args.id.strip(), resolution, note=args.note)
+    except (PermissionError, ValueError) as exc:
+        raise SystemExit(str(exc)) from exc
+    print(f"{row['challenge_id']} is now {row['status']}. Core band {row['band']} was not moved.")
+    return 0
+
+
 def cmd_review(args: argparse.Namespace) -> int:
     from grit.workflow.packages import review_package
 
@@ -872,7 +926,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub = commands.add_parser("misses", help="Record a review miss the next reasoned run can read, or write a proposal file without changing the rules.")
     sub.add_argument("action", choices=("list", "add", "propose"))
     sub.add_argument("--pack", required=True)
-    sub.add_argument("--kind", choices=("KEYWORD_DROP", "RANK_REJECT", "REPORT_RETURN"), help="For add: what was missed.")
+    sub.add_argument("--kind", choices=("KEYWORD_DROP", "RANK_REJECT", "REPORT_RETURN", "BAND_RULE_GAP"),
+                     help="For add: what was missed. BAND_RULE_GAP is also written when ReviewGate accepts a band challenge as a rule gap.")
     sub.add_argument("--text", help="For add: what you accepted.")
     sub.add_argument("--keyword", help="For add: a search word to propose later. It is not added to the scan plan.")
     sub.add_argument("--signal", help="For add: the signal id, when the miss is about one signal.")
@@ -908,6 +963,20 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--profile", required=True)
     sub.add_argument("--intent", required=True, choices=("APPROVE", "REJECT", "HOLD", "REQUEST_REWORK"))
     sub.set_defaults(handler=cmd_review)
+
+    sub = commands.add_parser(
+        "challenges",
+        help="List open band challenges for a run or package, or resolve one as a named reviewer (Uphold / Dismiss / Accept as rule gap).",
+    )
+    sub.add_argument("action", choices=("list", "uphold", "dismiss", "accept-gap"))
+    sub.add_argument("--run", help="For list: show OPEN challenges for this run.")
+    sub.add_argument("--package", help="For list: package id (with --version).")
+    sub.add_argument("--version", type=int, help="For list: package version.")
+    sub.add_argument("--id", help="For uphold/dismiss/accept-gap: the challenge id (CHAL-...).")
+    sub.add_argument("--profile", help="For resolve: reviewer profile id.")
+    sub.add_argument("--note", help="Optional reviewer note.")
+    sub.add_argument("--all", action="store_true", help="For list with --package: include resolved challenges.")
+    sub.set_defaults(handler=cmd_challenges)
 
     sub = commands.add_parser("requests", help="List, add, activate, close, or revise management requests (spec 29).")
     sub.add_argument("action", choices=("list", "add", "activate", "close", "revise"))

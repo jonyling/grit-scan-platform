@@ -205,6 +205,42 @@ def main() -> None:
                     path = files.get(kind)
                     if path and Path(path).is_file():
                         column.download_button(f"Download {kind}", Path(path).read_bytes(), file_name=Path(path).name, key=f"dl-{row['package_id']}-{row['version']}-{kind}")
+                from grit.core.challenges import package_challenges, unresolved_escalating
+
+                challenges = package_challenges(db, row["package_id"], row["version"])
+                open_challenges = [item for item in challenges if item.get("status") == "OPEN"]
+                if challenges:
+                    st.markdown("**Band challenges** (model proposes; core band stands until a named human decides).")
+                    blocking = unresolved_escalating(open_challenges)
+                    if blocking and row["status"] == "PENDING_REVIEW":
+                        st.warning(
+                            f"{len(blocking)} open Escalating challenge(s) must be resolved before Approve "
+                            "(Uphold band, Dismiss, or Accept as rule gap)."
+                        )
+                    for challenge in challenges:
+                        title = (db.signal(challenge["signal_id"]) or {}).get("title") or challenge["signal_id"]
+                        override = f" Override: {challenge['override_rule_id']}." if challenge.get("override_rule_id") else ""
+                        st.markdown(
+                            f"- `{challenge['challenge_id']}` · **{challenge['status']}** · "
+                            f"{challenge['band']} → challenged **{challenge['challenged_band']}** · "
+                            f"{title}. {challenge['challenge_reason']}{override}"
+                        )
+                        if (
+                            challenge["status"] == "OPEN"
+                            and row["status"] == "PENDING_REVIEW"
+                            and profile.review_role in {"REVIEWER", "BA_HEAD"}
+                        ):
+                            uphold, dismiss, gap = st.columns(3)
+                            key = f"{row['package_id']}-{row['version']}-{challenge['challenge_id']}"
+                            if uphold.button("Uphold band", key=f"chal-uphold-{key}"):
+                                actions.resolve_band_challenge(db, profile, challenge["challenge_id"], "UPHOLD")
+                                st.rerun()
+                            if dismiss.button("Dismiss (noise)", key=f"chal-dismiss-{key}"):
+                                actions.resolve_band_challenge(db, profile, challenge["challenge_id"], "DISMISS")
+                                st.rerun()
+                            if gap.button("Accept as rule gap", key=f"chal-gap-{key}"):
+                                actions.resolve_band_challenge(db, profile, challenge["challenge_id"], "ACCEPT_RULE_GAP")
+                                st.rerun()
                 if row["status"] == "PENDING_REVIEW" and profile.review_role in {"REVIEWER", "BA_HEAD"}:
                     approve, rework, hold, reject = st.columns(4)
                     if approve.button("Approve", type="primary", key=f"APPROVE-{row['package_id']}-{row['version']}"):
@@ -297,7 +333,7 @@ def _apply_review(db, profile, row, intent):  # noqa: ANN001, ANN201
 
     try:
         result = actions.review(db, profile, row["package_id"], row["version"], intent)
-    except PermissionError as exc:
+    except (PermissionError, ValueError) as exc:
         st.error(str(exc))
         return
     st.info(f"ReviewGate: {result['outcome']}. The package is now {result['status']}.")
