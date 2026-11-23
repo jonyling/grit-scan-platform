@@ -1,0 +1,96 @@
+{
+  "registerId": "GRIT-OVERRIDE-INSTRUMENTS",
+  "status": "DRAFT_FOR_REVIEW",
+  "owner": "R&A",
+  "note": "Human-owned phrases for OVERRIDE_REG_IN_FORCE. A hit needs an instrument phrase, an in-force phrase, and a pack jurisdiction named in the title or lead. Speculative wording alone does not fire. Engineers wire evaluation; R&A owns this list.",
+  "inForcePhrases": [
+    "in force",
+    "already in force",
+    "comes into force",
+    "came into force",
+    "enter into force",
+    "enters into force",
+    "entered into force",
+    "takes effect",
+    "take effect",
+    "took effect",
+    "taken effect",
+    "effective from",
+    "effective immediately",
+    "now in effect",
+    "now applies",
+    "now apply",
+    "has taken effect",
+    "have taken effect"
+  ],
+  "speculativePhrases": [
+    "may regulate",
+    "may impose",
+    "may ban",
+    "might ban",
+    "might impose",
+    "could impose",
+    "could ban",
+    "considering",
+    "considers",
+    "proposes",
+    "proposed",
+    "proposing",
+    "plans to",
+    "planning to",
+    "looking to",
+    "expected to",
+    "likely to",
+    "threatens to",
+    "warns it may",
+    "under consideration",
+    "draft rule",
+    "draft rules",
+    "proposed rule",
+    "proposed rules"
+  ],
+  "instruments": [
+    {
+      "id": "EXPORT_CONTROL_CHIPS",
+      "label": "Semiconductor / chip export controls",
+      "phrases": [
+        "export control",
+        "export controls",
+        "export ban",
+        "export bans",
+        "export restriction",
+        "export restrictions",
+        "entity list",
+        "chip ban",
+        "chip bans",
+        "semiconductor ban",
+        "semiconductor bans",
+        "advanced chip",
+        "advanced chips",
+        "AI chip",
+        "AI chips",
+        "GPU export",
+        "BIS rule",
+        "BIS rules"
+      ]
+    },
+    {
+      "id": "SANCTIONS_INSTRUMENT",
+      "label": "Sanctions or embargo already in force",
+      "phrases": [
+        "sanctions",
+        "sanction",
+        "embargo",
+        "embargoes"
+      ]
+    },
+    {
+      "id": "TARIFF_INSTRUMENT",
+      "label": "Tariff measure already in force",
+      "phrases": [
+        "tariff",
+        "tariffs"
+      ]
+    }
+  ]
+}

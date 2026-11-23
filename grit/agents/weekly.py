@@ -10,7 +10,8 @@ from grit.core.source_bands import evidence_level, supports_fact
 
 VERSION = "weekly-reasoning-2"
 CONTROLLED = frozenset({
-    "score", "severity", "likelihood", "probability", "priority", "tier",
+    "score", "severity", "likelihood", "probability", "priority", "tier", "band",
+    "override_rule_id", "override_reason",
     "credibility_rating", "risk_level", "harm_verdict", "red",
     "workflow_state", "approved", "published", "final_score_available",
 })

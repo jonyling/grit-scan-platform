@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from grit.core.impact_scoring import RegistryKind
 from grit.ontology.registry_loader import load_transmission_registry, slugify
 from grit.ontology.workbook import workbook_path
@@ -8,6 +10,20 @@ from grit.ontology.workbook import workbook_path
 ROOT = Path(__file__).parents[1]
 
 
+def _has_workbook() -> bool:
+    try:
+        return workbook_path().is_file()
+    except FileNotFoundError:
+        return False
+
+
+needs_workbook = pytest.mark.skipif(
+    not _has_workbook(),
+    reason="the URS Entity Info workbook is confidential and not in this environment",
+)
+
+
+@needs_workbook
 def test_workbook_entries_are_primary_and_aliases_are_overlays() -> None:
     registry = load_transmission_registry(
         workbook_path(),

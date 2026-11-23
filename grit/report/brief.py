@@ -154,8 +154,18 @@ def routed_signals(pool: Pool, run_id: str, profile: Profile) -> list[dict[str, 
         if selected and off_scope and not row.get("red") and off_scope.search(str(row.get("title") or "")):
             selected = False
         out.append({**row, "route": route.as_record(), "preference": effect.as_record(), "shown": route.include and selected})
+    from grit.core.overrides import band_sort_key, reader_band_of
+
     out.sort(key=lambda row: str(row.get("published_at") or ""), reverse=True)
-    out.sort(key=lambda row: (not row["shown"], row["route"]["priority"] or "P9", row.get("tier") or 9, not row.get("condition_ids"), -row["preference"]["affinity"], -(row.get("corroboration") or 1)))
+    out.sort(key=lambda row: (
+        not row["shown"],
+        row["route"]["priority"] or "P9",
+        band_sort_key(reader_band_of(row)),
+        row.get("tier") or 9,
+        not row.get("condition_ids"),
+        -row["preference"]["affinity"],
+        -(row.get("corroboration") or 1),
+    ))
     return out
 
 
@@ -281,16 +291,23 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
             ] if "RESPONSE_OPTIONS" in sections else [],
         })
 
+    from grit.core.overrides import BAND_ELEVATED, BAND_ESCALATING, reader_band_of
+
     shown = [row for row in routed if row["shown"]]
     max_findings = int(brief_config.get("maxFindings") or 8)
     # The package holds what the reader receives, so a section the profile leaves out adds no member.
-    priority_rows = [row for row in shown if (row.get("tier") or 9) <= 2][:max_findings] if "PRIORITY_FINDINGS" in sections else []
+    # Prefer reader bands Escalating/Elevated; fall back to legacy tier ≤ 2 when band is absent.
+    priority_rows = [
+        row for row in shown
+        if reader_band_of(row) in {BAND_ESCALATING, BAND_ELEVATED} or (row.get("tier") or 9) <= 2
+    ][:max_findings] if "PRIORITY_FINDINGS" in sections else []
     findings = []
     for row in priority_rows:
         card = (cards.get(row["signal_id"]) or {}).get("card")
         findings.append({
             "signal_id": row["signal_id"], "title": clean_title(row["title"]) or row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"],
-            "priority": row["route"]["priority"], "tier": row.get("tier"), "rung": row.get("rung"), "why": row["route"]["matched"][:2] or [row.get("relevance_basis")],
+            "priority": row["route"]["priority"], "band": reader_band_of(row), "tier": row.get("tier"), "rung": row.get("rung"),
+            "why": row["route"]["matched"][:2] or [row.get("relevance_basis")],
             "risks": [f"{hit['level'].title()}: {hit['name']}" for hit in (row.get("risk_cascade") or [])[:3]],
             "corroboration": row.get("corroboration"), "red": row.get("red_status") == "CONFIRMED", "red_status": row.get("red_status"), "harm": _harm_line(row), "preference": row["preference"]["reasons"],
             "card": _card_summary(card) if card else None,
