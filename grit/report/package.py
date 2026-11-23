@@ -45,6 +45,11 @@ def write_pack(pool: Pool, run_id: str, profile: Profile, *, folder: Path | None
         from grit.pipeline.weekly import frozen_report
         snapshot = frozen_report(pool, run_id, profile.profile_id, ready=submit)
     brief = snapshot["brief"] if snapshot else build_brief(pool, run_id, profile)
+    if pack is not None and pack.level in {"BA", "ENTITY"} and brief["meta"].get("layout") != "BA":
+        raise ValueError(
+            f"{run_id} is a {pack.level} run, but its frozen report predates the Spec-49 business-area layout. "
+            "Refresh the report with `grit resume-report --refresh` before rendering or submission."
+        )
     if snapshot and snapshot["status"] != "READY":
         from grit.pipeline.weekly import report_hash
         brief["meta"]["status"] = "INCOMPLETE_PREVIEW"

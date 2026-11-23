@@ -73,6 +73,58 @@ def test_business_area_reporting_may_edit_only_the_summary_box():
     assert narrative_fields(brief) == {"bottom_line.text": "Summary"}
 
 
+def test_stale_reasoned_business_area_snapshot_cannot_be_rendered(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from grit.report.package import write_pack
+
+    pool = Pool(tmp_path / "pool.sqlite")
+    pool.start_run("R", run_date="2026-11-19", pack="test", kind="READER_SCAN", config={"weekly_mode": "reasoned"})
+    pack = SimpleNamespace(level="BA", report_kind="weekly")
+    profile = SimpleNamespace(
+        profile_id="reader",
+        brief_for=lambda pack_name: {"formats": ["docx"]},
+    )
+    monkeypatch.setattr("grit.ontology.pack.manifests", lambda: {"test": {}})
+    monkeypatch.setattr("grit.pipeline.reader_scan._load_pack", lambda pack_name: pack)
+    monkeypatch.setattr(
+        "grit.pipeline.weekly.frozen_report",
+        lambda *args, **kwargs: {
+            "status": "READY",
+            "brief": {"meta": {"layout": "LEGACY"}, "membership": ["SIG-1"]},
+        },
+    )
+
+    with pytest.raises(ValueError, match="Spec-49"):
+        write_pack(pool, "R", profile, submit=False)
+
+
+def test_every_configured_business_area_uses_spec49_layout(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from grit.ontology.pack import load_ontology_pack, manifests
+    from grit.report.brief import build_brief
+    from grit.settings import CONFIG_DIR
+
+    business_areas = sorted(name for name, manifest in manifests().items() if manifest.get("level") == "BA")
+    assert set(business_areas) == {"ca", "dsc", "marine", "urs"}
+    pool = Pool(tmp_path / "pool.sqlite")
+    profile = SimpleNamespace(
+        label="Reader",
+        brief_for=lambda pack_name: {},
+    )
+    monkeypatch.setattr(
+        "grit.report.brief.business_area_brief",
+        lambda pool, run, pack, profile, brief_config: {"pack": pack.pack, "layout": "BA"},
+    )
+
+    for name in business_areas:
+        run_id = f"2026-11-19-{name}"
+        pool.start_run(run_id, run_date="2026-11-19", pack=name, kind="READER_SCAN")
+        assert load_ontology_pack(CONFIG_DIR, name).level == "BA"
+        assert build_brief(pool, run_id, profile) == {"pack": name, "layout": "BA"}
+
+
 def test_reasoned_selection_does_not_change_baseline(tmp_path):
     pool = Pool(tmp_path / "pool.sqlite")
     pool.start_run("R", run_date="2026-11-02", pack="test", kind="READER_SCAN")
