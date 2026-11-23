@@ -215,8 +215,12 @@ def _escalation_slide(slide: Any, rows: Sequence[Mapping[str, Any]], short: str)
         cell.text_frame.paragraphs[0].runs[0].font.bold = True
     for number, row in enumerate(shown, start=1):
         response = row.get("response") or {}
+        item = f"{row.get('reader_band') or row['band']} {row['item']}" + (f" [{row['risk']}]" if row["risk"] else "")
+        if row.get("urs_reach_reason"):
+            channel = f" ({row['reach_channel']})" if row.get("reach_channel") else ""
+            item += f"\nURS reach{channel}: {row['urs_reach_reason']}"
         values = (
-            f"{row['band']} {row['item']}" + (f" [{row['risk']}]" if row["risk"] else ""),
+            item,
             whole_sentences((row.get("summary") or {}).get("plain") or "Withheld: the draft failed its checks. See the Word brief's QA log.", 330),
             whole_sentences((row.get("implications") or {}).get("plain") or "Not drafted.", 260),
             whole_sentences(f"{response.get('action') or 'Not drafted.'} Owner: {response.get('owner') or 'to assign'}.", 220),
@@ -419,31 +423,40 @@ def _sheet(workbook: Workbook, title: str, headers: Sequence[str], rows: Sequenc
 
 
 def _signals_sheet(workbook: Workbook, signals: Sequence[Mapping[str, Any]]) -> None:
+    from grit.agents.weekly import reach_fields_of
     from grit.core.overrides import reader_band_of
 
     def _priority(row: Mapping[str, Any]) -> Mapping[str, Any]:
         value = row.get("priority") if isinstance(row.get("priority"), Mapping) else row.get("priority_json")
         return value if isinstance(value, Mapping) else {}
 
+    def _editorial(row: Mapping[str, Any]) -> Mapping[str, Any]:
+        value = row.get("editorial")
+        return value if isinstance(value, Mapping) else {}
+
     _sheet(
         workbook, "Signals",
-        ("Shown", "Priority", "Band", "Tier", "Override", "Rung", "RED", "Title", "Outlet", "Published", "Outlets", "Conditions", "Named items", "Risk register", "Harm verdict", "Evidence", "Why", "Not shown because", "URL", "Signal id"),
+        ("Shown", "Priority", "Band", "Order in band", "Reach channel", "URS reach", "Tier", "Override", "Rung", "RED", "Title", "Outlet", "Published", "Outlets", "Conditions", "Named items", "Risk register", "Harm verdict", "Evidence", "Why", "Not shown because", "URL", "Signal id"),
         [
             (
-                "yes" if row["shown"] else "no", row["route"]["priority"], reader_band_of(row), row.get("tier"),
+                "yes" if row["shown"] else "no", row["route"]["priority"], reader_band_of(row),
+                reach_fields_of(row).get("order_in_band") or "",
+                reach_fields_of(row).get("reach_channel") or "",
+                reach_fields_of(row).get("urs_reach_reason") or "",
+                row.get("tier"),
                 _priority(row).get("override_rule_id") or "",
                 row.get("rung"), {"CONFIRMED": "RED", "CANDIDATE": "Candidate", "NOT_CONFIRMED": "Not confirmed"}.get(row.get("red_status") or "", "Candidate" if row.get("red") else ""), row["title"], row["publisher"], row["published_at"],
                 row.get("corroboration"), ", ".join(row.get("condition_ids") or []), ", ".join(hit["item_name"] for hit in row.get("exposure") or [] if hit.get("strong")),
                 "; ".join(f"{hit['level']} {hit['risk_id']} {hit['name']}" for hit in (row.get("risk_cascade") or [])[:4]), row.get("harm_verdict") or "not established",
                 row.get("evidence_confidence"),
                 ((" ".join(row["route"]["matched"][:2]) or row.get("relevance_basis") or "") +
-                 (f" Editorial {row['editorial']['decision']}; {row['editorial']['time_scope']}: {row['editorial']['reason']}" if row.get("editorial") else "")),
-                row["route"]["suppression_reason"] or (row["editorial"]["reason"] if row.get("editorial") and not row["shown"] else ""),
+                 (f" Editorial {_editorial(row).get('decision')}; {_editorial(row).get('time_scope')}: {_editorial(row).get('reason')}" if _editorial(row) else "")),
+                row["route"]["suppression_reason"] or (_editorial(row).get("reason") if _editorial(row) and not row["shown"] else ""),
                 row["url"], row["signal_id"],
             )
             for row in signals
         ],
-        (7, 8, 12, 6, 22, 13, 6, 60, 22, 20, 8, 16, 24, 40, 18, 10, 50, 30, 40, 22),
+        (7, 8, 12, 10, 12, 40, 6, 22, 13, 6, 60, 22, 20, 8, 16, 24, 40, 18, 10, 50, 30, 40, 22),
     )
 
 

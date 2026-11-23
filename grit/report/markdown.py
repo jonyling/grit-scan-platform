@@ -81,14 +81,24 @@ def _v2(brief: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
     look = _table(["Date", "Event, as the source states it", f"Relevance to {short}", "Sources"], [[row["date"], row["event"], row["relevance"], _refs(row["sources"])] for row in v2["look_ahead"]]) \
         if v2["look_ahead"] else ["No source linked to the business area states a dated event in the next 30 days."]
     sections.append(("Look-ahead: the next 30 days", look))
-    rows = [[row.get("reader_band") or "Escalating", f"{row['band']} **{row['item']}**" + (f" [{row['risk']}]" if row["risk"] else ""), _md(row["summary"], "Withheld: the draft failed its checks. See the QA log."),
+    def _item_with_reach(row: Mapping[str, Any], *, bold: bool = False) -> str:
+        title = f"**{row['item']}**" if bold else row["item"]
+        head = f"{row.get('band', '')} {title}".strip() if row.get("band") else title
+        if row.get("risk"):
+            head += f" [{row['risk']}]"
+        if row.get("urs_reach_reason"):
+            channel = f" ({row['reach_channel']})" if row.get("reach_channel") else ""
+            head += f"<br>*URS reach{channel}: {row['urs_reach_reason']}*"
+        return head
+
+    rows = [[row.get("reader_band") or "Escalating", _item_with_reach(row, bold=True), _md(row["summary"], "Withheld: the draft failed its checks. See the QA log."),
              _md(row["implications"], "Not drafted."), f"{(row.get('response') or {}).get('action') or 'Not drafted.'} Owner: {(row.get('response') or {}).get('owner') or 'to assign'}.", _refs(row["sources"])]
             for row in v2["escalating"]]
     sections.append(("Escalating and elevated items", [*_table(["Band", "Item and risk", "Summary", f"Implications for {short}", "Suggested response", "Sources"], rows), "", f"*{V2_NOTE}*"]
                      if rows else ["No event met the escalation rule this week."]))
     if v2["priorities"]:
         sections.append(("Prioritisation", _table(["Band", "Item", "Trend", "Risk linkage", "Owner or forum"],
-                                                   [[row.get("reader_band") or "", row["item"], row["trend"], row["risk"], row["owner"]] for row in v2["priorities"]])))
+                                                   [[row.get("reader_band") or "", _item_with_reach(row), row["trend"], row["risk"], row["owner"]] for row in v2["priorities"]])))
     sections.append(("Coverage matrix", _table(["Line of business", *v2["categories"]], [[line["lob"], *(line["cells"][category]["text"] for category in v2["categories"])] for line in v2["coverage"]])))
     sections.append(("Jurisdiction coverage", _table(["Jurisdiction", "Entities", "In-window finding", "Trend"],
                                                       [[row["country"], "; ".join(row["entities"]), row["finding"], row["trend"]] for row in v2["jurisdictions"]])))
@@ -270,6 +280,10 @@ def render_markdown(brief: Mapping[str, Any]) -> str:
                 parts.extend(suggestions_for_signal(brief, item["signal_id"]))
                 band = item.get("band") or "Watch"
                 prefix = f"{item['priority']} · {band}" if item.get("priority") else band
+                reach = item.get("urs_reach_reason")
+                if reach:
+                    channel = f" ({item['reach_channel']})" if item.get("reach_channel") else ""
+                    parts.append(f"URS reach{channel}: {reach}")
                 body.append(f"- [{prefix}] [{item['title']}]({item['url']}) ({item['outlet']}, {item['date'] or 'n.d.'}). {' '.join(parts)}".rstrip())
         elif key == "WATCHPOINTS":
             body += [f"- **{row['title']}** ({row['status'].lower()}): {row['detail']} {_md(row['update'], '')}" for row in brief.get("watchpoints") or [] if row["status"] != "CLOSED"]

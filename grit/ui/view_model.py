@@ -61,16 +61,22 @@ def profile_in_force(profile: Any) -> list[str]:
         lines.append(f"Trusted sources: {len(sources['trust'])}.")
     if sources.get("distrust"):
         lines.append("Distrusted: " + ", ".join(sources["distrust"]) + ".")
-    lines.append("The profile reorders within a priority tier. It hides nothing and never moves a P1 or RED signal down.")
+    lines.append("The profile reorders within a reader band. It hides nothing and never moves a P1 or RED signal down.")
     return lines
 
 
 def signal_rows(routed: Sequence[Mapping[str, Any]], decisions: Mapping[str, str] | None = None) -> list[dict[str, Any]]:
     """decisions is None unless the reader's profile turns on the signal buttons. Then a "Your decision" column appears."""
+    from grit.agents.weekly import reach_fields_of
+    from grit.core.overrides import reader_band_of
+
     return [
         {
-            "Priority": row["route"]["priority"] or "", "Tier": row.get("tier"), "RED": {"CONFIRMED": "RED", "CANDIDATE": "Candidate", "NOT_CONFIRMED": "Not confirmed"}.get(row.get("red_status") or "", ""), "Title": row["title"],
+            "Priority": row["route"]["priority"] or "", "Band": reader_band_of(row),
+            "Order": reach_fields_of(row).get("order_in_band") or "",
+            "Tier": row.get("tier"), "RED": {"CONFIRMED": "RED", "CANDIDATE": "Candidate", "NOT_CONFIRMED": "Not confirmed"}.get(row.get("red_status") or "", ""), "Title": row["title"],
             "Outlet": row.get("publisher"), "Published": (row.get("published_at") or "")[:10], "Rung": row.get("rung") or "",
+            "URS reach": reach_fields_of(row).get("urs_reach_reason") or "",
             "Conditions": ", ".join(row.get("condition_ids") or []), "Named items": ", ".join(hit["item_name"] for hit in row.get("exposure") or [] if hit.get("strong")),
             **({"Your decision": decisions.get(row["signal_id"], "")} if decisions is not None else {}),
             "Your profile": " ".join(row["preference"]["reasons"]), "Shown": "yes" if row["shown"] else "no", "signal_id": row["signal_id"],
@@ -80,15 +86,26 @@ def signal_rows(routed: Sequence[Mapping[str, Any]], decisions: Mapping[str, str
 
 
 def signal_detail(row: Mapping[str, Any]) -> list[tuple[str, str]]:
+    from grit.agents.weekly import reach_fields_of
+    from grit.core.overrides import reader_band_of
+
     harm = row.get("harm") or {}
     severity = (harm.get("severity") or {}).get("max_band")
+    reach = reach_fields_of(row)
+    reach_line = ""
+    if reach.get("urs_reach_reason"):
+        channel = f" via {reach['reach_channel']}" if reach.get("reach_channel") else ""
+        order = f" Order in band: {reach['order_in_band']}." if reach.get("order_in_band") else ""
+        reach_line = f"{reach['urs_reach_reason']}{channel}.{order}"
     lines = [
         ("Why it is here", " ".join(row["route"]["matched"]) or shown(row.get("relevance_basis"))),
         ("Link", f"{shown(row.get('rung'))}. " + " ".join((row.get("link") or {}).get("reasons") or [])),
         ("Named items", shown([f"{hit['item_type'].title()} {hit['item_name']} ({'strong' if hit.get('strong') else 'passing'})" for hit in row.get("exposure") or []])),
         ("Standing conditions", shown(row.get("condition_ids"))),
         ("Risk register", shown([f"{hit['level'].title()} {hit['risk_id']} {hit['name']} ({hit['basis'].lower()})" for hit in (row.get("risk_cascade") or [])[:6]])),
-        ("Briefing priority", f"Tier {row.get('tier')}. " + " ".join((row.get("priority") or {}).get("reasons") or [])),
+        ("Reader band", f"{reader_band_of(row)}. " + " ".join((row.get("priority") or {}).get("reasons") or [])),
+        ("URS reach", reach_line),
+        ("Briefing priority", f"Tier {row.get('tier')} (audit). " + " ".join((row.get("priority") or {}).get("reasons") or [])),
         ("Outlets carrying it", f"{row.get('corroboration')}: " + ", ".join(item.get("publisher") or "" for item in (row.get("link") or {}).get("also_reported_by") or [])),
         ("Evidence confidence", shown(row.get("evidence_confidence"))),
         ("Harm scorer", f"verdict {shown((harm.get('verdict') or {}).get('verdict'))}; transmission {shown((harm.get('transmission') or {}).get('rung'))}; severity {shown(severity)}; opportunity cost {shown(row.get('opportunity_cost'))}"),

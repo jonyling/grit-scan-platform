@@ -30,6 +30,7 @@ ECHO = frozenset({
 ROW_FIELDS = frozenset({
     "signal_id", "decision", "reason", "source_ids", "significance", "impact_status", "exposure_status",
     "immediate_threat", "fact", "exposure", "transmission", "impact", "hops", "risk_ids", "uncertainty",
+    "order_in_band", "reach_channel", "urs_reach_reason", "order_withheld",
     "reason_cut", "reason_defaulted", "hop_rejected", "decision_downgraded", "source_ids_defaulted",
 })
 SIGNAL_MARK = re.compile(r"SIG-[0-9a-f]{16}")
@@ -197,13 +198,17 @@ def _fit_trace(value: dict[str, Any]) -> None:
         signal = row.get("signal_id") if isinstance(row.get("signal_id"), str) else None
         refs = row.get("source_ids") if isinstance(row.get("source_ids"), list) else ([signal] if signal else [])
         # Status flags are omitted so eighty ranked rows still fit; check_selections fills defaults.
-        return {
+        compact = {
             "signal_id": signal, "decision": row.get("decision"),
             "significance": _score(row), "reason": (str(row.get("reason") or "")[:40] or "Ranked."),
             "source_ids": [item for item in refs if isinstance(item, str)][:1] or ([signal] if signal else []),
             "fact": "not established", "exposure": "not established", "transmission": "not established",
             "impact": "not established", "rank_trimmed": True,
         }
+        for key in ("order_in_band", "reach_channel", "urs_reach_reason"):
+            if row.get(key) is not None:
+                compact[key] = row[key]
+        return compact
 
     # A full-week ranking can still overrun. Keep the decision fields, and replace chain prose with placeholders that
     # the selection contract accepts. INCLUDE and WATCH always need fact, exposure, transmission, and impact.
@@ -472,8 +477,13 @@ def _instruction(task: str, payload: Mapping[str, Any] | None = None) -> str:
     elif task.startswith("rank-"):
         ask = ("Revise these selections together for this business's week. "
                "A sector story with no path to a named entity, project, customer, or supplier is not INCLUDE. "
+               "Each candidate carries its core-assigned reader band (Escalating, Elevated, or Watch). "
+               "Order items only within each band; never move an item across bands and never write band or tier. "
                'Return {"selections":[{"signal_id":"...","decision":"INCLUDE|WATCH|EXCLUDE","reason":"under 200 characters",'
-               f'"source_ids":["..."],{_CHAIN}}}]}}, in order of importance, most important first. '
+               f'"source_ids":["..."],{_CHAIN},"order_in_band":1,'
+               '"reach_channel":"person|entity|contract|supplier|cash",'
+               '"urs_reach_reason":"one line naming how news reaches URS via that channel"}]}, '
+               "grouped by band with order_in_band starting at 1 inside each band (most important first within the band). "
                "One object per candidate. The significance scores in current_selections are kept, so do not rescore. "
                "Leave out the task packet and your private reasoning.")
     else:
@@ -488,7 +498,7 @@ def _instruction(task: str, payload: Mapping[str, Any] | None = None) -> str:
 
 # Fields a DeepSeek selection may leave out; the reviewed selection supplies them.
 CARRIED = ("fact", "exposure", "transmission", "impact", "exposure_status", "impact_status", "risk_ids", "uncertainty",
-           "immediate_threat")
+           "immediate_threat", "reach_channel", "urs_reach_reason", "order_in_band")
 
 
 def carry_over_selections(raw: Mapping[str, Any], current: Mapping[str, Any] | None, *, keep_scores: bool) -> dict[str, Any]:

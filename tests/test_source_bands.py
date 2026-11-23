@@ -51,7 +51,8 @@ def test_an_include_on_unrated_sources_only_is_watched_and_evidence_is_set_by_ru
     from grit.agents.weekly import check_selections
 
     chain = {"fact": "f", "exposure": "e", "transmission": "t", "impact": "i", "exposure_status": "POSSIBLE",
-             "significance": {"exposure": 2, "consequence": 3, "immediacy": 3, "evidence": 3, "change": 2}}
+             "significance": {"exposure": 2, "consequence": 3, "immediacy": 3, "evidence": 3, "change": 2},
+             "reach_channel": "entity", "urs_reach_reason": "Named entity exposure in the pack footprint."}
     sources = {"W": {"outlets": [_outlet("houseofsaud.com", "UNRATED")]},
                "O": {"outlets": [_outlet("sa.usembassy.gov", "T1")]}}
     weak = check_selections({"selections": [{"signal_id": "W", "decision": "INCLUDE", "reason": "r", "source_ids": ["W"], **chain}]},

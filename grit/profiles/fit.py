@@ -116,7 +116,7 @@ def fit_report(pool: Pool, run_id: str, profile: Any) -> str:
     entered = [item for item in with_profile if item not in without]
     left = [item for item in without if item not in with_profile]
     moved = sorted((row for row in rows if row["shown"] and row["preference"]["affinity"]), key=lambda row: -abs(row["preference"]["affinity"]))
-    lines.append(f"The profile moved {len(moved)} of {sum(1 for row in rows if row['shown'])} shown signals within their tiers.")
+    lines.append(f"The profile moved {len(moved)} of {sum(1 for row in rows if row['shown'])} shown signals within their bands.")
     if entered or left:
         lines += ["", "Priority findings it changed:", *(f"- In because of the profile: {titles[item]}" for item in entered), *(f"- Out because of the profile: {titles[item]}" for item in left)]
     else:

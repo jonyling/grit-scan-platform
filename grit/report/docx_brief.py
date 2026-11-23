@@ -600,7 +600,7 @@ def _method(document: Any, brief: Mapping[str, Any]) -> None:
     _heading(document, "How this brief was produced", level=2)
     lines = [
         f"{method['queries']} {method.get('queries_label') or 'queries'}, {method['signals']} pages, {method['kept']} kept by the deterministic keep rule, {method['shown_to_reader']} in this reader's view "
-        f"({method['hidden_by_routing']} outside the aperture). {method['profile']} The profile reordered {method['moved_by_profile']} signal(s) within their tiers and hid none.",
+        f"({method['hidden_by_routing']} outside the aperture). {method['profile']} The profile reordered {method['moved_by_profile']} signal(s) within their bands and hid none.",
         "Agents proposed the text. Deterministic checks rejected any sentence with an unquoted claim, a number not in its source, or a governed score word. "
         "Trend labels, confidence, priority, the harm verdict and RED status are computed by rule. Nothing here is approved or published.",
     ]
@@ -665,7 +665,8 @@ _SECTIONS = {
 # Format v2 sections (spec 44) -----------------------------------------------------------------------------------------
 
 V2_NOTE = (
-    "Bands come from hard overrides and scores; order within a band is not a precise 1–N rank. "
+    "Bands come from hard overrides and scores; order within a band is model-proposed with a URS reach reason "
+    "(person, entity, contract, supplier, or cash), not a precise global 1–N rank. "
     "Rows are AI-drafted suggestions for consideration, checked by rule against their sources. A named person reviews them before anyone acts."
 )
 
@@ -731,7 +732,11 @@ def _escalating(document: Any, brief: Mapping[str, Any], title: str, *, dry: boo
         for cell, width in zip(cells, widths):
             cell.width = Cm(width)
         _text_cell(cells[0], str(row.get("reader_band") or "Escalating"))
-        _cell_lines(cells[1], [f"{row['band']} {row['item']}", f"[{row['risk']}]" if row["risk"] else "No register risk matched."], bold_first=True)
+        item_lines = [f"{row['band']} {row['item']}", f"[{row['risk']}]" if row["risk"] else "No register risk matched."]
+        if row.get("urs_reach_reason"):
+            channel = f" ({row['reach_channel']})" if row.get("reach_channel") else ""
+            item_lines.append(f"URS reach{channel}: {row['urs_reach_reason']}")
+        _cell_lines(cells[1], item_lines, bold_first=True)
         if row.get("summary"):
             _runs(cells[2].paragraphs[0], row["summary"], size=8.5)
             _runs(cells[3].paragraphs[0], row["implications"], size=8.5)
@@ -804,6 +809,9 @@ def _priorities(document: Any, brief: Mapping[str, Any], title: str, *, dry: boo
     table = _table(document, ("Band", "Item", "Trend", "Risk linkage", "Owner or forum"), widths)
     for row in rows:
         item = row["item"] + (f" [{_marks(row['sources'])}]" if row.get("sources") and _REGISTER is not None else "")
+        if row.get("urs_reach_reason"):
+            channel = f" ({row['reach_channel']})" if row.get("reach_channel") else ""
+            item = f"{item}\nURS reach{channel}: {row['urs_reach_reason']}"
         _row(table, [row.get("reader_band") or "", item, row["trend"], row["risk"] or "No register risk matched", row["owner"]], widths)
     return True
 
