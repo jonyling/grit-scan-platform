@@ -386,11 +386,15 @@ def build_digest(
     run_date = run.get("run_date")
     if isinstance(run_date, date):
         run_date = run_date.isoformat()
+    from grit.core.overrides import READER_BAND_VOCAB_NOTE
+
     method_note = (
         "Wide scan nominates candidates. Assessment states fact → STE exposure → transmission → impact; "
-        "the Critic challenges the weakest link (spec 45 pattern for WSH). Nothing is published by code."
+        "the Critic challenges the weakest link (spec 45 pattern for WSH). Nothing is published by code. "
+        + READER_BAND_VOCAB_NOTE
         if use_reasoned else
-        "Agents propose discussion notes. Deterministic scope and citation checks decide what is kept. Nothing is published by code."
+        "Agents propose discussion notes. Deterministic scope and citation checks decide what is kept. Nothing is published by code. "
+        + READER_BAND_VOCAB_NOTE
     )
     digest = {
         "meta": {

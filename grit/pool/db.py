@@ -624,6 +624,53 @@ class Pool:
             latest[row["signal_id"]] = row
         return [row for row in latest.values() if row["status"] == "OPEN"]
 
+    def band_challenges_latest(
+        self, *, pack: str | None = None, run_id: str | None = None
+    ) -> list[dict[str, Any]]:
+        """Latest standing status per challenge_id, optionally scoped to a pack or run."""
+        if run_id:
+            rows = self.rows(
+                "SELECT * FROM band_challenges WHERE run_id = ? ORDER BY challenge_row_id",
+                (run_id,),
+            )
+        elif pack:
+            rows = self.rows(
+                """SELECT c.* FROM band_challenges c
+                   JOIN runs r ON r.run_id = c.run_id
+                   WHERE r.pack = ?
+                   ORDER BY c.challenge_row_id""",
+                (pack,),
+            )
+        else:
+            rows = self.rows("SELECT * FROM band_challenges ORDER BY challenge_row_id")
+        latest: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            latest[row["challenge_id"]] = row
+        return sorted(
+            latest.values(),
+            key=lambda row: (row.get("run_id") or "", row.get("signal_id") or "", row.get("challenge_id") or ""),
+        )
+
+    def assessment_band_rows(
+        self, *, pack: str | None = None, run_id: str | None = None
+    ) -> list[dict[str, Any]]:
+        """Assessment rows used for override-hit / challenge-rate denominators (KEEP preferred when present)."""
+        if run_id:
+            return self.assessments(run_id, kept_only=False)
+        if pack:
+            return self.rows(
+                """SELECT a.*, s.title, s.url, s.publisher, s.published_at, s.text, s.lane, s.doc_type
+                   FROM assessments a JOIN signals s ON s.signal_id = a.signal_id
+                   WHERE a.pack = ?
+                   ORDER BY a.run_id, COALESCE(a.tier, 9), a.signal_id""",
+                (pack,),
+            )
+        return self.rows(
+            """SELECT a.*, s.title, s.url, s.publisher, s.published_at, s.text, s.lane, s.doc_type
+               FROM assessments a JOIN signals s ON s.signal_id = a.signal_id
+               ORDER BY a.run_id, COALESCE(a.tier, 9), a.signal_id"""
+        )
+
     def management_requests(self, *, active_only: bool = False) -> list[dict[str, Any]]:
         """Each request carries "scope": the packs it belongs to. A request raised in chat has no pack, so it belongs to the
         packs of the profile that raised it. Empty means every pack."""

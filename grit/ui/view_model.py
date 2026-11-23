@@ -33,15 +33,29 @@ def shown(value: Any) -> str:
 
 def kpis(routed: Sequence[Mapping[str, Any]], brief: Mapping[str, Any], packages: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     shown_rows = [row for row in routed if row["shown"]]
+    from grit.core.overrides import BAND_ESCALATING, reader_band_of
+
     return {
         "Pages searched": brief["method"]["signals"],
         "Kept by rule": brief["method"]["kept"],
         "In your view": len(shown_rows),
-        "Tier 1–2": sum(1 for row in shown_rows if (row.get("tier") or 9) <= 2),
+        "Escalating": sum(1 for row in shown_rows if reader_band_of(row) == BAND_ESCALATING),
         "RED candidates awaiting R&A": sum(1 for row in routed if row.get("red_status") == "CANDIDATE"),
         "RED confirmed": sum(1 for row in routed if row.get("red_status") == "CONFIRMED"),
         "Pending review": sum(1 for row in packages if row["status"] == "PENDING_REVIEW"),
     }
+
+
+def band_learning_lines(pool: Any, *, pack: str | None = None, run_id: str | None = None) -> list[str]:
+    """Short dashboard lines from the P3 learning report. Empty when there is nothing to show."""
+    from grit.core.band_learning import format_learning_report, learning_report
+
+    report = learning_report(pool, pack=pack, run_id=run_id)
+    overrides = report.get("overrides") or {}
+    outcomes = report.get("outcomes") or {}
+    if not overrides.get("assessments") and not outcomes.get("challenges"):
+        return []
+    return format_learning_report(report).splitlines()
 
 
 def profile_in_force(profile: Any) -> list[str]:

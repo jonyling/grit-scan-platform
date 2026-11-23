@@ -36,7 +36,15 @@ def main() -> None:
     from grit.report.markdown import render_markdown
     from grit.ui import actions
     from grit.ui.runs import listed_runs, ready_snapshot
-    from grit.ui.view_model import kpis, profile_in_force, screen_context, signal_detail, signal_rows, table_html
+    from grit.ui.view_model import (
+        band_learning_lines,
+        kpis,
+        profile_in_force,
+        screen_context,
+        signal_detail,
+        signal_rows,
+        table_html,
+    )
 
     load_local_env()
     st.set_page_config(page_title="GRIT-Scan", layout="wide")
@@ -127,6 +135,15 @@ def main() -> None:
         active_tab = next((name for name, tab in zip(tab_names, (dashboard, signals_tab, packs_tab, requests_tab, alerts_tab)) if getattr(tab, "open", False)), tab_names[0])
 
         with dashboard:
+            learning = band_learning_lines(db, run_id=run_id)
+            if learning:
+                st.subheader("Band learning (challenge outcomes)")
+                st.caption(
+                    "Challenge rate, override hits, and upheld vs accept-as-rule-gap signals for score→band tuning. "
+                    "Core band never moves from this panel; R&A reviews proposals via `grit challenges propose-tuning`."
+                )
+                for line in learning[:16]:
+                    st.markdown(f"- {line}")
             if meta.get("layout") == "BA":
                 from grit.report.brief import SECTION_TITLES as BA_SECTIONS
 
