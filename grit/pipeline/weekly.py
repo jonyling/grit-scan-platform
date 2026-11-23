@@ -507,7 +507,7 @@ class WeeklyCoordinator:
         """The internal staff log by country, for this business area's staff only, read once per coordinator. None when
         the staff log has none of this business area's staff."""
         if self._people is None:
-            from grit.core.people import load_people, staff_snapshot
+            from grit.core.people import load_people, scope_people, staff_snapshot
             from grit.pipeline.reader_scan import _load_pack
 
             people = load_people(today=run_date) or {}
@@ -516,9 +516,8 @@ class WeeklyCoordinator:
             except (FileNotFoundError, KeyError, ValueError):
                 pack = None  # a pack with no config, as in tests, sees the whole staff log
             own = staff_snapshot(pack=pack) or {}
-            countries = {row["country"] for key in ("sites", "travel") for row in own.get(key) or []}
-            if people:
-                people = {**people, "countries": {name: row for name, row in people["countries"].items() if name in countries}}
+            if pack is not None:
+                people = scope_people(people, own) or {}
             self._people = people if people and people["countries"] else {}
         return self._people or None
 

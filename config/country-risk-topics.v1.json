@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "registerId": "GRIT-COUNTRY-RISK-TOPICS-V1",
+  "packs": {
+    "urs": ["Qatar", "Kuwait", "Bahrain", "Israel"]
+  },
+  "countries": {
+    "Qatar": [
+      "Qatar strikes",
+      "Qatar Iran retaliation",
+      "Qatar Qeshm",
+      "Qatar mediation",
+      "Qatar budget fiscal"
+    ],
+    "Kuwait": [
+      "Kuwait strikes",
+      "Kuwait Iran retaliation",
+      "Kuwait Qeshm",
+      "Kuwait budget fiscal"
+    ],
+    "Bahrain": [
+      "Bahrain strikes",
+      "Bahrain Iran retaliation",
+      "Bahrain Qeshm",
+      "Bahrain budget fiscal"
+    ],
+    "Israel": [
+      "Israel strikes",
+      "Israel Iran retaliation",
+      "Israel budget fiscal",
+      "Israel shekel"
+    ]
+  }
+}

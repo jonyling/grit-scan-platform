@@ -201,7 +201,15 @@ def plan(pool: Pool, run: ReaderRun) -> list[Any]:
     seed_watchpoints(pool, pack)
     seed_requests(pool, pack)
     requests = [row for row in pool.management_requests(active_only=True) if request_in_pack(row, run.pack)]
-    return reader_queries(pack.scan_plan, pool.watchpoints(run.pack), requests, pack=pack, reviewed_aliases=_aliases(), run_date=run.run_date)
+    return reader_queries(
+        pack.scan_plan,
+        pool.watchpoints(run.pack),
+        requests,
+        pack=pack,
+        country_risk_pack=graph_pack(pack) if pack.level == "GROUP" else pack,
+        reviewed_aliases=_aliases(),
+        run_date=run.run_date,
+    )
 
 
 # Acquire ---------------------------------------------------------------------------------------------------------
@@ -249,6 +257,26 @@ def acquire(
     found = {"queries_sent": 0, "results": 0, "signals_new": 0, "skipped_answered": len(specs) - len([s for s in specs if s.query_id not in answered])}
     returned: dict[str, int] = {}
 
+    def on_attempt(entry: Mapping[str, Any]) -> None:
+        spec = by_id.get(str(entry.get("query_id") or ""))
+        if spec is None:
+            return
+        pool.record_search_attempt(
+            run.run_id,
+            query_id=spec.query_id,
+            engine=str(entry.get("engine") or "BRAVE"),
+            query=spec.query,
+            lane=spec.lane,
+            target_id=target_of(spec),
+            canonical_lob=spec.canonical_lob,
+            sent_query=str(entry.get("sent_query") or spec.query),
+            attempt_no=int(entry.get("attempt_no") or 1),
+            outcome=str(entry.get("outcome") or "REQUEST_ERROR"),
+            http_status=int(entry["status"]) if entry.get("status") is not None else None,
+            error=str(entry.get("error") or "") or None,
+            attempted_at=str(entry.get("fetched_at") or fetched_at),
+        )
+
     def on_search(entry: dict[str, Any], *, replay: bool = False) -> None:
         if not replay:
             with (run.folder / "searches.jsonl").open("a", encoding="utf-8") as handle:
@@ -286,7 +314,10 @@ def acquire(
         if sleep is not None:
             options["sleep"] = sleep
         try:
-            result = collect_plan(todo, fetched_at=fetched_at, freshness=_freshness(run), country="ALL", getter=getter, on_search=on_search, **options)
+            result = collect_plan(
+                todo, fetched_at=fetched_at, freshness=_freshness(run), country="ALL", getter=getter,
+                on_search=on_search, on_attempt=on_attempt, **options,
+            )
             stopped = result.stopped
         except BraveFetchError as exc:
             stopped = "BRAVE_ERROR"
@@ -294,7 +325,10 @@ def acquire(
         thin = [spec for spec in todo if returned.get(spec.query_id, 0) == 0]
         # An injected Brave getter is an offline run: Currents runs live only beside a live Brave, or with its own getter.
         if thin and (getter is None or currents_getter is not None):
-            found["currents_fallback"] = _currents_fallback(thin, fetched_at=fetched_at, getter=currents_getter, on_search=on_search, limit=fallback_max, log=log)
+            found["currents_fallback"] = _currents_fallback(
+                thin, fetched_at=fetched_at, getter=currents_getter, on_search=on_search,
+                on_attempt=on_attempt, limit=fallback_max, log=log,
+            )
     if currents_queries:
         found["currents"] = _currents(pool, run, currents_queries[:2], currents_getter, fetched_at)
     from grit.copilot.web import take_additions
@@ -326,7 +360,14 @@ def _freshness(run: ReaderRun) -> str:
 
 
 def _currents_fallback(
-    specs: Sequence[Any], *, fetched_at: str, getter: Callable[..., Any] | None, on_search: Callable[[dict[str, Any]], None], limit: int | None, log: Callable[[str], None]
+    specs: Sequence[Any],
+    *,
+    fetched_at: str,
+    getter: Callable[..., Any] | None,
+    on_search: Callable[[dict[str, Any]], None],
+    on_attempt: Callable[[Mapping[str, Any]], None],
+    limit: int | None,
+    log: Callable[[str], None],
 ) -> dict[str, Any]:
     """Send Brave's unanswered and empty queries to Currents, one search each, logged like a Brave search (spec 37)."""
     import os
@@ -342,8 +383,17 @@ def _currents_fallback(
         try:
             candidates = collect_currents(spec.query, fetched_at=fetched_at, max_records=20, getter=getter)
         except CurrentsFetchError as exc:
+            on_attempt({
+                "query_id": spec.query_id, "query": spec.query, "sent_query": spec.query, "engine": "CURRENTS",
+                "attempt_no": 1, "outcome": "REQUEST_ERROR", "status": None, "error": type(exc).__name__,
+                "fetched_at": fetched_at,
+            })
             log(f"  Currents stopped: {exc}")
             return {"sent": sent, "skipped": len(specs) - sent, "reason": "CURRENTS_ERROR"}
+        on_attempt({
+            "query_id": spec.query_id, "query": spec.query, "sent_query": spec.query, "engine": "CURRENTS",
+            "attempt_no": 1, "outcome": "ANSWERED", "status": 200, "error": None, "fetched_at": fetched_at,
+        })
         results = [
             {"url": item.url, "title": item.title, "text": item.text, "publisher": item.publisher, "published_at": item.published_at, "rank": rank}
             for rank, item in enumerate(candidates, start=1) if item.url and item.title
@@ -494,10 +544,18 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
         records.append({**signal, "doc_type": doc, "link": link, "hits": hits, "scale": scale_cues(candidate)})
     decisions = filter_reader(records, run_date=run.run_date, vectors=run_vectors(pool, run), config=ReaderFilterConfig(window_days=window))
 
-    from grit.core.people import append_staff_basis, apply_staff_priority, ground_page, load_people, people_risk_terms
+    from grit.core.people import (
+        append_staff_basis,
+        apply_staff_priority,
+        ground_page,
+        load_people,
+        people_risk_terms,
+        scope_people,
+        staff_snapshot,
+    )
 
-    people = load_people(today=run.run_date)
-    risk_terms = people_risk_terms() if people else ()
+    people = scope_people(load_people(today=run.run_date), staff_snapshot(pack=reader))
+    risk_terms = people_risk_terms()
 
     kept = red = 0
     for record in records:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
 from grit.core.canonical import canonical_hash
@@ -12,6 +13,14 @@ INTENTS = {"APPROVE", "REJECT", "HOLD", "REQUEST_REWORK"}
 ALWAYS_REWORK = {"MISSING_SIGNAL", "INCORRECT_CLASSIFICATION", "MISSING_EVIDENCE", "MATERIAL_OMISSION"}
 FINDING_FIELDS = ("finding_id", "finding_type", "severity", "description", "resolution_required")
 INVOCATION_FIELDS = {"review_timestamp_utc", "invocation_id", "retry_attempt", "signature", "signed_payload_hash"}
+EXPOSURE_REQUIRED = {
+    "sites": ("entity", "city", "country", "headcount"),
+    "travel": ("destination", "country", "travellers"),
+    "projects": ("name", "entity", "country"),
+    "financial": ("item", "entity", "amount"),
+    "alerts": ("date", "location", "country", "summary"),
+}
+EXPOSURE_DATE_FIELDS = ("safetyConfirmed", "until", "date")
 
 
 def review_gate(context: dict[str, Any]) -> dict[str, Any]:
@@ -96,6 +105,20 @@ def review_gate(context: dict[str, Any]) -> dict[str, Any]:
             next_action="RESOLVE_HOLD",
             reason_code="OPEN_ESCALATING_CHALLENGES",
             material_ids=sorted(str(item) for item in open_escalating),
+        )
+    exposure_as_of, exposure_stale = _stale_exposure_approval(context)
+    if intent == "APPROVE" and context.get("package_current_status") == "PENDING_REVIEW" and exposure_stale:
+        return _decision(
+            context,
+            input_hash,
+            outcome="HOLD",
+            package_status="HELD",
+            signal_instruction="NONE",
+            next_action="RESOLVE_HOLD",
+            reason_code="EXPOSURE_DATA_STALE",
+            reason_summary="exposure data stale",
+            material_ids=_physical_threat_override_ids(context),
+            as_of=exposure_as_of,
         )
     if intent == "APPROVE" and context.get("package_current_status") == "PENDING_REVIEW":
         return _decision(
@@ -188,6 +211,96 @@ def _rework_finding_ids(findings: list[dict[str, Any]]) -> list[str]:
     return sorted(ids)
 
 
+def _physical_threat_override_ids(context: dict[str, Any]) -> list[str]:
+    value = (
+        context.get("kept_tier1_physical_threat_override_ids")
+        if "kept_tier1_physical_threat_override_ids" in context
+        else context.get("physical_threat_override_signal_ids")
+    )
+    if isinstance(value, list):
+        return sorted(str(item) for item in value if str(item))
+    return []
+
+
+def _stale_exposure_approval(context: dict[str, Any]) -> tuple[str | None, bool]:
+    override_ids = _physical_threat_override_ids(context)
+    has_override = bool(override_ids) or (
+        context.get("has_kept_tier1_physical_threat_override") is True
+    )
+    if not has_override:
+        return None, False
+
+    exposure = context.get("exposure_data", context.get("exposure_snapshot"))
+    if not isinstance(exposure, dict):
+        return None, True
+    from grit.pipeline.exposure_snapshot import exposure_freshness
+
+    as_of, stale = exposure_freshness(exposure, run_date=str(context.get("run_date") or ""))
+    if stale:
+        return as_of, True
+    typed = exposure.get("exposures")
+    if typed is not None:
+        return as_of, not _valid_typed_exposure_records(typed)
+    return as_of, not _valid_exposure_sections(exposure)
+
+
+def _valid_typed_exposure_records(records: Any) -> bool:
+    if not isinstance(records, list) or not records:
+        return False
+    for row in records:
+        if not isinstance(row, dict):
+            return False
+        if any(row.get(field) in (None, "") for field in ("entity", "status", "snapshot_date", "record_type")):
+            return False
+        if not _iso_date(str(row.get("snapshot_date") or "")):
+            return False
+        count = row.get("staff_count")
+        if count is not None and (not isinstance(count, int) or isinstance(count, bool) or count < 0):
+            return False
+        confirmation = row.get("last_safety_confirmation")
+        if confirmation and not _iso_date(str(confirmation)):
+            return False
+    return True
+
+
+def _valid_exposure_sections(exposure: dict[str, Any]) -> bool:
+    present = [(section, exposure[section]) for section in EXPOSURE_REQUIRED if section in exposure]
+    if not present or not any(rows for _, rows in present):
+        return False
+    for section, rows in present:
+        if not isinstance(rows, list):
+            return False
+        for row in rows:
+            if not isinstance(row, dict):
+                return False
+            if any(row.get(field) in (None, "") for field in EXPOSURE_REQUIRED[section]):
+                return False
+            for field in EXPOSURE_DATE_FIELDS:
+                if row.get(field) and not _iso_date(str(row[field])):
+                    return False
+            if section in {"sites", "travel"}:
+                count = row["headcount"] if section == "sites" else row["travellers"]
+                if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+                    return False
+            if section == "alerts":
+                nearest = row.get("nearest") or []
+                if not isinstance(nearest, list) or any(
+                    not isinstance(item, dict)
+                    or not item.get("entity")
+                    or not isinstance(item.get("distanceKm"), (int, float))
+                    for item in nearest
+                ):
+                    return False
+    return True
+
+
+def _iso_date(value: str) -> bool:
+    try:
+        return date.fromisoformat(value).isoformat() == value
+    except ValueError:
+        return False
+
+
 def _sorted_findings(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(findings, key=lambda item: str(item.get("finding_id") or ""))
 
@@ -204,6 +317,8 @@ def _decision(
     material_ids: list[str],
     new_package_required: bool = False,
     approval_eligible: bool = False,
+    reason_summary: str | None = None,
+    as_of: str | None = None,
 ) -> dict[str, Any]:
     result = {
         "review_outcome": outcome,
@@ -215,7 +330,7 @@ def _decision(
         "missing_signal_ids": sorted(context.get("missing_signal_ids") or []),
         "material_finding_ids": material_ids,
         "reason_code": reason_code,
-        "reason_summary": reason_code,
+        "reason_summary": reason_summary or reason_code,
         "package_id": context.get("review_package_id"),
         "package_version": context.get("review_package_version"),
         "package_hash": context.get("authoritative_package_hash"),
@@ -224,5 +339,7 @@ def _decision(
         "function_version": context.get("function_version") or FUNCTION_VERSION,
         "correlation_id": context.get("correlation_id"),
     }
+    if as_of is not None:
+        result["asOf"] = as_of
     result["canonical_result_hash"] = canonical_hash(result)
     return result

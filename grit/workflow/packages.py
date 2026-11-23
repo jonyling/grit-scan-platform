@@ -22,6 +22,57 @@ from grit.workflow.supervisor import Package, Supervisor, WorkflowRow
 ACTOR = "grit-supervisor"
 
 
+def _review_exposure_context(pool: Pool, row: Mapping[str, Any]) -> dict[str, Any]:
+    """Policy inputs frozen to this exact package and report."""
+    from grit.core.overrides import OVERRIDE_STAFF_THREAT
+
+    membership = row.get("membership") or {}
+    report_id = membership.get("weekly_report_id")
+    report = pool.one("SELECT * FROM weekly_reports WHERE report_id = ?", (report_id,)) if report_id else None
+    brief = report.get("brief") if report else {}
+    v2 = brief.get("v2") if isinstance(brief, dict) else None
+    block = v2.get("exposure_ask") if isinstance(v2, dict) else None
+    exposure = v2.get("exposure") if isinstance(v2, dict) else None
+    if isinstance(block, Mapping):
+        dates = sorted({
+            str(item.get("snapshot_date") or "")
+            for item in block.get("exposures") or []
+            if item.get("snapshot_date")
+        })
+        exposure = {
+            "asOf": dates[0] if len(dates) == 1 else None,
+            "exposures": list(block.get("exposures") or []),
+            "notSupplied": not block.get("exposures"),
+        }
+    member_ids = set(membership.get("members") or ())
+    override_ids: list[str] = []
+    for item in report.get("routed") or [] if report else []:
+        if not isinstance(item, Mapping) or item.get("signal_id") not in member_ids:
+            continue
+        priority = item.get("priority")
+        if not isinstance(priority, Mapping):
+            priority = item.get("priority_json")
+        if not isinstance(priority, Mapping):
+            priority = {}
+        rule_id = item.get("override_rule_id") or priority.get("override_rule_id")
+        tier = item.get("tier") if item.get("tier") is not None else priority.get("tier")
+        if rule_id == OVERRIDE_STAFF_THREAT and str(tier) == "1":
+            editorial = item.get("editorial")
+            kept = (
+                editorial.get("decision") in {"INCLUDE", "WATCH"}
+                if isinstance(editorial, Mapping)
+                else item.get("decision") in {"KEEP", "INCLUDE", "WATCH"} or item.get("shown") is True
+            )
+            if kept:
+                override_ids.append(str(item["signal_id"]))
+    return {
+        "kept_tier1_physical_threat_override_ids": sorted(set(override_ids)),
+        "has_kept_tier1_physical_threat_override": bool(override_ids),
+        "exposure_data": exposure,
+        "run_date": (pool.run(row["run_id"]) or {}).get("run_date"),
+    }
+
+
 def supervisor_for(pool: Pool) -> Supervisor:
     rows = [WorkflowRow(**row) for row in pool.workflow_rows()]
     supervisor = Supervisor(actor_id=ACTOR, ledger_rows=rows, ledger_sink=pool.append_workflow_row)
@@ -191,6 +242,7 @@ def review_package(pool: Pool, *, package_id: str, version: int, reviewer: Profi
         "unresolved_escalating_challenge_ids": blocking,
         "require_escalating_challenges_resolved": True,
         "open_challenge_ids": open_ids,
+        **_review_exposure_context(pool, row),
     })
     at = utc_now()
     decision = supervisor.submit_review(
@@ -204,8 +256,13 @@ def review_package(pool: Pool, *, package_id: str, version: int, reviewer: Profi
         reason = denied[-1].get("reason_code") if denied else "UNKNOWN"
         raise RuntimeError(f"ReviewGate returned {decision['review_outcome']}, but TransitionGuard refused to move the members ({reason}). Nothing was written.")
     membership = dict(row["membership"])
-    membership["review"] = {"intent": intent, "findings": [dict(item) for item in findings],
-                            "reviewer": reviewer.profile_id, "at": at}
+    membership["review"] = {
+        "intent": intent, "findings": [dict(item) for item in findings],
+        "reviewer": reviewer.profile_id, "at": at,
+        "outcome": decision["review_outcome"], "status": package.status,
+        "reason_code": decision["reason_code"], "reason_summary": decision["reason_summary"],
+        **({"asOf": decision["asOf"]} if "asOf" in decision else {}),
+    }
     approval = next((item for item in supervisor.approvals if item["package_id"] == package_id and item["package_version"] == version), None)
     if approval:
         membership["approval"] = {**approval, "member_signal_ids": list(approval["member_signal_ids"])}
@@ -215,7 +272,8 @@ def review_package(pool: Pool, *, package_id: str, version: int, reviewer: Profi
             (package.status, reviewer.profile_id, at, json.dumps(membership, sort_keys=True, default=str), package_id, version),
         )
     pool.log(actor_type="FUNCTION", actor="ReviewGate", status=decision["review_outcome"], subject=package_id, run_id=row["run_id"], output_hash=decision["canonical_result_hash"],
-             detail={"reviewer": reviewer.profile_id, "intent": intent, "reason_codes": decision.get("reason_codes")})
+             detail={"reviewer": reviewer.profile_id, "intent": intent, "reason_code": decision.get("reason_code"),
+                     "reason_summary": decision.get("reason_summary")})
     return {"outcome": decision["review_outcome"], "status": package.status, "decision": decision}
 
 

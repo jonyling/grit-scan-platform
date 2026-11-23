@@ -24,6 +24,7 @@ from grit.settings import ROOT
 
 # Lane order is the order of preference when a cap trims the due queries.
 LANES = (
+    "COUNTRY_RISK",
     "TAG_CLUSTER",
     "EMERGING_THEME",
     "SCAN_KEYWORD",
@@ -44,6 +45,7 @@ MAX_QUERY_CHARS = 400
 _RANK = {"Critical": 0, "Highest Priority": 0, "KEY": 0, "High": 1, "TIER_2": 1, "Medium": 2, "Emerging": 2, "EMERGING": 2}
 _NO_PRIORITY_RANK = 3
 _CADENCE: dict[str, int | dict[str | None, int]] = {
+    "COUNTRY_RISK": 1,
     "TAG_CLUSTER": {"Critical": 1, "High": 2, "Medium": 4, None: 4},
     "EMERGING_THEME": 4,
     "SCAN_KEYWORD": 2,
@@ -57,6 +59,7 @@ _CADENCE: dict[str, int | dict[str | None, int]] = {
     "ENTITY": 2,
     "CLUSTER_TERM": 12,
 }
+COUNTRY_RISK_CONFIG = "country-risk-topics.v1.json"
 
 
 @dataclass(frozen=True)
@@ -99,8 +102,65 @@ def search_name(name: str, node_id: str, reviewed: Mapping[str, Sequence[str]], 
     return (short[0], "GENERATED") if short else (name, "REGISTER")
 
 
-def _items(pack: OntologyPack, reviewed: Mapping[str, Sequence[str]] | None = None) -> Iterator[tuple[str, str, str | None, str | None, dict[str, str]]]:
+def load_country_risk_topics(config_dir: Path | None = None) -> dict[str, Any]:
+    """Load the governed country-risk topic register once, with a version visible in every generated source."""
+    root = Path(config_dir or (ROOT / "config"))
+    candidates = (root / COUNTRY_RISK_CONFIG, root.parent / COUNTRY_RISK_CONFIG, ROOT / "config" / COUNTRY_RISK_CONFIG)
+    path = next((candidate for candidate in candidates if candidate.is_file()), candidates[0])
+    data = json.loads(path.read_text(encoding="utf-8-sig"))
+    countries = data.get("countries")
+    if not isinstance(data.get("version"), int) or not isinstance(countries, dict):
+        raise ValueError(f"{path}: country-risk config must contain an integer version and a countries object")
+    for country, topics in countries.items():
+        if not isinstance(country, str) or not country.strip() or not isinstance(topics, list) or not all(isinstance(topic, str) for topic in topics):
+            raise ValueError(f"{path}: {country!r} must map to a list of topic strings")
+    packs = data.get("packs", {})
+    if not isinstance(packs, dict) or any(
+        not isinstance(pack, str)
+        or not isinstance(values, list)
+        or not all(isinstance(value, str) and value in countries for value in values)
+        for pack, values in packs.items()
+    ):
+        raise ValueError(f"{path}: packs must map pack ids to configured country names")
+    return data
+
+
+def country_risk_items(pack: Any, config: Mapping[str, Any] | None = None) -> Iterator[tuple[str, str, str | None, str | None, dict[str, str]]]:
+    """Country topics for explicit pack countries and registered entity or asset footprints."""
+    if getattr(pack, "level", None) == "GROUP":
+        return
+    config_dir = Path(getattr(pack, "config_dir", ROOT / "config"))
+    data = config or load_country_risk_topics(config_dir)
+    countries = {
+        str(country).strip().casefold()
+        for row in pack.exposure.get("entities") or []
+        for country in (row.get("countryOfIncorporation"), *(row.get("assetCountries") or []))
+        if str(country or "").strip()
+    }
+    countries |= {
+        str(country).strip().casefold()
+        for country in (data.get("packs") or {}).get(str(getattr(pack, "pack", "") or ""), [])
+    }
+    register = str(data.get("registerId") or f"GRIT-COUNTRY-RISK-TOPICS-V{data['version']}")
+    for country, topics in (data["countries"].items()):
+        if country.casefold() not in countries:
+            continue
+        for topic in topics:
+            yield "COUNTRY_RISK", topic, None, None, {
+                "register": register,
+                "where": f"version {data['version']} {country}",
+                "target": country,
+                "configVersion": str(data["version"]),
+            }
+
+
+def _items(
+    pack: OntologyPack,
+    reviewed: Mapping[str, Sequence[str]] | None = None,
+    country_risk_config: Mapping[str, Any] | None = None,
+) -> Iterator[tuple[str, str, str | None, str | None, dict[str, str]]]:
     """Yield (lane, query, canonical LOB, priority, source) in lane order."""
+    yield from country_risk_items(pack, country_risk_config)
     libraries = (pack.keyword_library or {}).get("libraries") or []
     register = "URS-KEYWORD-LIBRARY"
     for library in libraries:
@@ -171,10 +231,14 @@ def reviewed_by_id(reviewed_aliases: Mapping[str, Any] | None) -> dict[str, list
     return found
 
 
-def build_query_plan(pack: OntologyPack, reviewed_aliases: Mapping[str, Any] | None = None) -> list[QuerySpec]:
+def build_query_plan(
+    pack: OntologyPack,
+    reviewed_aliases: Mapping[str, Any] | None = None,
+    country_risk_config: Mapping[str, Any] | None = None,
+) -> list[QuerySpec]:
     """Build every query the ontology supports. A repeated query keeps its first lane and merges the sources."""
     merged: dict[str, dict[str, Any]] = {}
-    for lane, query, lob, priority, source in _items(pack, reviewed_by_id(reviewed_aliases)):
+    for lane, query, lob, priority, source in _items(pack, reviewed_by_id(reviewed_aliases), country_risk_config):
         text = re.sub(r"\s+", " ", query).strip()
         if not text:
             continue

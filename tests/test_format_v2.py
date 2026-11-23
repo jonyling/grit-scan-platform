@@ -345,6 +345,84 @@ def test_coverage_counts_answered_searches_and_scopes_them_to_the_line_they_aim_
     pool.close()
 
 
+def _jurisdiction_pack() -> object:
+    from types import SimpleNamespace
+
+    return SimpleNamespace(
+        level="BA",
+        exposure={
+            "entities": [
+                {
+                    "entityId": "ENTITY-QATAR-1",
+                    "entityName": "Doha Rail Ltd",
+                    "countryOfIncorporation": "Qatar",
+                    "assetCountries": ["Kuwait"],
+                }
+            ]
+        },
+    )
+
+
+def test_jurisdiction_answered_search_with_zero_results_says_no_item_found_and_audits_the_query() -> None:
+    from grit.report.format_v2 import NO_FINDING, jurisdiction_rows
+
+    (row,) = [item for item in jurisdiction_rows(
+        _jurisdiction_pack(),
+        [],
+        [],
+        [{"query_id": "q-qatar", "query": "Qatar rail regulation", "target_id": None}],
+    ) if item["country"] == "Qatar"]
+    assert row["finding"] == NO_FINDING == "No item found"
+    assert row["searched"] is True
+    assert row["search_audit"] == [{"query_id": "q-qatar", "query": "Qatar rail regulation"}]
+    assert row["audit_detail"] == "q-qatar: Qatar rail regulation"
+
+
+def test_jurisdiction_failed_search_attempt_does_not_support_no_finding(tmp_path: Path) -> None:
+    from grit.report.format_v2 import NO_COUNTRY_SEARCH, jurisdiction_rows
+
+    pool = Pool(tmp_path / "pool.db")
+    pool.start_run("R", run_date="2026-11-02", pack="urs", kind="READER_SCAN", config={})
+    pool.record_search_attempt(
+        "R", query_id="q-failed", engine="BRAVE", query="Qatar rail regulation", lane="COUNTRY_RISK",
+        target_id="Qatar", canonical_lob=None, sent_query="Qatar rail regulation", attempt_no=1,
+        outcome="HTTP_ERROR", http_status=503, error="Unavailable", attempted_at="2026-11-02T00:00:00Z",
+    )
+    (row,) = [item for item in jurisdiction_rows(
+        _jurisdiction_pack(), [], [], pool.answered_searches("R"),
+    ) if item["country"] == "Qatar"]
+    assert row["finding"] == NO_COUNTRY_SEARCH == "Search not run"
+    assert row["search_audit"] == []
+    pool.close()
+
+
+def test_jurisdiction_with_no_search_attempt_says_search_not_run(tmp_path: Path) -> None:
+    from grit.report.format_v2 import jurisdiction_rows
+
+    pool = Pool(tmp_path / "pool.db")
+    pool.start_run("R", run_date="2026-11-02", pack="urs", kind="READER_SCAN", config={})
+    rows = jurisdiction_rows(_jurisdiction_pack(), [], [], pool.answered_searches("R"))
+    assert {row["country"] for row in rows} == {"Qatar", "Kuwait"}
+    assert all(row["finding"] == "Search not run" and row["audit_detail"] == "No answered country-relevant search" for row in rows)
+    pool.close()
+
+
+def test_jurisdiction_entity_id_answer_matches_only_the_entity_countries() -> None:
+    from grit.report.format_v2 import jurisdiction_rows
+
+    rows = jurisdiction_rows(
+        _jurisdiction_pack(),
+        [],
+        [],
+        [{"query_id": "q-entity", "query": "Doha Rail Ltd", "target_id": "ENTITY-QATAR-1"}],
+    )
+    assert {row["country"]: row["finding"] for row in rows} == {
+        "Qatar": "No item found",
+        "Kuwait": "No item found",
+    }
+    assert all(row["search_audit"][0]["query_id"] == "q-entity" for row in rows)
+
+
 def test_a_management_request_search_takes_its_category_from_the_request_title(tmp_path: Path) -> None:
     from grit.report.format_v2 import FINANCIAL, OPERATIONAL, _searched
 

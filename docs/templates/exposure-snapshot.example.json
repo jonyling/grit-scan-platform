@@ -8,6 +8,15 @@
     "Travel tracker",
     "Item 5, Concentration Risk of Rail Projects in Taiwan"
   ],
+  "principalAsk": {
+    "text": "Confirm that Riyadh staff safety and project continuity remain unchanged by the next cycle.",
+    "owner_profile_id": "wilson",
+    "due_date": "2026-11-06",
+    "red_triggers": [
+      "STAFF_HARMED",
+      "PROJECT_SUSPENDED"
+    ]
+  },
   "sites": [
     {"entity": "ST Engineering Saudi Limited", "city": "Riyadh", "country": "Saudi Arabia", "headcount": 12,
      "safetyConfirmed": "2026-10-28", "reference": "GRIT entities list, 28 Oct"}

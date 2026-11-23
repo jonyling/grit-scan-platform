@@ -21,8 +21,8 @@ BA_WIDE = "Business-area wide"
 NOT_SEARCHED = "Not searched this week"
 NIL = "No item kept (searched)"
 NIL_WIDE = "No item kept (business-area-wide search only)"
-NO_FINDING = "No item found in the checked sources."
-NO_COUNTRY_SEARCH = "No item found; no country-specific search ran this week."
+NO_FINDING = "No item found"
+NO_COUNTRY_SEARCH = "Search not run"
 NO_ENGLISH = "No English-language headline in the kept sources."
 MAX_PRIORITIES = 12
 MAX_CHANGES = 12
@@ -441,7 +441,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
                and not any(cell["signal_ids"] for line in coverage if line["lob"] == lob for cell in line["cells"].values())]
     unsearched = sum(1 for line in coverage for cell in line["cells"].values() if cell["text"] == NOT_SEARCHED)
     wide_only = sum(1 for line in coverage for cell in line["cells"].values() if cell["text"] == NIL_WIDE)
-    unsearched_countries = [row["country"] for row in jurisdictions if row["finding"] == NO_COUNTRY_SEARCH]
+    unsearched_countries = [row["country"] for row in jurisdictions if not row["searched"]]
     competitor_names = [item for item in named.get("Competitor", [])]
 
     macro_topics = {row["request_id"] for row in pool.management_requests() if category_of_name(str(row.get("title") or "")) == FINANCIAL}
@@ -529,8 +529,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
 
 def jurisdiction_rows(pack: Any, visible: Sequence[Mapping[str, Any]], events: Sequence[Mapping[str, Any]],
                       queries: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
-    """Each country with a registered entity or asset, with the best kept signal that names it. A nil needs a search that
-    named the country or one of its entities."""
+    """Each registered-entity country, its best kept signal and the answered searches relevant to that country."""
     rows_out = []
     up_ids = {signal_id for event in events if event["band"] == UP for signal_id in event["signal_ids"]}
     for country, rows in sorted(_country_entities(pack).items(), key=lambda pair: (-len(pair[1]), pair[0])):
@@ -538,13 +537,25 @@ def jurisdiction_rows(pack: Any, visible: Sequence[Mapping[str, Any]], events: S
         entity_ids = {entity_id for _, entity_id in rows if entity_id}
         found = [row for row in visible if _mentions(country, row)]
         found.sort(key=lambda item: (item.get("tier") or 9, -(item.get("corroboration") or 1)))
-        country_searched = any(str(query.get("target_id") or "") in entity_ids or _names_country(country, str(query.get("query") or ""))
-                               for query in queries)
+        answered = [
+            query for query in queries
+            if str(query.get("target_id") or "") in entity_ids
+            or _names_country(country, str(query.get("target_id") or ""))
+            or _names_country(country, str(query.get("query") or ""))
+        ]
+        answered.sort(key=lambda query: (str(query.get("query_id") or ""), str(query.get("query") or "")))
+        search_audit = [
+            {"query_id": str(query.get("query_id") or ""), "query": str(query.get("query") or "")}
+            for query in answered
+        ]
+        audit_detail = "; ".join(f"{item['query_id']}: {item['query']}" for item in search_audit) or "No answered country-relevant search"
+        country_searched = bool(answered)
         headline = english_headlines(found, 1)
         rows_out.append({
             "country": country, "entities": entities[:6], "more_entities": max(0, len(entities) - 6),
             "finding": headline[0][0] if headline else (NO_ENGLISH if found else NO_FINDING if country_searched else NO_COUNTRY_SEARCH),
             "signal_ids": [headline[0][1]["signal_id"]] if headline else [], "searched": country_searched,
+            "search_audit": search_audit, "audit_detail": audit_detail,
             "trend": UP if any(row["signal_id"] in up_ids for row in found) else SAME if found else "–",
         })
     return rows_out

@@ -189,18 +189,26 @@ def _staff_pack(name: str | None) -> Any:
 
 def _admit_approved_evidence(pool: Any, run: Any, args: argparse.Namespace) -> dict[str, Any] | None:
     from pathlib import Path
-    from grit.pipeline.exposure_snapshot import is_snapshot, snapshot_records, snapshot_summary
+    from grit.pipeline.exposure_snapshot import is_snapshot, principal_ask, snapshot_records, snapshot_summary
     from grit.pipeline.weekly import add_internal_evidence
     document = json.loads(Path(args.internal_evidence).read_text(encoding="utf-8"))
     approver = _profiles([args.evidence_approved_by])[0]
     if is_snapshot(document):
         # A weekly exposure snapshot: approved records for the agents, and the whole snapshot for the report.
+        expected_pack = str(getattr(run, "pack", None) or document.get("pack") or "").strip() or None
         try:
-            records = snapshot_records(document)
+            records = snapshot_records(document, pack=expected_pack)
+            ask = document.get("principalAsk") or document.get("principal_ask")
+            if ask is not None:
+                principal_ask(ask, pack=expected_pack or "", profiles=_profiles(None))
         except ValueError as exc:
             raise SystemExit(str(exc)) from None
         add_internal_evidence(pool, run.run_id, records, approver)
-        return {**snapshot_summary(document), "approvedBy": approver.profile_id}
+        return {
+            **snapshot_summary(document),
+            **({"pack": expected_pack} if expected_pack else {}),
+            "approvedBy": approver.profile_id,
+        }
     add_internal_evidence(pool, run.run_id, document, approver)
     return None
 

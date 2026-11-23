@@ -47,6 +47,49 @@ EXPOSURE_TABLES = (
     ("financial", "Financial exposure", ("Item", "Entity", "Amount"), ("item", "entity", "amount")),
     ("alerts", "Internal alerts", ("Date", "Location", "Summary"), ("date", "location", "summary")),
 )
+EXPOSURE_ASK_HEADERS = (
+    "Country", "STE entity", "Staff count", "Scope", "Snapshot date",
+    "Last safety confirmation", "Status",
+)
+
+
+def exposure_ask_lines(block: Mapping[str, Any] | None) -> list[str]:
+    """Render the typed Exposure & Ask block for dashboard and Markdown use."""
+    if not block:
+        return ["## Exposure & Ask", "", "No typed exposure and ask block was supplied for this report.", ""]
+    rows = [
+        (
+            row.get("country") or "Not recorded",
+            row["entity"],
+            row["staff_count"] if row.get("staff_count") is not None else "Not recorded",
+            row.get("staff_scope") or row.get("record_type") or "Not recorded",
+            row.get("snapshot_date") or "Not recorded",
+            row.get("last_safety_confirmation") or "Not recorded",
+            row.get("status") or "Not recorded",
+        )
+        for row in block.get("exposures") or []
+    ]
+    lines = ["## Exposure & Ask", "", *_table(EXPOSURE_ASK_HEADERS, rows), ""]
+    if not rows:
+        lines += ["No approved internal exposure records were supplied for this pack.", ""]
+    ask = block.get("principal_ask")
+    if ask:
+        owner = ask.get("owner_label") or ask.get("owner_role") or ask.get("owner_profile_id")
+        lines += [f"**Principal ask.** {ask['text']} **Owner:** {owner}. **Due:** {ask['due_date']}.", ""]
+    else:
+        lines += ["**Principal ask.** No admitted principal ask with an owner profile and explicit due date was supplied.", ""]
+    triggers = list(block.get("red_triggers") or [])
+    lines += [f"**RED triggers.** {'; '.join(triggers) if triggers else 'No principal-ask RED triggers supplied.'}", ""]
+    warning = block.get("stale_warning")
+    if warning:
+        lines += [f"> **{warning}**", ""]
+    threats = block.get("tier1_physical_threats") or []
+    if threats:
+        lines += ["**Tier-1 physical threats.**", ""]
+        lines += [f"- {item['title']} ({item.get('outlet') or 'source'}, {item.get('published_at') or 'date not stated'}): "
+                  f"{item.get('override_reason') or 'Physical-threat override to Escalating.'}" for item in threats]
+        lines.append("")
+    return lines
 
 
 def not_supplied(snapshot: Mapping[str, Any]) -> str:
@@ -100,8 +143,9 @@ def _v2(brief: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
         sections.append(("Prioritisation", _table(["Band", "Item", "Trend", "Risk linkage", "Owner or forum"],
                                                    [[row.get("reader_band") or "", _item_with_reach(row), row["trend"], row["risk"], row["owner"]] for row in v2["priorities"]])))
     sections.append(("Coverage matrix", _table(["Line of business", *v2["categories"]], [[line["lob"], *(line["cells"][category]["text"] for category in v2["categories"])] for line in v2["coverage"]])))
-    sections.append(("Jurisdiction coverage", _table(["Jurisdiction", "Entities", "In-window finding", "Trend"],
-                                                      [[row["country"], "; ".join(row["entities"]), row["finding"], row["trend"]] for row in v2["jurisdictions"]])))
+    sections.append(("Jurisdiction coverage", _table(["Jurisdiction", "Entities", "In-window finding", "Search audit", "Trend"],
+                                                      [[row["country"], "; ".join(row["entities"]), row["finding"], row.get("audit_detail") or "", row["trend"]]
+                                                       for row in v2["jurisdictions"]])))
     return sections
 
 
@@ -157,6 +201,13 @@ def _source_register_lines(brief: Mapping[str, Any]) -> list[str]:
                 key = str(ref.get("signal_id") or ref.get("url") or ref.get("title") or "")
                 if key and key not in seen:
                     seen[key] = ref
+    for item in (v2.get("exposure_ask") or {}).get("tier1_physical_threats") or []:
+        key = str(item.get("signal_id") or item.get("url") or item.get("title") or "")
+        if key and key not in seen:
+            seen[key] = {
+                "signal_id": item.get("signal_id"), "outlet": item.get("outlet"), "title": item.get("title"),
+                "date": item.get("published_at"), "url": item.get("url"),
+            }
     if not seen:
         return []
     tiers = (brief.get("v2") or {}).get("tiers") or {}
@@ -194,6 +245,7 @@ def render_business_area(brief: Mapping[str, Any]) -> str:
         f"*Scan window: {meta['window']} | Prepared for: {meta['prepared_for']}" + (" | Status: draft for review, not approved.*" if meta.get("show_review_status", True) else "*"),
         "", DISCLAIMER, "", f"> **SUMMARY.** {brief['bottom_line']['text']}", "",
     ]
+    lines += exposure_ask_lines((v2.get("exposure_ask") if isinstance(v2, Mapping) else None))
     for level, title, key in ba_headings(brief):
         lines += [f"{'#' * (level + 1)} {title}", ""]
         if key:
@@ -207,8 +259,9 @@ def render_business_area(brief: Mapping[str, Any]) -> str:
     lines += _table(scenario_headers(v2["short"]), [["<br>".join(cell) for cell in scenario_cells(reading)] for reading in outlook.get("shifts") or []]) \
         if outlook.get("shifts") else ["No reviewed scenario register for this business area yet."]
     lines += ["", "### 3. Jurisdiction coverage", ""]
-    lines += _table(("Jurisdiction", f"{v2['short']} entities", "In-window finding", "Trend"),
-                    [(row["country"], "; ".join(row["entities"]) + (f"; and {row['more_entities']} more" if row["more_entities"] else ""), row["finding"], row["trend"])
+    lines += _table(("Jurisdiction", f"{v2['short']} entities", "In-window finding", "Search audit", "Trend"),
+                    [(row["country"], "; ".join(row["entities"]) + (f"; and {row['more_entities']} more" if row["more_entities"] else ""),
+                      row["finding"], row.get("audit_detail") or "", row["trend"])
                      for row in v2["jurisdictions"]])
     lines += ["", "### 4. Named supplier, customer and competitor watch", ""]
     lines += _table(WATCH_HEADERS, [(row["name"], row["type"], _md(row["text"]), row.get("lesson") or "Not drafted.") for row in v2["watch"]]) \

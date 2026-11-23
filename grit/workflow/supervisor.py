@@ -380,6 +380,10 @@ class Supervisor:
             "unresolved_escalating_challenge_ids",
             "require_escalating_challenges_resolved",
             "open_challenge_ids",
+            "kept_tier1_physical_threat_override_ids",
+            "has_kept_tier1_physical_threat_override",
+            "exposure_data",
+            "run_date",
         ):
             if key in self._review_extras.get(package_id, {}):
                 context[key] = self._review_extras[package_id][key]

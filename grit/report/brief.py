@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Any, Mapping, Sequence
 
@@ -16,6 +17,7 @@ from grit.core.canonical import canonical_hash
 from grit.core.corrections import ledger_view
 from grit.core.routing import aperture_routing
 from grit.ontology.pack import load_ontology_pack
+from grit.pipeline.exposure_snapshot import EXPOSURE_MAX_AGE_DAYS, ExposureRecord, PrincipalAsk
 from grit.pool import Pool
 from grit.profiles import Profile
 from grit.profiles.emphasis import profile_effect
@@ -25,6 +27,191 @@ from grit.settings import CONFIG_DIR
 CITE = re.compile(r"\[((?:SIG-[0-9a-f]{16})(?:\s*,\s*SIG-[0-9a-f]{16})*)\]")
 STATUS = "DRAFT_FOR_REVIEW"
 PROJECT_TIER_LABEL = {"TIER_1_ACTIVE": "Tier-1 active", "PIPELINE": "Pipeline"}
+
+
+@dataclass(frozen=True)
+class TierOnePhysicalThreat:
+    signal_id: str
+    title: str
+    tier: int
+    reader_band: str
+    override_rule_id: str
+    override_reason: str
+    outlet: str
+    published_at: str
+    url: str | None
+
+
+@dataclass(frozen=True)
+class ExposureAskBlock:
+    """Typed Exposure & Ask report block built from the approved contracts."""
+
+    pack: str
+    exposures: tuple[ExposureRecord, ...]
+    principal_ask: PrincipalAsk | None
+    owner_label: str | None
+    owner_role: str | None
+    red_triggers: tuple[str, ...]
+    tier1_physical_threats: tuple[TierOnePhysicalThreat, ...]
+    stale_warning: str | None
+
+
+def _exposure_ask_raw(config: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    direct = config.get("principal_ask") or config.get("principalAsk")
+    context = config.get("weekly_context") or {}
+    snapshot = config.get("exposure_snapshot") or {}
+    value = (
+        direct
+        or context.get("principal_ask")
+        or context.get("principalAsk")
+        or snapshot.get("principal_ask")
+        or snapshot.get("principalAsk")
+    )
+    return value if isinstance(value, Mapping) else None
+
+
+def exposure_ask_block(
+    run: Mapping[str, Any],
+    routed: Sequence[Mapping[str, Any]],
+    *,
+    profiles: Any = None,
+) -> ExposureAskBlock:
+    """Normalise the approved exposure snapshot and principal ask for one pack.
+
+    Physical-threat overrides are collected from every routed assessment before the
+    Spec-49 section cap is applied.
+    """
+    from grit.core.overrides import OVERRIDE_STAFF_THREAT, reader_band_of
+    from grit.pipeline.exposure_snapshot import (
+        exposure_freshness,
+        normalize_exposure_records,
+        normalize_principal_ask,
+    )
+    from grit.profiles import load_profiles
+
+    config = run.get("config") or {}
+    pack = str(run.get("pack") or "").strip()
+    snapshot = config.get("exposure_snapshot")
+    exposures: tuple[Any, ...] = ()
+    stale_warning = None
+    if isinstance(snapshot, Mapping) and not snapshot.get("notSupplied"):
+        # snapshot_summary intentionally omits row references from the report
+        # view. Restore its source-level reference before the typed normaliser;
+        # no snapshot field is interpreted here.
+        report_snapshot = dict(snapshot)
+        report_snapshot.setdefault("pack", pack)
+        source_reference = "; ".join(str(item) for item in snapshot.get("sources") or [])
+        for section in ("sites", "travel", "projects", "financial", "alerts"):
+            if section in report_snapshot:
+                report_snapshot[section] = [
+                    {**dict(row), "reference": str(row.get("reference") or source_reference)}
+                    for row in report_snapshot.get(section) or []
+                ]
+        exposures = tuple(normalize_exposure_records(report_snapshot, pack=pack))
+        run_date = date.fromisoformat(str(run["run_date"]))
+        as_at_text, stale = exposure_freshness(snapshot, run_date=run_date)
+        as_at = date.fromisoformat(as_at_text)
+        if stale:
+            stale_warning = (
+                f"STALE EXPOSURE DATA: the approved snapshot is dated "
+                f"{as_at.isoformat()}. It is older than {EXPOSURE_MAX_AGE_DAYS} days "
+                "or does not agree with the report run date. Reconfirm staff counts and safety."
+            )
+
+    known_profiles = load_profiles() if profiles is None else profiles
+    profile_map = (
+        known_profiles if isinstance(known_profiles, Mapping)
+        else {str(profile.profile_id): profile for profile in known_profiles}
+    )
+    ask_raw = _exposure_ask_raw(config)
+    ask = normalize_principal_ask(ask_raw, pack=pack, profiles=profile_map) if ask_raw is not None else None
+    profile = profile_map.get(ask.owner_profile_id) if ask else None
+    threats = []
+    seen: set[str] = set()
+    for row in routed:
+        priority = row.get("priority") if isinstance(row.get("priority"), Mapping) else row.get("priority_json")
+        if isinstance(priority, str):
+            continue
+        if not isinstance(priority, Mapping) or priority.get("override_rule_id") != OVERRIDE_STAFF_THREAT:
+            continue
+        editorial = row.get("editorial") if isinstance(row.get("editorial"), Mapping) else {}
+        editorial_decision = editorial.get("decision")
+        if editorial_decision is not None:
+            if editorial_decision not in {"INCLUDE", "WATCH"}:
+                continue
+        elif row.get("decision") not in {"KEEP", "INCLUDE", "WATCH"}:
+            continue
+        signal_id = str(row.get("signal_id") or "")
+        if signal_id in seen:
+            continue
+        seen.add(signal_id)
+        threats.append(TierOnePhysicalThreat(
+            signal_id=signal_id,
+            title=str(row.get("title") or signal_id),
+            tier=1,
+            reader_band=reader_band_of(row),
+            override_rule_id=OVERRIDE_STAFF_THREAT,
+            override_reason=str(priority.get("override_reason") or ""),
+            outlet=str(row.get("publisher") or "source"),
+            published_at=str(row.get("published_at") or "")[:10],
+            url=str(row["url"]) if row.get("url") is not None else None,
+        ))
+    return ExposureAskBlock(
+        pack=pack,
+        exposures=exposures,
+        principal_ask=ask,
+        owner_label=getattr(profile, "label", None),
+        owner_role=getattr(profile, "role", None),
+        red_triggers=tuple(ask.red_triggers) if ask else (),
+        tier1_physical_threats=tuple(threats),
+        stale_warning=stale_warning,
+    )
+
+
+def exposure_ask_record(block: ExposureAskBlock) -> dict[str, Any]:
+    """The serialisable report-model view of a typed ExposureAskBlock."""
+    ask = block.principal_ask
+    return {
+        "pack": block.pack,
+        "exposures": [
+            {
+                "country": row.country,
+                "entity": row.entity,
+                "staff_count": row.staff_count,
+                "staff_scope": row.staff_scope,
+                "snapshot_date": row.snapshot_date.isoformat(),
+                "last_safety_confirmation": (
+                    row.last_safety_confirmation.isoformat() if row.last_safety_confirmation else None
+                ),
+                "status": row.status,
+                "record_type": row.record_type,
+            }
+            for row in block.exposures
+        ],
+        "principal_ask": None if ask is None else {
+            "text": ask.text,
+            "owner_profile_id": ask.owner_profile_id,
+            "owner_label": block.owner_label,
+            "owner_role": block.owner_role,
+            "due_date": ask.due_date.isoformat(),
+        },
+        "red_triggers": list(block.red_triggers),
+        "tier1_physical_threats": [
+            {
+                "signal_id": row.signal_id,
+                "title": row.title,
+                "tier": row.tier,
+                "reader_band": row.reader_band,
+                "override_rule_id": row.override_rule_id,
+                "override_reason": row.override_reason,
+                "outlet": row.outlet,
+                "published_at": row.published_at,
+                "url": row.url,
+            }
+            for row in block.tier1_physical_threats
+        ],
+        "stale_warning": block.stale_warning,
+    }
 
 
 def fmt_date(value: str | None) -> str | None:
@@ -562,7 +749,12 @@ def business_area_brief(pool: Pool, run: Mapping[str, Any], pack: Any, profile: 
     seen_ids = {signal_id for shift in (scenarios or {}).get("shifts") or [] for case in shift["cases"]
                 for item in [*case["signposts_seen"], *case["counter_indicators_seen"]] for signal_id in item["signal_ids"]}
     watch_ids = {ref["signal_id"] for item in watch for ref in (item["text"] or {}).get("sources") or []}
-    membership = sorted({*(signal_id for row in rows for signal_id in row["signal_ids"]), *more, *watch_ids, *seen_ids})
+    exposure_ask = exposure_ask_record(exposure_ask_block(run, routed))
+    threat_ids = {str(item["signal_id"]) for item in exposure_ask["tier1_physical_threats"] if item.get("signal_id")}
+    membership = sorted({
+        *(signal_id for row in rows for signal_id in row["signal_ids"]),
+        *more, *watch_ids, *seen_ids, *threat_ids,
+    })
     counts = pool.one("SELECT COUNT(*) AS signals, SUM(decision = 'KEEP') AS kept FROM assessments WHERE run_id = ?", (run_id,)) or {}
     model = {
         "meta": {**meta_for(run, pack, profile, brief_config), "layout": "BA", "section_titles": dict(SECTION_TITLES)},
@@ -570,7 +762,8 @@ def business_area_brief(pool: Pool, run: Mapping[str, Any], pack: Any, profile: 
                         "drafted_by": "Reporter (validated)" if validated else "rule (the Reporter's draft was withheld or absent)"},
         "v2": {"status": status, "sections": sections, "look_ahead": look_rows, "jurisdictions": jurisdictions, "watch": watch,
                "tiers": source_tiers(routed, [pack.source_register, graph_pack(pack).source_register]),
-               "short": str((pack.manifest or {}).get("shortLabel") or pack.label)},
+               "short": str((pack.manifest or {}).get("shortLabel") or pack.label),
+               "exposure_ask": exposure_ask},
         "scenarios": scenarios, "red": red,
         # Not shown to the reader: the QA log lets the release check find a withheld date that reappears.
         "qa": [{"item": row["item"], "prior": row["prior"], "correction": row["correction"], "origin": row["origin"],

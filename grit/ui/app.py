@@ -217,6 +217,10 @@ def main() -> None:
             screens["Packs and review"] = screen_context("Packs and review", package_rows)
             for row in packages:
                 st.markdown(f"**{row['package_id']} v{row['version']}**: {row['status']}. Content hash `{row['content_hash'][:16]}`. Decided by {row['decided_by'] or 'nobody yet'}.")
+                review = (row.get("membership") or {}).get("review") or {}
+                if review.get("reason_summary"):
+                    as_of = f" (asOf {review['asOf']})" if review.get("asOf") else ""
+                    st.caption(f"ReviewGate: {review['reason_code']} — {review['reason_summary']}{as_of}.")
                 files = row["files"] or {}
                 for column, kind in zip(st.columns(4), ("docx", "pptx", "xlsx", "md")):
                     path = files.get(kind)
@@ -353,7 +357,12 @@ def _apply_review(db, profile, row, intent):  # noqa: ANN001, ANN201
     except (PermissionError, ValueError) as exc:
         st.error(str(exc))
         return
-    st.info(f"ReviewGate: {result['outcome']}. The package is now {result['status']}.")
+    decision = result["decision"]
+    as_of = f" (asOf {decision['asOf']})" if decision.get("asOf") else ""
+    st.info(
+        f"ReviewGate: {result['outcome']} ({decision['reason_code']} — {decision['reason_summary']}{as_of}). "
+        f"The package is now {result['status']}."
+    )
 
 
 def copilot_drawer(db, profile, run_id, brief, *, focus=None, screen=None):  # noqa: ANN001, ANN201

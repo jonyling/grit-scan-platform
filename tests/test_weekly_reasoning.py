@@ -231,6 +231,132 @@ def test_six_roles_are_real_calls_and_render_uses_frozen_snapshot(weekly):
     }
 
 
+def test_package_review_holds_a_kept_tier1_physical_override_with_frozen_stale_exposure(weekly):
+    from grit.workflow.packages import review_package, submit_package
+
+    pool, store, coordinator, ids, _ = weekly
+    coordinator.reconcile_pool(search=None, reassess=lambda: None)
+    routed = [{
+        **pool.weekly_assessments("R")[0],
+        "tier": 1,
+        "priority": {
+            "tier": 1,
+            "band": "Escalating",
+            "override_rule_id": "OVERRIDE_STAFF_THREAT",
+            "override_reason": "Physical threat in a staffed country.",
+        },
+    }]
+    draft = {
+        **_draft(ids[0]),
+        "v2": {"exposure_ask": {
+            "exposures": [{
+                "entity": "STE", "country": "Qatar", "staff_count": 1, "staff_scope": "LOCAL",
+                "snapshot_date": "2026-10-20", "last_safety_confirmation": "2026-10-20",
+                "status": "CONFIRMED", "record_type": "SITE",
+            }],
+            "tier1_physical_threats": [],
+        }},
+    }
+    report = coordinator.report(_profile(), draft, routed)
+    store.finish("READY")
+    pool.finish_run("R")
+    package = submit_package(
+        pool, run_id="R", profile=_profile(), members=[ids[0]],
+        brief_hash=report["content_hash"], files={},
+    )
+
+    reviewed = review_package(
+        pool, package_id=package["package_id"], version=package["version"],
+        reviewer=_profile(), intent="APPROVE",
+    )
+
+    assert reviewed["outcome"] == "HOLD"
+    assert reviewed["decision"]["reason_code"] == "EXPOSURE_DATA_STALE"
+    assert reviewed["decision"]["asOf"] == "2026-10-20"
+    row = pool.one("SELECT * FROM packages WHERE package_id = ?", (package["package_id"],))
+    assert row["status"] == "HELD"
+    assert row["membership"]["review"]["reason_summary"] == "exposure data stale"
+    assert pool.current_states()[(ids[0], row["membership"]["execution_id"])] == "PENDING_REVIEW"
+
+
+def test_package_review_accepts_fresh_typed_exposure_for_a_kept_tier1_threat(weekly):
+    from grit.workflow.packages import review_package, submit_package
+
+    pool, store, coordinator, ids, _ = weekly
+    coordinator.reconcile_pool(search=None, reassess=lambda: None)
+    routed = [{
+        **pool.weekly_assessments("R")[0],
+        "tier": 1,
+        "priority": {
+            "tier": 1,
+            "band": "Escalating",
+            "override_rule_id": "OVERRIDE_STAFF_THREAT",
+            "override_reason": "Physical threat in a staffed country.",
+        },
+    }]
+    draft = {
+        **_draft(ids[0]),
+        "v2": {"exposure_ask": {
+            "exposures": [{
+                "entity": "STE", "country": "Qatar", "staff_count": 1, "staff_scope": "LOCAL",
+                "snapshot_date": "2026-11-01", "last_safety_confirmation": "2026-11-01",
+                "status": "CONFIRMED", "record_type": "SITE",
+            }],
+            "tier1_physical_threats": [],
+        }},
+    }
+    report = coordinator.report(_profile(), draft, routed)
+    store.finish("READY")
+    pool.finish_run("R")
+    package = submit_package(
+        pool, run_id="R", profile=_profile(), members=[ids[0]],
+        brief_hash=report["content_hash"], files={},
+    )
+
+    reviewed = review_package(
+        pool, package_id=package["package_id"], version=package["version"],
+        reviewer=_profile(), intent="APPROVE",
+    )
+    assert reviewed["outcome"] == "APPROVE"
+
+
+def test_package_review_accepts_legacy_group_exposure_for_a_kept_tier1_threat(weekly):
+    from grit.workflow.packages import review_package, submit_package
+
+    pool, store, coordinator, ids, _ = weekly
+    coordinator.reconcile_pool(search=None, reassess=lambda: None)
+    routed = [{
+        **pool.weekly_assessments("R")[0],
+        "tier": 1,
+        "priority": {
+            "tier": 1,
+            "band": "Escalating",
+            "override_rule_id": "OVERRIDE_STAFF_THREAT",
+            "override_reason": "Physical threat in a staffed country.",
+        },
+    }]
+    draft = {
+        **_draft(ids[0]),
+        "v2": {"exposure": {
+            "asOf": "2026-11-01",
+            "sites": [{"entity": "STE", "city": "Doha", "country": "Qatar", "headcount": 1}],
+        }},
+    }
+    report = coordinator.report(_profile(), draft, routed)
+    store.finish("READY")
+    pool.finish_run("R")
+    package = submit_package(
+        pool, run_id="R", profile=_profile(), members=[ids[0]],
+        brief_hash=report["content_hash"], files={},
+    )
+
+    reviewed = review_package(
+        pool, package_id=package["package_id"], version=package["version"],
+        reviewer=_profile(), intent="APPROVE",
+    )
+    assert reviewed["outcome"] == "APPROVE"
+
+
 def test_budget_survives_resume_and_evidence_revisions(weekly):
     from grit.pipeline.weekly import WeeklyStore
     pool, store, coordinator, ids, _ = weekly

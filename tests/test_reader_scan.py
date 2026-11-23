@@ -119,6 +119,32 @@ def test_reader_scan_end_to_end(tmp_path: Path, monkeypatch) -> None:
     assert "Assessor" not in agents
 
 
+def test_country_risk_plan_uses_entity_footprint_and_records_attempts_separately(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(reader_scan, "OUTPUT_DIR", tmp_path)
+    pool = Pool(tmp_path / "grit.sqlite")
+    run = reader_scan.new_run(pool, RUN_DATE, "urs")
+    specs = reader_scan.plan(pool, run)
+    country_risk = [spec for spec in specs if spec.lane == "COUNTRY_RISK"]
+    assert specs[:len(country_risk)] == country_risk
+    assert {spec.sources[0]["target"] for spec in country_risk} == {"Qatar", "Kuwait", "Bahrain", "Israel"}
+    assert all(spec.cadence_weeks == 1 and spec.sources[0]["register"].endswith("V1") for spec in country_risk)
+
+    calls = []
+
+    def failed(_url, params):
+        calls.append(params["q"])
+        return BraveResponse(500, None, {})
+
+    outcome = reader_scan.acquire(
+        pool, run, country_risk[:1], getter=failed, usage_path=tmp_path / "usage.json",
+        sleep=lambda _s: None, log=lambda _m: None,
+    )
+    assert outcome["queries_sent"] == 0 and pool.answered_searches(run.run_id) == []
+    attempts = pool.search_attempts(run.run_id)
+    assert len(attempts) == 1 and attempts[0]["outcome"] == "HTTP_ERROR" and attempts[0]["http_status"] == 500
+    assert calls == [country_risk[0].query]
+
+
 def test_assessor_rejects_an_ungrounded_number() -> None:
     from grit.agents.reader import check_condition
 

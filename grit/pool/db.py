@@ -290,6 +290,34 @@ class Pool:
         self.insert("searches", {"run_id": run_id, "query_id": query_id, "engine": engine, "query": query, "lane": lane, "target_id": target_id,
                                  "canonical_lob": canonical_lob, "results": int(results), "fetched_at": fetched_at}, replace=True)
 
+    def record_search_attempt(
+        self,
+        run_id: str,
+        *,
+        query_id: str,
+        engine: str,
+        query: str,
+        lane: str | None,
+        target_id: str | None,
+        canonical_lob: str | None,
+        sent_query: str,
+        attempt_no: int,
+        outcome: str,
+        http_status: int | None,
+        error: str | None,
+        attempted_at: str,
+    ) -> None:
+        """Record every outbound request. Unlike searches, failed requests remain in this append-only audit."""
+        self.insert("search_attempts", {
+            "run_id": run_id, "query_id": query_id, "engine": engine, "query": query, "lane": lane,
+            "target_id": target_id, "canonical_lob": canonical_lob, "sent_query": sent_query,
+            "attempt_no": int(attempt_no), "outcome": outcome, "http_status": http_status,
+            "error": error, "attempted_at": attempted_at,
+        })
+
+    def search_attempts(self, run_id: str) -> list[dict[str, Any]]:
+        return self.rows("SELECT * FROM search_attempts WHERE run_id = ? ORDER BY attempt_id", (run_id,))
+
     def answered_searches(self, run_id: str) -> list[dict[str, Any]]:
         """One row per answered planned query: the search ledger, plus sightings from runs recorded before the ledger.
         A history lookup, an approved internal record or a covered pack's signal is not a search, so it never counts."""

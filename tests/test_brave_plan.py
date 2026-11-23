@@ -153,6 +153,22 @@ def test_every_search_reaches_the_callback_before_a_later_failure() -> None:
     assert [entry["query_id"] for entry in seen] == ["a"] and seen[0]["results"][0]["rank"] == 1
 
 
+def test_attempts_are_audited_even_when_the_search_fails_or_is_retried() -> None:
+    getter = _Getter(BraveResponse(429, None, {"x-ratelimit-reset": "1"}), _ok())
+    attempts: list[dict] = []
+    with TemporaryDirectory() as directory:
+        run = collect_plan(
+            [_q("a", "one")],
+            fetched_at=_AT,
+            getter=getter,
+            sleep=lambda _seconds: None,
+            usage_path=_usage(directory),
+            on_attempt=attempts.append,
+        )
+    assert run.queries_sent == 1 and [(row["attempt_no"], row["status"]) for row in attempts] == [(1, 429), (2, 200)]
+    assert [row["outcome"] for row in attempts] == ["RATE_LIMITED", "ANSWERED"]
+
+
 def test_a_missing_key_and_bad_bounds_are_refused_before_any_call() -> None:
     previous = os.environ.pop("BRAVE_SEARCH_API_KEY", None)
     try:
@@ -190,6 +206,7 @@ def test_the_command_runs_a_trial_logs_each_search_and_refuses_to_run_twice() ->
         assert main(args, getter=Numbered(), sleep=lambda _s: None, usage_path=_usage(directory)) == 0
         day = folder / "2026-10-12"
         assert len((day / "searches.jsonl").read_text().splitlines()) == 3
+        assert len((day / "search-attempts.jsonl").read_text().splitlines()) == 3
         stored = json.loads((day / "candidates.json").read_text())
         assert stored["queriesSent"] == 3 and len(stored["candidates"]) == 3 and stored["stopped"] is None
         assert json.loads((day / "selection.json").read_text())["runDate"] == "2026-10-12"

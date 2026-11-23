@@ -82,3 +82,66 @@ def test_review_decision_ignores_invocation_timestamp() -> None:
     second = review_gate(_context(review_timestamp_utc="2026-09-25T09:00:00Z"))
     assert first["canonical_result_hash"] == second["canonical_result_hash"]
     assert first["input_hash"] == second["input_hash"]
+
+
+def test_kept_physical_threat_override_holds_approval_for_stale_exposure() -> None:
+    result = review_gate(_context(
+        run_date="2026-09-25",
+        kept_tier1_physical_threat_override_ids=["SIG-1"],
+        exposure_data={"asOf": "2026-09-17", "sites": [{
+            "entity": "STE", "city": "Doha", "country": "Qatar", "headcount": 1,
+        }]},
+    ))
+
+    assert result["review_outcome"] == "HOLD"
+    assert result["reason_code"] == "EXPOSURE_DATA_STALE"
+    assert result["reason_summary"] == "exposure data stale"
+    assert result["asOf"] == "2026-09-17"
+    assert result["material_finding_ids"] == ["SIG-1"]
+    assert result["signal_transition_instruction"] == "NONE"
+
+
+def test_exposure_gate_accepts_exactly_seven_days_and_only_applies_to_physical_overrides() -> None:
+    fresh = review_gate(_context(
+        run_date="2026-09-25",
+        kept_tier1_physical_threat_override_ids=["SIG-1"],
+        exposure_data={"asOf": "2026-09-18", "sites": [{
+            "entity": "STE", "city": "Doha", "country": "Qatar", "headcount": 1,
+        }]},
+    ))
+    no_override = review_gate(_context(
+        run_date="2026-09-25",
+        kept_tier1_physical_threat_override_ids=[],
+        exposure_data=None,
+    ))
+
+    assert fresh["review_outcome"] == "APPROVE"
+    assert no_override["review_outcome"] == "APPROVE"
+
+
+def test_missing_invalid_and_not_supplied_exposure_hold_but_other_intents_are_preserved() -> None:
+    exposure_cases = [
+        None,
+        {"asOf": "not-a-date", "sites": [{
+            "entity": "STE", "city": "Doha", "country": "Qatar", "headcount": 1,
+        }]},
+        {"asOf": "2026-09-25"},
+        {"asOf": "2026-09-25", "sites": [{}]},
+        {"asOf": "2026-09-25", "notSupplied": True},
+    ]
+    for exposure in exposure_cases:
+        result = review_gate(_context(
+            run_date="2026-09-25",
+            kept_tier1_physical_threat_override_ids=["SIG-1"],
+            exposure_data=exposure,
+        ))
+        assert result["reason_code"] == "EXPOSURE_DATA_STALE", exposure
+
+    rejected = review_gate(_context(
+        reviewer_intent="REJECT",
+        run_date="2026-09-25",
+        kept_tier1_physical_threat_override_ids=["SIG-1"],
+        exposure_data=None,
+    ))
+    assert rejected["review_outcome"] == "REJECT"
+    assert rejected["reason_code"] == "REVIEWER_REJECTED"

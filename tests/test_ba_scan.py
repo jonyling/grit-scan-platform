@@ -114,7 +114,7 @@ def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
     assert document.tables[0].rows[0].cells[0].paragraphs[0].text == "SUMMARY"
     assert "Bottom line for Urban Solutions weekly risk scan" in document.tables[0].rows[0].cells[0].text
     headings = [paragraph.text for paragraph in document.paragraphs if paragraph.style.name.startswith("Heading")]
-    assert headings == ["1. Management Focus Topics", "2. URS Risks", "a. Key, T2 & Emerging", "b. Other Risk Themes", "3. Trends/Developments",
+    assert headings == ["Exposure & Ask", "1. Management Focus Topics", "2. URS Risks", "a. Key, T2 & Emerging", "b. Other Risk Themes", "3. Trends/Developments",
                         "Appendix A", "1. Look-ahead: the next 30 days", "2. Scenario outlook: best, medium and worst case", "3. Jurisdiction coverage",
                         "4. Named supplier, customer and competitor watch", "Appendix B: Source Register"]
     tables = [[[cell.text for cell in row.cells] for row in table.rows] for table in document.tables[1:]]
@@ -133,7 +133,10 @@ def test_business_area_pack_end_to_end(tmp_path: Path, monkeypatch) -> None:
     from openpyxl import load_workbook
 
     workbook = load_workbook(wilson["files"]["xlsx"])
-    assert workbook.sheetnames[:4] == ["Management Focus Topics", "Key, T2 & Emerging", "Other Risk Themes", "Trends-Developments"]
+    assert workbook.sheetnames[:5] == [
+        "Exposure & Ask", "Management Focus Topics", "Key, T2 & Emerging",
+        "Other Risk Themes", "Trends-Developments",
+    ]
     assert [cell.value for cell in workbook["Named watch"][1]] == list(WATCH_HEADERS)
 
     from pptx import Presentation

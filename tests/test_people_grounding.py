@@ -14,6 +14,7 @@ from grit.core.people import (
     ground_page,
     is_adverse_signal,
     load_people,
+    physical_threat_in_lead,
     people_risk_in_lead,
     presence,
     staff_priority_key,
@@ -55,6 +56,17 @@ def test_people_risk_plus_staffed_country_grounds_a_page(tmp_path: Path) -> None
     assert ground_page("Missiles intercepted over Kyiv", "", people, terms=terms) is None
     # Staffed country without people-risk terms does not ground.
     assert ground_page("Qatar awards a metro contract", "Commercial award.", people, terms=terms) is None
+
+
+def test_physical_threat_catalog_rejects_speculative_and_non_event_prose() -> None:
+    assert "drone*" in physical_threat_in_lead("Armed drones hit a base outside Doha", "")
+    assert physical_threat_in_lead("Missiles intercepted over Doha", "") == ["missile*"]
+    assert physical_threat_in_lead(
+        "Defence company may procure a missile system for Qatar", ""
+    ) == []
+    assert physical_threat_in_lead(
+        "Drone manufacturer wins a production contract in Qatar", ""
+    ) == []
 
 
 def test_priority_and_basis_cite_staff_without_changing_rung(tmp_path: Path) -> None:
@@ -217,6 +229,29 @@ def test_weekly_sources_tag_only_the_business_area_s_own_staffed_countries(tmp_p
     assert tagged == {"urs": (["Qatar"], 1), "marine": (None, 0)}
 
 
+def test_pack_scoped_people_replaces_group_counts_with_snapshot_counts(tmp_path: Path) -> None:
+    from grit.core.people import scope_people
+
+    all_people = {
+        "countries": {
+            "Qatar": {"local_staff": 99, "entities": ["Group entity"], "travellers": 40},
+            "United Arab Emirates": {"local_staff": 9, "entities": ["Marine entity"], "travellers": 4},
+        },
+        "dates": {"local_staff": "2026-11-01", "travellers": "2026-11-01"},
+    }
+    own = {
+        "asOf": "2026-11-19",
+        "sites": [{"country": "Qatar", "entity": "URS", "city": "Not stated", "headcount": 52}],
+        "travel": [{"country": "Qatar", "destination": "Qatar", "travellers": 21}],
+    }
+    scoped = scope_people(all_people, own)
+
+    assert scoped["countries"] == {
+        "Qatar": {"local_staff": 52, "entities": ["URS"], "travellers": 21}
+    }
+    assert scoped["local_total"] == 52 and scoped["travellers_total"] == 21
+
+
 def test_every_run_reports_the_staff_log_in_its_exposure_snapshot(tmp_path: Path, monkeypatch) -> None:
     import argparse
 
@@ -241,14 +276,20 @@ def test_every_run_reports_the_staff_log_in_its_exposure_snapshot(tmp_path: Path
 
 def test_a_business_area_without_staff_in_the_log_reads_not_supplied(tmp_path: Path) -> None:
     from grit.core.people import staff_snapshot
+    from grit.pipeline.exposure_snapshot import exposure_records
     from grit.pipeline.reader_scan import _load_pack
     from grit.report.markdown import _exposure
 
     path = _staff_file(tmp_path)
     urs = staff_snapshot(path, pack=_load_pack("urs"))
     assert [(row["entity"], row["country"]) for row in urs["sites"]] == [("URS", "Qatar")] and not urs["travel"] and not urs["notSupplied"]
+    normalised = exposure_records(urs, pack="urs")
+    assert [(record.pack, record.entity, record.staff_count, record.staff_scope) for record in normalised] == [
+        ("urs", "URS", 52, "urs local staff")
+    ], "pack records contain this BA's rows, never an unscoped group total"
     marine = staff_snapshot(path, pack=_load_pack("marine"))
     assert marine["notSupplied"] and not marine["sites"]
+    assert exposure_records(marine, pack="marine") == []
     assert _exposure(marine)[0].startswith("Marine exposure: not supplied.")
     group = staff_snapshot(path, pack=_load_pack("ste"))
     assert {row["entity"] for row in group["sites"]} == {"URS", "iDirect"} and group["travel"], "the Group pack sees the whole log"

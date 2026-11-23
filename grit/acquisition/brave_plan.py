@@ -93,6 +93,7 @@ def collect_plan(
     usage_path: Path = DEFAULT_USAGE_PATH,
     monthly_limit: int | None = None,
     on_search: Callable[[dict[str, Any]], None] | None = None,
+    on_attempt: Callable[[dict[str, Any]], None] | None = None,
 ) -> PlanRun:
     """Send each query once, in order. on_search receives every search as soon as it returns."""
     if not isinstance(count, int) or not 1 <= count <= MAX_PAGE_SIZE:
@@ -120,12 +121,33 @@ def collect_plan(
             params["freshness"] = freshness
         if country:
             params["country"] = country
-        response = fetch(NEWS_URL, params)
+        def request() -> BraveResponse:
+            try:
+                response = fetch(NEWS_URL, params)
+            except Exception as exc:
+                if on_attempt is not None:
+                    on_attempt({
+                        "query_id": spec.query_id, "query": spec.query, "sent_query": sent,
+                        "engine": "BRAVE", "attempt_no": retries + 1, "outcome": "REQUEST_ERROR",
+                        "status": None, "error": type(exc).__name__, "fetched_at": fetched_at,
+                    })
+                raise
+            if on_attempt is not None:
+                invalid_payload = response.status == 200 and response.payload is None
+                on_attempt({
+                    "query_id": spec.query_id, "query": spec.query, "sent_query": sent,
+                    "engine": "BRAVE", "attempt_no": retries + 1,
+                    "outcome": "ANSWERED" if response.status == 200 and not invalid_payload else ("RATE_LIMITED" if response.status == 429 else "HTTP_ERROR"),
+                    "status": response.status, "error": "EMPTY_PAYLOAD" if invalid_payload else None, "fetched_at": fetched_at,
+                })
+            return response
+
         retries = 0
+        response = request()
         while response.status == 429 and retries < MAX_RETRIES:
             retries += 1
             sleep(max(1.0, _first_number(response.headers.get("x-ratelimit-reset")) or 1.0))
-            response = fetch(NEWS_URL, params)
+            response = request()
         if response.status == 429:
             run.stopped = "RATE_LIMITED"
             break
@@ -296,6 +318,7 @@ def main(
         return 0
     folder = args.output_dir / args.date.isoformat()
     log = folder / "searches.jsonl"
+    attempts = folder / "search-attempts.jsonl"
     if log.exists():
         print(f"A run for {args.date} already exists. Delete {folder} to run it again. Each run spends queries.")
         return 1
@@ -304,6 +327,10 @@ def main(
 
     def write_search(entry: dict[str, Any]) -> None:
         with log.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+    def write_attempt(entry: dict[str, Any]) -> None:
+        with attempts.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
     try:
@@ -317,6 +344,7 @@ def main(
             sleep=sleep,
             usage_path=usage_path,
             on_search=write_search,
+            on_attempt=write_attempt,
         )
     except (ValueError, BraveFetchError) as exc:
         print(f"{exc}. Searches already returned are in {log}.")

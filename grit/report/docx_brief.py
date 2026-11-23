@@ -840,12 +840,12 @@ def _jurisdictions(document: Any, brief: Mapping[str, Any], title: str, *, dry: 
     if dry:
         return bool(rows)
     _heading(document, title)
-    widths = (2.6, 5.4, 7.6, 1.5)
-    table = _table(document, ("Jurisdiction", f"{brief['v2']['short']} entities", "In-window finding", "Trend"), widths)
+    widths = (2.4, 4.0, 5.4, 6.5, 1.5)
+    table = _table(document, ("Jurisdiction", f"{brief['v2']['short']} entities", "In-window finding", "Search audit", "Trend"), widths)
     for row in rows:
         entities = "; ".join(row["entities"]) + (f"; and {row['more_entities']} more" if row["more_entities"] else "")
         finding = row["finding"] + (f" [{_marks(row['sources'])}]" if row.get("sources") and _REGISTER is not None else "")
-        _row(table, [row["country"], entities, finding, row["trend"]], widths)
+        _row(table, [row["country"], entities, finding, row.get("audit_detail") or "", row["trend"]], widths)
     return True
 
 
@@ -1062,6 +1062,68 @@ def _ba_watch(document: Any, brief: Mapping[str, Any], title: str) -> None:
         _row(table, [row["name"], row["type"], row["text"], row.get("lesson") or "Not drafted."], widths)
 
 
+def _exposure_and_ask(document: Any, brief: Mapping[str, Any]) -> None:
+    """The typed internal exposure, ask, stale warning and uncapped physical-threat list."""
+    block = brief.get("v2", {}).get("exposure_ask") or {}
+    _heading(document, "Exposure & Ask", level=1)
+    widths = (2.0, 3.2, 1.4, 1.4, 2.0, 2.5, 1.8)
+    table = _table(
+        document,
+        ("Country", "STE entity", "Staff count", "Scope", "Snapshot date",
+         "Last safety confirmation", "Status"),
+        widths,
+    )
+    for row in block.get("exposures") or []:
+        _row(table, (
+            row.get("country") or "Not recorded",
+            row["entity"],
+            row["staff_count"] if row.get("staff_count") is not None else "Not recorded",
+            row.get("staff_scope") or row.get("record_type") or "Not recorded",
+            row.get("snapshot_date") or "Not recorded",
+            row.get("last_safety_confirmation") or "Not recorded",
+            row.get("status") or "Not recorded",
+        ), widths)
+    if not block.get("exposures"):
+        _note(document, "No approved internal exposure records were supplied for this pack.")
+    ask = block.get("principal_ask")
+    if ask:
+        owner = ask.get("owner_label") or ask.get("owner_role") or ask.get("owner_profile_id")
+        paragraph = document.add_paragraph()
+        paragraph.add_run("Principal ask. ").bold = True
+        paragraph.add_run(f"{ask['text']} Owner: {owner}. Due: {ask['due_date']}.")
+    else:
+        document.add_paragraph(
+            "Principal ask: no admitted principal ask with an owner profile and explicit due date was supplied."
+        )
+    triggers = list(block.get("red_triggers") or [])
+    document.add_paragraph(
+        "RED triggers: " + ("; ".join(triggers) if triggers else "no principal-ask RED triggers supplied.")
+    )
+    if block.get("stale_warning"):
+        paragraph = document.add_paragraph()
+        run = paragraph.add_run(str(block["stale_warning"]))
+        run.bold, run.font.color.rgb = True, RGBColor(0xB9, 0x3A, 0x22)
+    threats = block.get("tier1_physical_threats") or []
+    if threats:
+        heading = document.add_paragraph().add_run("Tier-1 physical threats")
+        heading.bold = True
+        for item in threats:
+            ref = {
+                "signal_id": item.get("signal_id"),
+                "outlet": item.get("outlet"),
+                "title": item.get("title"),
+                "date": item.get("published_at"),
+                "url": item.get("url"),
+            }
+            mark = f" [{_marks([ref])}]" if _REGISTER is not None and item.get("signal_id") else ""
+            document.add_paragraph(
+                f"{item['title']} ({item.get('outlet') or 'source'}, "
+                f"{item.get('published_at') or 'date not stated'}): "
+                f"{item.get('override_reason') or 'Physical-threat override to Escalating.'}{mark}",
+                style="List Bullet",
+            )
+
+
 def _render_business_area(brief: Mapping[str, Any], path: Path) -> Path:
     global _REGISTER
     document = _document()
@@ -1074,6 +1136,7 @@ def _render_business_area(brief: Mapping[str, Any], path: Path) -> Path:
     run = cell.paragraphs[0].add_run("SUMMARY")
     run.bold, run.font.color.rgb = True, NAVY
     cell.add_paragraph().add_run(brief["bottom_line"]["text"] or "")
+    _exposure_and_ask(document, brief)
     sections = brief["v2"]["sections"]
     for level, title, key in ba_headings(brief):
         _heading(document, title, level=level)

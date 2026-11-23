@@ -13,9 +13,9 @@ import re
 from datetime import date
 from typing import Any, Iterable, Mapping
 
-from grit.ontology.query_plan import QuerySpec, is_due, reviewed_by_id, search_name
+from grit.ontology.query_plan import QuerySpec, country_risk_items, is_due, reviewed_by_id, search_name
 
-LANES = ("REQUEST", "CONDITION", "THEME", "PROJECT", "SUPPLIER", "CUSTOMER", "HAZARD", "WATCHPOINT", "ENTITY", "COMPETITOR")
+LANES = ("COUNTRY_RISK", "REQUEST", "CONDITION", "THEME", "PROJECT", "SUPPLIER", "CUSTOMER", "HAZARD", "WATCHPOINT", "ENTITY", "COMPETITOR")
 NAME_FIELDS = {"SUPPLIER": ("suppliers", "supplierId", "supplierName"), "CUSTOMER": ("customers", "customerId", "customerName"), "ENTITY": ("entities", "entityId", "entityName")}
 
 
@@ -31,6 +31,7 @@ def reader_queries(
     requests: Iterable[Mapping[str, Any]] = (),
     *,
     pack: Any | None = None,
+    country_risk_pack: Any | None = None,
     reviewed_aliases: Mapping[str, Any] | None = None,
     run_date: date | None = None,
 ) -> list[QuerySpec]:
@@ -39,12 +40,15 @@ def reader_queries(
     seen: set[str] = set()
     register = str(scan_plan.get("registerId") or "SCAN-PLAN")
 
-    def add(lane: str, query: str, target_id: str, where: str, **options: Any) -> None:
-        spec = _spec(lane, query, len(specs), {"register": register, "where": where, "target": target_id}, **options)
+    def add(lane: str, query: str, target_id: str, where: str, *, source: dict[str, str] | None = None, **options: Any) -> None:
+        spec = _spec(lane, query, len(specs), source or {"register": register, "where": where, "target": target_id}, **options)
         if spec.query_id not in seen and spec.query:
             seen.add(spec.query_id)
             specs.append(spec)
 
+    if pack is not None:
+        for lane, query, lob, _priority, source in country_risk_items(country_risk_pack or pack):
+            add(lane, query, source["target"], source["where"], source=source, lob=lob)
     for row in requests:
         if row.get("status") != "ACTIVE" or (row.get("pack") and pack is not None and row["pack"] != pack.pack):
             continue

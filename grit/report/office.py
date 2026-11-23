@@ -463,6 +463,60 @@ def _signals_sheet(workbook: Workbook, signals: Sequence[Mapping[str, Any]]) -> 
     )
 
 
+def _exposure_ask_sheet(workbook: Workbook, block: Mapping[str, Any]) -> None:
+    headers = (
+        "Country", "STE entity", "Staff count", "Scope", "Snapshot date",
+        "Last safety confirmation", "Status",
+    )
+    sheet = workbook.create_sheet("Exposure & Ask")
+    sheet.append(list(headers))
+    for cell in sheet[1]:
+        cell.font, cell.fill = Font(bold=True, color="FFFFFF"), _HEADER
+    for row in block.get("exposures") or []:
+        sheet.append([
+            cell_text(row.get("country") or "Not recorded"),
+            cell_text(row.get("entity") or "Not recorded"),
+            cell_text(row.get("staff_count") if row.get("staff_count") is not None else "Not recorded"),
+            cell_text(row.get("staff_scope") or row.get("record_type") or "Not recorded"),
+            cell_text(row.get("snapshot_date") or "Not recorded"),
+            cell_text(row.get("last_safety_confirmation") or "Not recorded"),
+            cell_text(row.get("status") or "Not recorded"),
+        ])
+    sheet.append([])
+    ask = block.get("principal_ask")
+    owner = ask and (ask.get("owner_label") or ask.get("owner_role") or ask.get("owner_profile_id"))
+    sheet.append(["Principal ask", ask["text"] if ask else "No admitted principal ask with an owner profile and explicit due date was supplied."])
+    sheet.append(["Owner", owner or "Not supplied"])
+    sheet.append(["Due", ask["due_date"] if ask else "Not supplied"])
+    sheet.append(["RED triggers", "; ".join(block.get("red_triggers") or []) or "No principal-ask RED triggers supplied."])
+    if block.get("stale_warning"):
+        sheet.append(["Stale warning", block["stale_warning"]])
+    sheet.append([])
+    sheet.append(["Tier-1 physical threats", "Every override item, before event row caps"])
+    for cell in sheet[sheet.max_row]:
+        cell.font, cell.fill = Font(bold=True, color="FFFFFF"), _HEADER
+    sheet.append(["Title", "Tier", "Reader band", "Override", "Outlet", "Published", "URL"])
+    for cell in sheet[sheet.max_row]:
+        cell.font = Font(bold=True)
+    for item in block.get("tier1_physical_threats") or []:
+        sheet.append([
+            cell_text(item.get("title") or item.get("signal_id") or ""),
+            1,
+            item.get("reader_band") or "",
+            item.get("override_reason") or item.get("override_rule_id") or "",
+            item.get("outlet") or "",
+            item.get("published_at") or "",
+            item.get("url") or "",
+        ])
+    for number, width in enumerate((28, 42, 14, 22, 24, 28, 40), start=1):
+        sheet.column_dimensions[get_column_letter(number)].width = width
+    for row in sheet.iter_rows():
+        for cell in row:
+            cell.alignment = Alignment(wrap_text=True, vertical="top")
+    sheet.freeze_panes = "A2"
+    sheet.auto_filter.ref = f"A1:G{1 + len(block.get('exposures') or [])}"
+
+
 def render_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, Any]], path: Path) -> Path:
     """signals: routed_signals() rows for this reader, shown and hidden, so a reviewer can see what was cut and why."""
     if brief["meta"].get("layout") == "BA":
@@ -547,6 +601,81 @@ def _section_slide(slide: Any, title: str, rows: Sequence[Mapping[str, Any]], pa
                     run.font.size = PptPt(9.5)
 
 
+def _exposure_ask_slide(
+    slide: Any,
+    block: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+    page: int,
+    pages: int,
+) -> None:
+    from pptx.util import Pt as PptPt
+
+    suffix = f"  \u00b7  {page} OF {pages}" if pages > 1 else ""
+    _words(slide, 0.5, 0.22, 12.3, 0.28, [(f"EXPOSURE & ASK{suffix}  \u00b7  GRIT-SCAN", 13, True, EYEBROW)])
+    _words(slide, 0.5, 0.5, 12.3, 0.45, [("Approved staff exposure and management ask", 22, True, INK)])
+    table_top = 1.1
+    table_height = 0.42 + 0.52 * max(1, len(rows))
+    table = slide.shapes.add_table(
+        len(rows) + 1, 7, Inches(0.5), Inches(table_top), Inches(12.33), Inches(table_height)
+    ).table
+    for column, width in enumerate((1.35, 2.3, 1.0, 1.1, 1.55, 2.05, 2.98)):
+        table.columns[column].width = Inches(width)
+    for column, text in enumerate((
+        "Country", "STE entity", "Staff", "Scope", "Snapshot", "Last safety confirmation", "Status",
+    )):
+        cell = table.cell(0, column)
+        cell.text = text
+        cell.text_frame.paragraphs[0].runs[0].font.size = PptPt(9)
+        cell.text_frame.paragraphs[0].runs[0].font.bold = True
+    for number, row in enumerate(rows, start=1):
+        values = (
+            row.get("country") or "Not recorded",
+            row["entity"],
+            row["staff_count"] if row.get("staff_count") is not None else "Not recorded",
+            row.get("staff_scope") or row.get("record_type") or "Not recorded",
+            row.get("snapshot_date") or "Not recorded",
+            row.get("last_safety_confirmation") or "Not recorded",
+            row.get("status") or "Not recorded",
+        )
+        for column, value in enumerate(values):
+            cell = table.cell(number, column)
+            cell.text = str(value)
+            for paragraph in cell.text_frame.paragraphs:
+                for run in paragraph.runs:
+                    run.font.size = PptPt(8)
+    y = min(5.8, table_top + table_height + 0.15)
+    if page == 1:
+        ask = block.get("principal_ask")
+        owner = ask and (ask.get("owner_label") or ask.get("owner_role") or ask.get("owner_profile_id"))
+        ask_text = (
+            f"{ask['text']} Owner: {owner}. Due: {ask['due_date']}."
+            if ask else "No admitted principal ask with an owner profile and explicit due date was supplied."
+        )
+        triggers = "; ".join(block.get("red_triggers") or []) or "No principal-ask RED triggers supplied."
+        warning = f"  {block['stale_warning']}" if block.get("stale_warning") else ""
+        _words(slide, 0.5, y, 12.3, 6.62 - y, [
+            (f"PRINCIPAL ASK  {ask_text}", 10.5, True, INK),
+            (f"RED TRIGGERS  {triggers}{warning}", 9.5, False, RGBColor(0xB9, 0x3A, 0x22) if warning else BODY),
+        ])
+    if not rows:
+        _words(slide, 0.7, 1.65, 11.8, 0.4, [("No approved internal exposure records were supplied for this pack.", 12, False, MUTED)])
+
+
+def _physical_threat_slide(slide: Any, rows: Sequence[Mapping[str, Any]], page: int, pages: int) -> None:
+    suffix = f"  \u00b7  {page} OF {pages}" if pages > 1 else ""
+    _words(slide, 0.5, 0.22, 12.3, 0.28, [(f"TIER-1 PHYSICAL THREATS{suffix}  \u00b7  GRIT-SCAN", 13, True, EYEBROW)])
+    _words(slide, 0.5, 0.5, 12.3, 0.45, [("Every physical-threat override, before event-table caps", 22, True, INK)])
+    for number, item in enumerate(rows):
+        y = 1.2 + number * 0.9
+        _shape(slide, 0.5, y, 12.33, 0.78, CARD)
+        _shape(slide, 0.5, y, 0.06, 0.78, RGBColor(0xB9, 0x3A, 0x22))
+        _words(slide, 0.7, y + 0.08, 11.9, 0.62, [
+            (fit(str(item.get("title") or item.get("signal_id")), 120), 12, True, INK),
+            (fit(f"{item.get('outlet') or 'source'}, {item.get('published_at') or 'date not stated'}. "
+                 f"{item.get('override_reason') or 'Physical-threat override to Escalating.'}", 190), 9.5, False, BODY),
+        ])
+
+
 def _business_area_pptx(brief: Mapping[str, Any], path: Path) -> Path:
     """The business-area deck: a cover, the summary, one table slide per section with items, and the scenario outlook."""
     from grit.report.deck_template import CONTENT_LAYOUT, COVER_LAYOUT, TEMPLATE
@@ -566,6 +695,19 @@ def _business_area_pptx(brief: Mapping[str, Any], path: Path) -> Path:
     counts = [f"{title.split('. ', 1)[-1]}: {len(sections.get(key) or [])}" for _level, title, key in ba_headings(brief) if key]
     _words(summary, 0.5, 4.8, 12.3, 0.5, [("Items this week \u2014 " + "   \u00b7   ".join(counts), 12, True, BODY)])
     _notice(summary, deck)
+    block = brief["v2"].get("exposure_ask") or {}
+    exposure_rows = list(block.get("exposures") or [])
+    exposure_pages = [exposure_rows[start:start + 7] for start in range(0, len(exposure_rows), 7)] or [[]]
+    for page, rows in enumerate(exposure_pages, start=1):
+        slide = _blank(deck, CONTENT_LAYOUT)
+        _exposure_ask_slide(slide, block, rows, page, len(exposure_pages))
+        _notice(slide, deck)
+    threats = list(block.get("tier1_physical_threats") or [])
+    threat_pages = [threats[start:start + 5] for start in range(0, len(threats), 5)]
+    for page, rows in enumerate(threat_pages, start=1):
+        slide = _blank(deck, CONTENT_LAYOUT)
+        _physical_threat_slide(slide, rows, page, len(threat_pages))
+        _notice(slide, deck)
     for _level, title, key in ba_headings(brief):
         rows = list(sections.get(key) or []) if key else []
         pages = [rows[start:start + SECTION_SLIDE_ROWS] for start in range(0, len(rows), SECTION_SLIDE_ROWS)]
@@ -588,6 +730,7 @@ def business_area_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, 
     workbook = Workbook()
     workbook.remove(workbook.active)
     v2 = brief["v2"]
+    _exposure_ask_sheet(workbook, v2.get("exposure_ask") or {})
     for _level, title, key in ba_headings(brief):
         if key:
             rows = [[number, *section_cells(row)] for number, row in enumerate(v2["sections"].get(key) or [], start=1)]
@@ -599,13 +742,23 @@ def business_area_xlsx(brief: Mapping[str, Any], signals: Sequence[Mapping[str, 
     outlook = brief.get("scenarios") or {}
     if outlook.get("shifts"):
         _sheet(workbook, "Scenario outlook", scenario_headers(v2["short"]), [["\n".join(lines) for lines in scenario_cells(reading)] for reading in outlook["shifts"]], (50, 40, 90, 60, 60, 60))
-    _sheet(workbook, "Jurisdictions", ("Jurisdiction", f"{v2['short']} entities", "In-window finding", "Trend"),
-           [(row["country"], "; ".join(row["entities"]) + (f"; and {row['more_entities']} more" if row["more_entities"] else ""), row["finding"], row["trend"]) for row in v2["jurisdictions"]],
-           (16, 60, 80, 8))
+    _sheet(workbook, "Jurisdictions", ("Jurisdiction", f"{v2['short']} entities", "In-window finding", "Search audit", "Trend"),
+           [(row["country"], "; ".join(row["entities"]) + (f"; and {row['more_entities']} more" if row["more_entities"] else ""),
+             row["finding"], row.get("audit_detail") or "", row["trend"]) for row in v2["jurisdictions"]],
+           (16, 60, 80, 70, 8))
     _sheet(workbook, "Named watch", ("Name", "Type", "This week", "Proposed Response from Lessons Learnt"),
            [(row["name"], row["type"], (row["text"] or {}).get("plain") or "", row.get("lesson") or "Not drafted.") for row in v2["watch"]], (40, 12, 90, 60))
     refs = {ref["signal_id"]: ref for rows in v2["sections"].values() for row in rows for ref in row.get("sources") or []}
     refs |= {ref["signal_id"]: ref for row in [*v2["look_ahead"], *v2["jurisdictions"]] for ref in row.get("sources") or []}
+    for item in (v2.get("exposure_ask") or {}).get("tier1_physical_threats") or []:
+        signal_id = str(item.get("signal_id") or "")
+        if signal_id:
+            refs[signal_id] = {
+                "outlet": item.get("outlet"),
+                "title": item.get("title"),
+                "date": item.get("published_at"),
+                "url": item.get("url"),
+            }
     _sheet(workbook, "Sources", ("Outlet", "Title", "Date", "Tier", "URL"),
            [(ref["outlet"], ref.get("title") or "", ref.get("date") or "", (v2.get("tiers") or {}).get(key, "T4"), ref.get("url") or "") for key, ref in refs.items()],
            (24, 70, 14, 10, 60))

@@ -35,6 +35,8 @@ Rules:
 - Give counts of staff and travellers, never names.
 - Give each entry a "reference": the document or email it comes from, with its date.
 - "safetyConfirmed" is the date staff safety was last confirmed; leave it out if not found.
+- Add "principalAsk" with one ask, an existing GRIT-Scan reviewer profile ID as
+  "owner_profile_id", an explicit YYYY-MM-DD "due_date" and the applicable "red_triggers".
 - For each alert in the last 7 days, list the nearest sites with their distance in km,
   as stated in the GRIT impact assessment. Do not estimate a distance.
 - Leave out anything you cannot find. Never estimate or round up a number.

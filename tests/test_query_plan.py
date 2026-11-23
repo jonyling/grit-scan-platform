@@ -24,6 +24,8 @@ def _library(**parts):
 
 def _pack(libraries=(), management=None, suppliers=(), customers=(), entities=(), competitors=(), themes=(), lobs=()):
     return SimpleNamespace(
+        pack="test",
+        level="BA",
         keyword_library={"libraries": list(libraries)},
         lob_profiles={"lobs": list(lobs)},
         themes={"themes": list(themes)},
@@ -66,6 +68,34 @@ def test_names_are_exact_and_topics_are_not_and_entities_resolve_a_canonical_lob
     assert by_lane["ENTITY"].canonical_lob == "Mobility Road & Services"
     assert by_lane["COMPETITOR"].canonical_lob == "Mobility Rail"
     assert EXACT_LANES == {"SUPPLIER", "CUSTOMER", "COMPETITOR", "ENTITY"}
+
+
+def test_country_risk_queries_are_weekly_first_and_follow_governed_footprints() -> None:
+    pack = _pack()
+    pack.exposure["entities"] = [
+        {"entityName": "Qatar entity", "lob": "Mobility Services", "countryOfIncorporation": "Qatar"},
+        {"entityName": "Israel entity", "lob": "Mobility Services", "countryOfIncorporation": "Israel"},
+    ]
+    config = {
+        "version": 7,
+        "registerId": "COUNTRY-RISK-V7",
+        "packs": {"test": ["Kuwait"]},
+        "countries": {
+            "Qatar": ["Qatar strikes", "Qatar mediation"],
+            "Kuwait": ["Kuwait budget fiscal"],
+            "Israel": ["Israel Iran retaliation", "Israel shekel"],
+        },
+    }
+    plan = build_query_plan(pack, country_risk_config=config)
+    risk = [spec for spec in plan if spec.lane == "COUNTRY_RISK"]
+    assert {spec.query for spec in risk} == {
+        "Qatar strikes", "Qatar mediation", "Kuwait budget fiscal",
+        "Israel Iran retaliation", "Israel shekel",
+    }
+    assert all(spec.cadence_weeks == 1 and not spec.exact for spec in risk)
+    assert all(spec.sources[0]["configVersion"] == "7" and spec.sources[0]["register"] == "COUNTRY-RISK-V7" for spec in risk)
+    selected = select_queries(plan, date(2026, 10, 12), max_queries=2)["selected"]
+    assert [row["lane"] for row in selected] == ["COUNTRY_RISK", "COUNTRY_RISK"]
 
 
 def test_the_market_request_crosses_countries_with_the_sectors_its_scope_names() -> None:
@@ -123,6 +153,11 @@ def test_the_urs_plan_traces_every_query_and_stays_inside_the_monthly_budget() -
     assert all(spec.sources for spec in plan)
     assert len({spec.query.casefold().strip(" .;,") for spec in plan}) == len(plan)
     assert max(len(spec.query) for spec in plan) <= 400
+    country_queries = [spec.query for spec in plan if spec.lane == "COUNTRY_RISK"]
+    assert any(query.startswith("Qatar ") for query in country_queries)
+    assert any(query.startswith("Israel ") for query in country_queries)
+    assert any(query.startswith("Kuwait ") for query in country_queries)
+    assert any(query.startswith("Bahrain ") for query in country_queries)
 
     monday = date(2026, 10, 12)
     sizes = [len(select_queries(plan, monday + timedelta(weeks=week))["selected"]) for week in range(5)]

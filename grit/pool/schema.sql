@@ -169,6 +169,27 @@ CREATE TABLE IF NOT EXISTS searches (
     fetched_at    TEXT NOT NULL,
     PRIMARY KEY (run_id, query_id, engine)
 );
+CREATE TABLE IF NOT EXISTS search_attempts (
+    attempt_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id        TEXT NOT NULL REFERENCES runs (run_id),
+    query_id      TEXT NOT NULL,
+    engine        TEXT NOT NULL,              -- BRAVE, CURRENTS
+    query         TEXT NOT NULL,
+    lane          TEXT,
+    target_id     TEXT,
+    canonical_lob TEXT,
+    sent_query    TEXT NOT NULL,
+    attempt_no    INTEGER NOT NULL,
+    outcome       TEXT NOT NULL,              -- ANSWERED, HTTP_ERROR, RATE_LIMITED, REQUEST_ERROR
+    http_status   INTEGER,
+    error         TEXT,
+    attempted_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_search_attempts_run ON search_attempts (run_id, query_id, attempt_id);
+CREATE TRIGGER IF NOT EXISTS search_attempts_no_update BEFORE UPDATE ON search_attempts
+BEGIN SELECT RAISE(ABORT, 'Search attempts are append-only'); END;
+CREATE TRIGGER IF NOT EXISTS search_attempts_no_delete BEFORE DELETE ON search_attempts
+BEGIN SELECT RAISE(ABORT, 'Search attempts are append-only'); END;
 
 -- Later text for a page already in the pool, recorded only when the source states a later publication day: a search
 -- engine's snippet varies by query, which is not an update. The signal keeps its first text, so assessments and hashes do

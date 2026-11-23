@@ -202,7 +202,11 @@ For approved internal confirmations, add `--internal-evidence FILE` and `--evide
  "exposure": {"type": "SITE", "status": "CONFIRMED", "entity": "STE A"}}
 ```
 
-`type` is `SITE`, `STAFF`, `CONTRACT`, `TRAVEL`, `ASSET`, or `OTHER`. `status` is `CONFIRMED`, `POSSIBLE`, or `NOT_EXPOSED`. Only such a record lets Assessment or the Critic call exposure confirmed or ruled out. A claim without it is recorded as possible exposure. The admitting profile must be a reviewer or a business-area head. Prepare the file with [Prepare the weekly exposure snapshot](docs/templates/exposure-snapshot-prompt.md). Without one, each report says that exposure rests on public sources only.
+`type` is `SITE`, `STAFF`, `CONTRACT`, `TRAVEL`, `ASSET`, or `OTHER`. `status` is `CONFIRMED`, `POSSIBLE`, or `NOT_EXPOSED`. Only such a record lets Assessment or the Critic call exposure confirmed or ruled out. A claim without it is recorded as possible exposure. The admitting profile must be a reviewer or a business-area head. Prepare the file with [Prepare the weekly exposure snapshot](docs/templates/exposure-snapshot-prompt.md).
+
+BA reports place a typed `Exposure & Ask` block after the summary. It shows pack-only staff scope, the snapshot date, safety confirmation, the named owner, the explicit ask due date, RED triggers and every kept Tier-1 physical threat. ReviewGate holds approval with `EXPOSURE_DATA_STALE` when a physical-threat item exists and the snapshot is missing or more than seven days older than the run date. Without approved exposure data, the block states that no internal records were supplied. It does not present an older staff date as current.
+
+The weekly planner gives governed `COUNTRY_RISK` searches priority. URS always covers Qatar, Kuwait, Bahrain and Israel. Other country searches follow registered entity and asset footprints. A jurisdiction says `No item found` only when a relevant search was answered. Otherwise it says `Search not run`, with the query outcome available in the audit data.
 
 Keyword matching proposes each signal's risk links. In a reasoned run, Assessment and the Critic can remove a link the fact does not support. They can add a link the keywords missed, only from the pack's register of standing items. The report shows the reviewed links. The cascade to business-area and Group risks follows them.
 

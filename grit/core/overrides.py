@@ -17,7 +17,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from grit.core.people import StaffGrounding, people_risk_in_lead
+from grit.core.people import StaffGrounding, qualifying_threat_in_lead
 from grit.core.red_alert import names_jurisdiction
 
 BAND_ESCALATING = "Escalating"
@@ -170,6 +170,16 @@ def _find_phrase(phrases: Sequence[str], text: str) -> str | None:
     return None
 
 
+def _names_pack_jurisdiction(text: str, jurisdictions: Sequence[str]) -> str | None:
+    country = names_jurisdiction(text, jurisdictions)
+    if country:
+        return country
+    for candidate in jurisdictions:
+        if _phrase_pattern(candidate).search(text):
+            return candidate
+    return None
+
+
 @lru_cache(maxsize=1)
 def _load_instruments(path: str | None = None) -> dict[str, Any]:
     from grit.settings import CONFIG_DIR
@@ -195,17 +205,20 @@ def staff_threat_override(
 ) -> OverrideHit | None:
     """Strike / physical threat in a country with URS staff or pack entities → Escalating."""
     lead = f"{title or ''}\n{str(text or '')[:LEAD_CHARS]}"
+    effective_terms = terms if terms is not None else grounding.terms if grounding is not None else None
+    hits = qualifying_threat_in_lead(title, text, effective_terms)
+    if not hits:
+        return None
     if grounding is not None:
         countries = ", ".join(grounding.countries)
-        terms_hit = ", ".join(grounding.terms)
+        terms_hit = ", ".join(hits)
         return OverrideHit(
             OVERRIDE_STAFF_THREAT,
             f"People-risk ({terms_hit}) in staffed country {countries}: hard override to Escalating.",
         )
-    hits = people_risk_in_lead(title, text, terms)
     if not hits or not jurisdictions:
         return None
-    country = names_jurisdiction(lead, jurisdictions)
+    country = _names_pack_jurisdiction(lead, jurisdictions)
     if not country:
         return None
     return OverrideHit(
@@ -229,7 +242,7 @@ def regulation_in_force_override(
         return None
     register = instruments if instruments is not None else load_instruments()
     lead = f"{title or ''}\n{str(text or '')[:LEAD_CHARS]}"
-    country = names_jurisdiction(lead, jurisdictions)
+    country = _names_pack_jurisdiction(lead, jurisdictions)
     if not country:
         return None
     in_force = _find_phrase(list(register.get("inForcePhrases") or []), lead)
@@ -329,9 +342,10 @@ def apply_reader_band(
             reasons.append(hit.reason)
         record["reasons"] = reasons
         # Compat: Escalating membership historically keyed off tier 1 for elevated event selection.
-        if record.get("tier") is None or int(record.get("tier") or 9) > 1:
-            record["score_tier"] = record.get("tier")  # preserve pre-override tier when present
-            record["tier"] = 1
+        # Keep the score's tier under a stable audit key, including when the score was already tier 1.
+        if "score_tier" not in record:
+            record["score_tier"] = record.get("tier")
+        record["tier"] = 1
         return record
 
     record.pop("override_rule_id", None)

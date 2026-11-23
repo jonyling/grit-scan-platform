@@ -21,6 +21,95 @@ STALE_DAYS = 30  # older staff data is still used, and the report says it is sta
 LEAD_CHARS = 400  # title + lead window for people-risk grounding (same bar as adverse screening)
 STAFF_AFFINITY = 2  # within-tier bump when a page grounds to the staff log (not a new rung)
 
+# The hard reader-band override is deliberately narrower than the wider adverse
+# people-risk vocabulary. Entries here describe an actual or immediate physical
+# threat, rather than a weapons programme, sale, test or assessment.
+PHYSICAL_THREAT_TERMS = (
+    "armed attack*",
+    "armed assault*",
+    "armed strike*",
+    "military strike*",
+    "airstrike*",
+    "air strike*",
+    "air raid*",
+    "missile*",
+    "drone*",
+    "drone strike*",
+    "drone attack*",
+    "armed drone*",
+    "rocket attack*",
+    "rocket fire",
+    "shelling",
+    "bombing",
+    "bomb attack*",
+    "physical attack*",
+    "physical threat*",
+)
+
+_PHYSICAL_THREAT_SPECULATIVE = (
+    "may",
+    "might",
+    "could",
+    "would",
+    "likely",
+    "possibly",
+    "possible",
+    "potential",
+    "proposed",
+    "proposes",
+    "plans to",
+    "planned",
+    "considering",
+    "expected to",
+    "forecast",
+    "risk of",
+    "threatened to",
+)
+
+_PHYSICAL_THREAT_NON_EVENT = (
+    "contract",
+    "procurement",
+    "sale",
+    "sales",
+    "shipment",
+    "export",
+    "assessment",
+    "scenario",
+    "cyber",
+    "online",
+    "manufacturer",
+    "manufacturing",
+    "production",
+    "technology",
+    "capability",
+    "programme",
+    "program",
+    "development",
+    "test",
+    "testing",
+    "trial",
+    "exercise",
+    "drill",
+    "simulation",
+    "delivery",
+    "shipping",
+    "cargo",
+    "commercial",
+    "survey",
+    "inspection",
+    "footage",
+    "market",
+    "shares",
+    "stock",
+    "order",
+    "orders",
+    "training",
+    "did not happen",
+    "no missile",
+    "no drone",
+    "no attack",
+)
+
 # Canonical country and the names news uses for it (the country and its people); then the cities a report may name alone.
 COUNTRY_NAMES: dict[str, tuple[str, ...]] = {
     "United Arab Emirates": ("United Arab Emirates", "UAE", "U.A.E.", "Emirati", "Emirates"),
@@ -213,7 +302,8 @@ def staff_snapshot(path: Path | None = None, *, pack: Any = None) -> dict[str, A
             sources.append(str(part["source"]))
     if not found:
         return None
-    snapshot = {"asOf": min(dates) if dates else (str(data.get("asOf") or "")[:10] or date.today().isoformat()),
+    snapshot = {"pack": str(getattr(pack, "pack", None) or "ste"),
+                "asOf": min(dates) if dates else (str(data.get("asOf") or "")[:10] or date.today().isoformat()),
                 "preparedBy": "R&A", "sources": [reference, *dict.fromkeys(sources)], "sites": sites, "travel": travel}
     if not group:
         snapshot["businessArea"] = str((getattr(pack, "manifest", None) or {}).get("shortLabel") or getattr(pack, "label", "") or pack.pack)
@@ -278,6 +368,38 @@ def load_people(path: Path | None = None, *, today: date | None = None, addresse
     age = (today or date.today()) - date.fromisoformat(oldest) if oldest else None
     return {"countries": countries, "dates": dates, "age_days": age.days if age is not None else None, "stale": age is not None and age.days > STALE_DAYS,
             "caveats": caveats, "gap": data.get("gap"), "local_total": local.get("total_incl_smaller_sites"), "travellers_total": travel.get("total")}
+
+
+def scope_people(people: Mapping[str, Any] | None, snapshot: Mapping[str, Any] | None) -> dict[str, Any] | None:
+    """People-grounding view limited to the exact counts and entities in a pack-filtered staff snapshot."""
+    if not people or not snapshot or snapshot.get("notSupplied") is True:
+        return None
+    countries: dict[str, dict[str, Any]] = {}
+    for row in snapshot.get("sites") or []:
+        country = canonical_country(row.get("country"))
+        record = countries.setdefault(country, {"local_staff": 0, "entities": [], "travellers": 0})
+        record["local_staff"] += int(row.get("headcount") or 0)
+        entity = str(row.get("entity") or "").strip()
+        if entity and entity not in record["entities"]:
+            record["entities"].append(entity)
+        city = _city(country, row.get("city"))
+        if city:
+            record.setdefault("sites", {}).setdefault(city, []).append(f"{entity}, staff snapshot" if entity else "staff snapshot")
+    for row in snapshot.get("travel") or []:
+        country = canonical_country(row.get("country"))
+        record = countries.setdefault(country, {"local_staff": 0, "entities": [], "travellers": 0})
+        record["travellers"] += int(row.get("travellers") or 0)
+    countries = {country: row for country, row in countries.items() if country}
+    if not countries:
+        return None
+    as_of = str(snapshot.get("asOf") or "")
+    return {
+        **dict(people),
+        "countries": countries,
+        "dates": {"local_staff": as_of, "travellers": as_of},
+        "local_total": sum(row["local_staff"] for row in countries.values()),
+        "travellers_total": sum(row["travellers"] for row in countries.values()),
+    }
 
 
 def countries_named(text: str, people: Mapping[str, Any] | None) -> list[str]:
@@ -355,6 +477,53 @@ def people_risk_in_lead(title: str, text: str, terms: Sequence[str] | None = Non
         if where != "BODY":
             found.append(term)
     return found
+
+
+def _threat_context_is_guarded(lead: str, match: re.Match[str]) -> bool:
+    sentence_start = max(
+        (lead.rfind(mark, 0, match.start()) for mark in (". ", "\n", "? ", "! ")),
+        default=-1,
+    )
+    sentence_ends = [
+        index
+        for index in (lead.find(mark, match.end()) for mark in (". ", "\n", "? ", "! "))
+        if index >= 0
+    ]
+    sentence = lead[sentence_start + 1 : min(sentence_ends) if sentence_ends else len(lead)]
+    return any(
+        _term_pattern(guard).search(sentence)
+        for guard in (*_PHYSICAL_THREAT_SPECULATIVE, *_PHYSICAL_THREAT_NON_EVENT)
+    )
+
+
+def physical_threat_in_lead(title: str, text: str) -> list[str]:
+    """Explicit physical-threat hits, excluding speculative and non-event weapons prose."""
+    lead = f"{str(title or '')}\n{str(text or '')[:LEAD_CHARS]}"
+    found: list[str] = []
+    for term in PHYSICAL_THREAT_TERMS:
+        match = _term_pattern(term).search(lead)
+        if match and not _threat_context_is_guarded(lead, match):
+            found.append(term)
+    return found
+
+
+def qualifying_threat_in_lead(
+    title: str, text: str, terms: Sequence[str] | None = None
+) -> list[str]:
+    """People-risk terms plus explicit physical threats safe for a hard override."""
+    physical = physical_threat_in_lead(title, text)
+    general = people_risk_in_lead(title, text, terms)
+    # Bare weapons vocabulary is context-sensitive. It only qualifies through
+    # the guarded physical catalog, not a generic lexicon stem match.
+    lead = f"{str(title or '')}\n{str(text or '')[:LEAD_CHARS]}"
+    qualified: list[str] = []
+    for term in general:
+        if term.casefold().rstrip("*").startswith(("missile", "drone", "intercepted")):
+            continue
+        match = _term_pattern(term).search(lead)
+        if match and not _threat_context_is_guarded(lead, match):
+            qualified.append(term)
+    return list(dict.fromkeys([*physical, *qualified]))
 
 
 @dataclass(frozen=True)

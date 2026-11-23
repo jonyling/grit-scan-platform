@@ -13,6 +13,7 @@ layout. A profile still chooses the packs, the aperture and the review role, but
 |---|---|---|
 | Header | Masthead | Title, scan window, review status and the AI-suggestion notice |
 | Box | `SUMMARY` | The Reporter's summary of the week's rows |
+| Block | `Exposure & Ask` | Approved country/entity exposure, the dated principal ask, RED triggers, stale warning and uncapped Tier-1 physical threats |
 | 1 | Management Focus Topics | Events that answer an active management request |
 | 2a | Key, T2 & Emerging | Events that touch the business area's own register risks |
 | 2b | Other Risk Themes | Events that touch a Group risk and no register risk |
@@ -85,11 +86,35 @@ The Reporter writes the summary box from the drafted rows, the named items and t
 The per-risk Assessor, Critic and Options Proposer run for the Group radar only. The finding-card loop does too. A
 business-area run stores no condition assessments.
 
-The business-area brief has no exposure snapshot, what-changed table, prioritisation, coverage matrix, completeness gate,
-action posture, corrections ledger, entity packs, priority findings or QA appendix. The Group radar keeps all of these.
+The business-area brief has no legacy what-changed table, prioritisation, coverage matrix, completeness gate, action
+posture, corrections ledger, entity packs, priority findings or QA appendix. Its approved internal exposure and one
+typed, dated principal ask are shown in the `Exposure & Ask` block after the summary. The Group radar keeps its format-v2
+sections.
 
 In a reasoned run (spec 45), Reporting edits `bottom_line.text` only. The final Critic reviews the new brief model.
 Readiness does not use the completeness gate, because a business-area brief has none.
+
+## 5. Exposure & Ask governance
+
+The approved exposure document supplies one typed `Exposure & Ask` block. Its table shows country, STE entity,
+pack-only staff count and scope, snapshot date, last safety confirmation and status. Staff rows for one business area
+never use another business area's counts.
+
+The principal ask is data, not report prose. It names a known reviewer or BA-head profile for the pack, uses an explicit
+due date and lists the RED trigger conditions. The admission step rejects an unknown owner, a reader-only owner, an
+owner outside the pack and a missing or invalid due date.
+
+An armed strike, missile or drone attack, shelling, bombing or another physical threat in a registered entity or
+pack-staff jurisdiction forces the item to Tier 1 and `Escalating`. The block lists every such kept item. The event-row
+limit does not limit this list.
+
+ReviewGate holds `APPROVE` with reason `EXPOSURE_DATA_STALE` when a kept Tier-1 physical threat exists and the frozen
+exposure snapshot is missing, invalid or more than seven days old at the report run date. The report always labels the
+snapshot date. It never presents an older date as current.
+
+Country retrieval uses the versioned `COUNTRY_RISK` register. Qatar, Kuwait, Bahrain and Israel are mandatory URS
+searches. Other configured country searches follow registered entity or asset footprints. A jurisdiction may say
+`No item found` only after a relevant search was answered. A planned, failed or unrun query gives `Search not run`.
 
 ## 5. Rendering an older run
 

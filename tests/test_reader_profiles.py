@@ -74,6 +74,10 @@ def test_a_good_profile_has_no_problems(tmp_path: Path) -> None:
     _write(tmp_path)
     reader = load_reader_profile("wilson", tmp_path)
     assert check(reader, KNOWN, notes("wilson", tmp_path)) == []
+    profile = _profile()
+    assert profile.can_own_principal_ask("urs")
+    assert not profile.can_own_principal_ask("marine")
+    assert not _profile(review_role="READER").can_own_principal_ask("urs")
 
 
 @pytest.mark.parametrize(("old", "new", "problem"), [

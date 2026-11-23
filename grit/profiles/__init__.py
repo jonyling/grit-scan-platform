@@ -58,6 +58,10 @@ class Profile:
         """The brief this reader receives for a pack, or None when they receive no brief for it."""
         return self.briefs.get(pack)
 
+    def can_own_principal_ask(self, pack: str) -> bool:
+        """Only an approving human explicitly scoped to the pack can own a principal ask."""
+        return self.review_role in {"REVIEWER", "BA_HEAD"} and pack in self.packs
+
 
 def _profile(raw: dict[str, Any], source: Path) -> Profile:
     aperture = raw.get("aperture")

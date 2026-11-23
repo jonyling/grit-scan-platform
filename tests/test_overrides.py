@@ -104,6 +104,49 @@ def test_people_risk_in_pack_entity_jurisdiction_overrides() -> None:
     assert "Singapore" in hit.reason
 
 
+def test_explicit_physical_threat_in_entity_country_needs_no_staff_log() -> None:
+    priority = apply_reader_band(
+        {"tier": 4, "reasons": ["Low score reason."], "cues": ["source"]},
+        title="Armed drones struck a base outside kuwait",
+        text="The strike damaged a guard post.",
+        grounding=None,
+        jurisdictions=["Kuwait"],
+        terms=(),
+    )
+    assert priority["band"] == BAND_ESCALATING
+    assert priority["tier"] == 1
+    assert priority["score_tier"] == 4
+    assert priority["cues"] == ["source"]
+    assert priority["reasons"][0] == "Low score reason."
+    assert "Kuwait" in priority["override_reason"]
+
+
+def test_override_preserves_an_existing_tier_one_audit_score() -> None:
+    priority = apply_reader_band(
+        {"tier": 1, "reasons": ["Score reason."]},
+        title="Missile strike hits Qatar",
+        grounding=None,
+        jurisdictions=["Qatar"],
+    )
+    assert priority["tier"] == 1
+    assert priority["score_tier"] == 1
+    assert priority["reasons"][0] == "Score reason."
+
+
+def test_speculative_and_non_physical_weapon_text_does_not_override() -> None:
+    for title in (
+        "Qatar may face a missile threat next year",
+        "Singapore awards missile production contract",
+        "Qatar opens drone technology programme",
+    ):
+        assert staff_threat_override(
+            title,
+            "",
+            grounding=None,
+            jurisdictions=["Qatar", "Singapore"],
+        ) is None
+
+
 def test_chip_rule_in_force_in_urs_jurisdiction_overrides() -> None:
     hit = regulation_in_force_override(
         "US advanced chip export controls already in force for shipments via Singapore",
