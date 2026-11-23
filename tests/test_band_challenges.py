@@ -310,6 +310,52 @@ def test_dismiss_clears_block_for_approve(tmp_path) -> None:
     assert review_gate_challenge_block(package_challenges(pool, "PKG-3", 1)) == []
 
 
+def test_resolved_challenge_does_not_reopen_for_next_package_version(tmp_path) -> None:
+    pool = Pool(tmp_path / "pool.db")
+    run_id = "2026-11-01-demo"
+    pool.insert(
+        "runs",
+        {
+            "run_id": run_id,
+            "run_date": "2026-11-01",
+            "pack": "demo",
+            "kind": "READER_SCAN",
+            "status": "COMPLETE",
+            "started_at": "2026-11-01T00:00:00Z",
+            "config_json": {},
+        },
+    )
+    _seed_signal(pool, "SIG-eeeeeeeeeeeeeeee")
+    opened = open_from_editorial(
+        pool,
+        run_id=run_id,
+        signal_id="SIG-eeeeeeeeeeeeeeee",
+        band=BAND_ESCALATING,
+        challenged_band=BAND_ELEVATED,
+        challenge_reason="Override is too broad.",
+        package_id="PKG-5",
+        package_version=1,
+    )
+    resolve_challenge(
+        pool, challenge_id=opened["challenge_id"], resolution=STATUS_UPHOLD, reviewer_id="wilson"
+    )
+
+    reopened = open_from_editorial(
+        pool,
+        run_id=run_id,
+        signal_id="SIG-eeeeeeeeeeeeeeee",
+        band=BAND_ESCALATING,
+        challenged_band=BAND_ELEVATED,
+        challenge_reason="Override is too broad.",
+        package_id="PKG-5",
+        package_version=2,
+    )
+
+    assert reopened is None
+    assert pool.band_challenge(run_id, "SIG-eeeeeeeeeeeeeeee")["status"] == STATUS_UPHOLD
+    assert package_challenges(pool, "PKG-5", 2) == []
+
+
 def test_sync_package_challenges_from_editorial(tmp_path, monkeypatch) -> None:
     pool = Pool(tmp_path / "pool.db")
     run_id = "2026-11-01-demo"

@@ -92,6 +92,54 @@ def test_each_event_goes_to_the_first_table_it_qualifies_for() -> None:
     assert len(tables[REGISTER_RISK]) == MAX_SECTION_ROWS and not tables[MANAGEMENT_FOCUS], "each table is capped, and a quiet event has no row"
 
 
+def test_report_event_cap_applies_after_reader_band_and_within_band_order() -> None:
+    from grit.core.overrides import BAND_ELEVATED, BAND_ESCALATING, BAND_WATCH
+    from grit.report.format_v2 import _ranked_elevated_events
+
+    def event(number: int, band: str, order: int) -> dict:
+        signal_id = f"SIG-{number:016x}"
+        lead = {
+            "signal_id": signal_id,
+            "title": f"Event {number}",
+            "text": "Body.",
+            "priority": {"band": band},
+            "editorial": {"order_in_band": order},
+        }
+        return {
+            "event_id": f"E-{number}",
+            "elevated": True,
+            "band": UP,
+            "lead": lead,
+            "members": [lead],
+            "reports": [lead],
+            "signal_ids": [signal_id],
+            "risks": [],
+            "risk_label": "Risk",
+            "tier": 1,
+            "score": 14,
+            "red": False,
+            "red_candidate": False,
+            "publishers": 1,
+            "last_date": "2026-11-23",
+            "new": True,
+            "previous_lead": None,
+            "group_risks": [],
+            "requests": [],
+            "first_date": "2026-11-23",
+        }
+
+    source = [
+        *(event(number, BAND_WATCH, number) for number in range(1, 9)),
+        event(9, BAND_ESCALATING, 1),
+        event(10, BAND_ELEVATED, 1),
+    ]
+    selected = _ranked_elevated_events(source, set(), recorded=False, drafted={})
+    ids = {row["event_id"] for row in selected}
+    assert "E-9" in ids
+    assert "E-10" in ids
+    assert "E-8" not in ids
+
+
 def test_a_lessons_learnt_response_never_says_ste_has_the_weakness() -> None:
     from grit.agents.reader import checked_lesson
 

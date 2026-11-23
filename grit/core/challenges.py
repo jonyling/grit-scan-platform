@@ -109,13 +109,21 @@ def open_from_editorial(
     package_version: int | None = None,
 ) -> dict[str, Any] | None:
     """Append an OPEN challenge when the latest status for this run/signal is not already OPEN.
-    Returns None when an OPEN row already stands. Does not change assessment band."""
+    Returns None when the same proposal is already standing. Does not change assessment band."""
     if challenged_band not in BANDS or band not in BANDS or challenged_band == band:
         raise ChallengeError("OPEN challenge needs distinct core and challenged bands.")
     if not challenge_reason.strip():
         raise ChallengeError("OPEN challenge needs a reason.")
     existing = pool.band_challenge(run_id, signal_id)
-    if existing and existing["status"] == STATUS_OPEN:
+    same_proposal = bool(
+        existing
+        and existing["band"] == band
+        and existing["challenged_band"] == challenged_band
+        and existing["challenge_reason"] == challenge_reason.strip()
+    )
+    if existing and same_proposal:
+        if existing["status"] != STATUS_OPEN:
+            return None
         # Refresh package linkage if the package was just submitted.
         if package_id and (
             existing.get("package_id") != package_id or existing.get("package_version") != package_version

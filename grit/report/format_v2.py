@@ -26,6 +26,7 @@ NO_COUNTRY_SEARCH = "No item found; no country-specific search ran this week."
 NO_ENGLISH = "No English-language headline in the kept sources."
 MAX_PRIORITIES = 12
 MAX_CHANGES = 12
+MAX_ESCALATING_ITEMS = 8
 _CATEGORY_WORDS = (
     (FINANCIAL, ("financial", "economic slowdown", "recession", "forex", "foreign exchange", "exchange rate", "interest", "inflation", "credit", "funding", "revenue", "margin", "currency", "macro")),
     (SUPPLY, ("supply", "supplier", "vendor", "oem", "single source", "single-source", "cost", "material", "procurement")),
@@ -96,6 +97,38 @@ def short_text(text: str, limit: int = 120) -> str:
     if len(sentence) <= limit:
         return sentence
     return text[:limit].rsplit(" ", 1)[0].rstrip(",;:—-") + "…"
+
+
+def _report_reader_band(event: Mapping[str, Any]) -> str:
+    from grit.core.overrides import reader_band_of
+
+    return reader_band_of(event["lead"])
+
+
+def _ranked_elevated_events(
+    events: Sequence[Mapping[str, Any]],
+    withheld: set[str],
+    *,
+    recorded: bool,
+    drafted: Mapping[str, Any],
+) -> list[Mapping[str, Any]]:
+    from grit.agents.weekly import order_in_band_of
+    from grit.core.overrides import band_sort_key
+
+    eligible = [
+        event
+        for event in events
+        if event["elevated"]
+        and event["event_id"] not in withheld
+        and (not recorded or event["event_id"] in drafted)
+    ]
+    return sorted(
+        eligible,
+        key=lambda event: (
+            band_sort_key(_report_reader_band(event)),
+            order_in_band_of(event["lead"]),
+        ),
+    )[:MAX_ESCALATING_ITEMS]
 
 
 def source_tier(url: str | None, rating: str | None, publisher: str | None, source_class: str | None = None) -> str:
@@ -248,12 +281,18 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     # The QA log withholds these events, so their reports feed no table, the look-ahead, or the status line either.
     hidden = {signal_id for event in events if event["event_id"] in withheld for signal_id in event["signal_ids"]}
     visible = [row for row in shown if row["signal_id"] not in hidden]
-    elevated = [event for event in events if event["elevated"] and event["event_id"] not in withheld and (not recorded or event["event_id"] in drafted)][:8]
     from grit.core.financial_band import financial_size as _financial_size
 
     from grit.agents.weekly import order_in_band_of, reach_fields_of
     from grit.core.challenges import challenge_open
-    from grit.core.overrides import BAND_ESCALATING, band_sort_key, reader_band_of
+    from grit.core.overrides import band_sort_key
+
+    elevated = _ranked_elevated_events(
+        events,
+        withheld,
+        recorded=recorded,
+        drafted=drafted,
+    )
 
     pack_bands = ((getattr(pack, "manifest", None) or {}) if hasattr(pack, "manifest") else {}).get("severityBands")
     escalating_rows = []
@@ -261,9 +300,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         lead = event["lead"]
         size = _financial_size(f"{lead.get('title') or ''} {str(lead.get('text') or '')[:1500]}", pack_bands)
         # Reader band (Escalating / Elevated / Watch) from core assessment; event["band"] stays the week-over-week arrow.
-        reader_band = reader_band_of(lead)
-        if event.get("elevated") and reader_band == "Watch":
-            reader_band = BAND_ESCALATING
+        reader_band = _report_reader_band(event)
         priority = lead.get("priority") if isinstance(lead.get("priority"), Mapping) else lead.get("priority_json") if isinstance(lead.get("priority_json"), Mapping) else {}
         reach = reach_fields_of(lead)
         escalating_rows.append({
@@ -311,9 +348,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     for event in elevated:
         row = drafted.get(event["event_id"]) or {}
         lead = event["lead"]
-        reader_band = reader_band_of(lead)
-        if event.get("elevated") and reader_band == "Watch":
-            reader_band = BAND_ESCALATING
+        reader_band = _report_reader_band(event)
         reach = reach_fields_of(lead)
         priorities.append({"item": label(event), "reader_band": reader_band,
                            "order_in_band": reach.get("order_in_band"), "reach_channel": reach.get("reach_channel"),
