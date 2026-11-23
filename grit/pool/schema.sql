@@ -484,11 +484,12 @@ CREATE TRIGGER IF NOT EXISTS corrections_no_delete BEFORE DELETE ON corrections
 BEGIN SELECT RAISE(ABORT, 'corrections is append-only'); END;
 
 -- Accepted review misses. The next reasoned run can read them. They are not new facts about the world.
+-- BAND_RULE_GAP: ReviewGate ACCEPT_RULE_GAP on a band challenge (ranking quality P2); backlog for R&A, not auto-band change.
 CREATE TABLE IF NOT EXISTS misses (
     miss_row_id   INTEGER PRIMARY KEY AUTOINCREMENT,
     pack          TEXT NOT NULL,
     miss_id       TEXT NOT NULL,
-    kind          TEXT NOT NULL CHECK (kind IN ('KEYWORD_DROP', 'RANK_REJECT', 'REPORT_RETURN')),
+    kind          TEXT NOT NULL CHECK (kind IN ('KEYWORD_DROP', 'RANK_REJECT', 'REPORT_RETURN', 'BAND_RULE_GAP')),
     text          TEXT NOT NULL,
     keyword       TEXT,
     signal_id     TEXT,
@@ -500,6 +501,35 @@ CREATE TRIGGER IF NOT EXISTS misses_no_update BEFORE UPDATE ON misses
 BEGIN SELECT RAISE(ABORT, 'misses is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS misses_no_delete BEFORE DELETE ON misses
 BEGIN SELECT RAISE(ABORT, 'misses is append-only'); END;
+
+-- Band challenges (ranking quality P2): model may challenge core band; human resolves via ReviewGate.
+-- Append-only: OPEN then UPHOLD | ACCEPT_RULE_GAP | DISMISS. Latest row per challenge_id stands.
+-- ACCEPT_RULE_GAP never moves band for this package version.
+CREATE TABLE IF NOT EXISTS band_challenges (
+    challenge_row_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    challenge_id     TEXT NOT NULL,
+    run_id           TEXT NOT NULL REFERENCES runs (run_id),
+    signal_id        TEXT NOT NULL REFERENCES signals (signal_id),
+    package_id       TEXT,
+    package_version  INTEGER,
+    band             TEXT NOT NULL,              -- core-owned reader band
+    challenged_band  TEXT NOT NULL,              -- agent proposal
+    challenge_reason TEXT NOT NULL,
+    override_rule_id TEXT,
+    status           TEXT NOT NULL CHECK (status IN ('OPEN', 'UPHOLD', 'ACCEPT_RULE_GAP', 'DISMISS')),
+    challenge_json   TEXT NOT NULL DEFAULT '{}',
+    created_at       TEXT NOT NULL,
+    decided_by       TEXT,
+    decided_at       TEXT,
+    decision_note    TEXT
+);
+CREATE INDEX IF NOT EXISTS band_challenges_by_run ON band_challenges (run_id, signal_id, challenge_row_id);
+CREATE INDEX IF NOT EXISTS band_challenges_by_package ON band_challenges (package_id, package_version, challenge_row_id);
+CREATE INDEX IF NOT EXISTS band_challenges_by_id ON band_challenges (challenge_id, challenge_row_id);
+CREATE TRIGGER IF NOT EXISTS band_challenges_no_update BEFORE UPDATE ON band_challenges
+BEGIN SELECT RAISE(ABORT, 'band_challenges is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS band_challenges_no_delete BEFORE DELETE ON band_challenges
+BEGIN SELECT RAISE(ABORT, 'band_challenges is append-only'); END;
 
 -- AIRIS handoff: signals the BA head approved, packaged for import.
 CREATE TABLE IF NOT EXISTS airis_exports (

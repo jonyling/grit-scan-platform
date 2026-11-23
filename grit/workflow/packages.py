@@ -112,8 +112,15 @@ def submit_package(pool: Pool, *, run_id: str, profile: Profile, members: Sequen
                             "execution_id": execution_id, **({"weekly_report_id": snapshot["report_id"]} if snapshot else {"assurance": "LEGACY_RECONSTRUCTED"})},
         "files_json": dict(files), "created_at": at,
     })
-    pool.log(actor_type="FUNCTION", actor="PackAssembly", status="SUCCEEDED", run_id=run_id, subject=package_id, output_hash=package.content_hash, detail={"version": version, "members": len(usable)})
-    return {"package_id": package_id, "version": version, "content_hash": package.content_hash, "members": list(package.member_signal_ids)}
+    from grit.core.challenges import sync_package_challenges
+
+    challenges = sync_package_challenges(
+        pool, package_id=package_id, version=version, run_id=run_id, member_ids=list(package.member_signal_ids),
+    )
+    pool.log(actor_type="FUNCTION", actor="PackAssembly", status="SUCCEEDED", run_id=run_id, subject=package_id, output_hash=package.content_hash,
+             detail={"version": version, "members": len(usable), "open_challenges": len(challenges)})
+    return {"package_id": package_id, "version": version, "content_hash": package.content_hash, "members": list(package.member_signal_ids),
+            "open_challenges": len(challenges)}
 
 
 def _advance_reasoned(pool: Pool, supervisor: Supervisor, snapshot: Mapping[str, Any], signal_id: str,
@@ -167,8 +174,24 @@ def review_package(pool: Pool, *, package_id: str, version: int, reviewer: Profi
         raise KeyError(f"No package {package_id} v{version}")
     if row["status"] != "PENDING_REVIEW":
         raise ValueError(f"{package_id} v{version} is {row['status']}. Only a pending version can be reviewed.")
+    from grit.core.challenges import package_challenges, review_gate_challenge_block
+
+    challenges = package_challenges(pool, package_id, version)
+    open_ids = [str(item["challenge_id"]) for item in challenges if item.get("status") == "OPEN"]
+    blocking = review_gate_challenge_block(challenges)
+    if intent == "APPROVE" and blocking:
+        raise ValueError(
+            "Resolve Escalating band challenges before APPROVE: "
+            + ", ".join(blocking)
+            + ". Use Uphold band, Dismiss, or Accept as rule gap in ReviewGate."
+        )
     supervisor = supervisor_for(pool)
     supervisor.restore_package(_package(row))  # the exact version under review, not whichever version was loaded last
+    supervisor.set_review_extras(package_id, {
+        "unresolved_escalating_challenge_ids": blocking,
+        "require_escalating_challenges_resolved": True,
+        "open_challenge_ids": open_ids,
+    })
     at = utc_now()
     decision = supervisor.submit_review(
         package_id, reviewer_id=reviewer.profile_id, reviewer_intent=intent, findings=[dict(item) for item in findings], correlation_id=f"{package_id}-v{version}-review",

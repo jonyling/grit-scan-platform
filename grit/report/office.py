@@ -424,6 +424,7 @@ def _sheet(workbook: Workbook, title: str, headers: Sequence[str], rows: Sequenc
 
 def _signals_sheet(workbook: Workbook, signals: Sequence[Mapping[str, Any]]) -> None:
     from grit.agents.weekly import reach_fields_of
+    from grit.core.challenges import challenge_fields_of
     from grit.core.overrides import reader_band_of
 
     def _priority(row: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -436,13 +437,15 @@ def _signals_sheet(workbook: Workbook, signals: Sequence[Mapping[str, Any]]) -> 
 
     _sheet(
         workbook, "Signals",
-        ("Shown", "Priority", "Band", "Order in band", "Reach channel", "URS reach", "Tier", "Override", "Rung", "RED", "Title", "Outlet", "Published", "Outlets", "Conditions", "Named items", "Risk register", "Harm verdict", "Evidence", "Why", "Not shown because", "URL", "Signal id"),
+        ("Shown", "Priority", "Band", "Order in band", "Reach channel", "URS reach", "Challenge status", "Challenged band", "Tier", "Override", "Rung", "RED", "Title", "Outlet", "Published", "Outlets", "Conditions", "Named items", "Risk register", "Harm verdict", "Evidence", "Why", "Not shown because", "URL", "Signal id"),
         [
             (
                 "yes" if row["shown"] else "no", row["route"]["priority"], reader_band_of(row),
                 reach_fields_of(row).get("order_in_band") or "",
                 reach_fields_of(row).get("reach_channel") or "",
                 reach_fields_of(row).get("urs_reach_reason") or "",
+                challenge_fields_of(row).get("challenge_status") or "",
+                challenge_fields_of(row).get("challenged_band") or "",
                 row.get("tier"),
                 _priority(row).get("override_rule_id") or "",
                 row.get("rung"), {"CONFIRMED": "RED", "CANDIDATE": "Candidate", "NOT_CONFIRMED": "Not confirmed"}.get(row.get("red_status") or "", "Candidate" if row.get("red") else ""), row["title"], row["publisher"], row["published_at"],
@@ -456,7 +459,7 @@ def _signals_sheet(workbook: Workbook, signals: Sequence[Mapping[str, Any]]) -> 
             )
             for row in signals
         ],
-        (7, 8, 12, 10, 12, 40, 6, 22, 13, 6, 60, 22, 20, 8, 16, 24, 40, 18, 10, 50, 30, 40, 22),
+        (7, 8, 12, 10, 12, 40, 14, 14, 6, 22, 13, 6, 60, 22, 20, 8, 16, 24, 40, 18, 10, 50, 30, 40, 22),
     )
 
 

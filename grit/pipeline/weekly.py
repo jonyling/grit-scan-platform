@@ -421,6 +421,24 @@ class WeeklyStore:
                 "run_id": self.run_id, "version": self.state["version"], "signal_id": selection["signal_id"],
                 "call_id": call_id, "selection_json": value, "created_at": utc_now(),
             })
+            # Durable OPEN challenge flag; band stays on the assessment. Package submit relinks package_id/version.
+            if value.get("challenged_band") and value.get("challenge_reason"):
+                from grit.core.challenges import ChallengeError, open_from_editorial
+                from grit.core.overrides import reader_band_of
+
+                try:
+                    open_from_editorial(
+                        self.pool,
+                        run_id=self.run_id,
+                        signal_id=str(selection["signal_id"]),
+                        band=reader_band_of(signal),
+                        challenged_band=str(value["challenged_band"]),
+                        challenge_reason=str(value["challenge_reason"]),
+                        override_rule_id=(signal.get("priority") or {}).get("override_rule_id")
+                        if isinstance(signal.get("priority"), Mapping) else None,
+                    )
+                except ChallengeError:
+                    pass
 
     def issues(self) -> dict[str, dict[str, Any]]:
         return {row["issue_id"]: row for row in self.pool.rows(

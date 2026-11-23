@@ -68,6 +68,7 @@ def profile_in_force(profile: Any) -> list[str]:
 def signal_rows(routed: Sequence[Mapping[str, Any]], decisions: Mapping[str, str] | None = None) -> list[dict[str, Any]]:
     """decisions is None unless the reader's profile turns on the signal buttons. Then a "Your decision" column appears."""
     from grit.agents.weekly import reach_fields_of
+    from grit.core.challenges import challenge_fields_of
     from grit.core.overrides import reader_band_of
 
     return [
@@ -77,12 +78,27 @@ def signal_rows(routed: Sequence[Mapping[str, Any]], decisions: Mapping[str, str
             "Tier": row.get("tier"), "RED": {"CONFIRMED": "RED", "CANDIDATE": "Candidate", "NOT_CONFIRMED": "Not confirmed"}.get(row.get("red_status") or "", ""), "Title": row["title"],
             "Outlet": row.get("publisher"), "Published": (row.get("published_at") or "")[:10], "Rung": row.get("rung") or "",
             "URS reach": reach_fields_of(row).get("urs_reach_reason") or "",
+            "Challenge": (
+                f"{challenge_fields_of(row).get('challenge_status') or 'OPEN'} → {challenge_fields_of(row)['challenged_band']}"
+                if challenge_fields_of(row).get("challenged_band") else ""
+            ),
             "Conditions": ", ".join(row.get("condition_ids") or []), "Named items": ", ".join(hit["item_name"] for hit in row.get("exposure") or [] if hit.get("strong")),
             **({"Your decision": decisions.get(row["signal_id"], "")} if decisions is not None else {}),
             "Your profile": " ".join(row["preference"]["reasons"]), "Shown": "yes" if row["shown"] else "no", "signal_id": row["signal_id"],
         }
         for row in routed
     ]
+
+
+def _challenge_line(row: Mapping[str, Any]) -> str:
+    from grit.core.challenges import challenge_fields_of
+
+    fields = challenge_fields_of(row)
+    if not fields.get("challenged_band"):
+        return ""
+    status = fields.get("challenge_status") or "OPEN"
+    reason = fields.get("challenge_reason") or ""
+    return f"{status}: model proposes {fields['challenged_band']} (core band stands). {reason}".strip()
 
 
 def signal_detail(row: Mapping[str, Any]) -> list[tuple[str, str]]:
@@ -105,6 +121,7 @@ def signal_detail(row: Mapping[str, Any]) -> list[tuple[str, str]]:
         ("Risk register", shown([f"{hit['level'].title()} {hit['risk_id']} {hit['name']} ({hit['basis'].lower()})" for hit in (row.get("risk_cascade") or [])[:6]])),
         ("Reader band", f"{reader_band_of(row)}. " + " ".join((row.get("priority") or {}).get("reasons") or [])),
         ("URS reach", reach_line),
+        ("Band challenge", _challenge_line(row)),
         ("Briefing priority", f"Tier {row.get('tier')} (audit). " + " ".join((row.get("priority") or {}).get("reasons") or [])),
         ("Outlets carrying it", f"{row.get('corroboration')}: " + ", ".join(item.get("publisher") or "" for item in (row.get("link") or {}).get("also_reported_by") or [])),
         ("Evidence confidence", shown(row.get("evidence_confidence"))),

@@ -79,6 +79,24 @@ def review_gate(context: dict[str, Any]) -> dict[str, Any]:
             reason_code="REVIEWER_HOLD",
             material_ids=[],
         )
+    # Escalating-band challenges must be resolved (or policy opted out) before APPROVE.
+    open_escalating = list(context.get("unresolved_escalating_challenge_ids") or [])
+    if (
+        intent == "APPROVE"
+        and context.get("package_current_status") == "PENDING_REVIEW"
+        and open_escalating
+        and context.get("require_escalating_challenges_resolved", True) is not False
+    ):
+        return _decision(
+            context,
+            input_hash,
+            outcome="HOLD",
+            package_status="HELD",
+            signal_instruction="NONE",
+            next_action="RESOLVE_HOLD",
+            reason_code="OPEN_ESCALATING_CHALLENGES",
+            material_ids=sorted(str(item) for item in open_escalating),
+        )
     if intent == "APPROVE" and context.get("package_current_status") == "PENDING_REVIEW":
         return _decision(
             context,
