@@ -1944,6 +1944,12 @@ def test_a_report_refresh_rebuilds_reports_from_the_finished_review_after_an_r_a
         calls.append(system)
         return original(*args, system=system, payload=payload, **kwargs)
     before = pool.one("SELECT COUNT(*) AS n FROM weekly_selections")["n"]
+    pool.insert("weekly_calls", {
+        "run_id": "R", "version": store.state["version"], "role": "Memory",
+        "task": "PKG-R-reader-v1", "prompt_version": "memory-1", "model": "offline",
+        "input_hash": "i", "input_json": {}, "output_json": {"proposals": []}, "output_hash": "o",
+        "status": "VALIDATED", "created_at": "2026-11-02T00:00:00Z",
+    })
     result = resume_weekly_reporting(pool, run, client=None, model=None, profiles=[profile], call=report_only, refresh=True)
     assert result["status"] == "READY" and calls == [PROMPTS["Reporting"], PROMPTS["Critic"]]
     assert pool.one("SELECT COUNT(*) AS n FROM weekly_selections")["n"] == before, "no signal review ran"

@@ -2060,8 +2060,17 @@ def resume_weekly_reporting(pool: Pool, run: Any, *, client: Any, model: str | N
                          else "Report recovery requires an incomplete weekly analysis.")
     if state["evidence_hash"] != analysis_hash(pool, run.run_id):
         raise ValueError("Weekly evidence changed after the saved review. Report recovery cannot skip reassessment.")
-    failed = pool.one("SELECT * FROM weekly_calls WHERE run_id = ? AND version = ? ORDER BY call_id DESC LIMIT 1",
+    latest = pool.one("SELECT * FROM weekly_calls WHERE run_id = ? AND version = ? ORDER BY call_id DESC LIMIT 1",
                       (run.run_id, state["version"]))
+    failed = latest
+    if refresh:
+        failed = pool.one(
+            """SELECT * FROM weekly_calls
+               WHERE run_id = ? AND version = ?
+                 AND (role = 'Reporting' OR (role = 'Critic' AND task LIKE 'final-%'))
+               ORDER BY call_id DESC LIMIT 1""",
+            (run.run_id, state["version"]),
+        )
     final_critic_failed = bool(failed) and failed["role"] == "Critic" and failed["status"] == "FAILED" and failed["task"].startswith("final-")
     if refresh:
         finished = bool(failed) and failed["role"] == "Critic" and failed["status"] == "VALIDATED" and failed["task"].startswith("final-")
