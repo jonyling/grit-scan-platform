@@ -67,7 +67,8 @@ def matches(record: Mapping[str, Any], settings: Mapping[str, Any]) -> list[str]
 
 
 def profile_effect(record: Mapping[str, Any], profile: Any, *, protected: bool = False, memory: Any | None = None) -> Effect:
-    """protected is True for a P1 or RED signal: emphasis can move it up and never down."""
+    """protected is True for a P1 or RED signal: emphasis can move it up and never down.
+    Affinity is a secondary within-band nudge only; it never changes reader band or overrides."""
     reader = getattr(profile, "reader", None)
     reasons: list[str] = []
     affinity = 0
@@ -91,7 +92,7 @@ def profile_effect(record: Mapping[str, Any], profile: Any, *, protected: bool =
             reasons.append(f"From {trusted}, a source your {label} trusts.")
         if distrusted:
             affinity += DISTRUSTED
-            reasons.append(f"From {distrusted}, a source your {label} distrusts: placed last within its tier.")
+            reasons.append(f"From {distrusted}, a source your {label} distrusts: placed last within its band.")
     if memory is not None and getattr(profile, "signal_buttons", False):
         from grit.profiles.memory import apply_memory
 
@@ -100,7 +101,7 @@ def profile_effect(record: Mapping[str, Any], profile: Any, *, protected: bool =
         reasons += [reason for reason in remembered.reasons if not reason.startswith("Hidden")]
         if memory.decisions.get(str(record.get("signal_id") or "")) == "REJECT":
             affinity -= CAP
-            reasons.append("You rejected this signal: placed lower within its tier. Nothing is hidden.")
+            reasons.append("You rejected this signal: placed lower within its band. Nothing is hidden.")
     if protected and affinity < 0:
         affinity = 0
         reasons.append("A P1 or RED signal is never moved down.")

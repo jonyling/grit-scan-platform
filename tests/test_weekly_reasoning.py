@@ -9,7 +9,8 @@ from grit.pool import Pool
 
 CHAIN = {"fact": "Alpha airport operations are reported.", "exposure": "not established",
          "transmission": "Operations at a served airport", "impact": "not established",
-         "significance": {"exposure": 1, "consequence": 1, "immediacy": 1, "evidence": 1, "change": 0}}
+         "significance": {"exposure": 1, "consequence": 1, "immediacy": 1, "evidence": 1, "change": 0},
+         "reach_channel": "entity", "urs_reach_reason": "Named Alpha airport entity in URS footprint."}
 
 
 def test_missing_issue_list_is_not_a_clean_review(monkeypatch):

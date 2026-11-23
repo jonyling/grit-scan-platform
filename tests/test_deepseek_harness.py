@@ -16,7 +16,8 @@ from grit.settings import ROOT
 
 CHAIN = {"fact": "Democrats won both chambers.", "exposure": "TransCore bids for a tolling contract.",
          "transmission": "A harder China line in Congress could reach that bid.", "impact": "not established",
-         "significance": {"exposure": 3, "consequence": 2, "immediacy": 2, "evidence": 1, "change": 1}}
+         "significance": {"exposure": 3, "consequence": 2, "immediacy": 2, "evidence": 1, "change": 1},
+         "reach_channel": "contract", "urs_reach_reason": "TransCore tolling bid is a URS contract path."}
 
 
 def _selection(hops, **extra):

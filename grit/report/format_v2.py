@@ -251,7 +251,8 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     elevated = [event for event in events if event["elevated"] and event["event_id"] not in withheld and (not recorded or event["event_id"] in drafted)][:8]
     from grit.core.financial_band import financial_size as _financial_size
 
-    from grit.core.overrides import BAND_ESCALATING, reader_band_of
+    from grit.agents.weekly import order_in_band_of, reach_fields_of
+    from grit.core.overrides import BAND_ESCALATING, band_sort_key, reader_band_of
 
     pack_bands = ((getattr(pack, "manifest", None) or {}) if hasattr(pack, "manifest") else {}).get("severityBands")
     escalating_rows = []
@@ -263,16 +264,20 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         if event.get("elevated") and reader_band == "Watch":
             reader_band = BAND_ESCALATING
         priority = lead.get("priority") if isinstance(lead.get("priority"), Mapping) else lead.get("priority_json") if isinstance(lead.get("priority_json"), Mapping) else {}
+        reach = reach_fields_of(lead)
         escalating_rows.append({
             "event_id": event["event_id"], "band": event["band"], "reader_band": reader_band,
             "item": label(event), "risk": event["risk_label"], "tier": event["tier"], "score": event.get("score"),
             "override_rule_id": priority.get("override_rule_id"),
+            "order_in_band": reach.get("order_in_band"), "reach_channel": reach.get("reach_channel"),
+            "urs_reach_reason": reach.get("urs_reach_reason"),
             "row": drafted.get(event["event_id"]), "lead": lead["signal_id"], "signal_ids": event["signal_ids"][:6], "publishers": event["publishers"],
             "financial_size": size,
             # The event's best-banded reports (T1 to T3) beyond its lead, listed with the drafted row's own sources.
             "support_ids": [row["signal_id"] for row in event.get("reports") or event["members"] if row["signal_id"] != lead["signal_id"]
                             and str(row.get("source_band") or "") in {"T1", "T2", "T3"}][:2],
         })
+    escalating_rows.sort(key=lambda row: (band_sort_key(row.get("reader_band")), order_in_band_of(row), str(row.get("lead") or "")))
 
     # 2. What changed since the last report.
     previous = {row["condition_id"]: row for row in pool.conditions(pool.latest_run(run["pack"], before=run["run_date"], kind="READER_SCAN")["run_id"])} \
@@ -307,9 +312,13 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         reader_band = reader_band_of(lead)
         if event.get("elevated") and reader_band == "Watch":
             reader_band = BAND_ESCALATING
+        reach = reach_fields_of(lead)
         priorities.append({"item": label(event), "reader_band": reader_band,
+                           "order_in_band": reach.get("order_in_band"), "reach_channel": reach.get("reach_channel"),
+                           "urs_reach_reason": reach.get("urs_reach_reason"),
                            "trend": f"{event['band']} {'New' if event['new'] else 'Escalating' if event['band'] == UP else 'Elevated'}",
                            "risk": event["risk_label"], "owner": (row.get("response") or {}).get("owner") or "To assign", "signal_ids": [event["lead"]["signal_id"]]})
+    priorities.sort(key=lambda row: (band_sort_key(row.get("reader_band")), order_in_band_of(row), str((row.get("signal_ids") or [""])[0])))
     covered = {item for event in elevated for item in event["risks"]}
     for row in conditions:
         # An escalating theme is ranked only with the reports behind it.

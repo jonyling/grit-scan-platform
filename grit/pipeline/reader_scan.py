@@ -705,9 +705,10 @@ def _recent_first(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
 
 
 def material_order(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
-    """Briefing order for findings: a management-request match first, then reader band (Escalating→Watch), then tier,
-    staff-log priority within the band, outlets and recency. It is deterministic. It decides what the reader sees
-    first, never a fact."""
+    """Briefing order for findings: a management-request match first, then reader band (Escalating→Watch),
+    model order_in_band, staff-log priority, outlets and recency. Affinity is applied only in routed_signals.
+    It is deterministic for the staff/request keys. It decides what the reader sees first, never a fact."""
+    from grit.agents.weekly import order_in_band_of
     from grit.core.overrides import band_sort_key, reader_band_of
     from grit.core.people import staff_priority_key
 
@@ -716,8 +717,9 @@ def material_order(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]
     rows.sort(key=lambda row: (
         not any(hit.get("item_type") == REQUEST for hit in (row.get("link") or {}).get("reader_hits") or []),
         band_sort_key(reader_band_of(row)),
-        row.get("tier") or 9,
+        order_in_band_of(row),
         staff_priority_key(row),
+        row.get("tier") or 9,
         not row.get("condition_ids"),
         -(row.get("corroboration") or 1),
     ))

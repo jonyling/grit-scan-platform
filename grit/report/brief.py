@@ -154,6 +154,7 @@ def routed_signals(pool: Pool, run_id: str, profile: Profile) -> list[dict[str, 
         if selected and off_scope and not row.get("red") and off_scope.search(str(row.get("title") or "")):
             selected = False
         out.append({**row, "route": route.as_record(), "preference": effect.as_record(), "shown": route.include and selected})
+    from grit.agents.weekly import order_in_band_of
     from grit.core.overrides import band_sort_key, reader_band_of
 
     out.sort(key=lambda row: str(row.get("published_at") or ""), reverse=True)
@@ -161,9 +162,10 @@ def routed_signals(pool: Pool, run_id: str, profile: Profile) -> list[dict[str, 
         not row["shown"],
         row["route"]["priority"] or "P9",
         band_sort_key(reader_band_of(row)),
+        order_in_band_of(row),
+        -row["preference"]["affinity"],
         row.get("tier") or 9,
         not row.get("condition_ids"),
-        -row["preference"]["affinity"],
         -(row.get("corroboration") or 1),
     ))
     return out
@@ -302,11 +304,16 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
         if reader_band_of(row) in {BAND_ESCALATING, BAND_ELEVATED} or (row.get("tier") or 9) <= 2
     ][:max_findings] if "PRIORITY_FINDINGS" in sections else []
     findings = []
+    from grit.agents.weekly import reach_fields_of
+
     for row in priority_rows:
         card = (cards.get(row["signal_id"]) or {}).get("card")
+        reach = reach_fields_of(row)
         findings.append({
             "signal_id": row["signal_id"], "title": clean_title(row["title"]) or row["title"], "outlet": row["publisher"], "date": fmt_date(row["published_at"]), "url": row["url"],
             "priority": row["route"]["priority"], "band": reader_band_of(row), "tier": row.get("tier"), "rung": row.get("rung"),
+            "order_in_band": reach.get("order_in_band"), "reach_channel": reach.get("reach_channel"),
+            "urs_reach_reason": reach.get("urs_reach_reason"),
             "why": row["route"]["matched"][:2] or [row.get("relevance_basis")],
             "risks": [f"{hit['level'].title()}: {hit['name']}" for hit in (row.get("risk_cascade") or [])[:3]],
             "corroboration": row.get("corroboration"), "red": row.get("red_status") == "CONFIRMED", "red_status": row.get("red_status"), "harm": _harm_line(row), "preference": row["preference"]["reasons"],

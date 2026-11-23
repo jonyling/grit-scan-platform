@@ -16,8 +16,9 @@ from grit.agents.weekly import (
     significance_band,
     EXPOSURE_STATUSES, EXPOSURE_TYPES,
     PROMPTS, VERSION, ContractError, check_critique, check_selections, joined_problems,
-    no_controlled_fields, object_response, source_ids, time_scope,
+    no_controlled_fields, object_response, order_in_band_of, source_ids, time_scope,
 )
+from grit.core.overrides import BANDS, reader_band_of
 from grit.core.canonical import canonical_hash
 from grit.pool import Pool, utc_now
 from grit.report.brief import CITE, citations, plain
@@ -198,12 +199,37 @@ def index_view(row: Mapping[str, Any], chars: int = INDEX_TEXT_CHARS) -> dict[st
     value["title"] = str(row.get("title") or "")[:200]
     text = " ".join(str(row.get("text") or "").split())
     value["excerpt"] = text[:chars]
+    # Core-owned reader band for within-band ranking; agents must not rewrite it.
+    value["band"] = reader_band_of(row)
     if row.get("url") and chars > INDEX_TEXT_CHARS:
         value["url"] = row["url"]
     duplicate = (row.get("link") or {}).get("duplicate_of")
     if duplicate:
         value["duplicate_of"] = duplicate
     return value
+
+
+def apply_within_band_order(selections: Sequence[Mapping[str, Any]], bands: Mapping[str, str]) -> list[dict[str, Any]]:
+    """Number INCLUDE/WATCH items 1..n inside each reader band from list order (or existing order_in_band).
+    Does not change band. Cross-band list position is ignored for order_in_band."""
+    rows = [dict(row) if isinstance(row, Mapping) else row for row in selections]
+    by_band: dict[str, list[dict[str, Any]]] = {band: [] for band in BANDS}
+    for row in rows:
+        if not isinstance(row, dict) or row.get("decision") not in {"INCLUDE", "WATCH"}:
+            continue
+        if row.get("order_withheld"):
+            row.pop("order_in_band", None)
+            continue
+        band = bands.get(str(row.get("signal_id") or ""), "Watch")
+        if band not in by_band:
+            by_band[band] = []
+        by_band[band].append(row)
+    for band_rows in by_band.values():
+        if band_rows and all(isinstance(row.get("order_in_band"), int) and row["order_in_band"] >= 1 for row in band_rows):
+            band_rows.sort(key=lambda row: int(row["order_in_band"]))
+        for index, row in enumerate(band_rows, start=1):
+            row["order_in_band"] = index
+    return rows
 
 
 SCREEN_LEAD_CHARS = 240
@@ -597,6 +623,10 @@ class WeeklyCoordinator:
     def _save_harness_selections(self, task: str, payload: Mapping[str, Any], members: set[str], *, chain: bool,
                                  names: Sequence[str]) -> dict[str, Any] | None:
         def validate(raw: Any) -> None:
+            # Number within each core-owned band before the contract seals the call (calls are immutable once VALIDATED).
+            if (task.startswith("rank-") and isinstance(payload.get("bands"), Mapping) and isinstance(raw, dict)
+                    and isinstance(raw.get("selections"), list)):
+                raw["selections"] = apply_within_band_order(raw["selections"], payload["bands"])
             check_selections(raw, self.sources, members, chain=chain, register=self.register, register_names=names)
         found = self._harness_invoke("Assessment", task, payload, validate)
         if found is None:
@@ -680,15 +710,25 @@ class WeeklyCoordinator:
         chosen = self._drop_rank_noise(chosen, rows, self.sources, names)
         if not chosen:
             return
-        self.progress(f"  DeepSeek is ranking {len(chosen)} included signals")
+        self.progress(f"  DeepSeek is ranking {len(chosen)} included signals within each reader band")
+        bands = {key: reader_band_of(rows[key]) for key in chosen}
         ranked = self._save_harness_selections(
             f"rank-{chosen[0]}",
-            {"candidates": {key: index_view(self.sources[key], 800) for key in chosen},
-             "current_selections": {key: rows[key]["editorial"] for key in chosen}, "register_names": names},
+            {"candidates": {key: {**index_view(self.sources[key], 800), "band": bands[key]} for key in chosen},
+             "current_selections": {key: rows[key]["editorial"] for key in chosen}, "register_names": names,
+             "bands": bands},
             set(chosen), chain=True, names=names)
         if ranked and isinstance(ranked.get("selections"), list):
-            order = [row["signal_id"] for row in ranked["selections"]
-                     if isinstance(row, Mapping) and row.get("decision") in {"INCLUDE", "WATCH"} and row.get("signal_id")]
+            order = [
+                row["signal_id"]
+                for band in BANDS
+                for row in sorted(
+                    (item for item in ranked["selections"]
+                     if isinstance(item, Mapping) and item.get("decision") in {"INCLUDE", "WATCH"}
+                     and bands.get(str(item.get("signal_id") or "")) == band and item.get("signal_id")),
+                    key=lambda item: (order_in_band_of(item), str(item.get("signal_id") or "")),
+                )
+            ]
             self.pool.update_run_config(self.run_id, deepseek_rank=order[:12], deepseek_rank_version=self.store.state["version"])
 
     @property
