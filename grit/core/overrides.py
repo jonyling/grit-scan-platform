@@ -37,12 +37,32 @@ BAND_ORDER: dict[str, int] = {
     BAND_WATCH: 2,
 }
 
-_SIGNIFICANCE_TO_BAND = {
+# Default significance → band when config/score-band-thresholds.json is absent.
+_DEFAULT_SIGNIFICANCE_TO_BAND = {
     "TOP": BAND_ESCALATING,
     "SIGNIFICANT": BAND_ELEVATED,
     "SECONDARY": BAND_WATCH,
     "LOW": BAND_WATCH,
 }
+
+# Shared reader-band vocabulary for adverse / WSH product surfaces (P3 polish).
+# Product section titles stay as-is; these aliases let one reader language map across lanes.
+PRODUCT_BAND_ALIASES: dict[str, str] = {
+    "Immediate Attention": BAND_ESCALATING,
+    "Immediate Escalation Recommended": BAND_ESCALATING,
+    "Enhanced Monitoring": BAND_ELEVATED,
+    "Elevated Monitoring Required": BAND_ELEVATED,
+    "Management Action Recommended": BAND_ELEVATED,
+    "Watch": BAND_WATCH,
+    "monitoring": BAND_WATCH,
+    "No Material Concern": BAND_WATCH,
+}
+
+READER_BAND_VOCAB_NOTE = (
+    "Reader bands across weekly briefs: Escalating / Elevated / Watch. "
+    "Adverse Immediate Attention ≈ Escalating; Enhanced Monitoring ≈ Elevated; "
+    "monitoring / watch items ≈ Watch. WSH digests use the same three-band language for severity cues."
+)
 
 
 @dataclass(frozen=True)
@@ -55,22 +75,66 @@ class OverrideHit:
         return {"override_rule_id": self.rule_id, "override_reason": self.reason, "band": self.band}
 
 
-def band_from_tier(tier: int | None) -> str:
-    """Map legacy briefing tier 1–4 to the three reader bands."""
+@lru_cache(maxsize=1)
+def _load_score_band_thresholds(path: str | None = None) -> dict[str, Any]:
+    from grit.settings import CONFIG_DIR
+
+    file = Path(path) if path else CONFIG_DIR / "score-band-thresholds.json"
+    if not file.is_file():
+        return {
+            "tier": {"escalating_max": 1, "elevated_max": 3},
+            "significance": dict(_DEFAULT_SIGNIFICANCE_TO_BAND),
+        }
+    return json.loads(file.read_text(encoding="utf-8"))
+
+
+def load_score_band_thresholds(path: Path | str | None = None) -> dict[str, Any]:
+    """R&A-owned score→band cutoffs. Defaults match the P0 mapping when the file is missing."""
+    return dict(_load_score_band_thresholds(str(path) if path else None))
+
+
+def clear_score_band_threshold_cache() -> None:
+    """Tests may swap the thresholds file; drop the cached parse."""
+    _load_score_band_thresholds.cache_clear()
+
+
+def band_from_tier(tier: int | None, *, thresholds: Mapping[str, Any] | None = None) -> str:
+    """Map legacy briefing tier 1–4 to the three reader bands using R&A cutoffs."""
     if tier is None:
         return BAND_WATCH
-    if int(tier) <= 1:
+    config = thresholds if thresholds is not None else load_score_band_thresholds()
+    tier_cfg = config.get("tier") if isinstance(config.get("tier"), Mapping) else {}
+    escalating_max = int(tier_cfg.get("escalating_max", 1))
+    elevated_max = int(tier_cfg.get("elevated_max", 3))
+    value = int(tier)
+    if value <= escalating_max:
         return BAND_ESCALATING
-    if int(tier) <= 3:
+    if value <= elevated_max:
         return BAND_ELEVATED
     return BAND_WATCH
 
 
-def band_from_significance(significance: str | None) -> str | None:
+def band_from_significance(
+    significance: str | None, *, thresholds: Mapping[str, Any] | None = None
+) -> str | None:
     """Map reasoned significance_band TOP/SIGNIFICANT/SECONDARY/LOW, or None when unknown."""
     if not significance:
         return None
-    return _SIGNIFICANCE_TO_BAND.get(str(significance).strip().upper())
+    config = thresholds if thresholds is not None else load_score_band_thresholds()
+    mapping = config.get("significance") if isinstance(config.get("significance"), Mapping) else _DEFAULT_SIGNIFICANCE_TO_BAND
+    return mapping.get(str(significance).strip().upper()) or _DEFAULT_SIGNIFICANCE_TO_BAND.get(
+        str(significance).strip().upper()
+    )
+
+
+def product_band_alias(label: str | None) -> str | None:
+    """Map an adverse / WSH product label onto Escalating / Elevated / Watch when known."""
+    if not label:
+        return None
+    text = str(label).strip()
+    if text in BANDS:
+        return text
+    return PRODUCT_BAND_ALIASES.get(text)
 
 
 def band_sort_key(band: str | None) -> int:
@@ -215,15 +279,20 @@ def first_override(
     )
 
 
-def score_to_band(priority: Mapping[str, Any] | None, *, red: bool = False) -> str:
+def score_to_band(
+    priority: Mapping[str, Any] | None,
+    *,
+    red: bool = False,
+    thresholds: Mapping[str, Any] | None = None,
+) -> str:
     """Band from score inputs only (no override). RED candidates land in Escalating."""
     if red:
         return BAND_ESCALATING
     record = priority or {}
-    significance = band_from_significance(record.get("significance_band"))
+    significance = band_from_significance(record.get("significance_band"), thresholds=thresholds)
     if significance:
         return significance
-    return band_from_tier(record.get("tier"))
+    return band_from_tier(record.get("tier"), thresholds=thresholds)
 
 
 def apply_reader_band(
@@ -267,5 +336,6 @@ def apply_reader_band(
 
     record.pop("override_rule_id", None)
     record.pop("override_reason", None)
+    # Score cutoffs load from R&A-owned config/score-band-thresholds.json (not the instrument register).
     record["band"] = score_to_band(record, red=red)
     return record

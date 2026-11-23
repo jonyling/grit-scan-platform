@@ -468,7 +468,10 @@ def cmd_feedback(args: argparse.Namespace) -> int:
 
 
 def cmd_challenges(args: argparse.Namespace) -> int:
-    """Band challenges: list OPEN flags, or resolve as a named reviewer. Never moves the core band."""
+    """Band challenges: list OPEN flags, resolve as a named reviewer, or print the P3 learning report.
+
+    Never moves the core band. propose-tuning writes a review file only — it does not edit thresholds.
+    """
     from grit.core.challenges import (
         STATUS_ACCEPT_RULE_GAP,
         STATUS_DISMISS,
@@ -478,6 +481,33 @@ def cmd_challenges(args: argparse.Namespace) -> int:
     from grit.ui.actions import resolve_band_challenge
 
     pool = _pool()
+    if args.action in {"report", "propose-tuning"}:
+        from pathlib import Path
+
+        from grit.agents.harness import assert_proposal_path
+        from grit.core.band_learning import format_learning_report, learning_report, propose_threshold_changes
+
+        report = learning_report(pool, pack=args.pack, run_id=args.run)
+        if args.action == "report":
+            if args.json:
+                print(json.dumps(report, indent=2, default=str))
+            else:
+                print(format_learning_report(report))
+            return 0
+        if not args.out:
+            raise SystemExit("challenges propose-tuning needs --out FILE.")
+        try:
+            path = assert_proposal_path(Path(args.out))
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = propose_threshold_changes(report)
+        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        print(
+            f"Wrote {path}. Nothing in the repository was changed. "
+            "Review the file before accepting a score→band threshold edit in config/score-band-thresholds.json."
+        )
+        return 0
     if args.action == "list":
         if args.package and args.version is not None:
             package = args.package if args.package.startswith("PKG-") else f"PKG-{args.package}"
@@ -966,16 +996,25 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = commands.add_parser(
         "challenges",
-        help="List open band challenges for a run or package, or resolve one as a named reviewer (Uphold / Dismiss / Accept as rule gap).",
+        help=(
+            "List or resolve band challenges (Uphold / Dismiss / Accept as rule gap), "
+            "or print the P3 learning report / write a score→band tuning proposal (never auto-applies)."
+        ),
     )
-    sub.add_argument("action", choices=("list", "uphold", "dismiss", "accept-gap"))
-    sub.add_argument("--run", help="For list: show OPEN challenges for this run.")
+    sub.add_argument(
+        "action",
+        choices=("list", "uphold", "dismiss", "accept-gap", "report", "propose-tuning"),
+    )
+    sub.add_argument("--run", help="For list/report: scope to this run.")
+    sub.add_argument("--pack", help="For report/propose-tuning: scope to this pack.")
     sub.add_argument("--package", help="For list: package id (with --version).")
     sub.add_argument("--version", type=int, help="For list: package version.")
     sub.add_argument("--id", help="For uphold/dismiss/accept-gap: the challenge id (CHAL-...).")
     sub.add_argument("--profile", help="For resolve: reviewer profile id.")
     sub.add_argument("--note", help="Optional reviewer note.")
     sub.add_argument("--all", action="store_true", help="For list with --package: include resolved challenges.")
+    sub.add_argument("--json", action="store_true", help="For report: print JSON instead of plain text.")
+    sub.add_argument("--out", help="For propose-tuning: write the review file here (outside config/grit/specs).")
     sub.set_defaults(handler=cmd_challenges)
 
     sub = commands.add_parser("requests", help="List, add, activate, close, or revise management requests (spec 29).")

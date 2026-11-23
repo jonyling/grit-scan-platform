@@ -1,0 +1,16 @@
+{
+  "registerId": "GRIT-SCORE-BAND-THRESHOLDS",
+  "status": "ACTIVE",
+  "owner": "R&A",
+  "note": "Human-owned score→band cutoffs. Engineers evaluate them; R&A authorizes changes. grit challenges propose-tuning writes a review file outside config/ — it never edits this file. Defaults match the P0 mapping: tier ≤1 Escalating, ≤3 Elevated, else Watch; significance TOP/SIGNIFICANT/SECONDARY|LOW.",
+  "tier": {
+    "escalating_max": 1,
+    "elevated_max": 3
+  },
+  "significance": {
+    "TOP": "Escalating",
+    "SIGNIFICANT": "Elevated",
+    "SECONDARY": "Watch",
+    "LOW": "Watch"
+  }
+}

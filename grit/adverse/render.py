@@ -292,9 +292,14 @@ def compose(report: Mapping[str, Any], *, markdown: bool = False) -> str:
 
     attention = report["attention"]
     doc.heading("Management Attention Summary")
+    from grit.core.overrides import READER_BAND_VOCAB_NOTE, product_band_alias
+
+    doc.add(READER_BAND_VOCAB_NOTE)
     for label, key, empty in (("Immediate Attention", "immediate", checks.NO_IMMEDIATE), ("Enhanced Monitoring", "monitoring", checks.NO_MONITORING),
                               ("Competitor Lessons Learnt", "lessons", checks.NO_LESSONS)):
-        doc.add(f"{label}:")
+        alias = product_band_alias(label)
+        heading = f"{label} (reader band: {alias}):" if alias else f"{label}:"
+        doc.add(heading)
         for line in attention[key] or [empty]:
             doc.bullet(line, 1)
     doc.field("Overall Assessment", f"{report['overall'][0]}. {report['overall'][1]}")
@@ -480,10 +485,15 @@ def render_docx(report: Mapping[str, Any], path: Path) -> Path:
 
     attention = report.get("attention") or {}
     document.add_heading("Management Attention Summary", level=1)
+    from grit.core.overrides import READER_BAND_VOCAB_NOTE, product_band_alias
+
+    document.add_paragraph(READER_BAND_VOCAB_NOTE)
     for label, key, empty in (("Immediate Attention", "immediate", checks.NO_IMMEDIATE),
                               ("Enhanced Monitoring", "monitoring", checks.NO_MONITORING),
                               ("Competitor Lessons Learnt", "lessons", checks.NO_LESSONS)):
-        document.add_paragraph(label).runs[0].bold = True
+        alias = product_band_alias(label)
+        heading = f"{label} (reader band: {alias})" if alias else label
+        document.add_paragraph(heading).runs[0].bold = True
         for line in attention.get(key) or [empty]:
             document.add_paragraph(line, style="List Bullet")
     overall = report.get("overall") or ("", "")
