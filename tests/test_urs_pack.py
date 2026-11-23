@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from grit.ontology.build_pack import build_urs_pack
 from grit.ontology.lob_hierarchy import resolve_lob
 from grit.ontology.matchers import credibility_lookup, exposure_entity_match
@@ -11,6 +13,20 @@ _ROOT = Path(__file__).resolve().parent.parent
 _PACK = _ROOT / "config" / "urs"
 
 
+def _has_workbook() -> bool:
+    try:
+        return workbook_path().is_file()
+    except FileNotFoundError:
+        return False
+
+
+needs_workbook = pytest.mark.skipif(
+    not _has_workbook(),
+    reason="the URS Entity Info workbook is confidential and not in this environment",
+)
+
+
+@needs_workbook
 def test_urs_pack_is_rebuilt_from_the_workbook_and_does_not_invent() -> None:
     rebuilt = build_urs_pack(workbook_path(), Path("/tmp/grit-urs-pack"))
     for key, path in rebuilt.items():

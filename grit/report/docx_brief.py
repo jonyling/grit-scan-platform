@@ -111,10 +111,11 @@ def follow_ups(brief: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
         if name and name.casefold() not in {"to assign", "unassigned"} and ref not in owners.setdefault(name, []):
             owners[name].append(ref)
 
-    for number, row in enumerate((brief.get("v2") or {}).get("escalating") or [], start=1):
+    for row in (brief.get("v2") or {}).get("escalating") or []:
         response = row.get("response") or {}
         if response.get("action"):
-            add(response.get("owner"), f"escalating item {number}, {short_text(row['item'], 80)}")
+            band = row.get("reader_band") or "Escalating"
+            add(response.get("owner"), f"{band} item, {short_text(row['item'], 80)}")
     label = brief["meta"].get("standing_label") or "condition"
     for row in brief.get("conditions") or []:
         for option in row.get("options") or []:
@@ -453,10 +454,12 @@ def _findings(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool)
     if dry:
         return bool(brief.get("findings"))
     _heading(document, title)
-    document.add_paragraph("Ordered by this reader's news priority (P1 management request, P2 direct exposure, P3 competitor or sector, P4 customer), then briefing tier.")
+    document.add_paragraph("Ordered by this reader's news priority (P1 management request, P2 direct exposure, P3 competitor or sector, P4 customer), then reader band (Escalating / Elevated / Watch).")
     for item in brief["findings"]:
         paragraph = document.add_paragraph(style="List Bullet")
-        paragraph.add_run((f"[{item['priority']} · tier {item['tier']}] " if item['priority'] else f"[tier {item['tier']}] ")).bold = True
+        band = item.get("band") or "Watch"
+        label = f"{item['priority']} · {band}" if item.get("priority") else band
+        paragraph.add_run(f"[{label}] ").bold = True
         _WHOLE.add(paragraph._p)
         _source_link(paragraph, item["title"], item)
         paragraph.add_run(f" ({item['outlet']}, {item['date'] or 'date not stated'})")
@@ -661,7 +664,10 @@ _SECTIONS = {
 
 # Format v2 sections (spec 44) -----------------------------------------------------------------------------------------
 
-V2_NOTE = "Rows are AI-drafted suggestions for consideration, checked by rule against their sources. A named person reviews them before anyone acts."
+V2_NOTE = (
+    "Bands come from hard overrides and scores; order within a band is not a precise 1–N rank. "
+    "Rows are AI-drafted suggestions for consideration, checked by rule against their sources. A named person reviews them before anyone acts."
+)
 
 
 def _text_cell(cell: Any, text: str, *, size: float = 8.5, bold: bool = False) -> None:
@@ -718,13 +724,13 @@ def _escalating(document: Any, brief: Mapping[str, Any], title: str, *, dry: boo
         document.add_paragraph("No event met the escalation rule this week (spec 44, section 2).")
         return True
     short = brief["v2"]["short"]
-    widths = (0.7, 3.0, 4.6, 4.0, 3.4, 1.4)
-    table = _table(document, ("#", "Item and risk", "Summary", f"Implications for {short}", "Suggested response (owner)", "Sources"), widths)
-    for number, row in enumerate(rows, start=1):
+    widths = (1.4, 2.8, 4.4, 3.8, 3.2, 1.4)
+    table = _table(document, ("Band", "Item and risk", "Summary", f"Implications for {short}", "Suggested response (owner)", "Sources"), widths)
+    for row in rows:
         cells = table.add_row().cells
         for cell, width in zip(cells, widths):
             cell.width = Cm(width)
-        _text_cell(cells[0], f"{number}")
+        _text_cell(cells[0], str(row.get("reader_band") or "Escalating"))
         _cell_lines(cells[1], [f"{row['band']} {row['item']}", f"[{row['risk']}]" if row["risk"] else "No register risk matched."], bold_first=True)
         if row.get("summary"):
             _runs(cells[2].paragraphs[0], row["summary"], size=8.5)
@@ -794,11 +800,11 @@ def _priorities(document: Any, brief: Mapping[str, Any], title: str, *, dry: boo
     if dry:
         return bool(rows)
     _heading(document, title)
-    widths = (0.7, 7.0, 2.6, 3.4, 3.4)
-    table = _table(document, ("#", "Item", "Trend", "Risk linkage", "Owner or forum"), widths)
-    for number, row in enumerate(rows, start=1):
+    widths = (1.4, 6.3, 2.6, 3.4, 3.4)
+    table = _table(document, ("Band", "Item", "Trend", "Risk linkage", "Owner or forum"), widths)
+    for row in rows:
         item = row["item"] + (f" [{_marks(row['sources'])}]" if row.get("sources") and _REGISTER is not None else "")
-        _row(table, [number, item, row["trend"], row["risk"] or "No register risk matched", row["owner"]], widths)
+        _row(table, [row.get("reader_band") or "", item, row["trend"], row["risk"] or "No register risk matched", row["owner"]], widths)
     return True
 
 

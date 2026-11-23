@@ -419,12 +419,20 @@ def _sheet(workbook: Workbook, title: str, headers: Sequence[str], rows: Sequenc
 
 
 def _signals_sheet(workbook: Workbook, signals: Sequence[Mapping[str, Any]]) -> None:
+    from grit.core.overrides import reader_band_of
+
+    def _priority(row: Mapping[str, Any]) -> Mapping[str, Any]:
+        value = row.get("priority") if isinstance(row.get("priority"), Mapping) else row.get("priority_json")
+        return value if isinstance(value, Mapping) else {}
+
     _sheet(
         workbook, "Signals",
-        ("Shown", "Priority", "Tier", "Rung", "RED", "Title", "Outlet", "Published", "Outlets", "Conditions", "Named items", "Risk register", "Harm verdict", "Evidence", "Why", "Not shown because", "URL", "Signal id"),
+        ("Shown", "Priority", "Band", "Tier", "Override", "Rung", "RED", "Title", "Outlet", "Published", "Outlets", "Conditions", "Named items", "Risk register", "Harm verdict", "Evidence", "Why", "Not shown because", "URL", "Signal id"),
         [
             (
-                "yes" if row["shown"] else "no", row["route"]["priority"], row.get("tier"), row.get("rung"), {"CONFIRMED": "RED", "CANDIDATE": "Candidate", "NOT_CONFIRMED": "Not confirmed"}.get(row.get("red_status") or "", "Candidate" if row.get("red") else ""), row["title"], row["publisher"], row["published_at"],
+                "yes" if row["shown"] else "no", row["route"]["priority"], reader_band_of(row), row.get("tier"),
+                _priority(row).get("override_rule_id") or "",
+                row.get("rung"), {"CONFIRMED": "RED", "CANDIDATE": "Candidate", "NOT_CONFIRMED": "Not confirmed"}.get(row.get("red_status") or "", "Candidate" if row.get("red") else ""), row["title"], row["publisher"], row["published_at"],
                 row.get("corroboration"), ", ".join(row.get("condition_ids") or []), ", ".join(hit["item_name"] for hit in row.get("exposure") or [] if hit.get("strong")),
                 "; ".join(f"{hit['level']} {hit['risk_id']} {hit['name']}" for hit in (row.get("risk_cascade") or [])[:4]), row.get("harm_verdict") or "not established",
                 row.get("evidence_confidence"),
@@ -435,7 +443,7 @@ def _signals_sheet(workbook: Workbook, signals: Sequence[Mapping[str, Any]]) -> 
             )
             for row in signals
         ],
-        (7, 8, 6, 13, 6, 60, 22, 20, 8, 16, 24, 40, 18, 10, 50, 30, 40, 22),
+        (7, 8, 12, 6, 22, 13, 6, 60, 22, 20, 8, 16, 24, 40, 18, 10, 50, 30, 40, 22),
     )
 
 

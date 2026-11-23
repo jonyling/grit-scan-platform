@@ -545,8 +545,19 @@ def assess(pool: Pool, run: ReaderRun, *, red_patterns: Mapping[str, Any] | None
             # Staff-log grounding: elevate within tier and cite presence. Never invents Direct exposure or a PEOPLE rung.
             grounding = ground_page(record.get("title") or "", record.get("text") or "", people, terms=risk_terms)
             priority = apply_staff_priority(row.get("priority_json") or decision.get("priority") or {}, grounding)
-            if grounding is not None:
-                row["priority_json"], row["tier"] = priority, priority.get("tier", row.get("tier"))
+            # Hard overrides first for reader band (Escalating / Elevated / Watch); score maps band when no override.
+            from grit.core.overrides import apply_reader_band
+
+            priority = apply_reader_band(
+                priority,
+                title=record.get("title") or "",
+                text=record.get("text") or "",
+                grounding=grounding,
+                jurisdictions=places,
+                terms=risk_terms,
+                red=bool(red_result.red),
+            )
+            row["priority_json"], row["tier"] = priority, priority.get("tier", row.get("tier"))
             basis = compose_wild_scan_basis(condition, publisher=record["publisher"]) if condition else _basis(decision, link, exposure)
             row |= {"outlets_json": outlet_bands, "source_band": outlet_bands[0]["band"]}
             row |= {
@@ -694,15 +705,17 @@ def _recent_first(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
 
 
 def material_order(rows: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
-    """Briefing order for findings: a management-request match first, then a signal bound to a standing item, then the
-    rest, each by tier, staff-log priority within the tier, outlets and recency. It is deterministic. It decides what
-    the reader sees first, never a fact."""
+    """Briefing order for findings: a management-request match first, then reader band (Escalating→Watch), then tier,
+    staff-log priority within the band, outlets and recency. It is deterministic. It decides what the reader sees
+    first, never a fact."""
+    from grit.core.overrides import band_sort_key, reader_band_of
     from grit.core.people import staff_priority_key
 
     rows = list(rows)
     rows.sort(key=lambda row: str(row.get("published_at") or ""), reverse=True)
     rows.sort(key=lambda row: (
         not any(hit.get("item_type") == REQUEST for hit in (row.get("link") or {}).get("reader_hits") or []),
+        band_sort_key(reader_band_of(row)),
         row.get("tier") or 9,
         staff_priority_key(row),
         not row.get("condition_ids"),

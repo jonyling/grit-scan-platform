@@ -2,17 +2,36 @@ from pathlib import Path
 
 import re
 
+import pytest
+
 from grit.core.impact_scoring import KeywordTier
 from grit.ontology.lob_keyword_loader import load_lob_keywords, parse_lob_keyword_rows
 from grit.ontology.workbook import workbook_path
 
 ROOT = Path(__file__).parents[1]
-WORKBOOK = workbook_path()
 _LEFTOVER_NUMBERING = re.compile(r"^(\d+\.\s|\(\d+\)\s)")
 
 
+def _workbook() -> Path:
+    return workbook_path()
+
+
+def _has_workbook() -> bool:
+    try:
+        return _workbook().is_file()
+    except FileNotFoundError:
+        return False
+
+
+needs_workbook = pytest.mark.skipif(
+    not _has_workbook(),
+    reason="the URS Entity Info workbook is confidential and not in this environment",
+)
+
+
+@needs_workbook
 def test_keywords_are_attributed_to_the_correct_lob_via_forward_fill() -> None:
-    keywords = load_lob_keywords(WORKBOOK)
+    keywords = load_lob_keywords(_workbook())
     by_keyword = {(keyword.keyword, keyword.tier): keyword.lob for keyword in keywords}
     assert by_keyword[("Smart Metro Systems", KeywordTier.KEY_TIER_2)] == "Mobility Rail"
     assert by_keyword[("Electronic Tolling", KeywordTier.KEY_TIER_2)] == "TransCore"
@@ -47,11 +66,13 @@ def test_a_sheet_without_an_emerging_column_yields_no_emerging_keywords() -> Non
     assert {keyword.lob for keyword in keywords} == {"Mobility Rail"}
 
 
+@needs_workbook
 def test_the_workbook_has_no_emerging_column_and_none_is_invented() -> None:
-    keywords = load_lob_keywords(WORKBOOK)
+    keywords = load_lob_keywords(_workbook())
     assert keywords and not any(keyword.tier is KeywordTier.EMERGING for keyword in keywords)
 
 
+@needs_workbook
 def test_loader_is_deterministic_across_repeated_calls() -> None:
-    results = {load_lob_keywords(WORKBOOK) for _ in range(5)}
+    results = {load_lob_keywords(_workbook()) for _ in range(5)}
     assert len(results) == 1
