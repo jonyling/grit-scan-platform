@@ -142,6 +142,18 @@ def test_one_shared_identifier_in_two_labels_names_one_story():
     assert label_merges(events, rows) == {"EVT-b": "EVT-a"}
 
 
+def test_accented_company_names_merge_reports_of_the_same_story():
+    from grit.pipeline.events import label_merges
+
+    events = [_event("a", "Plus Ultra files for creditor protection", 12),
+              _event("b", "Plus Ultra enters pre-insolvency", 10)]
+    rows = {
+        "EVT-a": {"item": "Plus Ultra Líneas Aéreas files for creditor protection"},
+        "EVT-b": {"item": "Plus Ultra Líneas Aéreas enters pre-insolvency"},
+    }
+    assert label_merges(events, rows) == {"EVT-b": "EVT-a"}
+
+
 def test_the_scorecard_scores_an_escalating_row_by_its_event():
     from grit.report.scorecard import scorecard
 

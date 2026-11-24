@@ -21,7 +21,7 @@ def distinctive_terms(text: str) -> frozenset[str]:
     folded = str(text or "").casefold()
     for phrase, token in PLACES:
         folded = folded.replace(phrase, token)
-    words = (word for word in re.findall(r"[a-z]{5,}", folded) if word not in GENERIC)
+    words = (word for word in re.findall(r"[^\W\d_]{5,}", folded, flags=re.UNICODE) if word not in GENERIC)
     return frozenset(word[:-1] if len(word) > 5 and word.endswith("s") and not word.endswith("ss") else word for word in words)
 
 
