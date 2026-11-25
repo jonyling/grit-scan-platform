@@ -259,12 +259,13 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     rising = [row["condition_id"] for row in conditions if row["trend"] == "Escalating"]
     config = (pool.run(run_id) or {}).get("config") or {}
     drafted = config.get("event_rows") or {}
-    from grit.pipeline.events import label_merges
+    from grit.pipeline.events import label_merges, same_relation_pairs
 
     merges = dict(config.get("event_merges") or {})
+    same_pairs = same_relation_pairs(pool, run_id)
     events = event_register(pool, run_id, rows=shown, names=names, escalating=rising, merges=merges)
     # Drafted rows of one story that the recorded merges missed, for example after a merge rule changed, join here too.
-    extra = {key: value for key, value in label_merges([event for event in events if event["elevated"]], drafted).items() if key not in merges}
+    extra = {key: value for key, value in label_merges([event for event in events if event["elevated"]], drafted, same_pairs=same_pairs).items() if key not in merges}
     if extra:
         events = event_register(pool, run_id, rows=shown, names=names, escalating=rising, merges={**merges, **extra})
     short = str((pack.manifest or {}).get("shortLabel") or pack.label)

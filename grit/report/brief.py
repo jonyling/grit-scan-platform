@@ -657,6 +657,7 @@ def business_area_brief(pool: Pool, run: Mapping[str, Any], pack: Any, profile: 
         event_register,
         label_merges,
         risk_names,
+        same_relation_pairs,
     )
     from grit.pipeline.reader_scan import graph_pack
     from grit.pipeline.scenarios import outlook
@@ -670,9 +671,10 @@ def business_area_brief(pool: Pool, run: Mapping[str, Any], pack: Any, profile: 
     names = risk_names(pack)
     drafted = config.get("event_rows") or {}
     merges = dict(config.get("event_merges") or {})
+    same_pairs = same_relation_pairs(pool, run_id)
     events = event_register(pool, run_id, rows=shown, names=names, merges=merges)
     # Drafted rows of one story that the recorded merges missed, for example after a merge rule changed, join here too.
-    extra = {key: value for key, value in label_merges([event for event in events if event["members"]], drafted).items() if key not in merges}
+    extra = {key: value for key, value in label_merges([event for event in events if event["members"]], drafted, same_pairs=same_pairs).items() if key not in merges}
     if extra:
         events = event_register(pool, run_id, rows=shown, names=names, merges={**merges, **extra})
     withheld = set(config.get("event_rows_withheld") or [])
