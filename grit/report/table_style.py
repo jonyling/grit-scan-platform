@@ -32,6 +32,9 @@ ADVERSE_SECTION = (
     "Event / Sources, date and time",
     "Why adverse & impact",
     "Severity & action",
+)
+ADVERSE_SECTION_WITH_LESSONS = (
+    *ADVERSE_SECTION,
     "Lessons learnt",
 )
 

@@ -111,7 +111,7 @@ def test_sharepoint_columns_include_adverse() -> None:
 
 def test_adverse_docx_and_csv_use_shared_chrome(tmp_path: Path) -> None:
     from grit.adverse import checks, render
-    from grit.report.table_style import ADVERSE_SECTION, NAVY_HEX, TABLE_STYLE
+    from grit.report.table_style import ADVERSE_SECTION, ADVERSE_SECTION_WITH_LESSONS, NAVY_HEX, TABLE_STYLE
 
     report = {
         "run_date": "2026-11-13",
@@ -151,7 +151,8 @@ def test_adverse_docx_and_csv_use_shared_chrome(tmp_path: Path) -> None:
     from docx import Document
     document = Document(docx)
     assert document.tables
-    assert [cell.text for cell in document.tables[1].rows[0].cells] == list(ADVERSE_SECTION)
+    assert [cell.text for cell in document.tables[0].rows[0].cells] == list(ADVERSE_SECTION)
+    assert [cell.text for cell in document.tables[1].rows[0].cells] == list(ADVERSE_SECTION_WITH_LESSONS)
     assert "Review supplier incident notification controls." in document.tables[1].rows[1].cells[3].text
     # Incomplete runs must not invent Word/CSV; only READY write() attaches them.
     incomplete = {**report, "status": "INCOMPLETE", "counts": {"pages": 0, "verified_pages": 0},
