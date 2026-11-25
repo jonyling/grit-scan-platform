@@ -76,6 +76,10 @@ def scorecard(brief: Mapping[str, Any], corrections: Any = None) -> dict[str, An
         "escalating_scores": escalating_scores,
         "escalating_below_8": weak_escalation,
         "escalating_on_weak_sources_only": unsupported,
+        # P2 STE polish disclosures on escalating rows (optional fields; counts only).
+        "ste_anchor_disclosed": sum(1 for row in escalating if row.get("ste_anchor")),
+        "counterargument_disclosed": sum(1 for row in escalating if row.get("counterargument")),
+        "missing_check_disclosed": sum(1 for row in escalating if row.get("missing_check")),
         "truncated_status_text": len(truncated),
         "passing_mentions_shown": len(passing),
         "trend_words_contradict_trend": trend_mismatch,

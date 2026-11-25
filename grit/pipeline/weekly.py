@@ -789,16 +789,23 @@ class WeeklyCoordinator:
             f"SELECT signal_id, event_id FROM event_members WHERE signal_id IN ({marks})", ids)}
 
     def relation_peers(self, sources: Mapping[str, Mapping[str, Any]] | None = None) -> dict[str, list[str]]:
-        """signal_id → peers from VALIDATED SAME/RELATED event_relations for this run (empty when flag off)."""
+        """signal_id → peers from VALIDATED SAME/RELATED relations (this run + cross-run ledger; empty when flag off)."""
         from grit.core.event_relations import enabled, related_peers
 
         config = (self.pool.run(self.run_id) or {}).get("config") or {}
         if not enabled(config):
             return {}
-        rows = self.pool.event_relations_for_run(self.run_id, validated_only=True)
         keys = list(sources or {})
         if not keys:
             return {}
+        # P2: prefer run-local rows, then inherit daily/prior VALIDATED edges that touch these signals.
+        rows = self.pool.event_relations_for_run(self.run_id, validated_only=True)
+        seen = {(row["left_signal_id"], row["right_signal_id"]) for row in rows}
+        for row in self.pool.event_relations_for_signals(keys, validated_only=True):
+            pair = (row["left_signal_id"], row["right_signal_id"])
+            if pair not in seen:
+                rows.append(row)
+                seen.add(pair)
         return {key: related_peers(rows, key) for key in keys}
 
     def related(self, batch: Sequence[str], sources: Mapping[str, Mapping[str, Any]],
@@ -1564,196 +1571,54 @@ class WeeklyCoordinator:
         return {key for key, value in self.digests().items() if before.get(key) != value}
 
     def resolve_event_relations(self) -> dict[str, int]:
-        """Gated Event Relation Resolver (design §6 P1). Candidate-generate, classify, narrow Critic, persist.
+        """Gated Event Relation Resolver (design §6 P1/P2). Candidate-generate, classify, Critic, persist.
+        P2: batch input_hash reuse from nightly/prior runs; skip re-call at scale.
         No-op unless run config event_relations=1. Never writes band/tier/override."""
-        from grit.agents.relations import (
-            ambiguous_edges,
-            apply_critic_reviews,
-            check_relation_critique,
-            check_relations,
-        )
-        from grit.core.event_relations import (
-            CONTRACT,
-            PROMPT_VERSION,
-            REASON_CHARS,
-            T_SAME,
-            auto_same,
-            candidate_edges,
-            enabled,
-            input_hash_for,
-            needs_llm,
-            ordered_pair,
-            pack_candidate,
-            relation_id_for,
-        )
+        from grit.core.event_relations import enabled
+        from grit.pipeline.resolve_relations import resolve_and_persist
 
         config = (self.pool.run(self.run_id) or {}).get("config") or {}
         if not enabled(config):
-            return {"enabled": 0, "candidates": 0, "llm": 0, "auto_same": 0, "validated": 0, "critic": 0}
+            return {
+                "enabled": 0, "candidates": 0, "llm": 0, "auto_same": 0,
+                "reused": 0, "validated": 0, "critic": 0, "rejected": 0,
+            }
         sources = self.sources
         if len(sources) < 2:
-            return {"enabled": 1, "candidates": 0, "llm": 0, "auto_same": 0, "validated": 0, "critic": 0}
+            return {
+                "enabled": 1, "candidates": 0, "llm": 0, "auto_same": 0,
+                "reused": 0, "validated": 0, "critic": 0, "rejected": 0,
+            }
         clusters = self.event_clusters(list(sources))
-        cosines: dict[tuple[str, str], float] = {}
-        try:
-            import numpy as np
-
-            from grit.retrieval.embedder import DEFAULT_DIMENSIONS, DEFAULT_MODEL
-
-            vectors = {
-                key: np.asarray(value, dtype=np.float32)
-                for key, value in self.pool.vectors(
-                    list(sources), model=DEFAULT_MODEL, task="RETRIEVAL_DOCUMENT", dimensions=DEFAULT_DIMENSIONS
-                ).items()
-            }
-            keys = sorted(vectors)
-            for i, left in enumerate(keys):
-                for right in keys[i + 1:]:
-                    cosines[ordered_pair(left, right)] = float(vectors[left] @ vectors[right])
-        except Exception:
-            cosines = {}
+        # Prior SAME/UPDATE from this run and from nightly/other runs that touch these signals.
         prior = self.pool.event_relations_for_run(self.run_id, validated_only=True)
-        # Minimal P2 hook: also reuse VALIDATED rows by input_hash from any prior run.
-        edges = candidate_edges(list(sources.values()), clusters=clusters, cosines=cosines, prior_relations=prior)
-        auto_rows: list[dict[str, Any]] = []
-        llm_edges: list[dict[str, Any]] = []
-        for index, edge in enumerate(edges, 1):
-            edge_id = f"E{index}"
-            left, right = sources[edge["left_signal_id"]], sources[edge["right_signal_id"]]
-            digest = input_hash_for(
-                {"signal_id": left["signal_id"], "title": left.get("title"),
-                 "excerpt": " ".join(str(left.get("text") or "").split())[:500]},
-                {"signal_id": right["signal_id"], "title": right.get("title"),
-                 "excerpt": " ".join(str(right.get("text") or "").split())[:500]},
-                edge.get("features") or {},
-            )
-            cached = self.pool.event_relation_by_hash(digest)
-            if cached and {cached["left_signal_id"], cached["right_signal_id"]} == {
-                    edge["left_signal_id"], edge["right_signal_id"]}:
-                auto_rows.append({
-                    "edge_id": edge_id, "left_signal_id": edge["left_signal_id"], "right_signal_id": edge["right_signal_id"],
-                    "left_event_id": edge.get("left_event_id"), "right_event_id": edge.get("right_event_id"),
-                    "label": cached["label"], "confidence": float(cached["confidence"]),
-                    "reason": str(cached.get("reason") or "Reused validated relation.")[:REASON_CHARS],
-                    "evidence": {**(cached.get("evidence") or {}), "reused": True, "features": edge.get("features") or {}},
-                    "input_hash": digest, "status": "VALIDATED",
-                })
-                continue
-            if not needs_llm(edge):
-                auto_rows.append({
-                    "edge_id": edge_id, "left_signal_id": edge["left_signal_id"], "right_signal_id": edge["right_signal_id"],
-                    "left_event_id": edge.get("left_event_id"), "right_event_id": edge.get("right_event_id"),
-                    "label": "SAME", "confidence": max(T_SAME, float((edge.get("features") or {}).get("cosine") or T_SAME)),
-                    "reason": "Auto-SAME: cosine ≥ 0.90 with ≥2 shared terms on the same day.",
-                    "evidence": {"auto_same": True, "features": edge.get("features") or {}},
-                    "input_hash": digest, "status": "VALIDATED",
-                })
-                continue
-            packed = pack_candidate(edge, sources, edge_id=edge_id)
-            llm_edges.append({**edge, "edge_id": edge_id, "input_hash": digest, "packed": packed})
+        seen = {(row["left_signal_id"], row["right_signal_id"]) for row in prior}
+        for row in self.pool.event_relations_for_signals(
+                list(sources), validated_only=True, labels=("SAME", "UPDATE")):
+            pair = (row["left_signal_id"], row["right_signal_id"])
+            if pair not in seen:
+                prior.append(row)
+                seen.add(pair)
 
-        proposals: list[dict[str, Any]] = list(auto_rows)
-        if llm_edges:
-            payload = {
-                "contract": CONTRACT,
-                "candidates": [item["packed"] for item in llm_edges],
-            }
-            edge_ids = {item["edge_id"] for item in llm_edges}
-            response, _call_id = self.invoke(
-                "EventRelation", "resolve-relations", payload,
-                lambda raw: check_relations(raw, edge_ids),
-            )
-            by_edge = {item["edge_id"]: item for item in llm_edges}
-            for row in response["relations"]:
-                edge = by_edge[row["edge_id"]]
-                proposals.append({
-                    "edge_id": row["edge_id"],
-                    "left_signal_id": edge["left_signal_id"], "right_signal_id": edge["right_signal_id"],
-                    "left_event_id": edge.get("left_event_id"), "right_event_id": edge.get("right_event_id"),
-                    "label": row["label"], "confidence": float(row["confidence"]),
-                    "reason": str(row["reason"]).strip()[:REASON_CHARS],
-                    "quote": row.get("quote"),
-                    "evidence": {"features": edge.get("features") or {}, "quote": row.get("quote")},
-                    "input_hash": edge["input_hash"], "status": "PROPOSED",
-                })
+        def invoke(role: str, task: str, payload: dict[str, Any], validate: Any) -> tuple[Any, Any]:
+            return self.invoke(role, task, payload, validate)
 
-        elevated = {
-            key for key, row in sources.items()
-            if row.get("red") or (row.get("tier") or 9) <= 1
-        }
-        elevated_pairs = {
-            ordered_pair(a, b) for a in elevated for b in elevated if a < b
-        }
-        ambiguous = ambiguous_edges(proposals, elevated_pairs=elevated_pairs)
-        critic_count = 0
-        if ambiguous:
-            critic_count = len(ambiguous)
-            critique_payload = {
-                "contract": CONTRACT,
-                "candidates": [
-                    pack_candidate(
-                        {"left_signal_id": row["left_signal_id"], "right_signal_id": row["right_signal_id"],
-                         "left_event_id": row.get("left_event_id"), "right_event_id": row.get("right_event_id"),
-                         "features": (row.get("evidence") or {}).get("features") or {}},
-                        sources, edge_id=str(row["edge_id"]),
-                    ) | {"proposal": {"label": row["label"], "confidence": row["confidence"], "reason": row["reason"]}}
-                    for row in ambiguous
-                ],
-            }
-            review, _ = self.invoke(
-                "RelationCritic", "critique-relations", critique_payload,
-                lambda raw: check_relation_critique(raw, {str(row["edge_id"]) for row in ambiguous}),
-            )
-            proposals = apply_critic_reviews(proposals, review["reviews"])
-
-        validated = 0
-        for row in proposals:
-            label, confidence = str(row["label"]), float(row["confidence"])
-            status = "VALIDATED"
-            if label == "INSUFFICIENT" or (label == "SAME" and confidence < T_SAME
-                                           and not (row.get("evidence") or {}).get("critic_upheld")):
-                # Low-confidence SAME without Critic uphold does not apply; still recorded as VALIDATED INSUFFICIENT
-                # when Critic split, else REJECTED for weak SAME.
-                if label == "SAME":
-                    status = "REJECTED"
-                else:
-                    status = "VALIDATED"
-            elif row.get("status") == "VALIDATED" and (row.get("evidence") or {}).get("auto_same"):
-                status = "VALIDATED"
-            elif row.get("status") == "VALIDATED" and (row.get("evidence") or {}).get("reused"):
-                status = "VALIDATED"
-            else:
-                status = "VALIDATED"
-            if label == "SAME" and status == "REJECTED":
-                pass
-            elif label != "INSUFFICIENT" or status == "VALIDATED":
-                if status == "VALIDATED":
-                    validated += 1
-            self.pool.add_event_relation(
-                relation_id=relation_id_for(self.run_id, row["left_signal_id"], row["right_signal_id"]),
-                run_id=self.run_id,
-                left_signal_id=row["left_signal_id"],
-                right_signal_id=row["right_signal_id"],
-                left_event_id=row.get("left_event_id"),
-                right_event_id=row.get("right_event_id"),
-                label=label if status != "REJECTED" else "INSUFFICIENT",
-                confidence=confidence,
-                reason=str(row.get("reason") or "")[:REASON_CHARS],
-                input_hash=str(row["input_hash"]),
-                status="REJECTED" if status == "REJECTED" else "VALIDATED",
-                evidence=row.get("evidence") or {},
-                model=self.model,
-                prompt_version=PROMPT_VERSION,
-            )
-        summary = {
-            "enabled": 1, "candidates": len(edges), "llm": len(llm_edges),
-            "auto_same": sum(1 for row in auto_rows if (row.get("evidence") or {}).get("auto_same")),
-            "validated": validated, "critic": critic_count,
-        }
+        summary = resolve_and_persist(
+            self.pool,
+            run_id=self.run_id,
+            sources=sources,
+            clusters=clusters,
+            prior_relations=prior,
+            invoke=invoke,
+            model=self.model,
+        )
         self.pool.log(actor_type="FUNCTION", actor="EventRelationResolver", run_id=self.run_id, version=VERSION,
                       status="SUCCEEDED", detail=summary)
-        self.progress(f"  Event relations: {summary['candidates']} candidates, {summary['llm']} LLM, "
-                      f"{summary['auto_same']} auto-SAME, {summary['critic']} critic, {summary['validated']} validated.")
+        self.progress(
+            f"  Event relations: {summary['candidates']} candidates, {summary['llm']} LLM, "
+            f"{summary['auto_same']} auto-SAME, {summary.get('reused', 0)} reused, "
+            f"{summary['critic']} critic, {summary['validated']} validated."
+        )
         return summary
 
     def reconcile_pool(self, *, search: Callable[[str], Mapping[str, Any]] | None, reassess: Callable[[], Any]) -> None:
