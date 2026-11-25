@@ -126,7 +126,14 @@ def test_adverse_docx_and_csv_use_shared_chrome(tmp_path: Path) -> None:
                 "event_date": "2026-11-12", "publication_date": "2026-11-12",
                 "sources": [{"url": "https://n.example/1", "outlet": "Wire"}],
             }],
-            "B": [], "C": [],
+            "B": [{
+                "item_id": "B-1", "headline": "Competitor cyber incident", "event": "A vendor disclosed an intrusion.",
+                "severity": "Medium", "action": "Monitor", "why_material": "The incident may affect shared suppliers.",
+                "lessons": ["Review supplier incident notification controls."],
+                "event_date": "2026-11-12", "publication_date": "2026-11-12",
+                "sources": [{"url": "https://n.example/2", "outlet": "Wire"}],
+            }],
+            "C": [],
         },
         "attention": {"immediate": [], "monitoring": [], "lessons": []},
         "overall": ("Stable", "No new escalation beyond the staffed-country item."),
@@ -141,6 +148,11 @@ def test_adverse_docx_and_csv_use_shared_chrome(tmp_path: Path) -> None:
     assert "Adverse" in text and "Qatar" in text and "Yes" in text
     assert ADVERSE_SECTION[0].startswith("Event")
     assert TABLE_STYLE == "Table Grid" and NAVY_HEX == "1F3864"
+    from docx import Document
+    document = Document(docx)
+    assert document.tables
+    assert [cell.text for cell in document.tables[1].rows[0].cells] == list(ADVERSE_SECTION)
+    assert "Review supplier incident notification controls." in document.tables[1].rows[1].cells[3].text
     # Incomplete runs must not invent Word/CSV; only READY write() attaches them.
     incomplete = {**report, "status": "INCOMPLETE", "counts": {"pages": 0, "verified_pages": 0},
                   "blockers": ["x"], "repeats": [], "withheld": [], "notes": {}, "calls": [],

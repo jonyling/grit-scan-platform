@@ -459,7 +459,7 @@ def render_docx(report: Mapping[str, Any], path: Path) -> Path:
         if not items:
             document.add_paragraph(checks.NO_DEVELOPMENTS)
             continue
-        table = header_row(document, ADVERSE_SECTION, (7.0, 6.0, 3.5))
+        table = header_row(document, ADVERSE_SECTION, (5.2, 4.8, 2.7, 3.8))
         for item in items:
             sources = item.get("sources") or []
             first = sources[0] if sources else {}
@@ -477,8 +477,9 @@ def render_docx(report: Mapping[str, Any], path: Path) -> Path:
             severity = f"{item.get('severity') or ''}"
             if item.get("action") or item.get("response"):
                 severity += f"\n{item.get('action') or item.get('response')}"
+            lessons = "\n".join(f"- {lesson}" for lesson in item.get("lessons") or []) or "Not identified."
             cells = table.add_row().cells
-            for cell, value in zip(cells, (event, why, severity)):
+            for cell, value in zip(cells, (event, why, severity, lessons)):
                 cell.text = ""
                 run = cell.paragraphs[0].add_run(str(value))
                 run.font.size = Pt(9)
