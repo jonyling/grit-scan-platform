@@ -11,7 +11,7 @@ differs per business area sits in the pack's pack.json under "build":
     themeVocabulary          general vocabulary for theme names, keyed by the start of the name
     themeActionPlans         true keeps each Key Risk's Action Plans column as sheetActionPlans (spec 36)
     sourceSheets             a sheet's column layout, such as {"9. Specific Industry News": {"name_col": 1, "numbered": true}}
-    managementFocusLayout    "requests" (URS) or "areas" (one row per focus area, DS&C)
+    managementFocusLayout    "requests" (URS), "areas" (DS&C), "scenarios" (CA), or "columns" (Marine)
     supplierUnit             the business area's own label in the supplier sheet's BA column, such as "DS&C"
     sharedSupplierSeparator  the separator in a BA value naming two business areas, such as "/" in "URS/DS&C"
     entitySheet              the entity sheet, if not "2. Entity Address". Its header row is found by its NameOfEntity (or plain

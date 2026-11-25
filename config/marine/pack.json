@@ -28,6 +28,7 @@
     "keywordSheets": [],
     "themeLayout": "classified",
     "themeClassificationRequire": "BA Annual Risk Refresh",
+    "managementFocusLayout": "columns",
     "themeCounts": {
       "KEY": 6,
       "TIER_2": 6,

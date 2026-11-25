@@ -11,7 +11,7 @@ from grit.ontology.build_pack import _exposure, _themes
 from grit.ontology.graph import short_names
 from grit.ontology.lob_keyword_loader import ALL_LOBS, parse_lob_keyword_rows
 from grit.ontology.registry_loader import load_transmission_registry
-from grit.ontology.search_inputs import parse_competitor_rows
+from grit.ontology.search_inputs import parse_competitor_rows, parse_management_column_rows
 
 
 def _workbook(path: Path, sheets: dict[str, list[list]]) -> Path:
@@ -129,6 +129,23 @@ def test_a_competitor_sheet_by_region_skips_its_header_and_keeps_the_region() ->
     competitors = parse_competitor_rows(rows)["competitors"]
     assert [row["competitor"] for row in competitors] == ["Seatrium", "Abu Dhabi Shipbuilding"]
     assert competitors[1]["region"] == "MENA"
+
+
+def test_management_columns_keep_opportunities_risks_and_markets_without_inventing_serials() -> None:
+    rows = [
+        ["S.No", "Business Area", "LOB Grouping (Optional)", "LOB (Optional)", "Entity Name (Optional)",
+         "Management Focus - Opportunities", "Management Focus - Risks", "Management Focus - Markets", "Remarks"],
+        ["1", "Marine", "NA", "NA", "NA", "Naval & Government Maritime", "", "", "Newbuild and MRO programmes."],
+        ["", "", "", "", "", "", "Workforce/visa/skills constraints", "", ""],
+        ["", "", "", "", "", "", "", "Priority markets: Saudi Arabia and Japan.", "Enhanced Saudi coverage."],
+    ]
+    parsed = parse_management_column_rows(rows)
+    opportunity, risk, market = parsed["focusItems"]
+    assert [item["category"] for item in parsed["focusItems"]] == ["OPPORTUNITY", "RISK", "MARKET"]
+    assert opportunity["number"] == 1 and opportunity["allLobs"] and opportunity["businessArea"] == "Marine"
+    assert risk["focus"] == "Workforce/visa/skills constraints" and "number" not in risk
+    assert market["whyItMatters"] == "Enhanced Saudi coverage."
+    assert parsed["dropped"] == []
 
 
 def test_short_names_for_branches_and_names_ending_in_of_a_country() -> None:

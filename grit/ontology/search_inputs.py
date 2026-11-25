@@ -349,6 +349,79 @@ def parse_management_scenario_rows(rows: list[list[str]]) -> dict[str, Any]:
     return {"requests": [], "focusItems": items, "dropped": dropped}
 
 
+def parse_management_column_rows(rows: list[list[str]]) -> dict[str, Any]:
+    """Parse a focus sheet with separate opportunity, risk and market columns."""
+    header = next(
+        (
+            index
+            for index, row in enumerate(rows)
+            if row[0].casefold().rstrip(".") in {"s.no", "s/n", "no"}
+            and any("management focus - opportunities" in cell.casefold() for cell in row)
+        ),
+        None,
+    )
+    if header is None:
+        raise ValueError("Management focus sheet is missing its 'S.No | ... | Management Focus - Opportunities' header.")
+
+    columns = {cell.casefold(): index for index, cell in enumerate(rows[header]) if cell}
+    category_columns = [
+        ("OPPORTUNITY", "management focus - opportunities"),
+        ("RISK", "management focus - risks"),
+        ("MARKET", "management focus - markets"),
+    ]
+    if not all(name in columns for _, name in category_columns):
+        raise ValueError("Management focus sheet must give opportunity, risk and market columns.")
+
+    items: list[dict[str, Any]] = []
+    dropped: list[dict[str, Any]] = []
+    for number, row in enumerate(rows[header + 1 :], start=header + 2):
+        business_area = row[columns.get("business area", 0)]
+        lob_grouping = row[columns.get("lob grouping (optional)", 3)]
+        lob = row[columns.get("lob (optional)", 3)]
+        entity = row[columns.get("entity name (optional)", 4)]
+        remarks = row[columns.get("remarks", len(row) - 1)]
+        serial = row[0]
+        found = [
+            (category, row[columns[name]])
+            for category, name in category_columns
+            if row[columns[name]]
+        ]
+        if len(found) != 1:
+            if any(found):
+                dropped.append({"row": number, "text": " / ".join(text for _, text in found)[:120],
+                                "reason": "MULTIPLE_MANAGEMENT_FOCUS_CATEGORIES"})
+            elif any(row[:9]):
+                dropped.append({"row": number, "text": next((cell for cell in row[1:] if cell), "")[:120],
+                                "reason": "NO_MANAGEMENT_FOCUS_TEXT"})
+            continue
+        category, focus = found[0]
+        scope_parts = [part for part in (lob, entity, lob_grouping) if part and part.casefold() not in {"na", "n/a", "-"}]
+        scope = scope_parts[0] if scope_parts else "All LOBs"
+        item: dict[str, Any] = {
+            "scope": scope,
+            "allLobs": not scope_parts,
+            "focus": focus,
+            "whyItMatters": remarks or None,
+            "indicators": [],
+            "status": None,
+            "category": category,
+        }
+        if serial.isdigit():
+            item["number"] = int(serial)
+        if business_area and business_area.casefold() not in {"na", "n/a", "-"}:
+            item["businessArea"] = business_area
+        if lob_grouping and lob_grouping.casefold() not in {"na", "n/a", "-"}:
+            item["lobGrouping"] = lob_grouping
+        if lob and lob.casefold() not in {"na", "n/a", "-"}:
+            item["lob"] = lob
+        if entity and entity.casefold() not in {"na", "n/a", "-"}:
+            item["entity"] = entity
+        items.append(item)
+    if not items:
+        raise ValueError("Management focus sheet has no opportunity, risk or market rows.")
+    return {"requests": [], "focusItems": items, "dropped": dropped}
+
+
 def load_keyword_library(workbook: Path, hierarchy: dict[str, Any] | None, *, sheets: tuple[str, ...] | None = None, prefix: str = "URS") -> dict[str, Any]:
     """sheets None reads the URS keyword sheets. An empty tuple reads none: a workbook can carry copies of another business
     area's sheets, and those are not this business area's vocabulary."""
@@ -391,15 +464,17 @@ def load_competitors(workbook: Path, hierarchy: dict[str, Any] | None, *, prefix
 
 
 def load_management_focus(workbook: Path, hierarchy: dict[str, Any] | None, *, prefix: str = "URS", layout: str = "requests") -> dict[str, Any]:
-    """layout 'requests' is the URS sheet: numbered requests, then a LOB / Scope table. 'areas' is the DS&C sheet: one row
-    per focus area with its watchpoints."""
-    rows = _cells(read_worksheet(workbook, MANAGEMENT_SHEET, keep_blank_rows=True), 5)
+    """Load a supported management-focus layout and resolve any stated LOB."""
+    rows = _cells(read_worksheet(workbook, MANAGEMENT_SHEET, keep_blank_rows=True), 9 if layout == "columns" else 5)
     if layout == "areas":
         parsed = parse_management_area_rows(rows)
         absence = "The sheet gives each area a list of watchpoints. It names no LOB, status, or reason, so none is recorded."
     elif layout == "scenarios":
         parsed = parse_management_scenario_rows(rows)
         absence = "The sheet gives scenarios with watchpoints. It names no LOB or status, so none is recorded. origin names who proposed each one."
+    elif layout == "columns":
+        parsed = parse_management_column_rows(rows)
+        absence = "The sheet names opportunities, risks and markets. It states no status or suggested monitoring indicators."
     else:
         parsed = parse_management_focus_rows(rows)
         absence = "The status text is copied unchanged. A status that says research draft means a business area has not validated the item."

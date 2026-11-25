@@ -2,257 +2,233 @@
   "registerId": "MARINE-MANAGEMENT-FOCUS",
   "workbook": "06_Marine_Entity_Info.xlsx",
   "sheet": "10. Management Focus",
-  "absence": "The status text is copied unchanged. A status that says research draft means a business area has not validated the item.",
+  "absence": "The sheet names opportunities, risks and markets. It states no status or suggested monitoring indicators.",
   "requests": [],
   "focusItems": [
     {
-      "scope": "Naval Shipbuilding",
-      "allLobs": false,
-      "focus": "Naval programme delivery",
-      "whyItMatters": "Deliver naval newbuild programmes (e.g. Kuwait and UAE vessels) on schedule, cost and specification.",
-      "indicators": [
-        "Milestone adherence",
-        "cost variance",
-        "sea-trial outcomes",
-        "deliveries vs plan",
-        "LDs"
-      ],
-      "status": "Management priority — validate programme list",
-      "canonicalLob": "Naval Shipbuilding"
-    },
-    {
-      "scope": "Commercial Shipbuilding",
-      "allLobs": false,
-      "focus": "Commercial newbuild execution and margins",
-      "whyItMatters": "Fixed-price newbuilds (e.g. Walk-to-Work vessels) are exposed to design change and cost overrun.",
-      "indicators": [
-        "Contract margin",
-        "change orders",
-        "schedule slippage",
-        "warranty claims"
-      ],
-      "status": "Research draft — BA validation required",
-      "canonicalLob": "Commercial Shipbuilding"
-    },
-    {
-      "scope": "Ship Repair & Conversion",
-      "allLobs": false,
-      "focus": "Yard utilisation and repair throughput",
-      "whyItMatters": "Optimise dock and berth utilisation and turnaround across Benoi and Tuas yards.",
-      "indicators": [
-        "Dock utilisation",
-        "vessels handled",
-        "repair TAT",
-        "revenue per dock-day"
-      ],
-      "status": "Management priority — validate targets",
-      "canonicalLob": "Ship Repair & Conversion"
-    },
-    {
-      "scope": "Ship Repair & Conversion",
-      "allLobs": false,
-      "focus": "Decarbonisation retrofits and green conversions",
-      "whyItMatters": "Capture demand for methanol/LNG conversions, scrubber and energy-efficiency retrofits.",
-      "indicators": [
-        "Retrofit orders",
-        "conversion pipeline",
-        "project margin",
-        "repeat customers"
-      ],
-      "status": "Research draft — BA validation required",
-      "canonicalLob": "Ship Repair & Conversion"
-    },
-    {
-      "scope": "Offshore Renewables",
-      "allLobs": false,
-      "focus": "Offshore wind vessel repair and modifications",
-      "whyItMatters": "Grow repair and structural modification work for wind-installation and support vessels.",
-      "indicators": [
-        "Orders",
-        "pipeline",
-        "project TAT",
-        "customer concentration"
-      ],
-      "status": "Research draft — BA validation required",
-      "canonicalLob": "Offshore Renewables"
-    },
-    {
-      "scope": "Lifecycle Support",
-      "allLobs": false,
-      "focus": "Naval through-life support",
-      "whyItMatters": "Sustain fleet availability and modernisation for navies under long-term support contracts.",
-      "indicators": [
-        "Fleet availability",
-        "contract KPIs met",
-        "upgrade milestones",
-        "spares fill rate"
-      ],
-      "status": "Management priority — validate KPIs with BA",
-      "canonicalLob": "Lifecycle Support"
-    },
-    {
       "scope": "All LOBs",
       "allLobs": true,
-      "focus": "Workplace safety",
-      "whyItMatters": "Heavy lifting, hot work, confined spaces and subcontractor activity create severe safety exposure.",
-      "indicators": [
-        "LTIFR",
-        "fatalities",
-        "high-potential incidents",
-        "near misses",
-        "safety audit findings"
-      ],
-      "status": "Core control focus — validate KPI definitions",
-      "canonicalLob": null
-    },
-    {
-      "scope": "All LOBs",
-      "allLobs": true,
-      "focus": "Supply chain and equipment lead times",
-      "whyItMatters": "Propulsion, electrical and combat-system equipment lead times can delay construction and repair.",
-      "indicators": [
-        "Long-lead items",
-        "supplier OTIF",
-        "critical shortages",
-        "schedule impact days"
-      ],
-      "status": "Research draft — BA validation required",
-      "canonicalLob": null
-    },
-    {
-      "scope": "All LOBs",
-      "allLobs": true,
-      "focus": "Subcontractor and skilled workforce capacity",
-      "whyItMatters": "Yards depend on skilled trades and subcontracted labour subject to supply and regulatory constraints.",
-      "indicators": [
-        "Headcount vs plan",
-        "foreign-worker quota",
-        "attrition",
-        "productivity per man-hour"
-      ],
-      "status": "Management priority — validate workforce plan",
-      "canonicalLob": null
-    },
-    {
-      "scope": "All LOBs",
-      "allLobs": true,
-      "focus": "Environmental compliance",
-      "whyItMatters": "Shipyard emissions, waste, spills and ballast handling require strict control.",
-      "indicators": [
-        "Environmental incidents",
-        "regulatory findings",
-        "emissions",
-        "waste volumes"
-      ],
-      "status": "Core control focus — validate KPI definitions",
-      "canonicalLob": null
-    },
-    {
-      "scope": "US Marine",
-      "allLobs": false,
-      "focus": "US marine business performance",
-      "whyItMatters": "Manage programme execution and profitability in the US marine operations.",
-      "indicators": [
-        "Backlog",
-        "programme margin",
-        "schedule adherence",
-        "customer findings"
-      ],
-      "status": "Research draft — BA validation required",
-      "canonicalLob": null
-    },
-    {
-      "scope": "All LOBs",
-      "allLobs": true,
-      "focus": "Export control and geopolitical exposure",
-      "whyItMatters": "Naval programmes and equipment transfers face licensing, sanctions and end-user restrictions.",
-      "indicators": [
-        "Licence status",
-        "screening exceptions",
-        "compliance findings"
-      ],
-      "status": "Core control focus — validate KPI definitions",
-      "canonicalLob": null
-    },
-    {
-      "scope": "Capability Development",
-      "allLobs": false,
-      "focus": "Digital Twin",
-      "whyItMatters": "Advanced design, systems integration and real-time monitoring",
+      "focus": "Naval & Government Maritime",
+      "whyItMatters": "Defence/naval/coast guard budget changes; fleet modernisation; new shipbuilding and MRO programmes; tenders/RFIs; G2G opportunities and customer procurement strategies.",
       "indicators": [],
-      "status": "Strategic focus area (per P25)",
+      "status": null,
+      "category": "OPPORTUNITY",
+      "number": 1,
+      "businessArea": "Marine",
       "canonicalLob": null
     },
     {
-      "scope": "Capability Development",
-      "allLobs": false,
-      "focus": "Unmanned Capabilities",
-      "whyItMatters": "Development of unmanned drones and vessels",
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "International MRO & Lifecycle Support",
+      "whyItMatters": "MRO, fleet sustainment, in-service support and long-term maintenance opportunities, including opportunities for predictive/condition-based maintenance and digital services.",
       "indicators": [],
-      "status": "Strategic focus area (per P25)",
+      "status": null,
+      "category": "OPPORTUNITY",
+      "number": 2,
       "canonicalLob": null
     },
     {
-      "scope": "Capability Development",
-      "allLobs": false,
-      "focus": "Condition-based Maintenance",
-      "whyItMatters": "Predictive maintenance via sensorisation and data analytics",
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "AI-Enabled Shipbuilding & Smart Yard",
+      "whyItMatters": "Developments in AI-enabled planning and scheduling, integrated shipbuilding management, digital twins, IoT/sensorisation, video analytics, robotics and automation that could improve throughput, cost, schedule and yard utilisation. Marine’s roadmap targets a connected AI-enabled Shipbuilding Management System and ultimately smart-yard capabilities.",
       "indicators": [],
-      "status": "Strategic focus area (per P25)",
+      "status": null,
+      "category": "OPPORTUNITY",
+      "number": 3,
       "canonicalLob": null
     },
     {
-      "scope": "Capability Development",
-      "allLobs": false,
-      "focus": "AI and Automation",
-      "whyItMatters": "Enhance and optimize troubleshooting and maintenance, use technologies for productivity gains and product innovations",
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Advanced Engineering & Unmanned Systems",
+      "whyItMatters": "AI-assisted vessel design/optimisation; autonomous and unmanned vessels/drones; USV/UUV technologies; advanced systems integration and relevant technology partnerships. Marine’s roadmap specifically includes AI-assisted design and next-generation USV hull-form development.",
       "indicators": [],
-      "status": "Strategic focus area (per P25)",
+      "status": null,
+      "category": "OPPORTUNITY",
+      "number": 4,
       "canonicalLob": null
     },
     {
-      "scope": "Capability Development",
-      "allLobs": false,
-      "focus": "Alternative Energy for Naval and Commercial Vessels",
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Smart Ship & Predictive Maintenance",
+      "whyItMatters": "AI-enabled ship-management systems, vessel-performance optimisation, condition-based/predictive maintenance, sensorisation, digital watchkeeping and safety/compliance applications.",
+      "indicators": [],
+      "status": null,
+      "category": "OPPORTUNITY",
+      "number": 6,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Alternative Energy",
+      "whyItMatters": "Emerging propulsion/energy technologies for naval and commercial vessels, including hybrid/electric systems and alternative fuels; associated newbuild, conversion and retrofit opportunities.",
+      "indicators": [],
+      "status": null,
+      "category": "OPPORTUNITY",
+      "number": 7,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Offshore Renewables & Infrastructure",
+      "whyItMatters": "Offshore wind and infrastructure developments creating demand for specialised vessels, shipbuilding and lifecycle-support services.",
+      "indicators": [],
+      "status": null,
+      "category": "OPPORTUNITY",
+      "number": 8,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Partnerships & Integrated Solutions",
+      "whyItMatters": "Competitor/shipyard developments, JVs and technology partnerships; opportunities for collaboration with Digital Systems and Land Systems to offer differentiated integrated solutions.",
+      "indicators": [],
+      "status": null,
+      "category": "OPPORTUNITY",
+      "number": 9,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Future Workforce & Productivity",
+      "whyItMatters": "Technologies, workforce models and skills required for AI, robotics, autonomy, advanced engineering and alternative energy; opportunities for reskilling, knowledge retention and productivity improvement. Marine’s roadmap targets higher productivity and greater output from the same workforce.",
+      "indicators": [],
+      "status": null,
+      "category": "OPPORTUNITY",
+      "number": 10,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Geopolitical/security risks affecting naval programmes, market access, maritime routes or customer priorities.",
       "whyItMatters": null,
       "indicators": [],
-      "status": "Strategic focus area (per P25)",
+      "status": null,
+      "category": "RISK",
+      "number": 11,
       "canonicalLob": null
     },
     {
-      "scope": "Capability Development",
-      "allLobs": false,
-      "focus": "Developing our people",
-      "whyItMatters": "Empowering our workforce through continuous learning, growth and engagement",
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Sanctions, export controls and technology-transfer restrictions, particularly for defence, AI, autonomous and advanced systems.",
+      "whyItMatters": null,
       "indicators": [],
-      "status": "Strategic focus area (per P25)",
+      "status": null,
+      "category": "RISK",
+      "number": 13,
       "canonicalLob": null
     },
     {
-      "scope": "Adjacent",
-      "allLobs": false,
-      "focus": "International Business",
-      "whyItMatters": "Shipbuilding and Maintenance, Repair & Overhaul (MRO)",
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Localisation and regulatory requirements, including industrial participation and local-content obligations.",
+      "whyItMatters": null,
       "indicators": [],
-      "status": "Strategic focus area (per P25)",
+      "status": null,
+      "category": "RISK",
+      "number": 14,
       "canonicalLob": null
     },
     {
-      "scope": "Adjacent",
-      "allLobs": false,
-      "focus": "Offshore Renewables and Infrastructure",
-      "whyItMatters": "Shipbuilding",
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Competitor and shipyard actions, including major contract wins, technology advances, alliances/JVs and capacity expansion.",
+      "whyItMatters": null,
       "indicators": [],
-      "status": "Strategic focus area (per P25)",
+      "status": null,
+      "category": "RISK",
+      "number": 15,
       "canonicalLob": null
     },
     {
-      "scope": "Adjacent",
-      "allLobs": false,
-      "focus": "Greater collaboration for competitiveness",
-      "whyItMatters": "Work with Digital Systems and Land Systems for comprehensive solutions and competitive pursuits",
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Foreign partner risks, including capability, integrity, ownership/control and geopolitical exposure.",
+      "whyItMatters": null,
       "indicators": [],
-      "status": "Strategic focus area (per P25)",
+      "status": null,
+      "category": "RISK",
+      "number": 16,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Supply-chain/logistics disruption, critical components, strategic shipping routes and supplier dependencies.",
+      "whyItMatters": null,
+      "indicators": [],
+      "status": null,
+      "category": "RISK",
+      "number": 17,
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Workforce/visa/skills constraints affecting overseas mobilisation and programme execution.",
+      "whyItMatters": null,
+      "indicators": [],
+      "status": null,
+      "category": "RISK",
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Cyber, AI and data risks affecting smart yards, connected vessels, AI systems, digital twins, autonomous platforms and operational technology.",
+      "whyItMatters": null,
+      "indicators": [],
+      "status": null,
+      "category": "RISK",
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Technology disruption, particularly advances that could make Marine’s existing capabilities less competitive.",
+      "whyItMatters": null,
+      "indicators": [],
+      "status": null,
+      "category": "RISK",
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Programme execution risks, including cost, schedule, infrastructure and resource constraints.",
+      "whyItMatters": null,
+      "indicators": [],
+      "status": null,
+      "category": "RISK",
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Priority markets: Saudi Arabia, Indonesia, Malaysia, Thailand, Japan, Poland, USA and UK.",
+      "whyItMatters": "Give enhanced coverage to Saudi Arabia, particularly for Naval New Build and MRO opportunities, localisation requirements, partners, workforce/visa considerations and supply-chain/execution risks. Do not restrict emerging technology intelligence to the above markets. Monitor globally for significant developments in AI-enabled shipbuilding, smart yards, Digital Twin, autonomous/unmanned systems, predictive maintenance, robotics, alternative energy and offshore renewables.",
+      "indicators": [],
+      "status": null,
+      "category": "MARKET",
+      "canonicalLob": null
+    },
+    {
+      "scope": "All LOBs",
+      "allLobs": true,
+      "focus": "Opportunity/watchlist markets: Estonia, Lithuania, Sweden, Denmark, Germany, Canada, Chile, Israel and Greece.",
+      "whyItMatters": null,
+      "indicators": [],
+      "status": null,
+      "category": "MARKET",
       "canonicalLob": null
     }
   ],
