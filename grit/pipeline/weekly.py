@@ -1481,8 +1481,7 @@ class WeeklyCoordinator:
             critique, critic_id = self.invoke("Critic", f"pool-{round_number}-{offset}", {
                 "candidates": batch, "sources": related, "assessment": selections,
                 "open_issues": self.batch_issues(batch_keys, sources), "admitted_corrections": memory_context(self.pool, self.run_id),
-            }, lambda raw: (check_critique(raw, set(batch), sources, set(self.store.issues())),
-                            check_selections(raw, sources, set(batch), register=self.register)))
+            }, self.scoped(set(batch), sources, self.store.issues(), assessment=selections))
             self.store.select(critic_id, critique["selections"])
             self.store.record_critique(critic_id, critique)
 
@@ -1499,10 +1498,26 @@ class WeeklyCoordinator:
         self.full_review(round_number, sorted(full), sources)
 
     def scoped(self, members: set[str], sources: Mapping[str, Any], open_issues: Mapping[str, Any],
-               selections: bool = True, chain: bool = True) -> Callable[[Any], Any]:
+               selections: bool = True, chain: bool = True,
+               assessment: Mapping[str, Any] | None = None) -> Callable[[Any], Any]:
         """A thread-safe critique check against a snapshot of the open issues."""
         register = self.register  # read on the caller thread, because workers must not touch the pool
+        prior_scores = {
+            str(row.get("signal_id")): dict(row["significance"])
+            for row in (assessment or {}).get("selections") or []
+            if isinstance(row, Mapping) and isinstance(row.get("significance"), Mapping)
+        }
         def validate(raw: Any) -> None:
+            if selections and prior_scores and isinstance(raw, dict) and isinstance(raw.get("selections"), list):
+                for row in raw["selections"]:
+                    if isinstance(row, dict):
+                        if "significance" not in row:
+                            score = prior_scores.get(str(row.get("signal_id") or ""))
+                            if score is not None:
+                                row["significance"] = dict(score)
+                                row["significance_inherited"] = True
+                        if "challenge_status" in row:
+                            row.pop("challenge_status")
             if not selections and isinstance(raw, dict) and "selections" in raw:
                 # Selections are not this task's output. An unrequested list is set aside instead of failing the run.
                 extra = raw.pop("selections")
@@ -1558,7 +1573,7 @@ class WeeklyCoordinator:
             self.store.select(call_id, selections["selections"])
         critiques = self.invoke_many([
             ("Critic", f"pool-{round_number}-{batch[0]}", {**payload, "assessment": selections},
-             self.scoped(set(batch), sources, open_issues), None)
+             self.scoped(set(batch), sources, open_issues, assessment=selections), None)
             for batch, payload, (selections, _) in zip(batches, inputs, assessments)], f"Critic full review of {len(keys)} signals")
         for critique, call_id in critiques:
             self.store.select(call_id, critique["selections"])

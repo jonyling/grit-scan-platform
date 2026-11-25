@@ -50,8 +50,15 @@ def check_relations(raw: Any, edge_ids: set[str]) -> Mapping[str, Any]:
         if not isinstance(reason, str) or not reason.strip() or len(reason) > REASON_CHARS:
             raise ContractError(f"{edge_id}: reason must be nonempty text of at most {REASON_CHARS} characters.")
         quote = row.get("quote")
-        if quote is not None and (not isinstance(quote, str) or len(quote) > QUOTE_CHARS):
-            raise ContractError(f"{edge_id}: quote must be at most {QUOTE_CHARS} characters.")
+        if quote is not None:
+            if not isinstance(quote, str):
+                raise ContractError(f"{edge_id}: quote must be text when supplied.")
+            quote = quote.strip()
+            if len(quote) > QUOTE_CHARS:
+                cut = quote.rfind(" ", 0, QUOTE_CHARS + 1)
+                quote = quote[:cut if cut >= QUOTE_CHARS // 2 else QUOTE_CHARS].rstrip()
+            if isinstance(row, dict):
+                row["quote"] = quote
         if CONTROLLED.intersection(row):
             raise ContractError("An agent attempted to write a controlled field.")
     missing = edge_ids - seen

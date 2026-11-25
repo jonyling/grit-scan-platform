@@ -279,6 +279,10 @@ def check_selections(raw: Any, sources: Mapping[str, Any], expected: set[str], *
     """chain: an INCLUDE or WATCH must state the reasoning chain. The compact drop screen is exempt. Anything it does not
     EXCLUDE goes to full review, where the chain is required."""
     raw = object_response(raw)
+    if isinstance(raw, dict) and isinstance(raw.get("selections"), list):
+        for row in raw["selections"]:
+            if isinstance(row, dict) and "challenge_status" in row:
+                row.pop("challenge_status")
     no_controlled_fields(raw)
     rows = raw.get("selections")
     if not isinstance(rows, list) or not all(isinstance(row, Mapping) for row in rows):
@@ -608,6 +612,12 @@ def check_critique(raw: Any, expected: set[str], sources: Mapping[str, Any], ope
                 problem = ("A factual correction needs a verbatim quote from a cited source page, not from the report. "
                            "To challenge the report's wording against the selections or status_basis, use kind NARRATIVE.")
         if problem and issue["material"]:
+            if isinstance(issue, dict) and issue.get("missing_evidence") and issue["kind"] not in {
+                    "UNSUPPORTED", "COVERAGE", "INTERNAL_EVIDENCE", "NARRATIVE"}:
+                issue["issue_kind_original"] = issue["kind"]
+                issue["kind"] = "UNSUPPORTED"
+                kept.append(issue)
+                continue
             raise ContractError(problem)
         if problem:
             # A non-material issue blocks nothing. One without valid evidence is withheld and kept for audit.

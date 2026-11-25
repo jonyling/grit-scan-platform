@@ -38,6 +38,17 @@ def test_selection_cannot_write_a_controlled_score():
         check_selections({"selections": [{"signal_id": "A", "decision": "INCLUDE", "reason": "Named", "source_ids": ["A"], "severity": 3}]}, {"A": {}}, {"A"})
 
 
+def test_replayed_selection_regenerates_core_challenge_status():
+    row = {
+        "signal_id": "A", "decision": "INCLUDE", "reason": "Named", "source_ids": ["A"], **CHAIN,
+        "challenged_band": "Elevated", "challenge_reason": "The controlled band is too low.",
+        "challenge_status": "OPEN",
+    }
+    checked = check_selections({"selections": [row]}, {"A": {}}, {"A"})["selections"][0]
+    assert checked["challenge_status"] == "OPEN"
+    assert "ignored_challenge_status" not in checked
+
+
 @pytest.mark.parametrize("decision", [None, [], {}, 1])
 def test_malformed_editorial_decision_is_rejected(decision):
     with pytest.raises(ContractError, match="decision"):
@@ -1213,6 +1224,34 @@ def test_out_of_batch_resolution_is_ignored_not_fatal(weekly):
            "resolutions": [{"issue_id": "RES", "response": "Covered elsewhere", "source_ids": [ids[0]]}]}
     coordinator.scoped({ids[0]}, coordinator.sources, open_issues, selections=False)(raw)
     assert raw["resolved_issue_ids"] == [] and raw["ignored_resolutions"] == ["RES"]
+
+
+def test_critic_inherits_omitted_significance_from_assessment(weekly):
+    pool, _, coordinator, ids, _ = weekly
+    signal_id = ids[0]
+    assessment = {"selections": [{"signal_id": signal_id, **CHAIN, "decision": "INCLUDE",
+                                  "reason": "Assessed.", "source_ids": [signal_id]}]}
+    raw = {
+        "reviewed_ids": [signal_id], "issues": [], "resolved_issue_ids": [], "selections": [{
+            "signal_id": signal_id, **{key: value for key, value in CHAIN.items() if key != "significance"},
+            "decision": "INCLUDE", "reason": "Critiqued.", "source_ids": [signal_id], "challenge_status": "OPEN",
+        }],
+    }
+    coordinator.scoped({signal_id}, coordinator.sources, {}, assessment=assessment)(raw)
+    assert raw["selections"][0]["significance"] == CHAIN["significance"]
+    assert raw["selections"][0]["significance_inherited"] is True
+    assert "challenge_status" not in raw["selections"][0]
+
+
+def test_material_issue_without_quote_becomes_explicit_unsupported():
+    raw = {"reviewed_ids": ["A"], "issues": [{
+        "issue_id": "RISK-MISMATCH", "kind": "PRECISION", "target": "A",
+        "problem": "The stated risk does not match the sourced event.", "material": True,
+        "source_ids": ["A"], "missing_evidence": "Evidence of the claimed risk link.",
+    }], "resolved_issue_ids": []}
+    checked = check_critique(raw, {"A"}, {"A": {}}, set())
+    assert checked["issues"][0]["kind"] == "UNSUPPORTED"
+    assert checked["issues"][0]["issue_kind_original"] == "PRECISION"
 
 
 def test_cli_fast_review_needs_reasoned_mode():

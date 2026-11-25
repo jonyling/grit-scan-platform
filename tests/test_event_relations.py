@@ -91,6 +91,25 @@ def test_contract_rejects_controlled_fields_and_unknown_edge():
         check_relation_critique({"reviews": [{"edge_id": "E1", "action": "KEEP", "reason": "no"}]}, {"E1"})
 
 
+def test_relation_contract_bounds_verbatim_quote_without_retrying_the_batch():
+    from grit.agents.relations import check_relations
+    from grit.core.event_relations import QUOTE_CHARS
+
+    source_quote = "word " * 30
+    raw = {"relations": [{
+        "edge_id": "E1",
+        "label": "SAME",
+        "confidence": 0.9,
+        "reason": "same source event",
+        "quote": source_quote,
+    }]}
+    checked = check_relations(raw, {"E1"})
+    quote = checked["relations"][0]["quote"]
+    assert 0 < len(quote) <= QUOTE_CHARS
+    assert quote == source_quote[:len(quote)]
+    assert raw["relations"][0]["quote"] == quote
+
+
 def test_critic_split_and_reclassify():
     from grit.agents.relations import apply_critic_reviews
 
