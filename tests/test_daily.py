@@ -126,7 +126,7 @@ def test_events_join_the_same_story_and_digests_report_new_tier_1_2_events(tmp_p
     with pool.transaction() as conn:
         conn.execute("UPDATE assessments SET tier = 2 WHERE signal_id = ?", (strait,))
     clustered = cluster_events(pool)
-    assert clustered == {"joined": 1, "new": 2} and cluster_events(pool) == {"joined": 0, "new": 0}, "safe to repeat"
+    assert clustered == {"joined": 1, "new": 2, "near_misses": 0} and cluster_events(pool) == {"joined": 0, "new": 0, "near_misses": 0}, "safe to repeat"
     event = pool.one("SELECT * FROM events WHERE members = 2")
     assert event["lead_signal_id"] in {strait, copy}
     digest = build_digest(pool, "urs-tw", DAY)

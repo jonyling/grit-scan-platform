@@ -1,0 +1,13 @@
+{
+  "note": "R&A-owned entity aliases for story matching only. Report text stays as written. Matching folds accents (NFKD) and treats any name in a group as the same entity; one shared alias is enough to join stories, like an identifier. Longer names are preferred when several match.",
+  "aliases": [
+    {
+      "canonical": "plusultra",
+      "names": [
+        "Plus Ultra Lineas Aereas",
+        "Plus Ultra Líneas Aéreas",
+        "Plus Ultra"
+      ]
+    }
+  ]
+}

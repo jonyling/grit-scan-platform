@@ -118,6 +118,13 @@ def event_terms(row: Mapping[str, Any]) -> frozenset[str]:
     return distinctive_terms(str(row.get("title") or ""))
 
 
+def event_aliases_of(row: Mapping[str, Any]) -> frozenset[str]:
+    """R&A entity alias ids named in the headline (grit.core.headlines)."""
+    from grit.core.headlines import alias_ids
+
+    return alias_ids(str(row.get("title") or ""))
+
+
 def band_rank(row: Mapping[str, Any]) -> int:
     from grit.core.source_bands import BANDS
 
@@ -125,25 +132,36 @@ def band_rank(row: Mapping[str, Any]) -> int:
     return BANDS.index(band) if band in BANDS else len(BANDS)
 
 
-def same_event(key: str, sources: Mapping[str, Mapping[str, Any]], terms_of: Mapping[str, frozenset[str]] | None = None) -> list[str]:
-    """Other candidates whose headlines share at least two distinctive words with this one, published within a week.
-    terms_of: precomputed event_terms per candidate, so a batch does not recompute them."""
+def same_event(key: str, sources: Mapping[str, Mapping[str, Any]], terms_of: Mapping[str, frozenset[str]] | None = None,
+               aliases_of: Mapping[str, frozenset[str]] | None = None,
+               clusters: Mapping[str, str] | None = None) -> list[str]:
+    """Other reports of the same event: the same nightly event_members cluster, a shared R&A entity alias, or at least
+    two distinctive headline words within a week. clusters: signal_id → event_id. terms_of / aliases_of: precomputed
+    per candidate so a batch does not recompute them."""
     terms_of = terms_of if terms_of is not None else {other: event_terms(candidate) for other, candidate in sources.items()}
+    aliases_of = aliases_of if aliases_of is not None else {other: event_aliases_of(candidate) for other, candidate in sources.items()}
+    clusters = clusters or {}
     row = sources[key]
     terms = terms_of.get(key) or frozenset()
-    if len(terms) < SAME_EVENT_TERMS:
-        return []
+    aliases = aliases_of.get(key) or frozenset()
+    event_id = clusters.get(key)
     day = str(row.get("published_at") or "")[:10]
     found = []
     for other, candidate in sources.items():
-        if other == key or len(terms & (terms_of.get(other) or frozenset())) < SAME_EVENT_TERMS:
+        if other == key:
             continue
-        when = str(candidate.get("published_at") or "")[:10]
-        try:
-            if day and when and abs((date.fromisoformat(day) - date.fromisoformat(when)).days) > SAME_EVENT_DAYS:
-                continue
-        except ValueError:
-            pass
+        clustered = bool(event_id) and clusters.get(other) == event_id
+        shared_alias = bool(aliases & (aliases_of.get(other) or frozenset()))
+        shared_terms = len(terms & (terms_of.get(other) or frozenset())) >= SAME_EVENT_TERMS
+        if not clustered and not shared_alias and not shared_terms:
+            continue
+        if not clustered:
+            when = str(candidate.get("published_at") or "")[:10]
+            try:
+                if day and when and abs((date.fromisoformat(day) - date.fromisoformat(when)).days) > SAME_EVENT_DAYS:
+                    continue
+            except ValueError:
+                pass
         found.append(other)
     return sorted(found, key=lambda other: (band_rank(sources[other]), other))[:SAME_EVENT_MAX]
 
@@ -754,15 +772,28 @@ class WeeklyCoordinator:
         context = ((self.pool.run(self.run_id) or {}).get("config") or {}).get("weekly_context") or {}
         return frozenset(str(item.get("id")) for item in context.get("standing_items") or [] if isinstance(item, Mapping) and item.get("id"))
 
+    def event_clusters(self, signal_ids: Sequence[str]) -> dict[str, str]:
+        """Nightly event_members clusters for the given signals (signal_id → event_id)."""
+        ids = [str(key) for key in signal_ids if key]
+        if not ids:
+            return {}
+        marks = ",".join("?" for _ in ids)
+        return {row["signal_id"]: row["event_id"] for row in self.pool.rows(
+            f"SELECT signal_id, event_id FROM event_members WHERE signal_id IN ({marks})", ids)}
+
     def related(self, batch: Sequence[str], sources: Mapping[str, Mapping[str, Any]],
                 included: Sequence[str] | None = None) -> dict[str, Any]:
         """Index entries for linked duplicates, other reports of the same event (best band first), and included items
-        sharing a register condition with the batch. Same-event reports let a selection cite its corroboration."""
+        sharing a register condition with the batch. Same-event reports include nightly cluster mates even when word
+        overlap is below two terms, so Assessment batches see corroboration the way same_story does for top findings."""
         members = set(batch)
         linked = {(sources[key].get("link") or {}).get("duplicate_of") for key in batch} - {None}
         linked |= {key for key, row in sources.items() if (row.get("link") or {}).get("duplicate_of") in members}
         terms_of = {key: event_terms(row) for key, row in sources.items()}
-        same = sorted({key for member in batch for key in same_event(member, sources, terms_of) if key not in members},
+        aliases_of = {key: event_aliases_of(row) for key, row in sources.items()}
+        clusters = self.event_clusters(list(sources))
+        same = sorted({key for member in batch
+                       for key in same_event(member, sources, terms_of, aliases_of, clusters) if key not in members},
                       key=lambda key: (band_rank(sources[key]), key))
         conditions = {item for key in batch for item in (sources[key].get("condition_ids") or [])}
         sharing = [key for key in (self.included_ids(sources) if included is None else included)
@@ -1097,8 +1128,9 @@ class WeeklyCoordinator:
         return top
 
     def same_story(self, first: str, second: str, sources: Mapping[str, Mapping[str, Any]]) -> bool:
-        """Two reports of one story: the same event cluster, or headlines that share STORY_TERMS distinctive words."""
-        from grit.core.headlines import distinctive_terms
+        """Two reports of one story: the same event cluster, a shared R&A entity alias, or headlines that share
+        STORY_TERMS distinctive words."""
+        from grit.core.headlines import alias_ids, distinctive_terms
         from grit.pipeline.events import STORY_TERMS
 
         if first == second:
@@ -1107,7 +1139,10 @@ class WeeklyCoordinator:
             "SELECT signal_id, event_id FROM event_members WHERE signal_id IN (?, ?)", (first, second))}
         if len(events) == 2 and events[first] == events[second]:
             return True
-        words = [distinctive_terms(str((sources.get(key) or {}).get("title") or "")) for key in (first, second)]
+        titles = [str((sources.get(key) or {}).get("title") or "") for key in (first, second)]
+        if alias_ids(titles[0]) & alias_ids(titles[1]):
+            return True
+        words = [distinctive_terms(title) for title in titles]
         return len(words[0] & words[1]) >= STORY_TERMS
 
     def front_page_findings(self, sources: Mapping[str, Mapping[str, Any]] | None = None) -> list[dict[str, Any]]:

@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import re
 from datetime import date, timedelta
-from typing import Any
+from typing import Any, Mapping, Sequence
 
 from grit.copilot.search import SAME_STORY, SAME_STORY_DAYS, ensure_fts
 from grit.pool import Pool, utc_now
@@ -34,6 +34,35 @@ def _title_key(title: str | None) -> str:
     return re.sub(r"[^a-z0-9]+", " ", (title or "").casefold()).strip()
 
 
+def _near_misses(row: Mapping[str, Any], nearby: Sequence[Mapping[str, Any]],
+                 vectors: Mapping[str, Any], high: float = SAME_STORY) -> list[dict[str, Any]]:
+    """Candidate soft near-misses for instrumentation: cosine in [0.82, high) with ≥1 shared distinctive term or
+    identifier. Not applied — cluster_events still only joins at high or by title."""
+    from grit.core.headlines import distinctive_terms, identifiers, is_near_miss
+
+    signal_id = row["signal_id"]
+    if signal_id not in vectors:
+        return []
+    mine = vectors[signal_id]
+    own_terms = distinctive_terms(str(row.get("title") or ""))
+    own_ids = identifiers(str(row.get("title") or ""))
+    found: list[dict[str, Any]] = []
+    for member in nearby:
+        other_id = member["signal_id"]
+        if other_id not in vectors or other_id == signal_id:
+            continue
+        cosine = float(mine @ vectors[other_id])
+        shared_terms = len(own_terms & distinctive_terms(str(member.get("title") or "")))
+        shared_ids = len(own_ids & identifiers(str(member.get("title") or "")))
+        if is_near_miss(cosine, shared_terms=shared_terms, shared_identifiers=shared_ids, high=high):
+            found.append({
+                "left_signal_id": signal_id, "right_signal_id": other_id, "event_id": member.get("event_id"),
+                "cosine": round(cosine, 4), "shared_terms": shared_terms, "shared_identifiers": shared_ids,
+            })
+    found.sort(key=lambda item: (-item["cosine"], item["right_signal_id"]))
+    return found
+
+
 def cluster_events(pool: Pool) -> dict[str, int]:
     """Assign every kept signal that has no event yet."""
     import numpy as np
@@ -47,7 +76,7 @@ def cluster_events(pool: Pool) -> dict[str, int]:
            GROUP BY s.signal_id ORDER BY day, s.signal_id"""
     )
     if not todo:
-        return {"joined": 0, "new": 0}
+        return {"joined": 0, "new": 0, "near_misses": 0}
     members = pool.rows(
         """SELECT m.signal_id, m.event_id, s.title, COALESCE(s.published_at, s.first_seen_at) AS day FROM event_members m JOIN signals s ON s.signal_id = m.signal_id"""
     )
@@ -67,6 +96,7 @@ def cluster_events(pool: Pool) -> dict[str, int]:
     for member in members:
         remember(dict(member))
     joined = new = 0
+    near_misses: list[dict[str, Any]] = []
     now = utc_now()
     with pool.transaction() as conn:
         for row in todo:
@@ -78,12 +108,17 @@ def cluster_events(pool: Pool) -> dict[str, int]:
                 if day is None or other is None or abs((day - other).days) <= SAME_STORY_DAYS:
                     target = member["event_id"]
                     break
-            if target is None and day is not None and row["signal_id"] in vectors:
-                mine = vectors[row["signal_id"]]
-                nearby = [member for offset in range(-SAME_STORY_DAYS, SAME_STORY_DAYS + 1) for member in by_day.get(day.toordinal() + offset, [])]
-                best = max(((float(mine @ vectors[member["signal_id"]]), member["event_id"]) for member in nearby if member["signal_id"] in vectors), default=(0.0, None))
+            nearby: list[dict[str, Any]] = []
+            if day is not None and row["signal_id"] in vectors:
+                nearby = [member for offset in range(-SAME_STORY_DAYS, SAME_STORY_DAYS + 1)
+                          for member in by_day.get(day.toordinal() + offset, [])]
+            if target is None and nearby:
+                best = max(((float(vectors[row["signal_id"]] @ vectors[member["signal_id"]]), member["event_id"])
+                            for member in nearby if member["signal_id"] in vectors), default=(0.0, None))
                 if best[0] >= SAME_STORY:
                     target = best[1]
+            if target is None and nearby:
+                near_misses.extend(_near_misses(row, nearby, vectors))
             text_day = day.isoformat() if day else None
             if target is None:
                 target = f"EVT-{row['signal_id'][4:]}"
@@ -106,7 +141,10 @@ def cluster_events(pool: Pool) -> dict[str, int]:
                 joined += 1
             conn.execute("INSERT INTO event_members (signal_id, event_id, joined_at) VALUES (?, ?, ?)", (row["signal_id"], target, now))
             remember({"signal_id": row["signal_id"], "event_id": target, "title": row["title"], "day": row["day"]})
-    return {"joined": joined, "new": new}
+    if near_misses:
+        pool.log(actor_type="FUNCTION", actor="EventNearMiss", status="SUCCEEDED",
+                 detail={"count": len(near_misses), "candidates": near_misses[:50]})
+    return {"joined": joined, "new": new, "near_misses": len(near_misses)}
 
 
 def build_digest(pool: Pool, pack: str, day: date) -> dict[str, Any]:

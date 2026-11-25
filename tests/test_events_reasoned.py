@@ -154,6 +154,19 @@ def test_accented_company_names_merge_reports_of_the_same_story():
     assert label_merges(events, rows) == {"EVT-b": "EVT-a"}
 
 
+def test_accented_and_ascii_plus_ultra_labels_still_merge():
+    """Unicode regression: accented vs ASCII forms of the same airline name stay one story."""
+    from grit.pipeline.events import label_merges
+
+    events = [_event("a", "Plus Ultra files for creditor protection", 12),
+              _event("b", "Plus Ultra enters pre-insolvency", 10)]
+    rows = {
+        "EVT-a": {"item": "Plus Ultra Líneas Aéreas files for creditor protection"},
+        "EVT-b": {"item": "Plus Ultra Lineas Aereas enters pre-insolvency"},
+    }
+    assert label_merges(events, rows) == {"EVT-b": "EVT-a"}
+
+
 def test_the_scorecard_scores_an_escalating_row_by_its_event():
     from grit.report.scorecard import scorecard
 
