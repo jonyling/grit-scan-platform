@@ -129,14 +129,18 @@ def _group(pool: Pool, rows: Sequence[Mapping[str, Any]]) -> dict[str, list[Mapp
             event_id = parent[event_id]
         return event_id
 
-    from grit.core.headlines import distinctive_terms
+    from grit.core.headlines import alias_ids, distinctive_terms
 
     titles = {row["signal_id"]: distinctive_terms(str(row.get("title") or "")) for row in rows}
+    aliases = {row["signal_id"]: alias_ids(str(row.get("title") or "")) for row in rows}
     for row in rows:
         editorial = row.get("editorial") if isinstance(row.get("editorial"), Mapping) else {}
         for cited in editorial.get("source_ids") or []:
-            # A selection may cite context about another event. Only a citation whose headline shares a word joins events.
-            if cited in mapping and cited != row["signal_id"] and titles[row["signal_id"]] & titles.get(cited, frozenset()):
+            # A selection may cite context about another event. Only a citation whose headline shares a word or
+            # R&A entity alias joins events.
+            if cited in mapping and cited != row["signal_id"] and (
+                    titles[row["signal_id"]] & titles.get(cited, frozenset())
+                    or aliases[row["signal_id"]] & aliases.get(cited, frozenset())):
                 first, second = sorted((root(mapping[row["signal_id"]]), root(mapping[cited])))
                 parent[second] = first
     grouped: dict[str, list[Mapping[str, Any]]] = {}
@@ -195,8 +199,9 @@ def _elevated(members: Sequence[Mapping[str, Any]]) -> bool:
 
 def _cited_reports(pool: Pool, run_id: str, rows: Sequence[Mapping[str, Any]]) -> dict[str, list[Mapping[str, Any]]]:
     """Reports that a reviewed selection cites as the same event but that are not in rows, such as the duplicates the review
-    set aside, keyed by the citing signal. A citation counts only when the two headlines share a distinctive word."""
-    from grit.core.headlines import distinctive_terms
+    set aside, keyed by the citing signal. A citation counts only when the two headlines share a distinctive word or an
+    R&A entity alias."""
+    from grit.core.headlines import alias_ids, distinctive_terms
 
     present = {row["signal_id"] for row in rows}
     def cited(row: Mapping[str, Any]) -> list[str]:
@@ -211,10 +216,14 @@ def _cited_reports(pool: Pool, run_id: str, rows: Sequence[Mapping[str, Any]]) -
         return {}
     found: dict[str, list[Mapping[str, Any]]] = {}
     for row in rows:
-        own = distinctive_terms(str(row.get("title") or ""))
+        title = str(row.get("title") or "")
+        own, own_aliases = distinctive_terms(title), alias_ids(title)
         for item in cited(row):
             other = reports.get(item)
-            if other is not None and own & distinctive_terms(str(other.get("title") or "")):
+            if other is None:
+                continue
+            other_title = str(other.get("title") or "")
+            if own & distinctive_terms(other_title) or own_aliases & alias_ids(other_title):
                 found.setdefault(row["signal_id"], []).append(other)
     return found
 
@@ -367,15 +376,16 @@ def _replace(events: list[dict[str, Any]], groups: Mapping[str, Sequence[dict[st
 
 def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], places: Mapping[str, re.Pattern[str]] | None = None) -> list[dict[str, Any]]:
     """In a reasoned run, elevated events are one story when, within a week, their members' reports share two or more
-    distinctive headline words. A shared country and risk alone do not join stories (places is unused). The merged
-    event keeps the best-sourced lead, the top score and its most common risks."""
-    from grit.core.headlines import distinctive_terms
+    distinctive headline words, or one R&A entity alias. A shared country and risk alone do not join stories (places is
+    unused). The merged event keeps the best-sourced lead, the top score and its most common risks."""
+    from grit.core.headlines import alias_ids, distinctive_terms
 
     merging = [event for event in events if event["elevated"] and event["members"] and event.get("score") is not None]
     if len(merging) < 2:
         return events
     titles = {event["event_id"]: " ".join(str(row.get("title") or "") for row in event["members"]) for event in merging}
     terms = {key: distinctive_terms(text) for key, text in titles.items()}
+    aliases = {key: alias_ids(text) for key, text in titles.items()}
     # A page whose headline is too poor to compare (fewer than two distinctive words) is read by its opening instead, so it
     # still joins its story; body text never joins two well-titled stories.
     def place_text(row: Mapping[str, Any]) -> str:
@@ -384,14 +394,17 @@ def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], place
 
     for event in merging:
         if len(terms[event["event_id"]]) < STORY_TERMS:
-            terms[event["event_id"]] = distinctive_terms(" ".join(place_text(row) for row in event["members"]))
+            text = " ".join(place_text(row) for row in event["members"])
+            terms[event["event_id"]] = distinctive_terms(text)
+            aliases[event["event_id"]] = alias_ids(text)
     # Each event joins the highest-scored story whose own reports it matches, never through a chain of weak matches.
     seeds: list[dict[str, Any]] = []
     groups: dict[str, list[dict[str, Any]]] = {}
     for event in sorted(merging, key=lambda item: (-(item["score"] or 0), item["event_id"])):
         # A shared country and risk is not enough: a politics page and a weather page for Taiwan must stay separate.
         home = next((seed for seed in seeds if _near(seed, event)
-                     and len(terms[seed["event_id"]] & terms[event["event_id"]]) >= STORY_TERMS), None)
+                     and (len(terms[seed["event_id"]] & terms[event["event_id"]]) >= STORY_TERMS
+                          or aliases[seed["event_id"]] & aliases[event["event_id"]])), None)
         if home is None:
             seeds.append(event)
             groups[event["event_id"]] = [event]
@@ -404,23 +417,24 @@ def label_merges(events: Sequence[Mapping[str, Any]], rows: Mapping[str, Mapping
     """Join drafted events by their item labels, after the EventAssessor drafts the rows.
 
     A drafted event joins the row of a higher-ranked drafted event within a week when their labels share two or more
-    distinctive words, or one identifier such as "PHP2Shell". A vague headline such as "US Orders Evacuations As Major
-    Ally Is Attacked" does not name its story, but its label does.
+    distinctive words, one identifier such as "PHP2Shell", or one R&A entity alias. A vague headline such as "US Orders
+    Evacuations As Major Ally Is Attacked" does not name its story, but its label does.
 
     events: in report order. rows: event id -> drafted row. Returns event id -> the event it joins, with no chains."""
-    from grit.core.headlines import distinctive_terms, identifiers
+    from grit.core.headlines import alias_ids, distinctive_terms, identifiers
 
-    seeds: list[tuple[Mapping[str, Any], frozenset[str], frozenset[str]]] = []
+    seeds: list[tuple[Mapping[str, Any], frozenset[str], frozenset[str], frozenset[str]]] = []
     joins: dict[str, str] = {}
     for event in events:
         row = rows.get(event["event_id"])
         if not row or not row.get("item"):
             continue
-        words, names = distinctive_terms(str(row["item"])), identifiers(str(row["item"]))
-        home = next((seed for seed, seed_words, seed_names in seeds if _near(seed, event)
-                     and (len(seed_words & words) >= STORY_TERMS or seed_names & names)), None)
+        item = str(row["item"])
+        words, names, aliases = distinctive_terms(item), identifiers(item), alias_ids(item)
+        home = next((seed for seed, seed_words, seed_names, seed_aliases in seeds if _near(seed, event)
+                     and (len(seed_words & words) >= STORY_TERMS or seed_names & names or seed_aliases & aliases)), None)
         if home is None:
-            seeds.append((event, words, names))
+            seeds.append((event, words, names, aliases))
         else:
             joins[event["event_id"]] = home["event_id"]
     return joins
