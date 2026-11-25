@@ -308,6 +308,48 @@ def test_a_business_area_without_staff_in_the_log_reads_not_supplied(tmp_path: P
     assert {row["entity"] for row in group["sites"]} == {"URS", "iDirect"} and group["travel"], "the Group pack sees the whole log"
 
 
+def test_a_business_area_traveller_breakdown_is_used_without_changing_group_totals(tmp_path: Path) -> None:
+    import json
+
+    from grit.core.people import staff_snapshot
+    from grit.pipeline.reader_scan import _load_pack
+
+    path = _staff_file(tmp_path)
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["middle_east_travellers_and_assignees"] |= {
+        "by_business_area": {
+            "Digital Systems": [{"destination": "Tel Aviv", "country": "Israel", "travellers": 5}],
+            "Cyber": [],
+            "Marine": [
+                {"destination": "Dammam", "country": "Saudi Arabia", "travellers": 2},
+                {"destination": "Abu Dhabi", "country": "UAE", "travellers": 6},
+            ],
+            "Commercial Aero": [],
+        },
+        "status": "All listed travellers and assignees safe",
+    }
+    path.write_text(json.dumps(document), encoding="utf-8")
+
+    marine = staff_snapshot(path, pack=_load_pack("marine"))
+    assert not marine["notSupplied"]
+    assert {(row["destination"], row["country"], row["travellers"], row["safetyConfirmed"]) for row in marine["travel"]} == {
+        ("Dammam", "Saudi Arabia", 2, "2026-10-30"),
+        ("Abu Dhabi", "United Arab Emirates", 6, "2026-10-30"),
+    }
+    dsc = staff_snapshot(path, pack=_load_pack("dsc"))
+    assert [(row["destination"], row["country"], row["travellers"]) for row in dsc["travel"]] == [
+        ("Tel Aviv", "Israel", 5)
+    ]
+    ca = staff_snapshot(path, pack=_load_pack("ca"))
+    assert ca["notSupplied"] and not ca["travel"]
+    group = staff_snapshot(path, pack=_load_pack("ste"))
+    assert {(row["country"], row["travellers"]) for row in group["travel"]} == {
+        ("Saudi Arabia", 2),
+        ("United Arab Emirates", 6),
+        ("Israel", 5),
+    }, "The Group uses the detailed source rows instead of double-counting the aggregate"
+
+
 def test_the_principal_ask_rests_only_on_a_strict_business_area_link():
     from grit.core.ba_link import links, register
     from grit.pipeline.reader_scan import _load_pack

@@ -1,4 +1,4 @@
-{"pack":"dsc","level":"BA","label":"Digital Systems & Cyber","shortLabel":"DS&C","businessArea":"Digital Systems & Cyber","parent":null,"children":[],
+{"pack":"dsc","level":"BA","label":"Digital Systems & Cyber","shortLabel":"DS&C","staffLogAliases":["Digital Systems","Cyber"],"businessArea":"Digital Systems & Cyber","parent":null,"children":[],
  "note":"Under Defence & Public Security. Two Presidents: Digital Systems (Low Jin Phang) and Cyber (Goh Eng Choon). No entity pack yet.",
  "registers":{"source_register":"DSC-Source-Register.json","exposure":"DSC-Exposure-Ontology.json","lob_profiles":"DSC-LOB-Profiles.json","themes":"DSC-STE-Themes.json","baseline":"DSC-Global-Baseline.json"},
  "optional":{"lob_hierarchy":"DSC-LOB-Hierarchy.json","keyword_library":"DSC-Keyword-Library.json","competitors":"DSC-Competitors.json","management_focus":"DSC-Management-Focus.json","relationships":"DSC-Relationships.json","scan_plan":"DSC-Scan-Plan.json"},

@@ -54,6 +54,7 @@ You need:
    |---|---|
    | `leadingIndicators` | The leading indicators the BA reads, each with the BA's risk themes it bears on, such as CA's `[{"id": "EXPORT-CONTROLS", "themes": ["CA-KEY-03", "CA-KEY-08"]}]`. The ids are those in `grit/pipeline/indicators.py`. Use `[]` for none. Without the field, the report reads all of them, including the Taiwan ones. |
    | `outOfScope` | Headline terms for news outside the BA's business, such as CA's defence platforms (`"P-8A"`, `"sub hunter"`). A matching signal is left out of the BA's report, unless it is a RED candidate. |
+   | `staffLogAliases` | Exact source labels in `secrets/internal-context.json` that identify the same BA, such as `"Digital Systems"` and `"Cyber"` for DS&C. |
 
    The build also handles these differences without configuration:
    - A sheet 6 cell with two or more commas is split into one keyword per item.

@@ -3,6 +3,7 @@
   "level": "BA",
   "label": "Commercial Aerospace",
   "shortLabel": "CA",
+  "staffLogAliases": ["Commercial Aero"],
   "businessArea": "Commercial Aerospace",
   "parent": "ste",
   "children": [],

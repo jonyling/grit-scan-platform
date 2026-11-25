@@ -199,7 +199,14 @@ def staff_log_path() -> Path | None:
 
 def _names(pack: Any) -> set[str]:
     manifest = getattr(pack, "manifest", None) or {}
-    return {str(name).casefold() for name in (getattr(pack, "pack", None), getattr(pack, "label", None), manifest.get("shortLabel")) if name}
+    aliases = manifest.get("staffLogAliases") or []
+    if isinstance(aliases, str):
+        aliases = [aliases]
+    return {
+        str(name).casefold()
+        for name in (getattr(pack, "pack", None), getattr(pack, "label", None), manifest.get("shortLabel"), *aliases)
+        if name
+    }
 
 
 @lru_cache(maxsize=1)
@@ -281,20 +288,48 @@ def staff_snapshot(path: Path | None = None, *, pack: Any = None) -> dict[str, A
         site(row, row.get("headcount"), str(data.get("asOf") or "")[:10] or None, False, row.get("source"), data)
     traveller = data.get("middle_east_travellers_and_assignees") or {}
     travel_date = str(traveller.get("as_at") or "")[:10] or None
-    counts: dict[str, int] = {}
-    if traveller.get("by_country"):
-        found = True
-    if kept(None, traveller.get("business_area")):
-        for country, count in (traveller.get("by_country") or {}).items():
-            counts[canonical_country(country)] = counts.get(canonical_country(country), 0) + int(count or 0)
+    travel_safe = "safe" in str(traveller.get("status") or "").casefold()
+    travel_counts: dict[tuple[str, str, str], int] = {}
+    by_area = traveller.get("by_business_area") or {}
+    if by_area:
+        for area, rows in by_area.items():
+            if not group and not kept(None, area):
+                continue
+            records = [
+                {"country": country, "destination": country, "travellers": count}
+                for country, count in rows.items()
+            ] if isinstance(rows, Mapping) else rows
+            for row in records or []:
+                country = canonical_country(row.get("country"))
+                count = int(row.get("travellers") or 0)
+                destination = str(row.get("destination") or country).strip()
+                if not country or count <= 0:
+                    continue
+                found = True
+                label = f"{area}: {destination}" if group else destination
+                key = (str(area), label, country)
+                travel_counts[key] = travel_counts.get(key, 0) + count
+    else:
+        if traveller.get("by_country"):
+            found = True
+        if kept(None, traveller.get("business_area")):
+            for country, count in (traveller.get("by_country") or {}).items():
+                canonical = canonical_country(country)
+                key = ("", canonical, canonical)
+                travel_counts[key] = travel_counts.get(key, 0) + int(count or 0)
     for row in data.get("travel") or []:
         found = True
         if kept(None, row.get("business_area"), data.get("business_area")):
-            counts[canonical_country(row.get("country"))] = counts.get(canonical_country(row.get("country")), 0) + 1
-    for country, count in counts.items():
+            country = canonical_country(row.get("country"))
+            destination = str(row.get("destination") or country).strip()
+            label = f"{row['business_area']}: {destination}" if group and row.get("business_area") else destination
+            key = (str(row.get("business_area") or ""), label, country)
+            travel_counts[key] = travel_counts.get(key, 0) + int(row.get("travellers") or 1)
+    for (_area, destination, country), count in travel_counts.items():
         if country and count > 0:
-            travel.append({"destination": country, "country": country, "travellers": count,
-                           "reference": str(traveller.get("source") or reference)})
+            travel.append({"destination": destination, "country": country, "travellers": count,
+                           "reference": str(traveller.get("source") or reference),
+                           **({"safetyConfirmed": travel_date} if travel_safe and travel_date else {})})
     for part, when in ((local, local_date), (traveller, travel_date)):
         if part and when:
             dates.append(when)
