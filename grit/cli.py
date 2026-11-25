@@ -85,8 +85,12 @@ def _run(pool: Any, args: argparse.Namespace, pack: str) -> Any:
                 raise SystemExit("--workers must be at least 1.")
             pool.update_run_config(run.run_id, weekly_review="fast" if getattr(args, "fast", False) else "full",
                                    agent_workers=workers)
+            if getattr(args, "event_relations", False):
+                pool.update_run_config(run.run_id, event_relations=1)
     elif getattr(args, "fast", False):
         raise SystemExit("--fast applies only to --reasoned runs.")
+    elif getattr(args, "event_relations", False):
+        raise SystemExit("--event-relations applies only to --reasoned runs.")
     return run
 
 
@@ -894,6 +898,8 @@ def build_parser() -> argparse.ArgumentParser:
             sub.add_argument("--countersearch-limit", type=int, help="Required with --reasoned. The maximum number of searches for the run. 0 is allowed.")
             sub.add_argument("--fast", action="store_true", help="With --reasoned: the Critic screens dropped signals from compact records. Model calls run in parallel.")
             sub.add_argument("--workers", type=int, help="With --reasoned --fast: model calls in flight at once. Default 6.")
+            sub.add_argument("--event-relations", action="store_true",
+                             help="With --reasoned: gated Event Relation Resolver (SAME/UPDATE/CONTRADICTION/RELATED). Sets event_relations=1.")
             sub.add_argument("--internal-evidence", help="A JSON file of approved human-supplied evidence. Only this file is read. No folder is scanned.")
             sub.add_argument("--evidence-approved-by", help="Reviewer profile admitting the supplied evidence.")
             sub.add_argument("--model")
@@ -923,6 +929,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--countersearch-limit", type=int)
     sub.add_argument("--fast", action="store_true")
     sub.add_argument("--workers", type=int)
+    sub.add_argument("--event-relations", action="store_true")
     sub.add_argument("--profile", nargs="*", default=["all"])
     sub.add_argument("--internal-evidence")
     sub.add_argument("--evidence-approved-by")

@@ -699,6 +699,79 @@ class Pool:
                ORDER BY a.run_id, COALESCE(a.tier, 9), a.signal_id"""
         )
 
+    # Event relations (semantic reasoning P1) ------------------------------------------------------------------
+
+    def add_event_relation(
+        self,
+        *,
+        relation_id: str,
+        run_id: str,
+        left_signal_id: str,
+        right_signal_id: str,
+        label: str,
+        confidence: float,
+        reason: str,
+        input_hash: str,
+        status: str,
+        left_event_id: str | None = None,
+        right_event_id: str | None = None,
+        evidence: Mapping[str, Any] | None = None,
+        model: str | None = None,
+        prompt_version: str | None = None,
+    ) -> dict[str, Any]:
+        """Append an event-relation row. Latest row per relation_id is the standing status."""
+        left, right = (left_signal_id, right_signal_id) if left_signal_id < right_signal_id else (right_signal_id, left_signal_id)
+        left_event, right_event = (left_event_id, right_event_id) if left_signal_id < right_signal_id else (right_event_id, left_event_id)
+        row = {
+            "relation_id": relation_id,
+            "run_id": run_id,
+            "left_signal_id": left,
+            "right_signal_id": right,
+            "left_event_id": left_event,
+            "right_event_id": right_event,
+            "label": label,
+            "confidence": float(confidence),
+            "reason": reason,
+            "evidence_json": dict(evidence or {}),
+            "model": model,
+            "prompt_version": prompt_version,
+            "input_hash": input_hash,
+            "status": status,
+            "created_at": utc_now(),
+        }
+        row["relation_row_id"] = self.insert("event_relations", row)
+        return row
+
+    def event_relation_by_id(self, relation_id: str) -> dict[str, Any] | None:
+        """Latest row for a relation_id."""
+        return self.one(
+            """SELECT * FROM event_relations WHERE relation_id = ?
+               ORDER BY relation_row_id DESC LIMIT 1""",
+            (relation_id,),
+        )
+
+    def event_relations_for_run(self, run_id: str, *, validated_only: bool = False) -> list[dict[str, Any]]:
+        """Latest standing status per relation_id for a run."""
+        rows = self.rows(
+            "SELECT * FROM event_relations WHERE run_id = ? ORDER BY relation_row_id",
+            (run_id,),
+        )
+        latest: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            latest[row["relation_id"]] = row
+        found = list(latest.values())
+        if validated_only:
+            found = [row for row in found if row["status"] == "VALIDATED"]
+        return sorted(found, key=lambda row: (row["left_signal_id"], row["right_signal_id"], row["relation_id"]))
+
+    def event_relation_by_hash(self, input_hash: str) -> dict[str, Any] | None:
+        """Latest VALIDATED row for an input_hash (P2 reuse hook; skip re-resolve when unchanged)."""
+        return self.one(
+            """SELECT * FROM event_relations WHERE input_hash = ? AND status = 'VALIDATED'
+               ORDER BY relation_row_id DESC LIMIT 1""",
+            (input_hash,),
+        )
+
     def management_requests(self, *, active_only: bool = False) -> list[dict[str, Any]]:
         """Each request carries "scope": the packs it belongs to. A request raised in chat has no pack, so it belongs to the
         packs of the profile that raised it. Empty means every pack."""

@@ -117,9 +117,22 @@ def _event_ids(pool: Pool, signal_ids: Sequence[str]) -> dict[str, str]:
     return {signal_id: found.get(signal_id) or f"EVT-{signal_id[4:]}" for signal_id in signal_ids}
 
 
-def _group(pool: Pool, rows: Sequence[Mapping[str, Any]]) -> dict[str, list[Mapping[str, Any]]]:
-    """Signals grouped by event cluster. In a reasoned run, a selection that cites other candidates as corroborating or
-    contradicting the same event joins their events, so one event is not reported twice."""
+def same_relation_pairs(pool: Pool, run_id: str | None) -> list[tuple[str, str]]:
+    """Applied SAME signal pairs from the event_relations ledger for this run (empty when flag off)."""
+    if not run_id:
+        return []
+    from grit.core.event_relations import enabled, validated_same_pairs
+
+    config = (pool.run(run_id) or {}).get("config") or {}
+    if not enabled(config):
+        return []
+    return validated_same_pairs(pool.event_relations_for_run(run_id, validated_only=True))
+
+
+def _group(pool: Pool, rows: Sequence[Mapping[str, Any]], *, run_id: str | None = None,
+           same_pairs: Sequence[tuple[str, str]] | None = None) -> dict[str, list[Mapping[str, Any]]]:
+    """Signals grouped by event cluster. Validated SAME relations dominate; then a selection that cites other
+    candidates as corroborating the same event joins their events when headlines share a word or alias."""
     mapping = _event_ids(pool, [row["signal_id"] for row in rows])
     parent = {event_id: event_id for event_id in mapping.values()}
 
@@ -131,6 +144,11 @@ def _group(pool: Pool, rows: Sequence[Mapping[str, Any]]) -> dict[str, list[Mapp
 
     from grit.core.headlines import alias_ids, distinctive_terms
 
+    present = {row["signal_id"] for row in rows}
+    for left, right in (same_pairs if same_pairs is not None else same_relation_pairs(pool, run_id)):
+        if left in present and right in present and left in mapping and right in mapping:
+            first, second = sorted((root(mapping[left]), root(mapping[right])))
+            parent[second] = first
     titles = {row["signal_id"]: distinctive_terms(str(row.get("title") or "")) for row in rows}
     aliases = {row["signal_id"]: alias_ids(str(row.get("title") or "")) for row in rows}
     for row in rows:
@@ -242,11 +260,12 @@ def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]]
     rows = list(rows if rows is not None else pool.weekly_assessments(run_id))
     cited = _cited_reports(pool, run_id, rows) if (run.get("config") or {}).get("weekly_mode") == "reasoned" else {}
     previous = pool.latest_run(run["pack"], before=run["run_date"], kind="READER_SCAN")
-    before = _group(pool, pool.weekly_assessments(previous["run_id"])) if previous else {}
+    same_pairs = same_relation_pairs(pool, run_id)
+    before = _group(pool, pool.weekly_assessments(previous["run_id"]), run_id=previous["run_id"]) if previous else {}
     names = dict(names or {})
     rising = set(escalating)
     events = []
-    for event_id, members in _group(pool, rows).items():
+    for event_id, members in _group(pool, rows, run_id=run_id, same_pairs=same_pairs).items():
         members = sorted(members, key=lambda row: str(row.get("published_at") or ""), reverse=True)
         own = {row["signal_id"] for row in members}
         extra = list({row["signal_id"]: row for member in members for row in cited.get(member["signal_id"], []) if row["signal_id"] not in own}.values())
@@ -283,7 +302,7 @@ def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]]
             "signal_ids": [], "publishers": 0, "first_date": None, "last_date": None, "risks": risks, "risk_label": risk_labels(risks, names),
             "group_risks": [], "requests": [], "previous_lead": lead,
         })
-    events = _merge_stories(events, names, _places(run.get("pack")))
+    events = _merge_stories(events, names, _places(run.get("pack")), same_pairs=same_pairs)
     events = apply_merges(events, merges or {}, names)
     order = {UP: 0, SAME: 1, DOWN: 2}
     rungs = {"DIRECT": 0, "COUNTERPARTY": 1}
@@ -374,10 +393,22 @@ def _replace(events: list[dict[str, Any]], groups: Mapping[str, Sequence[dict[st
     return [merged.get(event["event_id"], event) for event in events if merged.get(event["event_id"], event) is not None]
 
 
-def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], places: Mapping[str, re.Pattern[str]] | None = None) -> list[dict[str, Any]]:
-    """In a reasoned run, elevated events are one story when, within a week, their members' reports share two or more
-    distinctive headline words, or one R&A entity alias. A shared country and risk alone do not join stories (places is
-    unused). The merged event keeps the best-sourced lead, the top score and its most common risks."""
+def _members_same(first: Mapping[str, Any], second: Mapping[str, Any],
+                  same_pairs: Sequence[tuple[str, str]] | None) -> bool:
+    """True when any member of first is SAME-linked to any member of second."""
+    if not same_pairs:
+        return False
+    left = {row["signal_id"] for row in first.get("members") or []}
+    right = {row["signal_id"] for row in second.get("members") or []}
+    linked = set(same_pairs)
+    return any(((a, b) if a < b else (b, a)) in linked for a in left for b in right if a != b)
+
+
+def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], places: Mapping[str, re.Pattern[str]] | None = None,
+                   same_pairs: Sequence[tuple[str, str]] | None = None) -> list[dict[str, Any]]:
+    """In a reasoned run, elevated events are one story when SAME relations link their members, or when within a week
+    their members' reports share two or more distinctive headline words or one R&A entity alias. SAME dominates;
+    words only fill gaps. A shared country and risk alone do not join stories (places is unused)."""
     from grit.core.headlines import alias_ids, distinctive_terms
 
     merging = [event for event in events if event["elevated"] and event["members"] and event.get("score") is not None]
@@ -401,10 +432,11 @@ def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], place
     seeds: list[dict[str, Any]] = []
     groups: dict[str, list[dict[str, Any]]] = {}
     for event in sorted(merging, key=lambda item: (-(item["score"] or 0), item["event_id"])):
-        # A shared country and risk is not enough: a politics page and a weather page for Taiwan must stay separate.
-        home = next((seed for seed in seeds if _near(seed, event)
-                     and (len(terms[seed["event_id"]] & terms[event["event_id"]]) >= STORY_TERMS
-                          or aliases[seed["event_id"]] & aliases[event["event_id"]])), None)
+        # SAME relations dominate; else shared distinctive words or alias. Country+risk alone never joins.
+        home = next((seed for seed in seeds if _near(seed, event) and (
+            _members_same(seed, event, same_pairs)
+            or len(terms[seed["event_id"]] & terms[event["event_id"]]) >= STORY_TERMS
+            or aliases[seed["event_id"]] & aliases[event["event_id"]])), None)
         if home is None:
             seeds.append(event)
             groups[event["event_id"]] = [event]
@@ -413,12 +445,12 @@ def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], place
     return _replace(events, groups, names, terms)
 
 
-def label_merges(events: Sequence[Mapping[str, Any]], rows: Mapping[str, Mapping[str, Any]]) -> dict[str, str]:
-    """Join drafted events by their item labels, after the EventAssessor drafts the rows.
+def label_merges(events: Sequence[Mapping[str, Any]], rows: Mapping[str, Mapping[str, Any]],
+                 same_pairs: Sequence[tuple[str, str]] | None = None) -> dict[str, str]:
+    """Join drafted events by SAME relations first, then by their item labels, after the EventAssessor drafts the rows.
 
-    A drafted event joins the row of a higher-ranked drafted event within a week when their labels share two or more
-    distinctive words, one identifier such as "PHP2Shell", or one R&A entity alias. A vague headline such as "US Orders
-    Evacuations As Major Ally Is Attacked" does not name its story, but its label does.
+    A drafted event joins the row of a higher-ranked drafted event within a week when SAME links their members, or when
+    their labels share two or more distinctive words, one identifier such as "PHP2Shell", or one R&A entity alias.
 
     events: in report order. rows: event id -> drafted row. Returns event id -> the event it joins, with no chains."""
     from grit.core.headlines import alias_ids, distinctive_terms, identifiers
@@ -431,8 +463,9 @@ def label_merges(events: Sequence[Mapping[str, Any]], rows: Mapping[str, Mapping
             continue
         item = str(row["item"])
         words, names, aliases = distinctive_terms(item), identifiers(item), alias_ids(item)
-        home = next((seed for seed, seed_words, seed_names, seed_aliases in seeds if _near(seed, event)
-                     and (len(seed_words & words) >= STORY_TERMS or seed_names & names or seed_aliases & aliases)), None)
+        home = next((seed for seed, seed_words, seed_names, seed_aliases in seeds if _near(seed, event) and (
+            _members_same(seed, event, same_pairs)
+            or len(seed_words & words) >= STORY_TERMS or seed_names & names or seed_aliases & aliases)), None)
         if home is None:
             seeds.append((event, words, names, aliases))
         else:
@@ -539,7 +572,7 @@ def draft_rows(pool: Pool, run: Any, *, client: Any, model: str, log: Callable[[
                         source_ids=list(event["signal_ids"]), origin="CHECK")
         log(f"  EventAssessor {str(section or 'GROUP')[:16]:16} {event['event_id'][:20]:20} {result['status']}")
     withheld = [event["event_id"] for event in events if event["event_id"] not in saved]
-    merges = label_merges(events, saved)
+    merges = label_merges(events, saved, same_pairs=same_relation_pairs(pool, run.run_id))
     if merges:
         log(f"  Story merging by item label: {len(merges)} row(s) join another event's row.")
     pool.update_run_config(run.run_id, event_rows=saved, event_rows_withheld=withheld, event_merges=merges)

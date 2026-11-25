@@ -552,6 +552,36 @@ BEGIN SELECT RAISE(ABORT, 'band_challenges is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS band_challenges_no_delete BEFORE DELETE ON band_challenges
 BEGIN SELECT RAISE(ABORT, 'band_challenges is append-only'); END;
 
+-- Event relations (semantic reasoning P1): gated SAME/UPDATE/CONTRADICTION/RELATED/INSUFFICIENT between signals.
+-- Append-only. Latest row per relation_id stands. Agents propose; core validates; never writes band/tier/override.
+CREATE TABLE IF NOT EXISTS event_relations (
+    relation_row_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    relation_id       TEXT NOT NULL,
+    run_id            TEXT NOT NULL REFERENCES runs (run_id),
+    left_signal_id    TEXT NOT NULL REFERENCES signals (signal_id),
+    right_signal_id   TEXT NOT NULL REFERENCES signals (signal_id),
+    left_event_id     TEXT,
+    right_event_id    TEXT,
+    label             TEXT NOT NULL CHECK (label IN ('SAME', 'UPDATE', 'CONTRADICTION', 'RELATED', 'INSUFFICIENT')),
+    confidence        REAL NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
+    reason            TEXT NOT NULL,
+    evidence_json     TEXT NOT NULL DEFAULT '{}',
+    model             TEXT,
+    prompt_version    TEXT,
+    input_hash        TEXT NOT NULL,
+    status            TEXT NOT NULL CHECK (status IN ('PROPOSED', 'VALIDATED', 'REJECTED', 'SUPERSEDED')),
+    created_at        TEXT NOT NULL,
+    CHECK (left_signal_id < right_signal_id)
+);
+CREATE INDEX IF NOT EXISTS event_relations_by_run ON event_relations (run_id, relation_row_id);
+CREATE INDEX IF NOT EXISTS event_relations_by_id ON event_relations (relation_id, relation_row_id);
+CREATE INDEX IF NOT EXISTS event_relations_by_hash ON event_relations (input_hash, relation_row_id);
+CREATE INDEX IF NOT EXISTS event_relations_by_pair ON event_relations (left_signal_id, right_signal_id, relation_row_id);
+CREATE TRIGGER IF NOT EXISTS event_relations_no_update BEFORE UPDATE ON event_relations
+BEGIN SELECT RAISE(ABORT, 'event_relations is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS event_relations_no_delete BEFORE DELETE ON event_relations
+BEGIN SELECT RAISE(ABORT, 'event_relations is append-only'); END;
+
 -- AIRIS handoff: signals the BA head approved, packaged for import.
 CREATE TABLE IF NOT EXISTS airis_exports (
     export_id       TEXT PRIMARY KEY,
