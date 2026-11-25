@@ -230,13 +230,89 @@ def retain(pool: Pool, day: date, *, days: int = RETENTION_DAYS) -> int:
 
 
 DIGEST_DAYS = 3  # a weekly or monthly run that finishes after the night's index still reaches its day's digest the next night
+# How far back nightly relation resolve looks for kept signals (matches SAME_STORY window).
+RELATION_LOOKBACK_DAYS = SAME_STORY_DAYS
+
+
+def index_run_id(day: date) -> str:
+    """Synthetic run id for nightly relation persistence (FK target for event_relations)."""
+    return f"{day.isoformat()}-index"
+
+
+def ensure_index_run(pool: Pool, day: date) -> str:
+    """Create or reuse the day's INDEX run with event_relations enabled for ledger writes."""
+    run_id = index_run_id(day)
+    existing = pool.run(run_id)
+    if existing is None:
+        pool.start_run(
+            run_id, run_date=day.isoformat(), pack="_index", kind="INDEX",
+            config={"lane": "nightly-index", "event_relations": 1},
+        )
+        pool.finish_run(run_id)
+    elif not ((existing.get("config") or {}).get("event_relations")):
+        pool.update_run_config(run_id, event_relations=1)
+    return run_id
+
+
+def resolve_nightly_relations(pool: Pool, day: date) -> dict[str, int]:
+    """P2: after cluster_events, candidate+resolve for recent kept signals (auto-SAME + input_hash reuse).
+
+    No LLM by default (cheap nightly path). Weekly with --event-relations reuses these rows by hash.
+    """
+    from grit.pipeline.resolve_relations import resolve_and_persist
+
+    run_id = ensure_index_run(pool, day)
+    since = (day - timedelta(days=RELATION_LOOKBACK_DAYS)).isoformat()
+    rows = pool.rows(
+        """SELECT s.signal_id, s.title, s.text, s.publisher,
+                  COALESCE(s.published_at, s.first_seen_at) AS published_at,
+                  MIN(COALESCE(a.tier, 9)) AS tier, MAX(COALESCE(a.red, 0)) AS red
+           FROM signals s
+           JOIN assessments a ON a.signal_id = s.signal_id AND a.decision = 'KEEP'
+           WHERE substr(COALESCE(s.published_at, s.first_seen_at), 1, 10) >= ?
+           GROUP BY s.signal_id
+           ORDER BY published_at, s.signal_id""",
+        (since,),
+    )
+    if len(rows) < 2:
+        summary = {
+            "enabled": 1, "candidates": 0, "llm": 0, "auto_same": 0,
+            "reused": 0, "validated": 0, "critic": 0, "rejected": 0, "signals": len(rows),
+        }
+        pool.log(actor_type="FUNCTION", actor="NightlyEventRelations", run_id=run_id, status="SUCCEEDED", detail=summary)
+        return summary
+    sources = {
+        row["signal_id"]: {
+            "signal_id": row["signal_id"], "title": row["title"], "text": row["text"],
+            "publisher": row.get("publisher"), "published_at": row.get("published_at"),
+            "tier": row["tier"], "red": bool(row["red"]),
+        }
+        for row in rows
+    }
+    ids = list(sources)
+    marks = ",".join("?" for _ in ids)
+    clusters = {
+        row["signal_id"]: row["event_id"]
+        for row in pool.rows(f"SELECT signal_id, event_id FROM event_members WHERE signal_id IN ({marks})", ids)
+    }
+    prior = pool.event_relations_for_signals(ids, validated_only=True, labels=("SAME", "UPDATE"))
+    summary = resolve_and_persist(
+        pool, run_id=run_id, sources=sources, clusters=clusters, prior_relations=prior, invoke=None, model="nightly-auto",
+    )
+    summary["signals"] = len(sources)
+    pool.log(actor_type="FUNCTION", actor="NightlyEventRelations", run_id=run_id, status="SUCCEEDED", detail=summary)
+    return summary
 
 
 def nightly(pool: Pool, day: date, *, packs: list[str] | None = None) -> dict[str, Any]:
     events = cluster_events(pool)
+    relations = resolve_nightly_relations(pool, day)
     for back in range(DIGEST_DAYS - 1, 0, -1):
         write_digests(pool, day - timedelta(days=back), packs)
-    result = {"fts_added": ensure_fts(pool), "events": events, "digests": write_digests(pool, day, packs), "retained": retain(pool, day)}
+    result = {
+        "fts_added": ensure_fts(pool), "events": events, "relations": relations,
+        "digests": write_digests(pool, day, packs), "retained": retain(pool, day),
+    }
     pool.log(actor_type="FUNCTION", actor="NightlyIndex", status="SUCCEEDED", detail={"day": day.isoformat(), **result})
     return result
 

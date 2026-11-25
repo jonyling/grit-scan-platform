@@ -284,7 +284,7 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
     visible = [row for row in shown if row["signal_id"] not in hidden]
     from grit.core.financial_band import financial_size as _financial_size
 
-    from grit.agents.weekly import order_in_band_of, reach_fields_of
+    from grit.agents.weekly import order_in_band_of, reach_fields_of, ste_fields_of
     from grit.core.challenges import challenge_open
     from grit.core.overrides import band_sort_key
 
@@ -304,12 +304,20 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         reader_band = _report_reader_band(event)
         priority = lead.get("priority") if isinstance(lead.get("priority"), Mapping) else lead.get("priority_json") if isinstance(lead.get("priority_json"), Mapping) else {}
         reach = reach_fields_of(lead)
+        ste = ste_fields_of(lead)
+        draft_row = drafted.get(event["event_id"]) or {}
+        # Drafted EventAssessor rows may also echo STE polish fields.
+        for key in ("ste_anchor", "counterargument", "missing_check"):
+            if key not in ste and isinstance(draft_row.get(key), str) and draft_row[key].strip():
+                ste[key] = draft_row[key].strip()
         escalating_rows.append({
             "event_id": event["event_id"], "band": event["band"], "reader_band": reader_band,
             "item": label(event), "risk": event["risk_label"], "tier": event["tier"], "score": event.get("score"),
             "override_rule_id": priority.get("override_rule_id"),
             "order_in_band": reach.get("order_in_band"), "reach_channel": reach.get("reach_channel"),
             "urs_reach_reason": reach.get("urs_reach_reason"),
+            "ste_anchor": ste.get("ste_anchor"), "counterargument": ste.get("counterargument"),
+            "missing_check": ste.get("missing_check"),
             "challenge_open": challenge_open(lead),
             "row": drafted.get(event["event_id"]), "lead": lead["signal_id"], "signal_ids": event["signal_ids"][:6], "publishers": event["publishers"],
             "financial_size": size,

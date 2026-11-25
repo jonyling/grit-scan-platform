@@ -117,8 +117,9 @@ def _event_ids(pool: Pool, signal_ids: Sequence[str]) -> dict[str, str]:
     return {signal_id: found.get(signal_id) or f"EVT-{signal_id[4:]}" for signal_id in signal_ids}
 
 
-def same_relation_pairs(pool: Pool, run_id: str | None) -> list[tuple[str, str]]:
-    """Applied SAME signal pairs from the event_relations ledger for this run (empty when flag off)."""
+def same_relation_pairs(pool: Pool, run_id: str | None,
+                        signal_ids: Sequence[str] | None = None) -> list[tuple[str, str]]:
+    """Applied SAME signal pairs from the event_relations ledger (this run + cross-run; empty when flag off)."""
     if not run_id:
         return []
     from grit.core.event_relations import enabled, validated_same_pairs
@@ -126,7 +127,15 @@ def same_relation_pairs(pool: Pool, run_id: str | None) -> list[tuple[str, str]]
     config = (pool.run(run_id) or {}).get("config") or {}
     if not enabled(config):
         return []
-    return validated_same_pairs(pool.event_relations_for_run(run_id, validated_only=True))
+    rows = pool.event_relations_for_run(run_id, validated_only=True)
+    if signal_ids:
+        seen = {(row["left_signal_id"], row["right_signal_id"]) for row in rows}
+        for row in pool.event_relations_for_signals(signal_ids, validated_only=True, labels=("SAME",)):
+            pair = (row["left_signal_id"], row["right_signal_id"])
+            if pair not in seen:
+                rows.append(row)
+                seen.add(pair)
+    return validated_same_pairs(rows)
 
 
 def _group(pool: Pool, rows: Sequence[Mapping[str, Any]], *, run_id: str | None = None,
@@ -145,7 +154,7 @@ def _group(pool: Pool, rows: Sequence[Mapping[str, Any]], *, run_id: str | None 
     from grit.core.headlines import alias_ids, distinctive_terms
 
     present = {row["signal_id"] for row in rows}
-    for left, right in (same_pairs if same_pairs is not None else same_relation_pairs(pool, run_id)):
+    for left, right in (same_pairs if same_pairs is not None else same_relation_pairs(pool, run_id, list(present))):
         if left in present and right in present and left in mapping and right in mapping:
             first, second = sorted((root(mapping[left]), root(mapping[right])))
             parent[second] = first

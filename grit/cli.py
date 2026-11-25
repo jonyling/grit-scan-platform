@@ -479,6 +479,19 @@ def cmd_feedback(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_relations(args: argparse.Namespace) -> int:
+    """Event-relation learning report (P2). False-merge / missed-merge proxies; never mutates the ledger."""
+    from grit.core.relation_learning import format_learning_report, learning_report
+
+    pool = _pool()
+    report = learning_report(pool, run_id=args.run)
+    if args.json:
+        print(json.dumps(report, indent=2, default=str))
+    else:
+        print(format_learning_report(report))
+    return 0
+
+
 def cmd_challenges(args: argparse.Namespace) -> int:
     """Band challenges: list OPEN flags, resolve as a named reviewer, or print the P3 learning report.
 
@@ -1008,6 +1021,15 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--profile", required=True)
     sub.add_argument("--intent", required=True, choices=("APPROVE", "REJECT", "HOLD", "REQUEST_REWORK"))
     sub.set_defaults(handler=cmd_review)
+
+    sub = commands.add_parser(
+        "relations",
+        help="Print the event-relation learning report (false-merge / missed-merge proxies). Never changes a relation.",
+    )
+    sub.add_argument("action", choices=("report",), nargs="?", default="report")
+    sub.add_argument("--run", help="Scope to this run; default: latest standing across the pool.")
+    sub.add_argument("--json", action="store_true", help="Print JSON instead of plain text.")
+    sub.set_defaults(handler=cmd_relations)
 
     sub = commands.add_parser(
         "challenges",

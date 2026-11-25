@@ -52,12 +52,19 @@ def relation_id_for(run_id: str, left: str, right: str) -> str:
     return f"REL-{run_id}-{first}-{second}"
 
 
+def stable_features(features: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Feature subset for input_hash. Drops discovery-only keys (reasons) so prior-relation tags do not bust reuse."""
+    raw = dict(features or {})
+    raw.pop("reasons", None)
+    return raw
+
+
 def input_hash_for(left: Mapping[str, Any], right: Mapping[str, Any], features: Mapping[str, Any]) -> str:
-    """Reuse key over pair excerpts and features (P2 daily→weekly hook; P1 uses it for cache skip)."""
+    """Reuse key over pair excerpts and stable features (P2 daily→weekly; skip re-resolve when unchanged)."""
     return canonical_hash({
         "left": {"signal_id": left.get("signal_id"), "title": left.get("title"), "excerpt": left.get("excerpt")},
         "right": {"signal_id": right.get("signal_id"), "title": right.get("title"), "excerpt": right.get("excerpt")},
-        "features": dict(features),
+        "features": stable_features(features),
     })
 
 

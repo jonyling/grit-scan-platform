@@ -504,7 +504,8 @@ def _instruction(task: str, payload: Mapping[str, Any] | None = None) -> str:
 # Fields a DeepSeek selection may leave out; the reviewed selection supplies them.
 CARRIED = ("fact", "exposure", "transmission", "impact", "exposure_status", "impact_status", "risk_ids", "uncertainty",
            "immediate_threat", "reach_channel", "urs_reach_reason", "order_in_band",
-           "challenged_band", "challenge_reason")
+           "challenged_band", "challenge_reason",
+           "ste_anchor", "counterargument", "missing_check")
 
 
 def carry_over_selections(raw: Mapping[str, Any], current: Mapping[str, Any] | None, *, keep_scores: bool) -> dict[str, Any]:

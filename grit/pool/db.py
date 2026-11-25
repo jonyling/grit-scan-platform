@@ -772,6 +772,76 @@ class Pool:
             (input_hash,),
         )
 
+    def event_relations_by_hashes(self, input_hashes: Sequence[str]) -> dict[str, dict[str, Any]]:
+        """Latest VALIDATED row per input_hash (batch P2 reuse; one query for many edges)."""
+        keys = [str(item) for item in dict.fromkeys(input_hashes) if item]
+        if not keys:
+            return {}
+        found: dict[str, dict[str, Any]] = {}
+        # Chunk to stay under SQLite variable limits on large weekly batches.
+        chunk = 400
+        for start in range(0, len(keys), chunk):
+            part = keys[start:start + chunk]
+            marks = ",".join("?" for _ in part)
+            rows = self.rows(
+                f"""SELECT * FROM event_relations WHERE input_hash IN ({marks}) AND status = 'VALIDATED'
+                    ORDER BY relation_row_id""",
+                part,
+            )
+            for row in rows:
+                found[str(row["input_hash"])] = row
+        return found
+
+    def event_relations_for_signals(
+        self,
+        signal_ids: Sequence[str],
+        *,
+        validated_only: bool = True,
+        labels: Sequence[str] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Latest standing relation per relation_id that touches any of the given signals (cross-run reuse)."""
+        ids = [str(item) for item in dict.fromkeys(signal_ids) if item]
+        if not ids:
+            return []
+        found: dict[str, dict[str, Any]] = {}
+        chunk = 200
+        for start in range(0, len(ids), chunk):
+            part = ids[start:start + chunk]
+            marks = ",".join("?" for _ in part)
+            rows = self.rows(
+                f"""SELECT * FROM event_relations
+                    WHERE left_signal_id IN ({marks}) OR right_signal_id IN ({marks})
+                    ORDER BY relation_row_id""",
+                (*part, *part),
+            )
+            for row in rows:
+                found[row["relation_id"]] = row
+        out = list(found.values())
+        if validated_only:
+            out = [row for row in out if row.get("status") == "VALIDATED"]
+        if labels is not None:
+            allowed = set(labels)
+            out = [row for row in out if row.get("label") in allowed]
+        return sorted(out, key=lambda row: (row["left_signal_id"], row["right_signal_id"], row["relation_id"]))
+
+    def event_relations_latest(
+        self,
+        *,
+        run_id: str | None = None,
+        validated_only: bool = False,
+    ) -> list[dict[str, Any]]:
+        """Latest standing status per relation_id, optionally scoped to one run."""
+        if run_id:
+            return self.event_relations_for_run(run_id, validated_only=validated_only)
+        rows = self.rows("SELECT * FROM event_relations ORDER BY relation_row_id")
+        latest: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            latest[row["relation_id"]] = row
+        found = list(latest.values())
+        if validated_only:
+            found = [row for row in found if row["status"] == "VALIDATED"]
+        return sorted(found, key=lambda row: (row["left_signal_id"], row["right_signal_id"], row["relation_id"]))
+
     def management_requests(self, *, active_only: bool = False) -> list[dict[str, Any]]:
         """Each request carries "scope": the packs it belongs to. A request raised in chat has no pack, so it belongs to the
         packs of the profile that raised it. Empty means every pack."""

@@ -33,6 +33,12 @@ class ContractError(ValueError):
     pass
 
 
+# Optional STE linkage polish (design §4.3 / P2). Length caps keep disclosures short.
+STE_ANCHOR_CHARS = 120
+COUNTERARGUMENT_CHARS = 400
+MISSING_CHECK_CHARS = 240
+
+
 class EditorialSelection(TypedDict):
     signal_id: str
     decision: Literal["INCLUDE", "EXCLUDE", "WATCH", "DEFER"]
@@ -53,6 +59,10 @@ class EditorialSelection(TypedDict):
     urs_reach_reason: NotRequired[str]
     challenged_band: NotRequired[Literal["Escalating", "Elevated", "Watch"]]
     challenge_reason: NotRequired[str]
+    # P2 optional STE fields (extend Spec 45 chain; not a parallel STE object).
+    ste_anchor: NotRequired[str]
+    counterargument: NotRequired[str]
+    missing_check: NotRequired[str]
 
 
 class CritiqueIssue(TypedDict):
@@ -326,8 +336,67 @@ def _check_selection(row: Any, sources: Mapping[str, Any], *, chain: bool, regis
         check_reach(row, sources)
     check_order_in_band(row)
     check_band_challenge(row, sources)
+    check_ste_fields(row, sources, register=register)
     check_hops(row, sources, register_names)
     check_fact_support(row, sources, chain)
+
+
+def check_ste_fields(row: Any, sources: Mapping[str, Any], *, register: Collection[str] | None = None) -> None:
+    """Optional P2 STE polish: ste_anchor, counterargument, missing_check. Present → validate; absent → skip."""
+    if not isinstance(row, dict):
+        return
+    anchor = row.get("ste_anchor")
+    if anchor is not None:
+        if not isinstance(anchor, str) or not anchor.strip():
+            raise ContractError(f"{row.get('signal_id')}: ste_anchor must be nonempty text when present.")
+        cleaned = " ".join(anchor.split())
+        if len(cleaned) > STE_ANCHOR_CHARS:
+            raise ContractError(f"{row.get('signal_id')}: ste_anchor must be at most {STE_ANCHOR_CHARS} characters.")
+        # Prefer a standing-item / register id when the register is known; otherwise keep as entity/project text.
+        allowed = set(register or ()) | {
+            str(item) for item in (sources.get(row.get("signal_id")) or {}).get("condition_ids") or []
+        }
+        if allowed and cleaned in allowed:
+            row["ste_anchor"] = cleaned
+        else:
+            row["ste_anchor"] = cleaned
+    counter = row.get("counterargument")
+    if counter is not None:
+        if not isinstance(counter, str) or not counter.strip():
+            raise ContractError(f"{row.get('signal_id')}: counterargument must be nonempty text when present.")
+        cleaned = " ".join(counter.split())
+        if len(cleaned) > COUNTERARGUMENT_CHARS:
+            raise ContractError(
+                f"{row.get('signal_id')}: counterargument must be at most {COUNTERARGUMENT_CHARS} characters."
+            )
+        row["counterargument"] = cleaned
+        # Optional supporting source_ids already validated by selection.source_ids; no separate list required.
+    missing = row.get("missing_check")
+    if missing is not None:
+        if not isinstance(missing, str) or not missing.strip():
+            raise ContractError(f"{row.get('signal_id')}: missing_check must be nonempty text when present.")
+        cleaned = " ".join(missing.split())
+        if len(cleaned) > MISSING_CHECK_CHARS:
+            raise ContractError(
+                f"{row.get('signal_id')}: missing_check must be at most {MISSING_CHECK_CHARS} characters."
+            )
+        row["missing_check"] = cleaned
+        if row.get("decision") not in {"DEFER", "WATCH", "INCLUDE", "EXCLUDE"}:
+            pass
+
+
+def ste_fields_of(row: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Optional STE disclosure fields from an assessment lead or editorial overlay."""
+    if not row:
+        return {}
+    editorial = row.get("editorial") if isinstance(row.get("editorial"), Mapping) else {}
+    source = editorial if editorial else row
+    out: dict[str, Any] = {}
+    for key in ("ste_anchor", "counterargument", "missing_check"):
+        value = source.get(key)
+        if isinstance(value, str) and value.strip():
+            out[key] = value.strip()
+    return out
 
 
 def check_reach(row: Any, sources: Mapping[str, Any]) -> None:
@@ -598,10 +667,16 @@ Return {"selections":[{"signal_id":"...", "decision":"INCLUDE|EXCLUDE|WATCH|DEFE
 "reach_channel":"person|entity|contract|supplier|cash",
 "urs_reach_reason":"one line naming how the news reaches URS via that channel (at most 160 characters)",
 "challenged_band":"Escalating|Elevated|Watch when you disagree with the core band",
-"challenge_reason":"why the core band is wrong (optional; required with challenged_band)"}]}.
+"challenge_reason":"why the core band is wrong (optional; required with challenged_band)",
+"ste_anchor":"optional standing-item or entity/project id the chain hangs on",
+"counterargument":"optional short contrary reading with citations in source_ids",
+"missing_check":"optional specific check still needed (especially for DEFER or WATCH)"}]}.
 For INCLUDE and WATCH, condition_ids are keyword matches to the register (authority.standing_items). In risk_ids keep
 those the fact and transmission support, and add another standing item only when the transmission to it is clear;
 every included or watched item should map to the register. Use only IDs from authority.standing_items.
+Optional STE fields (omit when unused): ste_anchor names the register item or entity/project the chain hangs on;
+counterargument is a short contrary reading (cite sources in source_ids); missing_check names one specific check
+still needed — prefer it on DEFER or WATCH instead of a vague uncertainty line.
 For INCLUDE and WATCH, reach_channel and urs_reach_reason are required: name how the news reaches URS (a person/staff,
 a named entity, a contract, a supplier, or cash) in one short line. Do not write band or tier; core owns band placement.
 If you disagree with the candidate's core band, set challenged_band to a different band and challenge_reason; the item
