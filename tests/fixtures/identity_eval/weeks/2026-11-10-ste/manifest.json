@@ -1,0 +1,14 @@
+{
+  "week_id": "2026-11-10-ste",
+  "label": "Group (STE) \u2014 local proxy for 25 Nov 2026 Strategic Radar PDF",
+  "role": "group-25nov-proxy",
+  "pack": "ste",
+  "brief_path": "output/runs/2026-11-10-ste/wilson/v1/GRIT-Scan_ste_wilson_2026-11-10.brief.json",
+  "source": "brief_method_weekly_selections",
+  "escalating_events": 7,
+  "elevated_signals": 103,
+  "near_elevated_signals": 119,
+  "exported_signals": 222,
+  "offline_group_clusters": 162,
+  "note_25nov": "No local run_id 2026-11-25-*; PDF '25 November 2026 ST Engineering Strategic Radar' is represented by this week when role=group-25nov-proxy."
+}
