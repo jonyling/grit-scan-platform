@@ -2,19 +2,20 @@
 
 Built for plan v2 Phase E. **No pipeline merge behaviour is changed by these fixtures.**
 
-## Weeks exported
+## Weeks exported (Wilson DOCX — authoritative)
 
-- `2026-11-10-ste` — Group (STE) — local proxy for 25 Nov 2026 Strategic Radar PDF (role=group-25nov-proxy; 7 elevated events, 222 signals)
-- `2026-11-02-urs-tw` — URS-Taiwan (role=urs-taiwan; 3 elevated events, 8 signals)
-- `2026-11-06-marine` — Marine (role=marine; 7 elevated events, 63 signals)
-- `2026-11-05-ste` — Group (STE) reasoned week (role=group; 5 elevated events, 232 signals)
+- `2026-11-25-ste` — Group (STE) — 25 Nov 2026 Strategic Radar (Wilson DOCX) (role=group; 7 elevated events, 59 signals)
+- `2026-11-26-urs` — URS — 26 Nov 2026 (Wilson DOCX) (role=urs; 12 elevated events, 91 signals)
+- `2026-11-19-urs` — URS — 19 Nov 2026 (Wilson DOCX) (role=urs; 12 elevated events, 48 signals)
+- `2026-11-25-marine` — Marine — 25 Nov 2026 (Wilson DOCX) (role=marine; 11 elevated events, 68 signals)
+- `2026-11-19-marine` — Marine — 19 Nov 2026 (Wilson DOCX) (role=marine; 9 elevated events, 77 signals)
+- `2026-11-24-ca` — Commercial Aerospace — 24 Nov 2026 (Wilson DOCX) (role=ca; 8 elevated events, 61 signals)
 
-## 25 Nov 2026
+## Provenance
 
-No `2026-11-25-*` weekly run is present under `output/runs/` or in the local pool on this machine.
-The architecture PDF is dated 25 November 2026; the closest matching Group week on disk is
-`2026-11-10-ste` (seven elevated rows including Houthi/Riyadh, chip/export-control, and OFAC).
-It is filed under role `group-25nov-proxy`.
+- Wilson DOCX directory used: `/cursor/stores/bc-ad02b207-afda-408c-997d-5188616d063c/internal/topic-collapse/wilson-briefs`
+- **Pool / weekly-run gap:** `output/grit.sqlite` and matching `output/runs/<week_id>` were not available on the builder host. Fixtures are built from Wilson DOCX elevated item tables + Appendix B source registers. Signal IDs are stable hashes of URL/title (not pool `SIG-*` ids). Re-run this builder on a host with the pool to enrich text/lanes.
+- URS-Taiwan pack week is **not** in the attached six briefs; URS Group weeks `2026-11-19-urs` and `2026-11-26-urs` stand in for the URS role.
 
 ## Files
 
@@ -23,9 +24,9 @@ It is filed under role `group-25nov-proxy`.
 - `weeks/<week_id>/manifest.json` — provenance
 - `pairs.jsonl` — candidate pairs (`signal_a`, `signal_b`, `label`); labels are empty or **provisional** only
 - `labelling_sheet.csv` — sheet for Jony (fill `ra_label`: SAME | RELATED | UNRELATED)
-- `topics.jsonl` — expected topic groupings (PDF skeleton + gaps)
+- `topics.jsonl` — expected topic groupings seeded from Wilson elevated items
 
-Candidate pairs in this build: **596**.
+Candidate pairs in this build: **472**.
 
 ## Labelling
 

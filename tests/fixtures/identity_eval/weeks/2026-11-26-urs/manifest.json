@@ -1,0 +1,18 @@
+{
+  "week_id": "2026-11-26-urs",
+  "label": "URS \u2014 26 Nov 2026 (Wilson DOCX)",
+  "role": "urs",
+  "pack": "urs",
+  "docx_file": "GRIT-Scan_urs_wilson_2026-11-26_5ebe.docx",
+  "docx_run_id": "2026-11-26-urs",
+  "scan_window": "20 November \u2013 26 November 2026",
+  "source": "wilson_docx",
+  "pool_available": false,
+  "escalating_events": 12,
+  "elevated_signals": 30,
+  "near_elevated_signals": 61,
+  "exported_signals": 91,
+  "offline_group_clusters": 73,
+  "source_register_count": 110,
+  "gap": "No local output/runs or grit.sqlite on this builder host; fixtures built from Wilson DOCX source register + elevated item tables."
+}

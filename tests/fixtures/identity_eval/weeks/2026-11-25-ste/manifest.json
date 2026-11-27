@@ -1,0 +1,18 @@
+{
+  "week_id": "2026-11-25-ste",
+  "label": "Group (STE) \u2014 25 Nov 2026 Strategic Radar (Wilson DOCX)",
+  "role": "group",
+  "pack": "ste",
+  "docx_file": "GRIT-Scan_ste_wilson_2026-11-25_9883.docx",
+  "docx_run_id": "2026-11-25-ste",
+  "scan_window": "26 October \u2013 25 November 2026",
+  "source": "wilson_docx",
+  "pool_available": false,
+  "escalating_events": 7,
+  "elevated_signals": 19,
+  "near_elevated_signals": 40,
+  "exported_signals": 59,
+  "offline_group_clusters": 49,
+  "source_register_count": 65,
+  "gap": "No local output/runs or grit.sqlite on this builder host; fixtures built from Wilson DOCX source register + elevated item tables."
+}

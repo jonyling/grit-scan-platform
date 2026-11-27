@@ -1,12 +1,25 @@
 {
   "weeks": [
-    "2026-11-10-ste",
-    "2026-11-02-urs-tw",
-    "2026-11-06-marine",
-    "2026-11-05-ste"
+    "2026-11-25-ste",
+    "2026-11-26-urs",
+    "2026-11-19-urs",
+    "2026-11-25-marine",
+    "2026-11-19-marine",
+    "2026-11-24-ca"
   ],
-  "pair_count": 596,
+  "docx_dir": "/cursor/stores/bc-ad02b207-afda-408c-997d-5188616d063c/internal/topic-collapse/wilson-briefs",
+  "pool_available": false,
+  "pool_gap": true,
+  "pair_count": 472,
   "hard_pairs": 450,
-  "provisional_labels": 182,
-  "unlabelled": 414
+  "provisional_labels": 290,
+  "unlabelled": 182,
+  "elevated_events_per_week": {
+    "2026-11-25-ste": 7,
+    "2026-11-26-urs": 12,
+    "2026-11-19-urs": 12,
+    "2026-11-25-marine": 11,
+    "2026-11-19-marine": 9,
+    "2026-11-24-ca": 8
+  }
 }

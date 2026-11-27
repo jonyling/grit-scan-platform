@@ -9,6 +9,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests" / "fixtures" / "identity_eval"
 
+# Authoritative weeks from Jony's attached Wilson DOCX briefs (Phase E refresh).
+EXPECTED_WEEKS = {
+    "2026-11-25-ste",
+    "2026-11-26-urs",
+    "2026-11-19-urs",
+    "2026-11-25-marine",
+    "2026-11-19-marine",
+    "2026-11-24-ca",
+}
+
 
 def test_identity_eval_fixtures_present():
     assert (FIXTURES / "pairs.jsonl").exists()
@@ -16,14 +26,15 @@ def test_identity_eval_fixtures_present():
     assert (FIXTURES / "labelling_sheet.csv").exists()
     weeks = sorted(p.name for p in (FIXTURES / "weeks").iterdir() if p.is_dir())
     assert len(weeks) >= 4
-    required_roles = {"group-25nov-proxy", "urs-taiwan", "marine", "group"}
+    assert EXPECTED_WEEKS <= set(weeks)
     roles = set()
     for week in weeks:
         manifest = json.loads((FIXTURES / "weeks" / week / "manifest.json").read_text(encoding="utf-8"))
         roles.add(manifest.get("role"))
         assert (FIXTURES / "weeks" / week / "events.jsonl").exists()
         assert (FIXTURES / "weeks" / week / "signals.jsonl").exists()
-    assert required_roles <= roles
+        assert manifest.get("source", "").startswith("wilson_docx")
+    assert {"group", "marine", "urs", "ca"} <= roles
 
 
 def test_pairs_jsonl_has_at_least_300_candidates_and_marks_non_authoritative():
@@ -49,9 +60,23 @@ def test_topics_jsonl_marks_gaps_and_covers_exported_weeks():
     exported = {p.name for p in (FIXTURES / "weeks").iterdir() if p.is_dir()}
     assert exported <= week_ids
     assert any(row.get("gap_for_jony") for row in rows)
-    proxy = next(row for row in rows if row["week_id"] == "2026-11-10-ste")
-    assert proxy["status"] == "skeleton_from_pdf"
-    assert len(proxy.get("topics") or []) >= 3
+    ste = next(row for row in rows if row["week_id"] == "2026-11-25-ste")
+    assert ste["status"] == "skeleton_from_wilson_docx"
+    assert len(ste.get("topics") or []) >= 3
+    keys = {t.get("topic_key") for t in ste["topics"]}
+    assert "middle-east-security-escalation" in keys
+    assert "us-advanced-compute-controls" in keys
+    assert "ofac-sanctions" in keys
+
+
+def test_labelling_sheet_ra_label_blank():
+    """Do not invent authoritative R&A pair labels; sheet leaves ra_label empty for Jony."""
+    import csv
+
+    with (FIXTURES / "labelling_sheet.csv").open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    assert len(rows) >= 300
+    assert all(not (row.get("ra_label") or "").strip() for row in rows)
 
 
 def test_eval_identity_runs_offline(tmp_path: Path):

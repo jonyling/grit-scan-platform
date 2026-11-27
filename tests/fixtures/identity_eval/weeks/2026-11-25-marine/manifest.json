@@ -1,0 +1,18 @@
+{
+  "week_id": "2026-11-25-marine",
+  "label": "Marine \u2014 25 Nov 2026 (Wilson DOCX)",
+  "role": "marine",
+  "pack": "marine",
+  "docx_file": "GRIT-Scan_marine_wilson_2026-11-25_0cfe.docx",
+  "docx_run_id": "2026-11-25-marine",
+  "scan_window": "19 November \u2013 25 November 2026",
+  "source": "wilson_docx",
+  "pool_available": false,
+  "escalating_events": 11,
+  "elevated_signals": 28,
+  "near_elevated_signals": 40,
+  "exported_signals": 68,
+  "offline_group_clusters": 54,
+  "source_register_count": 68,
+  "gap": "No local output/runs or grit.sqlite on this builder host; fixtures built from Wilson DOCX source register + elevated item tables."
+}
