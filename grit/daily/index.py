@@ -3,7 +3,7 @@
 | Step | What it does |
 |---|---|
 | Full text | Adds new signals to the FTS5 index. |
-| Events | Joins each newly kept signal to an event when it tells the same story as one: the same title, or cosine 0.90 or more with a member published within 8 days. Otherwise it starts an event. The lead is the best-labelled member: lowest tier, then earliest. |
+| Events | Joins each newly kept identity-eligible signal to an event when it matches the event **anchor** (lead + ≤2 medoids): same title, or cosine 0.90 or more with an anchor member within 8 days. Internal / approved evidence never joins. Otherwise it starts an event. Lead changes are logged. |
 | Digests | Per pack and day, from the runs dated that day: newly kept tier 1 and 2 events, RED patterns and drafts, moved standing items, and watchpoint updates. |
 | Retention | After 90 days, a page that no run kept keeps its title and the first 500 characters of its text. Kept pages and all vectors stay whole. |
 """
@@ -64,17 +64,19 @@ def _near_misses(row: Mapping[str, Any], nearby: Sequence[Mapping[str, Any]],
 
 
 def cluster_events(pool: Pool) -> dict[str, int]:
-    """Assign every kept signal that has no event yet."""
+    """Assign every kept signal that has no event yet. Internal / approved evidence never enters event_members."""
     import numpy as np
 
+    from grit.core.identity import anchor_members, is_identity_eligible, matches_anchor
     from grit.retrieval.embedder import DEFAULT_DIMENSIONS, DEFAULT_MODEL
 
     todo = pool.rows(
-        """SELECT s.signal_id, s.title, COALESCE(s.published_at, s.first_seen_at) AS day, MIN(COALESCE(a.tier, 9)) AS tier
+        """SELECT s.signal_id, s.title, s.url, s.lane, COALESCE(s.published_at, s.first_seen_at) AS day, MIN(COALESCE(a.tier, 9)) AS tier
            FROM signals s JOIN assessments a ON a.signal_id = s.signal_id AND a.decision = 'KEEP'
            WHERE s.signal_id NOT IN (SELECT signal_id FROM event_members)
            GROUP BY s.signal_id ORDER BY day, s.signal_id"""
     )
+    todo = [row for row in todo if is_identity_eligible(row)]
     if not todo:
         return {"joined": 0, "new": 0, "near_misses": 0}
     members = pool.rows(
@@ -85,6 +87,7 @@ def cluster_events(pool: Pool) -> dict[str, int]:
         "SELECT a.signal_id, MIN(COALESCE(a.tier, 9)) AS tier FROM assessments a WHERE a.signal_id IN (SELECT lead_signal_id FROM events) GROUP BY a.signal_id")}
     ids = [row["signal_id"] for row in todo] + [row["signal_id"] for row in members]
     vectors = {key: np.asarray(value, dtype=np.float32) for key, value in pool.vectors(ids, model=DEFAULT_MODEL, task="RETRIEVAL_DOCUMENT", dimensions=DEFAULT_DIMENSIONS).items()}
+    by_event_members: dict[str, list[dict[str, Any]]] = {}
     by_day: dict[int, list[dict[str, Any]]] = {}
     by_title: dict[str, list[dict[str, Any]]] = {}
 
@@ -92,11 +95,26 @@ def cluster_events(pool: Pool) -> dict[str, int]:
         when = _day(member["day"])
         by_day.setdefault(when.toordinal() if when else -1, []).append(member)
         by_title.setdefault(_title_key(member["title"]), []).append(member)
+        by_event_members.setdefault(member["event_id"], []).append(member)
+
+    def event_view(event_id: str) -> dict[str, Any]:
+        event = events[event_id]
+        group = list(by_event_members.get(event_id) or [])
+        lead_id = event.get("lead_signal_id")
+        lead = next((row for row in group if row["signal_id"] == lead_id), group[0] if group else {"signal_id": lead_id, "title": ""})
+        return {"event_id": event_id, "lead": lead, "members": group}
+
+    def anchor_ok(candidate: Mapping[str, Any], event_id: str) -> bool:
+        view = event_view(event_id)
+        if not view["members"]:
+            return True
+        return matches_anchor(candidate, view, vectors=vectors, min_terms=2)
 
     for member in members:
         remember(dict(member))
     joined = new = 0
     near_misses: list[dict[str, Any]] = []
+    lead_changes: list[dict[str, Any]] = []
     now = utc_now()
     with pool.transaction() as conn:
         for row in todo:
@@ -106,16 +124,28 @@ def cluster_events(pool: Pool) -> dict[str, int]:
             for member in reversed(by_title.get(key, []) if key else []):
                 other = _day(member["day"])
                 if day is None or other is None or abs((day - other).days) <= SAME_STORY_DAYS:
-                    target = member["event_id"]
-                    break
+                    # Exact title match still requires an anchor hit (anti-chaining).
+                    if anchor_ok(row, member["event_id"]):
+                        target = member["event_id"]
+                        break
             nearby: list[dict[str, Any]] = []
             if day is not None and row["signal_id"] in vectors:
                 nearby = [member for offset in range(-SAME_STORY_DAYS, SAME_STORY_DAYS + 1)
                           for member in by_day.get(day.toordinal() + offset, [])]
             if target is None and nearby:
-                best = max(((float(vectors[row["signal_id"]] @ vectors[member["signal_id"]]), member["event_id"])
-                            for member in nearby if member["signal_id"] in vectors), default=(0.0, None))
-                if best[0] >= SAME_STORY:
+                # P0.3: cosine join only against anchor members of each candidate event.
+                best = (0.0, None)
+                for member in nearby:
+                    if member["signal_id"] not in vectors:
+                        continue
+                    view = event_view(member["event_id"])
+                    anchor_ids = {item["signal_id"] for item in anchor_members(view, vectors=vectors)}
+                    if member["signal_id"] not in anchor_ids:
+                        continue
+                    score = float(vectors[row["signal_id"]] @ vectors[member["signal_id"]])
+                    if score > best[0]:
+                        best = (score, member["event_id"])
+                if best[0] >= SAME_STORY and best[1] is not None:
                     target = best[1]
             if target is None and nearby:
                 near_misses.extend(_near_misses(row, nearby, vectors))
@@ -132,18 +162,24 @@ def cluster_events(pool: Pool) -> dict[str, int]:
                 first = min(filter(None, [event.get("first_date"), text_day]), default=None)
                 last = max(filter(None, [event.get("last_date"), text_day]), default=None)
                 lead = event["lead_signal_id"]
+                prior_lead = lead
                 if row["tier"] < lead_tier.get(lead, 9):
                     lead = row["signal_id"]
                     lead_tier[lead] = row["tier"]
                 conn.execute("UPDATE events SET lead_signal_id = ?, first_date = ?, last_date = ?, members = members + 1, updated_at = ? WHERE event_id = ?",
                              (lead, first, last, now, target))
                 event.update({"lead_signal_id": lead, "first_date": first, "last_date": last, "members": int(event.get("members") or 1) + 1})
+                if lead != prior_lead:
+                    lead_changes.append({"event_id": target, "from": prior_lead, "to": lead})
                 joined += 1
             conn.execute("INSERT INTO event_members (signal_id, event_id, joined_at) VALUES (?, ?, ?)", (row["signal_id"], target, now))
             remember({"signal_id": row["signal_id"], "event_id": target, "title": row["title"], "day": row["day"]})
     if near_misses:
         pool.log(actor_type="FUNCTION", actor="EventNearMiss", status="SUCCEEDED",
                  detail={"count": len(near_misses), "candidates": near_misses[:50]})
+    if lead_changes:
+        pool.log(actor_type="FUNCTION", actor="EventLeadChange", status="SUCCEEDED",
+                 detail={"count": len(lead_changes), "changes": lead_changes[:50]})
     return {"joined": joined, "new": new, "near_misses": len(near_misses)}
 
 

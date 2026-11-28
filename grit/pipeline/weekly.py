@@ -32,10 +32,10 @@ RoleCall = Callable[..., dict[str, Any]]
 FULL_TEXT_CHARS = 4000
 INDEX_TEXT_CHARS = 240
 RELATED_LIMIT = 30
-INTERNAL_LIMIT = 20
+INTERNAL_LIMIT = 20  # legacy blanket cap; P0.6 selects per batch via exposure-graph match instead
 MAX_PAYLOAD_CHARS = 2_000_000
 INDEX_FIELDS = ("signal_id", "title", "publisher", "source_band", "published_at", "event_dates", "time_scope", "decision", "drop_reason",
-                "tier", "condition_ids", "red", "assessment_missing", "internal_exposure", "staff_countries", "hindsight_checks")
+                "tier", "condition_ids", "red", "assessment_missing", "internal_exposure", "staff_countries", "hindsight_checks", "joinable")
 EVENT_LEAD_CHARS, EVENT_DATES_MAX = 600, 3
 # The included findings that must each have a recorded contradiction search before release.
 TOP_FINDINGS = 5
@@ -827,10 +827,18 @@ class WeeklyCoordinator:
         sharing = [key for key in (self.included_ids(sources) if included is None else included)
                    if key not in members and conditions & set(sources[key].get("condition_ids") or [])]
         sharing.sort(key=lambda key: (sources[key].get("tier") or 9, key))
-        # Approved internal records (the exposure snapshot) go to every batch, so a selection can cite confirmed exposure.
-        internal = sorted(key for key, row in sources.items() if row.get("internal_exposure") and key not in members)[:INTERNAL_LIMIT]
+        # P0.6: internal evidence selected per batch by exposure-graph match (entity / country), capped per event.
+        from grit.core.identity import INTERNAL_PER_EVENT, select_internal_evidence
+
+        internal = select_internal_evidence(batch, sources, limit=INTERNAL_PER_EVENT)
         chosen = internal + [key for key in sorted(linked) if key in sources and key not in members] + same + sharing
-        return {key: index_view(sources[key]) for key in dict.fromkeys(chosen[:RELATED_LIMIT + len(internal)])}
+        views = {}
+        for key in dict.fromkeys(chosen[:RELATED_LIMIT + len(internal)]):
+            view = index_view(sources[key])
+            if sources[key].get("internal_exposure"):
+                view["joinable"] = False
+            views[key] = view
+        return views
 
     def batch_issues(self, batch: Sequence[str], sources: Mapping[str, Any]) -> dict[str, Any]:
         members = set(batch)
@@ -1618,6 +1626,10 @@ class WeeklyCoordinator:
         def invoke(role: str, task: str, payload: dict[str, Any], validate: Any) -> tuple[Any, Any]:
             return self.invoke(role, task, payload, validate)
 
+        stored = []
+        for pair in config.get("identity_nomination_pairs") or []:
+            if isinstance(pair, (list, tuple)) and len(pair) == 2:
+                stored.append((str(pair[0]), str(pair[1])))
         summary = resolve_and_persist(
             self.pool,
             run_id=self.run_id,
@@ -1626,6 +1638,7 @@ class WeeklyCoordinator:
             prior_relations=prior,
             invoke=invoke,
             model=self.model,
+            citation_pairs=stored,
         )
         self.pool.log(actor_type="FUNCTION", actor="EventRelationResolver", run_id=self.run_id, version=VERSION,
                       status="SUCCEEDED", detail=summary)
