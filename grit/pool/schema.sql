@@ -603,6 +603,34 @@ BEGIN SELECT RAISE(ABORT, 'event_signatures is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS event_signatures_no_delete BEFORE DELETE ON event_signatures
 BEGIN SELECT RAISE(ABORT, 'event_signatures is append-only'); END;
 
+-- Topic resolutions (topic-collapse plan v2 Phase P2): persistent storylines over distinct events.
+-- Append-only. Topics never write SAME / band / override / challenge. Latest VALIDATED row per (topic_key, run_id) stands.
+CREATE TABLE IF NOT EXISTS topic_resolutions (
+    topic_row_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    topic_key          TEXT NOT NULL,
+    run_id             TEXT NOT NULL REFERENCES runs (run_id),
+    label              TEXT NOT NULL,
+    event_ids_json     TEXT NOT NULL DEFAULT '[]',
+    basis              TEXT NOT NULL DEFAULT '',
+    common_ste_path    TEXT NOT NULL DEFAULT '',
+    differences        TEXT NOT NULL DEFAULT '',
+    status_vs_last_week TEXT NOT NULL CHECK (status_vs_last_week IN ('NEW', 'CONTINUING', 'ESCALATING', 'EASING')),
+    confidence         REAL NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
+    status             TEXT NOT NULL CHECK (status IN ('VALIDATED', 'REJECTED', 'UNASSIGNED', 'THEME_CANDIDATE')),
+    input_hash         TEXT NOT NULL,
+    model              TEXT,
+    prompt_version     TEXT,
+    critic_verdict_json TEXT NOT NULL DEFAULT '{}',
+    created_at         TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS topic_resolutions_by_run ON topic_resolutions (run_id, topic_row_id);
+CREATE INDEX IF NOT EXISTS topic_resolutions_by_key ON topic_resolutions (topic_key, topic_row_id);
+CREATE INDEX IF NOT EXISTS topic_resolutions_by_hash ON topic_resolutions (input_hash, topic_row_id);
+CREATE TRIGGER IF NOT EXISTS topic_resolutions_no_update BEFORE UPDATE ON topic_resolutions
+BEGIN SELECT RAISE(ABORT, 'topic_resolutions is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS topic_resolutions_no_delete BEFORE DELETE ON topic_resolutions
+BEGIN SELECT RAISE(ABORT, 'topic_resolutions is append-only'); END;
+
 -- AIRIS handoff: signals the BA head approved, packaged for import.
 CREATE TABLE IF NOT EXISTS airis_exports (
     export_id       TEXT PRIMARY KEY,

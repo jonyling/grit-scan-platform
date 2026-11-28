@@ -786,26 +786,27 @@ def draft_rows(pool: Pool, run: Any, *, client: Any, model: str, log: Callable[[
     pack = _load_pack(run.pack)
     names = risk_names(pack)
     titles = {row["request_id"]: row["title"] for row in pool.management_requests()}
+    register_events: list[dict[str, Any]] = []
     if pack.level not in {"BA", "ENTITY"}:
         rising = [row["condition_id"] for row in pool.conditions(run.run_id) if row.get("trend_label") == "Escalating"]
+        register_events = event_register(
+            pool, run.run_id, names=names, escalating=rising,
+            signature_invoke=invoke, signature_model=model,
+        )
         jobs: list[tuple[str | None, Mapping[str, Any]]] = [
-            (None, event) for event in [
-                event for event in event_register(
-                    pool, run.run_id, names=names, escalating=rising,
-                    signature_invoke=invoke, signature_model=model,
-                ) if event["elevated"]
-            ][:MAX_ROWS]]
+            (None, event) for event in [event for event in register_events if event["elevated"]][:MAX_ROWS]
+        ]
     else:
         off_scope = out_of_scope(run.pack)
         rows = [row for row in pool.weekly_assessments(run.run_id)
                 if (row.get("editorial") or {}).get("decision", "INCLUDE") in {"INCLUDE", "WATCH"}
                 and (row.get("red") or not off_scope or not off_scope.search(str(row.get("title") or "")))]
         active = active_requests(pool, run.pack)
-        sections = section_events(
-            event_register(pool, run.run_id, rows=rows, names=names,
-                           signature_invoke=invoke, signature_model=model),
-            active, names,
+        register_events = event_register(
+            pool, run.run_id, rows=rows, names=names,
+            signature_invoke=invoke, signature_model=model,
         )
+        sections = section_events(register_events, active, names)
         jobs = [(section, event) for section in SECTIONS for event in sections[section]]
     events = [event for _section, event in jobs]
     area = business_area_context(pack)
@@ -859,4 +860,27 @@ def draft_rows(pool: Pool, run: Any, *, client: Any, model: str, log: Callable[[
                 seen.add(pair)
         updates["identity_nomination_pairs"] = existing
     pool.update_run_config(run.run_id, **updates)
+    # P2: Topic Resolver over elevated + near-threshold + prior topics (gated by topic_collapse=1).
+    from grit.core.topics import enabled as topics_enabled
+    from grit.pipeline.resolve_topics import resolve_and_persist
+
+    run_row = pool.run(run.run_id) or {}
+    if topics_enabled(run_row.get("config") or {}) and register_events:
+        topic_invoke = None
+        if client is not None:
+            from grit.agents.topics import PROMPTS as TOPIC_PROMPTS
+
+            def topic_invoke(role: str, task: str, payload: dict[str, Any], validate: Callable[[Any], Any]):
+                system = TOPIC_PROMPTS[role]
+                raw = call_json(client, model=model, system=system, payload=payload, retries=1, pause=1.0)
+                return validate(raw), None
+
+        topic_summary = resolve_and_persist(
+            pool, run_id=run.run_id, events=register_events, invoke=topic_invoke, model=model,
+        )
+        log(
+            f"  Topics: {topic_summary.get('topics', 0)} validated, "
+            f"{topic_summary.get('unassigned', 0)} unassigned, "
+            f"{topic_summary.get('themes', 0)} themes (flag topic_collapse)."
+        )
     return {"events": len(events), **counts}

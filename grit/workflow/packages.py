@@ -152,7 +152,16 @@ def submit_package(pool: Pool, *, run_id: str, profile: Profile, members: Sequen
             supervisor.request_transition(signal_id, execution_id, requested_state="CRITIQUED", transition_type="ADVANCE", trigger_type="AGENT_EXECUTION", trigger_record_id=critic, correlation_id=correlation, accepted_at=at)
     if not usable:
         raise ValueError("No member signal can enter review. Each is already pending, approved, or handed off.")
-    package = supervisor.create_package(usable, package_id=package_id, version=version, content={"brief_hash": brief_hash, "profile": profile.profile_id, "run": run_id}, execution_id=execution_id)
+    # Plan P2.5: when topic_collapse is on, ReviewGate package hash includes the topic ledger hash.
+    content: dict[str, Any] = {"brief_hash": brief_hash, "profile": profile.profile_id, "run": run_id}
+    run_config = (pool.run(run_id) or {}).get("config") or {}
+    from grit.core.topics import enabled as topics_enabled
+
+    if topics_enabled(run_config):
+        ledger_hash = pool.topic_ledger_hash_for_run(run_id) or run_config.get("topic_ledger_hash")
+        if ledger_hash:
+            content["topic_ledger_hash"] = ledger_hash
+    package = supervisor.create_package(usable, package_id=package_id, version=version, content=content, execution_id=execution_id)
     for signal_id in usable:
         result = supervisor.request_transition(signal_id, execution_id, requested_state="PENDING_REVIEW", transition_type="ADVANCE", trigger_type="OUTPUT_PACKAGE", trigger_record_id=package.package_id, correlation_id=correlation, accepted_at=at)
         if result.get("decision") not in {"ALLOW", "ALREADY_APPLIED"}:

@@ -14,6 +14,7 @@ from grit.agents.checks import INTERNAL_CLAIM, sentence_cite_problems, text_prob
 from grit.agents.loop.llm import LoopError, call_json
 from grit.agents.relations import PROMPTS as RELATION_PROMPTS
 from grit.agents.signature import PROMPTS as SIGNATURE_PROMPTS
+from grit.agents.topics import PROMPTS as TOPIC_PROMPTS
 from grit.agents.weekly import (
     significance_band,
     EXPOSURE_STATUSES, EXPOSURE_TYPES,
@@ -21,7 +22,7 @@ from grit.agents.weekly import (
     no_controlled_fields, object_response, order_in_band_of, source_ids, time_scope,
 )
 
-PROMPTS = {**WEEKLY_PROMPTS, **RELATION_PROMPTS, **SIGNATURE_PROMPTS}
+PROMPTS = {**WEEKLY_PROMPTS, **RELATION_PROMPTS, **SIGNATURE_PROMPTS, **TOPIC_PROMPTS}
 from grit.core.overrides import BANDS, reader_band_of
 from grit.core.canonical import canonical_hash
 from grit.pool import Pool, utc_now
@@ -1647,6 +1648,40 @@ class WeeklyCoordinator:
             f"  Event relations: {summary['candidates']} candidates, {summary['llm']} LLM, "
             f"{summary['auto_same']} auto-SAME, {summary.get('reused', 0)} reused, "
             f"{summary['critic']} critic, {summary['validated']} validated."
+        )
+        return summary
+
+    def resolve_topics(self, events: Sequence[Mapping[str, Any]] | None = None) -> dict[str, Any]:
+        """Gated Topic Resolver (plan v2 P2). One call over elevated + near-threshold + prior topics.
+        TopicCritic once on ambiguous borders. Persists topic_resolutions. Never writes SAME/band/override."""
+        from grit.core.topics import enabled
+        from grit.pipeline.events import event_register
+        from grit.pipeline.resolve_topics import resolve_and_persist
+
+        config = (self.pool.run(self.run_id) or {}).get("config") or {}
+        if not enabled(config):
+            return {
+                "enabled": 0, "elevated": 0, "near": 0, "topics": 0, "unassigned": 0,
+                "themes": 0, "critic": 0, "rejected": 0,
+            }
+        if events is None:
+            events = event_register(self.pool, self.run_id)
+
+        def invoke(role: str, task: str, payload: dict[str, Any], validate: Any) -> tuple[Any, Any]:
+            return self.invoke(role, task, payload, validate)
+
+        summary = resolve_and_persist(
+            self.pool,
+            run_id=self.run_id,
+            events=events,
+            invoke=invoke,
+            model=self.model,
+        )
+        self.pool.log(actor_type="FUNCTION", actor="TopicResolver", run_id=self.run_id, version=VERSION,
+                      status="SUCCEEDED", detail={k: v for k, v in summary.items() if k not in {"topics_detail", "theme_candidates"}})
+        self.progress(
+            f"  Topics: {summary.get('topics', 0)} validated, {summary.get('unassigned', 0)} unassigned, "
+            f"{summary.get('themes', 0)} emerging themes, {summary.get('critic', 0)} critic."
         )
         return summary
 
