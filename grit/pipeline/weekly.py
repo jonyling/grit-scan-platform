@@ -13,6 +13,7 @@ from typing import Any, Callable, Mapping, Sequence
 from grit.agents.checks import INTERNAL_CLAIM, sentence_cite_problems, text_problems
 from grit.agents.loop.llm import LoopError, call_json
 from grit.agents.relations import PROMPTS as RELATION_PROMPTS
+from grit.agents.signature import PROMPTS as SIGNATURE_PROMPTS
 from grit.agents.weekly import (
     significance_band,
     EXPOSURE_STATUSES, EXPOSURE_TYPES,
@@ -20,7 +21,7 @@ from grit.agents.weekly import (
     no_controlled_fields, object_response, order_in_band_of, source_ids, time_scope,
 )
 
-PROMPTS = {**WEEKLY_PROMPTS, **RELATION_PROMPTS}
+PROMPTS = {**WEEKLY_PROMPTS, **RELATION_PROMPTS, **SIGNATURE_PROMPTS}
 from grit.core.overrides import BANDS, reader_band_of
 from grit.core.canonical import canonical_hash
 from grit.pool import Pool, utc_now

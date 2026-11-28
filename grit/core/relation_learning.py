@@ -90,6 +90,50 @@ def relation_outcome_stats(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     }
 
 
+def signature_learning_stats(pool: Pool, *, run_id: str | None = None) -> dict[str, Any]:
+    """Read-only P1 signature proxies: cache hits, fallback rate, near-miss topic candidates."""
+    config = (pool.run(run_id) or {}).get("config") or {} if run_id else {}
+    stats = dict(config.get("signature_stats") or {})
+    near = list(config.get("signature_near_misses") or [])
+    rows = pool.event_signatures_for_run(run_id) if run_id else []
+    by_source: Counter[str] = Counter(str(row.get("signature_source") or "") for row in rows)
+    # False-merge proxy: near-misses that still share only location (should never have merged).
+    location_only = sum(1 for item in near if item.get("missing_fields") == ["action_class"]
+                        and item.get("location_overlap") and not item.get("actor_overlap")
+                        and not item.get("object_overlap"))
+    # Missed-merge proxy: near-misses one field short of actor+action+window or object+action.
+    missed_proxy = len(near)
+    return {
+        "signatures_recorded": len(rows),
+        "by_source": dict(sorted(by_source.items())),
+        "run_stats": stats,
+        "near_misses": {
+            "count": missed_proxy,
+            "sample": near[:10],
+            "note": (
+                "Signature near-misses (exactly one field short of same_event_candidate). "
+                "Topic candidates for P2; do not merge on their own."
+            ),
+        },
+        "false_merge": {
+            "count": location_only,
+            "rate": _rate(location_only, max(1, missed_proxy)),
+            "note": (
+                "Signature false-merge proxy: near-miss rows whose only shared cue is location. "
+                "Read-only; R&A reviews whether compare rules under-separated."
+            ),
+        },
+        "missed_merge": {
+            "count": missed_proxy,
+            "rate": _rate(missed_proxy, max(1, int(stats.get("events") or missed_proxy or 1))),
+            "note": (
+                "Signature missed-merge proxy: near-miss count (one field short). "
+                "Complementary to Critic RECLASSIFY-to-SAME on the relation ledger."
+            ),
+        },
+    }
+
+
 def learning_report(
     pool: Pool,
     *,
@@ -101,15 +145,18 @@ def learning_report(
     else:
         rows = pool.event_relations_latest(validated_only=False)
     outcomes = relation_outcome_stats(rows)
+    signature = signature_learning_stats(pool, run_id=run_id)
     return {
         "function": FUNCTION_NAME,
         "version": FUNCTION_VERSION,
         "scope": {"run_id": run_id},
         "outcomes": outcomes,
+        "signatures": signature,
         "apply": False,
         "note": (
             "Event-relation analytics for R&A. False-merge and missed-merge rates are proxies from "
-            "Critic actions and REJECTED SAME rows. Nothing in this report changes a relation, band, "
+            "Critic actions and REJECTED SAME rows. Signature proxies (P1) are read-only near-miss "
+            "counts for topic candidates. Nothing in this report changes a relation, band, "
             "override, or challenge."
         ),
     }
@@ -121,6 +168,11 @@ def format_learning_report(report: Mapping[str, Any]) -> str:
     false_merge = outcomes.get("false_merge") or {}
     missed = outcomes.get("missed_merge") or {}
     critic = outcomes.get("critic") or {}
+    signatures = report.get("signatures") or {}
+    sig_stats = signatures.get("run_stats") or {}
+    sig_near = signatures.get("near_misses") or {}
+    sig_false = signatures.get("false_merge") or {}
+    sig_missed = signatures.get("missed_merge") or {}
     lines = [
         f"{report.get('function')} v{report.get('version')}",
         f"Scope: run_id={((report.get('scope') or {}).get('run_id') or 'all')}",
@@ -133,6 +185,18 @@ def format_learning_report(report: Mapping[str, Any]) -> str:
         f"reclassify_to_same={critic.get('reclassify_to_same', 0)}",
         f"By label: {outcomes.get('by_label') or {}}",
         f"By status: {outcomes.get('by_status') or {}}",
+        (
+            f"Signatures: recorded={signatures.get('signatures_recorded', 0)} "
+            f"by_source={signatures.get('by_source') or {}} "
+            f"calls={sig_stats.get('calls')} cache_hits={sig_stats.get('cache_hits')} "
+            f"cache_hit_rate={sig_stats.get('cache_hit_rate')} fallback={sig_stats.get('fallback')} "
+            f"llm={sig_stats.get('llm')}"
+        ),
+        (
+            f"Signature near-misses: {sig_near.get('count', 0)}; "
+            f"false-merge proxy={sig_false.get('count', 0)}; "
+            f"missed-merge proxy={sig_missed.get('count', 0)}"
+        ),
         str(report.get("note") or ""),
     ]
     return "\n".join(lines)

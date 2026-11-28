@@ -1,0 +1,97 @@
+{
+  "note": "R&A-owned closed vocabulary for event-signature-1 action_class. The model picks one id; it must not invent classes. cues drive the deterministic fallback extractor when the model call fails.",
+  "classes": [
+    {
+      "id": "armed_attack",
+      "cues": [
+        "airstrike", "air strike", "missile", "drone strike", "drone attack", "rocket", "shelling",
+        "bombardment", "armed attack", "military strike", "terror attack", "terrorist attack",
+        "invasion", "hostilities", "ceasefire collapse", "airport strike", "airport strikes",
+        "strikes on", "strike on", "missile attack", "missile attacks"
+      ]
+    },
+    {
+      "id": "threat_warning",
+      "cues": [
+        "security alert", "travel advisory", "travel advisories", "threat warning", "elevated threat",
+        "warns of attack", "orders staff out", "orders staff departure", "staff departure",
+        "evacuate", "evacuation order", "evacuations", "drawdown"
+      ]
+    },
+    {
+      "id": "sanction_designation",
+      "cues": [
+        "ofac", "sanctions", "sanctioned", "designates", "designation", "entity list", "sdn",
+        "blacklist", "asset freeze", "blocked persons"
+      ]
+    },
+    {
+      "id": "export_control",
+      "cues": [
+        "export control", "export ban", "export restriction", "chip ban", "semiconductor ban",
+        "bis", "entity list addition", "technology transfer ban", "dual-use"
+      ]
+    },
+    {
+      "id": "regulatory_action",
+      "cues": [
+        "fine", "fined", "probe", "investigation", "antitrust", "tariff", "mandate", "order to",
+        "regulator", "enforcement", "licence revoked", "license revoked", "suspended licence"
+      ]
+    },
+    {
+      "id": "defence_funding",
+      "cues": [
+        "defence budget", "defense budget", "defence funding", "defense funding", "military spending",
+        "arms package", "weapons package", "defence bill", "defense bill", "supplemental defence"
+      ]
+    },
+    {
+      "id": "investment_announcement",
+      "cues": [
+        "invests", "investment", "joint venture", "jv ", "acquisition", "acquires", "funding round",
+        "capital injection", "sovereign wealth", "project finance"
+      ]
+    },
+    {
+      "id": "policy_change",
+      "cues": [
+        "saudisation", "saudization", "nitaqat", "localisation", "localization", "quota",
+        "visa rule", "labour policy", "labor policy", "operating licence", "operating license",
+        "policy change", "new law", "passes bill"
+      ]
+    },
+    {
+      "id": "legal_proceeding",
+      "cues": [
+        "insolvency", "bankruptcy", "creditor protection", "lawsuit", "indictment", "court rules",
+        "pre-insolvency", "restructuring", "receivership"
+      ]
+    },
+    {
+      "id": "cyber_incident",
+      "cues": [
+        "cyberattack", "cyber attack", "ransomware", "data breach", "hacked", "malware",
+        "ddos", "intrusion"
+      ]
+    },
+    {
+      "id": "supply_disruption",
+      "cues": [
+        "port closure", "shipping disrupted", "supply chain", "blockade", "strait", "hormuz",
+        "transit halt", "route closure", "cargo delay"
+      ]
+    },
+    {
+      "id": "personnel_action",
+      "cues": [
+        "appointed", "resigns", "dismissed", "ceo", "leadership change", "board shake",
+        "key hire", "key departure"
+      ]
+    },
+    {
+      "id": "other",
+      "cues": []
+    }
+  ]
+}

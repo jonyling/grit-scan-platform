@@ -582,6 +582,27 @@ BEGIN SELECT RAISE(ABORT, 'event_relations is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS event_relations_no_delete BEFORE DELETE ON event_relations
 BEGIN SELECT RAISE(ABORT, 'event_relations is append-only'); END;
 
+-- Event signatures (topic-collapse plan v2 Phase P1): LLM-extracted or cue-list fallback, cached by input_hash.
+-- Append-only. Latest VALIDATED row per input_hash stands. Comparison is deterministic in grit.core.event_signature.
+CREATE TABLE IF NOT EXISTS event_signatures (
+    signature_row_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id          TEXT,
+    run_id            TEXT,
+    input_hash        TEXT NOT NULL,
+    signature_json    TEXT NOT NULL DEFAULT '{}',
+    signature_source  TEXT NOT NULL CHECK (signature_source IN ('llm', 'fallback', 'cache')),
+    model             TEXT,
+    prompt_version    TEXT,
+    status            TEXT NOT NULL CHECK (status IN ('VALIDATED', 'FAILED')),
+    created_at        TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS event_signatures_by_hash ON event_signatures (input_hash, signature_row_id);
+CREATE INDEX IF NOT EXISTS event_signatures_by_run ON event_signatures (run_id, signature_row_id);
+CREATE TRIGGER IF NOT EXISTS event_signatures_no_update BEFORE UPDATE ON event_signatures
+BEGIN SELECT RAISE(ABORT, 'event_signatures is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS event_signatures_no_delete BEFORE DELETE ON event_signatures
+BEGIN SELECT RAISE(ABORT, 'event_signatures is append-only'); END;
+
 -- AIRIS handoff: signals the BA head approved, packaged for import.
 CREATE TABLE IF NOT EXISTS airis_exports (
     export_id       TEXT PRIMARY KEY,
