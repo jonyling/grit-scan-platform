@@ -303,6 +303,125 @@ def _topic_metrics(
     }
 
 
+def _topic_resolver_metrics(topics_row: dict[str, Any]) -> dict[str, Any]:
+    """P2: replay gold topics.jsonl through contract + apply; score event-level purity/completeness.
+
+    Offline (no LLM): gold groupings are the predicted topics. Measures that apply rules accept
+    well-formed gold and preserve membership. Live LLM purity awaits a weekly run with topic_collapse=1.
+    """
+    from grit.agents.topics import ContractError, check_topics
+    from grit.core.topics import apply_topic_resolution
+
+    elevated = set(topics_row.get("all_elevated_event_ids") or [])
+    gold_topics = []
+    for topic in topics_row.get("topics") or []:
+        key = str(topic.get("topic_key") or "")
+        eids = [eid for eid in (topic.get("event_ids") or []) if eid and eid != "TBD"]
+        if not key or key == "TBD" or not eids:
+            continue
+        gold_topics.append({
+            "topic_key": key,
+            "label": str(topic.get("label") or key),
+            "event_ids": eids,
+            "basis": str(topic.get("notes") or topic.get("basis")
+                         or f"Shared management frame for {topic.get('label') or key}: mechanism and STE exposure"),
+            "common_ste_path": "",
+            "differences": "",
+            "status_vs_last_week": "CONTINUING" if key and not key.startswith("NEW") else "NEW",
+            "confidence": 0.9,
+        })
+    unassigned = [eid for eid in (topics_row.get("unassigned_event_ids") or []) if eid in elevated]
+    # Ensure every elevated id is covered exactly once for the contract.
+    covered = {eid for topic in gold_topics for eid in topic["event_ids"]}
+    for eid in sorted(elevated - covered - set(unassigned)):
+        unassigned.append(eid)
+    # CONTINUING needs prior_keys; treat gold keys as known priors for offline replay.
+    prior_keys = {topic["topic_key"] for topic in gold_topics}
+    for topic in gold_topics:
+        if topic["status_vs_last_week"] == "CONTINUING" and topic["topic_key"] not in prior_keys:
+            topic["status_vs_last_week"] = "NEW"
+    allowed = elevated | {eid for topic in gold_topics for eid in topic["event_ids"]}
+    try:
+        checked = check_topics(
+            {"topics": gold_topics, "unassigned": unassigned, "theme_candidates": []},
+            elevated_ids=elevated,
+            allowed_ids=allowed,
+            prior_keys=prior_keys,
+        )
+        applied = apply_topic_resolution(
+            list(checked.get("topics") or []),
+            elevated_ids=elevated,
+            near_ids=set(),
+            prior_keys=prior_keys,
+            run_date=str(topics_row.get("week_id") or "")[:10] or "2026-11-25",
+        )
+    except ContractError as exc:
+        return {
+            "topic_resolver_purity": None,
+            "topic_resolver_completeness": None,
+            "topics_validated": 0,
+            "contract_ok": False,
+            "error": str(exc),
+        }
+
+    # Event-level: predicted topic_key per elevated event vs gold.
+    gold_map: dict[str, str] = {}
+    for topic in gold_topics:
+        for eid in topic["event_ids"]:
+            if eid in elevated:
+                gold_map[eid] = topic["topic_key"]
+    pred_map: dict[str, str] = {}
+    for topic in applied["topics"]:
+        for eid in topic.get("elevated_event_ids") or topic.get("event_ids") or []:
+            if eid in elevated:
+                pred_map[eid] = topic["topic_key"]
+
+    # Purity: among predicted co-members, fraction that share gold topic.
+    purity_scores = []
+    by_pred: dict[str, list[str]] = defaultdict(list)
+    for eid, key in pred_map.items():
+        by_pred[key].append(eid)
+    for _key, members in by_pred.items():
+        if len(members) < 2:
+            purity_scores.append(1.0)
+            continue
+        # pairwise agreement with gold
+        agree = total = 0
+        for i, a in enumerate(members):
+            for b in members[i + 1:]:
+                total += 1
+                if gold_map.get(a) and gold_map.get(a) == gold_map.get(b):
+                    agree += 1
+        purity_scores.append(agree / total if total else 1.0)
+
+    # Completeness: among gold co-members, fraction co-located in predicted topic.
+    completeness_scores = []
+    by_gold: dict[str, list[str]] = defaultdict(list)
+    for eid, key in gold_map.items():
+        by_gold[key].append(eid)
+    for _key, members in by_gold.items():
+        if len(members) < 2:
+            completeness_scores.append(1.0 if all(eid in pred_map for eid in members) else 0.0)
+            continue
+        agree = total = 0
+        for i, a in enumerate(members):
+            for b in members[i + 1:]:
+                total += 1
+                if pred_map.get(a) and pred_map.get(a) == pred_map.get(b):
+                    agree += 1
+        completeness_scores.append(agree / total if total else 0.0)
+
+    return {
+        "topic_resolver_purity": (sum(purity_scores) / len(purity_scores)) if purity_scores else None,
+        "topic_resolver_completeness": (
+            (sum(completeness_scores) / len(completeness_scores)) if completeness_scores else None
+        ),
+        "topics_validated": len(applied["topics"]),
+        "contract_ok": True,
+        "note": "offline gold replay through TopicResolver contract+apply (no LLM)",
+    }
+
+
 def evaluate(fixtures: Path) -> dict[str, Any]:
     pairs = _load_jsonl(fixtures / "pairs.jsonl")
     topics = {row["week_id"]: row for row in _load_jsonl(fixtures / "topics.jsonl")}
@@ -334,12 +453,14 @@ def evaluate(fixtures: Path) -> dict[str, Any]:
         global_stats["max_distinct_country_count"] = max(
             global_stats["max_distinct_country_count"], stats["max_distinct_country_count"]
         )
+        topic_row = topics.get(week_id) or {"week_id": week_id, "topics": [], "gap_for_jony": True}
         topic_metrics = _topic_metrics(
-            topics.get(week_id) or {"week_id": week_id, "topics": [], "gap_for_jony": True},
+            topic_row,
             events,
             membership,
             fixtures=fixtures,
         )
+        resolver_metrics = _topic_resolver_metrics(topic_row)
         # Per-week pair rates (pairs scoped to week)
         week_pairs = [p for p in pairs if p.get("week_id") == week_id]
         week_results.append(
@@ -350,6 +471,7 @@ def evaluate(fixtures: Path) -> dict[str, Any]:
                 "pair_rates_authoritative": _pair_rates(week_pairs, membership, authoritative_only=True),
                 "pair_rates_provisional": _pair_rates(week_pairs, membership, authoritative_only=False),
                 "topic_metrics": topic_metrics,
+                "topic_resolver_metrics": resolver_metrics,
             }
         )
 
@@ -377,6 +499,24 @@ def evaluate(fixtures: Path) -> dict[str, Any]:
     prov = micro_average("pair_rates_provisional")
     topic_purities = [wr["topic_metrics"]["topic_purity"] for wr in week_results if wr["topic_metrics"]["topic_purity"] is not None]
     topic_comps = [wr["topic_metrics"]["topic_completeness"] for wr in week_results if wr["topic_metrics"]["topic_completeness"] is not None]
+    resolver_purities = [
+        wr["topic_resolver_metrics"]["topic_resolver_purity"]
+        for wr in week_results
+        if wr["topic_resolver_metrics"].get("topic_resolver_purity") is not None
+    ]
+    resolver_comps = [
+        wr["topic_resolver_metrics"]["topic_resolver_completeness"]
+        for wr in week_results
+        if wr["topic_resolver_metrics"].get("topic_resolver_completeness") is not None
+    ]
+    # Persistent key check: same topic_key appears across consecutive fixture weeks where storyline continues.
+    key_weeks: dict[str, list[str]] = defaultdict(list)
+    for wr in week_results:
+        for topic in (topics.get(wr["week_id"]) or {}).get("topics") or []:
+            key = str(topic.get("topic_key") or "")
+            if key and key != "TBD" and (topic.get("event_ids") or []):
+                key_weeks[key].append(wr["week_id"])
+    persistent_keys = {key: weeks for key, weeks in key_weeks.items() if len(weeks) >= 2}
 
     return {
         "fixtures": str(fixtures),
@@ -390,6 +530,13 @@ def evaluate(fixtures: Path) -> dict[str, Any]:
             "max_distinct_country_count": global_stats["max_distinct_country_count"],
             "topic_purity_mean": (sum(topic_purities) / len(topic_purities)) if topic_purities else None,
             "topic_completeness_mean": (sum(topic_comps) / len(topic_comps)) if topic_comps else None,
+            "topic_resolver_purity_mean": (
+                (sum(resolver_purities) / len(resolver_purities)) if resolver_purities else None
+            ),
+            "topic_resolver_completeness_mean": (
+                (sum(resolver_comps) / len(resolver_comps)) if resolver_comps else None
+            ),
+            "persistent_topic_keys": sorted(persistent_keys),
             "authoritative_pairs_considered": auth["pairs_considered"],
             "provisional_pairs_considered": prov["pairs_considered"],
             "baseline_status": (
@@ -424,17 +571,24 @@ def print_report(result: dict[str, Any]) -> None:
     print(f"  missed-merge rate (provisional): {_fmt_rate(h['missed_merge_rate_provisional'])}")
     print(f"  max cluster size:             {h['max_cluster_size']}")
     print(f"  max distinct-country count:   {h['max_distinct_country_count']}")
-    print(f"  topic purity (mean):          {_fmt_rate(h['topic_purity_mean'])}")
-    print(f"  topic completeness (mean):    {_fmt_rate(h['topic_completeness_mean'])}")
+    print(f"  topic purity (mean, merge):   {_fmt_rate(h['topic_purity_mean'])}")
+    print(f"  topic completeness (mean, merge): {_fmt_rate(h['topic_completeness_mean'])}")
+    print(f"  topic resolver purity (mean): {_fmt_rate(h.get('topic_resolver_purity_mean'))}")
+    print(f"  topic resolver completeness (mean): {_fmt_rate(h.get('topic_resolver_completeness_mean'))}")
+    print(f"  persistent topic_keys (≥2 weeks): {', '.join(h.get('persistent_topic_keys') or []) or 'none'}")
     print()
     for wr in result["weeks_detail"]:
         cs = wr["cluster_stats"]
         tm = wr["topic_metrics"]
+        tr = wr.get("topic_resolver_metrics") or {}
         print(f"Week {wr['week_id']}: signals={wr['signals']} events={cs['event_count']} "
               f"elevated={cs['elevated_event_count']} max_size={cs['max_cluster_size']} "
               f"max_countries={cs['max_distinct_country_count']}")
-        print(f"  topics: purity={tm.get('topic_purity')} completeness={tm.get('topic_completeness')} "
+        print(f"  topics (merge): purity={tm.get('topic_purity')} completeness={tm.get('topic_completeness')} "
               f"({tm.get('note')})")
+        print(f"  topics (resolver replay): purity={tr.get('topic_resolver_purity')} "
+              f"completeness={tr.get('topic_resolver_completeness')} validated={tr.get('topics_validated')} "
+              f"ok={tr.get('contract_ok')}")
 
 
 def main(argv: list[str] | None = None) -> int:

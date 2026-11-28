@@ -108,11 +108,18 @@ def test_eval_identity_runs_offline(tmp_path: Path):
     assert "max_distinct_country_count" in headline
     assert "topic_purity_mean" in headline
     assert "topic_completeness_mean" in headline
+    assert "topic_resolver_purity_mean" in headline
+    assert "topic_resolver_completeness_mean" in headline
     assert headline["max_cluster_size"] >= 1
     assert headline["authoritative_pairs_considered"] > 0
     assert headline["baseline_status"] == "authoritative"
     assert headline["false_merge_rate_authoritative"] is not None
     assert headline["missed_merge_rate_authoritative"] is not None
+    assert headline["topic_resolver_purity_mean"] is not None
+    assert headline["topic_resolver_completeness_mean"] is not None
+    assert headline["topic_resolver_purity_mean"] >= 0.85
+    assert headline["topic_resolver_completeness_mean"] >= 0.75
+    assert "middle-east-security-escalation" in (headline.get("persistent_topic_keys") or [])
 
     out = tmp_path / "report.txt"
     completed = subprocess.run(

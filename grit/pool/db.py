@@ -42,7 +42,9 @@ def _loads_json(column: str, value: str) -> Any:
     """Parse a *_json cell. Blank strings (seen after sqlite .recover) become [] or {}."""
     text = value.strip()
     if not text:
-        return [] if column in _JSON_LIST_COLUMNS or column.endswith("_ids_json") else {}
+        if column in _JSON_LIST_COLUMNS or column.endswith("_ids_json"):
+            return []
+        return {}
     return json.loads(text)
 
 
@@ -904,6 +906,91 @@ class Pool:
             "SELECT * FROM event_signatures WHERE run_id = ? ORDER BY signature_row_id",
             (run_id,),
         )
+
+    # Topic resolutions (topic-collapse plan v2 Phase P2) ------------------------------------------------------
+
+    def add_topic_resolution(
+        self,
+        *,
+        topic_key: str,
+        run_id: str,
+        label: str,
+        event_ids: Sequence[str],
+        basis: str,
+        common_ste_path: str,
+        differences: str,
+        status_vs_last_week: str,
+        confidence: float,
+        status: str,
+        input_hash: str,
+        model: str | None = None,
+        prompt_version: str | None = None,
+        critic_verdict: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Append a topic resolution row. Latest VALIDATED per topic_key within a run stands."""
+        row = {
+            "topic_key": topic_key,
+            "run_id": run_id,
+            "label": label,
+            "event_ids_json": list(event_ids),
+            "basis": basis,
+            "common_ste_path": common_ste_path,
+            "differences": differences,
+            "status_vs_last_week": status_vs_last_week,
+            "confidence": float(confidence),
+            "status": status,
+            "input_hash": input_hash,
+            "model": model,
+            "prompt_version": prompt_version,
+            "critic_verdict_json": dict(critic_verdict or {}),
+            "created_at": utc_now(),
+        }
+        row["topic_row_id"] = self.insert("topic_resolutions", row)
+        # Convenience aliases matching decoded read shape.
+        row["event_ids"] = list(event_ids)
+        row["critic_verdict"] = dict(critic_verdict or {})
+        return row
+
+    def topic_resolutions_for_run(self, run_id: str, *, validated_only: bool = False) -> list[dict[str, Any]]:
+        rows = self.rows(
+            "SELECT * FROM topic_resolutions WHERE run_id = ? ORDER BY topic_row_id",
+            (run_id,),
+        )
+        if validated_only:
+            rows = [row for row in rows if row.get("status") == "VALIDATED"]
+        return rows
+
+    def topic_resolutions_recent(
+        self,
+        *,
+        pack: str,
+        since: str,
+        until: str | None = None,
+        validated_only: bool = True,
+    ) -> list[dict[str, Any]]:
+        """Topic rows for runs of this pack with run_date in [since, until)."""
+        until = until or "9999-12-31"
+        rows = self.rows(
+            """SELECT t.* FROM topic_resolutions t
+               JOIN runs r ON r.run_id = t.run_id
+               WHERE r.pack = ? AND r.run_date >= ? AND r.run_date < ?
+               ORDER BY t.topic_row_id""",
+            (pack, since, until),
+        )
+        if validated_only:
+            rows = [row for row in rows if row.get("status") == "VALIDATED"]
+        return rows
+
+    def topic_ledger_hash_for_run(self, run_id: str) -> str | None:
+        """Standing VALIDATED topic ledger hash for ReviewGate package content."""
+        from grit.core.topics import topic_ledger_hash
+
+        rows = self.topic_resolutions_for_run(run_id, validated_only=True)
+        if not rows:
+            config = (self.run(run_id) or {}).get("config") or {}
+            stored = config.get("topic_ledger_hash")
+            return str(stored) if stored else None
+        return topic_ledger_hash(rows)
 
     def management_requests(self, *, active_only: bool = False) -> list[dict[str, Any]]:
         """Each request carries "scope": the packs it belongs to. A request raised in chat has no pack, so it belongs to the

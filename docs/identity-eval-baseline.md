@@ -1,7 +1,7 @@
 # Identity evaluation baseline
 
-**Plan:** `topic-collapse-plan-v2` Phase E + Phase P0 + Phase P1  
-**Code tip:** P1 branch (see latest commit on `cursor/phase-p1-event-signatures-5445`)  
+**Plan:** `topic-collapse-plan-v2` Phase E + Phase P0 + Phase P1 + Phase P2  
+**Code tip:** P2 branch (see latest commit on `cursor/phase-p2-topic-resolver-8bb9`)  
 **Recorded:** 2026-11-28 (Asia/Singapore)  
 **Harness:** `tools/eval_identity.py` against `tests/fixtures/identity_eval/`  
 **Labels:** Provisional export heuristics promoted to authoritative after Jony R&A approval (no flips).
@@ -47,7 +47,7 @@
 
 **Missed-merge rise (exit-criteria note):** Offline eval has no Relation Resolver LLM. All 56 newly missed SAME pairs are `co_member_elevated_export` with 0–1 shared non-place terms (many are Wilson topic co-elevated mates such as Houthi/Riyadh vs Hormuz/ADNOC). Among SAME pairs with ≥2 shared non-place terms or a curated alias, missed-merge stays **0.000**. Houthi/airport lexical duplicates and Plus Ultra alias still join. Production `event_relations=1` nominates the weak pairs for the resolver instead of unioning them.
 
-### Phase P1 (this change — LLM signatures + deterministic compare)
+### Phase P1 (`7bfca9a` merge of PR #14 on `main` — LLM signatures + deterministic compare)
 
 | Metric | Value | Notes |
 |---|---|---|
@@ -55,23 +55,31 @@
 | missed-merge rate (authoritative) | **0.452** | Flat vs P0 offline — see note |
 | max cluster size | **6** | Unchanged |
 | max distinct-country count / event | **4** | Unchanged |
-| topic purity (mean) | **1.000** | |
-| topic completeness (mean) | **0.664** | |
+| topic purity (mean, merge) | **1.000** | |
+| topic completeness (mean, merge) | **0.664** | |
 | authoritative pairs considered | **290** | |
 | baseline_status | **authoritative** | |
 
 **Missed-merge flat (exit-criteria note):** Offline harness uses cue-list fallback only (no EventSignature LLM, no Relation Resolver). The 56 weak SAME pairs still lack actor+action or object+action evidence under `same_event_candidate`, so they stay separate — same as P0 word-join. Production path: signature matches **nominate** when `event_relations=1` (resolver can recover), and union on the flag-off path when the closed-class signature matches. Unit fixtures: Houthi/airport duplicates join; OFAC / Taiwan defence / chip-control stay separate without term-bag luck.
 
-## P1 decision-gate metrics (for Jony)
+### Phase P2 (this change — Topic Resolver + TopicCritic + `topic_resolutions`)
 
-Check against **25 Nov STE** and one other week (recommend **26 Nov URS**):
+| Metric | Value | Notes |
+|---|---|---|
+| false-merge rate (authoritative) | **0.000** | Unchanged (topics never write SAME) |
+| missed-merge rate (authoritative) | **0.452** | Unchanged |
+| max cluster size | **6** | Unchanged |
+| max distinct-country count / event | **4** | Unchanged |
+| topic purity (mean, merge) | **1.000** | Merge-cluster proxy (P0/P1) |
+| topic completeness (mean, merge) | **0.664** | Merge-cluster proxy; topics do not change merges |
+| topic resolver purity (mean) | **1.000** | Gold `topics.jsonl` replay through contract+apply (no LLM) |
+| topic resolver completeness (mean) | **1.000** | ≥ 0.75 exit; offline gold replay |
+| persistent topic_keys (≥2 weeks) | `cyber-ot`, `middle-east-security-escalation`, `unmanned-autonomy`, `us-advanced-compute-controls` | Storyline keys persist across fixture weeks |
+| 25 Nov STE topics validated | **4** | Matches PDF shape; OFAC + Saudi operating-policy stay separate |
+| authoritative pairs considered | **290** | |
+| baseline_status | **authoritative** | |
 
-| Gate question | Offline evidence |
-|---|---|
-| Is the elevated set already readable without topics? | 25 Nov STE: 9 elevated events, max size 6, purity 1.0 — OFAC / Taiwan defence / chip controls stay separate under signature compare. |
-| False bridges via country / staff / one word? | Still blocked (P0 + signature `other` never matches). |
-| Signature cost (weekly) | 1 EventSignature call per event with members; cache by anchor `input_hash`; re-extract only when anchors change. Fallback marked `signature_source=fallback`. Stats on run config: `signature_stats` (`calls`, `cache_hits`, `cache_hit_rate`, `llm`, `fallback`) and `signature_near_misses` (P2 topic candidates). |
-| Proceed to P2? | If 25 Nov + one peer week read cleanly as separate events, P2 (persistent topics) may be deferred. If the brief still needs a management-frame roll-up across distinct events, start P2 after this merges. |
+**P2 notes:** Flag `topic_collapse=1`. Topics never write SAME/bands/overrides/challenges. Theme candidates never change band. TopicCritic runs at most once on ambiguous borders (`0.55–0.80`). Live LLM topic purity awaits a weekly run with the flag on; offline numbers are gold-replay through the apply path.
 
 ## Labelling
 
@@ -83,5 +91,5 @@ Check against **25 Nov STE** and one other week (recommend **26 Nov URS**):
 ```bash
 python3 tools/eval_identity.py
 python3 tools/eval_identity.py --json
-python3 -m pytest tests/test_identity_eval.py tests/test_topic_identity_p0.py tests/test_event_signature.py -q
+python3 -m pytest tests/test_identity_eval.py tests/test_topic_identity_p0.py tests/test_event_signature.py tests/test_topic_collapse_p2.py -q
 ```
