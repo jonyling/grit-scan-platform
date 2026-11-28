@@ -78,10 +78,12 @@ def resolve_and_persist(
     invoke: InvokeFn | None = None,
     model: str | None = None,
     elevated_ids: set[str] | None = None,
+    citation_pairs: Sequence[tuple[str, str]] = (),
 ) -> dict[str, int]:
     """Candidate-generate, reuse by input_hash, auto-SAME, optional LLM+Critic, persist under run_id.
 
     When invoke is None, only auto-SAME and cross-run hash reuse run (nightly cheap path).
+    citation_pairs: identity nominations from `_group` / `_merge_stories` / `label_merges` (P0.2).
     """
     if len(sources) < 2:
         return {
@@ -90,8 +92,15 @@ def resolve_and_persist(
         }
     clusters = clusters or {}
     cosines = load_cosines(pool, list(sources))
+    config = (pool.run(run_id) or {}).get("config") or {}
+    stored = []
+    for pair in config.get("identity_nomination_pairs") or []:
+        if isinstance(pair, (list, tuple)) and len(pair) == 2:
+            stored.append((str(pair[0]), str(pair[1])))
+    pairs = list(citation_pairs) + stored
     edges = candidate_edges(
         list(sources.values()), clusters=clusters, cosines=cosines, prior_relations=prior_relations,
+        citation_pairs=pairs,
     )
     digests = [
         pair_input_hash(sources[edge["left_signal_id"]], sources[edge["right_signal_id"]], edge.get("features") or {})

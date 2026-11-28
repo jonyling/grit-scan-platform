@@ -20,12 +20,19 @@ def test_in_a_reasoned_run_significance_decides_materiality_not_the_rule_tier():
 
 
 def test_reports_a_selection_cites_as_the_same_event_are_one_event(tmp_path: Path):
+    """P0.2: a single shared place word (Saudi) must not join citation mates on the flag-off path."""
     pool = Pool(tmp_path / "grit.sqlite")
     rows = [_row("SIG-a", 11, cites=("SIG-b", "SIG-c"), title="US orders staff out of Saudi Arabia"),
             _row("SIG-b", 9, band="T1", title="Security alert for Saudi Arabia"),
             _row("SIG-c", 7, title="PRC weaponizing Taiwan handover")]
     groups = sorted(sorted(row["signal_id"] for row in members) for members in _group(pool, rows).values())
-    assert groups == [["SIG-a", "SIG-b"], ["SIG-c"]], "a cited report about another event does not join it"
+    assert groups == [["SIG-a"], ["SIG-b"], ["SIG-c"]], "country-only citation overlap does not join events"
+
+    # Legitimate corroboration: ≥2 shared non-place terms still joins when relations are off.
+    linked = [_row("SIG-h1", 11, cites=("SIG-h2",), title="Houthi drone strikes targeting Saudi airports"),
+              _row("SIG-h2", 9, band="T1", title="Houthi missile attacks on Saudi airport facilities")]
+    joined = sorted(sorted(row["signal_id"] for row in members) for members in _group(pool, linked).values())
+    assert joined == [["SIG-h1", "SIG-h2"]]
 
 
 def test_the_status_line_text_ends_at_a_sentence_or_an_ellipsis():
@@ -46,16 +53,16 @@ def test_elevated_reports_of_one_story_merge_into_one_event():
                 "red_candidate": False, "lead": row, "members": [row], "signal_ids": [key], "publishers": 1, "first_date": day,
                 "last_date": day, "risks": [], "risk_label": "", "requests": []}
 
-    events = [event("a", "Houthi drone and missile strikes targeting Saudi Arabian airports", 12),
-              event("b", "US Embassy security alert on Saudi airport attacks", 10, band="T1"),
+    events = [event("a", "Houthi drone strikes targeting Saudi airports", 12),
+              event("b", "Houthi missile attacks on Saudi airport facilities", 10, band="T1"),
               event("c", "US orders staff departure from Saudi Arabia amid attacks", 11),
               event("d", "Israeli shekel and stocks drop amid election deadlock", 10),
               event("e", "Saudi Arabia hosts tourism summit", 9)]
     merged = _merge_stories(events, {})
     stories = sorted(sorted(item["signal_ids"]) for item in merged)
     assert stories == [["a", "b"], ["c"], ["d"], ["e"]], "words shared only through another report do not chain stories"
-    saudi = next(item for item in merged if len(item["signal_ids"]) == 2)
-    assert saudi["score"] == 12 and saudi["lead"]["signal_id"] == "b", "the top score stands and the T1 report leads"
+    houthi = next(item for item in merged if len(item["signal_ids"]) == 2)
+    assert houthi["score"] == 12 and houthi["lead"]["signal_id"] == "b", "the top score stands and the T1 report leads"
 
 
 def test_reports_sharing_a_country_and_risk_but_not_headline_words_stay_separate():

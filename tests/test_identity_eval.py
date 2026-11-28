@@ -37,21 +37,29 @@ def test_identity_eval_fixtures_present():
     assert {"group", "marine", "urs", "ca"} <= roles
 
 
-def test_pairs_jsonl_has_at_least_300_candidates_and_marks_non_authoritative():
+def test_pairs_jsonl_has_at_least_300_candidates_and_ra_labels():
     lines = [ln for ln in (FIXTURES / "pairs.jsonl").read_text(encoding="utf-8").splitlines() if ln.strip()]
     assert len(lines) >= 300
-    hard = 0
+    hard = authoritative = 0
     for line in lines:
         row = json.loads(line)
         assert "signal_a" in row and "signal_b" in row
-        assert row.get("authoritative") is False
-        assert row.get("label_status") in {"unlabelled", "provisional"}
         if row.get("label"):
             assert row["label"] in {"SAME", "RELATED", "UNRELATED"}
-            assert row.get("label_source") == "export_heuristic"
+            assert row.get("label_status") in {"labelled", "provisional"}
+            if row.get("authoritative") is True:
+                authoritative += 1
+                assert row.get("label_source") == "ra"
+                assert row.get("label_status") == "labelled"
+            else:
+                assert row.get("label_status") in {"unlabelled", "provisional"}
+        else:
+            assert row.get("authoritative") is False
+            assert row.get("label_status") in {"unlabelled", "provisional"}
         if row.get("hard_flags"):
             hard += 1
     assert hard >= 100, "hard cases should be over-sampled"
+    assert authoritative >= 200, "R&A-approved provisional labels should be promoted"
 
 
 def test_topics_jsonl_marks_gaps_and_covers_exported_weeks():
@@ -69,18 +77,20 @@ def test_topics_jsonl_marks_gaps_and_covers_exported_weeks():
     assert "ofac-sanctions" in keys
 
 
-def test_labelling_sheet_ra_label_blank():
-    """Do not invent authoritative R&A pair labels; sheet leaves ra_label empty for Jony."""
+def test_labelling_sheet_ra_label_filled_from_approved_provisional():
+    """Jony approved provisional labels as R&A authoritative; sheet ra_label mirrors those."""
     import csv
 
     with (FIXTURES / "labelling_sheet.csv").open(encoding="utf-8", newline="") as fh:
         rows = list(csv.DictReader(fh))
     assert len(rows) >= 300
-    assert all(not (row.get("ra_label") or "").strip() for row in rows)
+    filled = [row for row in rows if (row.get("ra_label") or "").strip()]
+    assert len(filled) >= 200
+    assert all((row.get("ra_label") or "").strip().upper() in {"SAME", "RELATED", "UNRELATED"} for row in filled)
 
 
 def test_eval_identity_runs_offline(tmp_path: Path):
-    """Harness imports current merge helpers and returns headline metrics without touching events.py behaviour."""
+    """Harness imports current merge helpers and returns headline metrics."""
     import importlib.util
 
     path = ROOT / "tools" / "eval_identity.py"
@@ -99,9 +109,10 @@ def test_eval_identity_runs_offline(tmp_path: Path):
     assert "topic_purity_mean" in headline
     assert "topic_completeness_mean" in headline
     assert headline["max_cluster_size"] >= 1
-    # Authoritative rates stay null until Jony labels the sheet.
-    assert headline["authoritative_pairs_considered"] == 0
-    assert headline["baseline_status"] == "provisional_only"
+    assert headline["authoritative_pairs_considered"] > 0
+    assert headline["baseline_status"] == "authoritative"
+    assert headline["false_merge_rate_authoritative"] is not None
+    assert headline["missed_merge_rate_authoritative"] is not None
 
     out = tmp_path / "report.txt"
     completed = subprocess.run(
