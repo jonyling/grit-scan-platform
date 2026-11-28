@@ -81,6 +81,21 @@
 
 **P2 notes:** Flag `topic_collapse=1`. Topics never write SAME/bands/overrides/challenges. Theme candidates never change band. TopicCritic runs at most once on ambiguous borders (`0.55–0.80`). Live LLM topic purity awaits a weekly run with the flag on; offline numbers are gold-replay through the apply path.
 
+### Phase P3 (this change — render + nightly reuse-only continuity)
+
+| Metric | Value | Notes |
+|---|---|---|
+| false-merge rate (authoritative) | **0.000** | Unchanged (render/reuse never write SAME) |
+| missed-merge rate (authoritative) | **0.452** | Unchanged |
+| max cluster size | **6** | Unchanged |
+| max distinct-country count / event | **4** | Unchanged |
+| topic purity / completeness (merge) | **1.000 / 0.664** | Unchanged |
+| topic resolver purity / completeness | **1.000 / 1.000** | Unchanged (gold replay) |
+| authoritative pairs considered | **290** | |
+| baseline_status | **authoritative** | |
+
+**P3 notes:** `format_v2` rolls validated topics into parent rows (`Week N, status`) with indented children; unassigned elevated stay flat; emerging themes are a separate section and never change band. Nightly attaches new events to existing `topic_key`s on signature match only — no new topics overnight. Operator note: `docs/topic-collapse-operator-note.md`.
+
 ## Labelling
 
 - Candidate pairs: **472** (`pairs.jsonl`), of which **290** are authoritative (`label_source=ra`, `label_status=labelled`).
@@ -91,5 +106,5 @@
 ```bash
 python3 tools/eval_identity.py
 python3 tools/eval_identity.py --json
-python3 -m pytest tests/test_identity_eval.py tests/test_topic_identity_p0.py tests/test_event_signature.py tests/test_topic_collapse_p2.py -q
+python3 -m pytest tests/test_identity_eval.py tests/test_topic_identity_p0.py tests/test_event_signature.py tests/test_topic_collapse_p2.py tests/test_topic_collapse_p3.py -q
 ```

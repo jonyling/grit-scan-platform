@@ -4,6 +4,8 @@
 |---|---|
 | Full text | Adds new signals to the FTS5 index. |
 | Events | Joins each newly kept identity-eligible signal to an event when it matches the event **anchor** (lead + ≤2 medoids): same title, or cosine 0.90 or more with an anchor member within 8 days. Internal / approved evidence never joins. Otherwise it starts an event. Lead changes are logged. |
+| Relations | Cheap nightly Event Relation resolve (auto-SAME + input_hash reuse); weekly with `--event-relations` reuses these rows. |
+| Topics | Reuse-only: attach new events to existing `topic_key`s when the signature matches a child. Never mints new topics overnight. |
 | Digests | Per pack and day, from the runs dated that day: newly kept tier 1 and 2 events, RED patterns and drafts, moved standing items, and watchpoint updates. |
 | Retention | After 90 days, a page that no run kept keeps its title and the first 500 characters of its text. Kept pages and all vectors stay whole. |
 """
@@ -340,13 +342,21 @@ def resolve_nightly_relations(pool: Pool, day: date) -> dict[str, int]:
     return summary
 
 
+def resolve_nightly_topics(pool: Pool, day: date) -> dict[str, Any]:
+    """P3: reuse-only topic assignment (attach new events to existing topic_keys; no new topics)."""
+    from grit.pipeline.resolve_topics import resolve_nightly_topic_reuse
+
+    return resolve_nightly_topic_reuse(pool, day)
+
+
 def nightly(pool: Pool, day: date, *, packs: list[str] | None = None) -> dict[str, Any]:
     events = cluster_events(pool)
     relations = resolve_nightly_relations(pool, day)
+    topics = resolve_nightly_topics(pool, day)
     for back in range(DIGEST_DAYS - 1, 0, -1):
         write_digests(pool, day - timedelta(days=back), packs)
     result = {
-        "fts_added": ensure_fts(pool), "events": events, "relations": relations,
+        "fts_added": ensure_fts(pool), "events": events, "relations": relations, "topics": topics,
         "digests": write_digests(pool, day, packs), "retained": retain(pool, day),
     }
     pool.log(actor_type="FUNCTION", actor="NightlyIndex", status="SUCCEEDED", detail={"day": day.isoformat(), **result})

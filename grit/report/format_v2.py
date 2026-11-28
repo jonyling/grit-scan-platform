@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, Mapping, Sequence
 
 from grit.pipeline.events import DOWN, SAME, UP, event_register, risk_labels
@@ -326,6 +326,13 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
                             and str(row.get("source_band") or "") in {"T1", "T2", "T3"}][:2],
         })
     escalating_rows.sort(key=lambda row: (band_sort_key(row.get("reader_band")), order_in_band_of(row), str(row.get("lead") or "")))
+    for row in escalating_rows:
+        row.setdefault("row_kind", "event")
+
+    # P3: when topic_collapse is on, roll elevated rows into topic parents + indented children.
+    topics_view, emerging_themes, escalating_rows = _apply_topic_collapse(
+        pool, run, config, escalating_rows, events=events, drafted=drafted, label=label,
+    )
 
     # 2. What changed since the last report.
     previous = {row["condition_id"]: row for row in pool.conditions(pool.latest_run(run["pack"], before=run["run_date"], kind="READER_SCAN")["run_id"])} \
@@ -533,7 +540,210 @@ def build(pool: Any, run: Mapping[str, Any], pack: Any, routed: Sequence[Mapping
         "completeness": completeness,
         "tiers": tiers, "short": short, "unrated_outlets": [{"domain": domain, "signals": count} for domain, count in unrated],
         "exposure": exposure,
+        "topics": topics_view,
+        "emerging_themes": emerging_themes,
     }
+
+
+CHILD_INDENT = "    "
+
+
+def _apply_topic_collapse(
+    pool: Any,
+    run: Mapping[str, Any],
+    config: Mapping[str, Any],
+    escalating_rows: list[dict[str, Any]],
+    *,
+    events: Sequence[Mapping[str, Any]],
+    drafted: Mapping[str, Any],
+    label,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """P3: topic parent rows + indented children; unassigned elevated stay flat; emerging themes section."""
+    from grit.core.topics import (
+        combined_implication,
+        enabled as topics_enabled,
+        format_status_vs_last_week,
+        topic_week_number,
+        worst_reader_band,
+    )
+
+    if not topics_enabled(config):
+        return [], [], escalating_rows
+
+    run_id = run["run_id"]
+    run_date = str(run.get("run_date") or "")[:10]
+    pack = str(run.get("pack") or "")
+    try:
+        validated = pool.topic_resolutions_for_run(run_id, validated_only=True)
+    except Exception:
+        validated = []
+    try:
+        all_rows = pool.topic_resolutions_for_run(run_id, validated_only=False)
+    except Exception:
+        all_rows = []
+
+    themes_cfg = list(config.get("emerging_themes") or [])
+    theme_rows = [
+        row for row in all_rows
+        if row.get("status") == "THEME_CANDIDATE"
+    ]
+    emerging: list[dict[str, Any]] = []
+    seen_theme_keys: set[str] = set()
+    for row in theme_rows or themes_cfg:
+        event_ids = list(row.get("event_ids") or [])
+        key = tuple(event_ids) or (str(row.get("basis") or ""),)
+        if key in seen_theme_keys:
+            continue
+        seen_theme_keys.add(key)
+        emerging.append({
+            "event_ids": event_ids,
+            "basis": str(row.get("basis") or ""),
+            "confidence": float(row.get("confidence") or 0),
+            "label": str(row.get("label") or "Emerging theme (not elevated)"),
+            "band_unchanged": True,
+            "status": "THEME_CANDIDATE",
+        })
+
+    if not validated:
+        return [], emerging, escalating_rows
+
+    by_event_row = {str(row["event_id"]): row for row in escalating_rows if row.get("event_id")}
+    by_event = {str(event["event_id"]): event for event in events if event.get("event_id")}
+    assigned: set[str] = set()
+    topics_view: list[dict[str, Any]] = []
+    flat: list[dict[str, Any]] = []
+
+    # Prior run_dates per topic_key (same pack) for Week N.
+    from grit.core.overrides import band_sort_key
+    from grit.core.topics import PRIOR_TOPIC_WEEKS
+
+    prior_dates: dict[str, list[str]] = defaultdict(list)
+    try:
+        since = (
+            (date.fromisoformat(run_date) - timedelta(days=PRIOR_TOPIC_WEEKS * 7)).isoformat()
+            if run_date else "1970-01-01"
+        )
+        for row in pool.topic_resolutions_recent(pack=pack, since=since, until=run_date or "9999-12-31", validated_only=True):
+            key = str(row.get("topic_key") or "")
+            run_row = pool.run(row["run_id"]) or {}
+            day = str(run_row.get("run_date") or "")[:10]
+            if key and day and day != run_date:
+                prior_dates[key].append(day)
+    except Exception:
+        pass
+
+    for topic in validated:
+        topic_key = str(topic.get("topic_key") or "")
+        event_ids = [str(eid) for eid in (topic.get("event_ids") or [])]
+        # Prefer elevated children that appear in the escalating table; fall back to any known event.
+        child_ids = [eid for eid in event_ids if eid in by_event_row] or [eid for eid in event_ids if eid in by_event]
+        if not child_ids:
+            continue
+        children_src = []
+        for eid in child_ids:
+            if eid in by_event_row:
+                children_src.append(by_event_row[eid])
+            else:
+                event = by_event[eid]
+                children_src.append({
+                    "event_id": eid,
+                    "band": event.get("band"),
+                    "reader_band": _report_reader_band(event) if event.get("lead") else "Watch",
+                    "item": label(event) if event.get("lead") else eid,
+                    "lead": (event.get("lead") or {}).get("signal_id"),
+                    "signal_ids": list(event.get("signal_ids") or [])[:6],
+                    "publishers": event.get("publishers"),
+                    "row": drafted.get(eid),
+                    "score": event.get("score"),
+                    "risk": event.get("risk_label"),
+                    "tier": event.get("tier"),
+                })
+        for eid in child_ids:
+            assigned.add(eid)
+
+        week = topic_week_number(
+            topic_key=topic_key,
+            run_date=run_date,
+            prior_run_dates=prior_dates.get(topic_key),
+        )
+        status_raw = str(topic.get("status_vs_last_week") or "NEW")
+        status_label = format_status_vs_last_week(status_raw, week=week)
+        worst = worst_reader_band([row.get("reader_band") for row in children_src])
+        implication = combined_implication(topic, children_src)
+        confidence = float(topic.get("confidence") or 0)
+        child_rows: list[dict[str, Any]] = []
+        for child in children_src:
+            event = by_event.get(str(child["event_id"])) or {}
+            event_date = str(event.get("last_date") or event.get("first_date") or "")[:10]
+            lead_title = str(child.get("item") or clean_title((event.get("lead") or {}).get("title")))
+            child_row = {
+                **{k: v for k, v in child.items() if k not in {"row_kind", "children"}},
+                "row_kind": "topic_child",
+                "topic_key": topic_key,
+                "item": f"{CHILD_INDENT}{lead_title}",
+                "lead_title": lead_title,
+                "event_date": event_date,
+                "confidence": confidence,
+                "status_vs_last_week": status_label,
+                "summary": event_date or None,
+                "implications_text": None,
+                "parent_topic": topic_key,
+            }
+            child_rows.append(child_row)
+
+        parent = {
+            "row_kind": "topic_parent",
+            "topic_key": topic_key,
+            "event_id": topic_key,
+            "item": str(topic.get("label") or topic_key),
+            "label": str(topic.get("label") or topic_key),
+            "status_vs_last_week": status_label,
+            "status_raw": status_raw,
+            "week_number": week,
+            "reader_band": worst,
+            "band": status_label,
+            "risk": next((row.get("risk") for row in children_src if row.get("risk")), ""),
+            "tier": min((row.get("tier") or 9) for row in children_src),
+            "score": max((row.get("score") for row in children_src if row.get("score") is not None), default=None),
+            "confidence": confidence,
+            "implications_text": implication,
+            "basis": str(topic.get("basis") or ""),
+            "common_ste_path": str(topic.get("common_ste_path") or ""),
+            "differences": str(topic.get("differences") or ""),
+            "signal_ids": [sid for row in children_src for sid in (row.get("signal_ids") or [])][:12],
+            "support_ids": [sid for row in children_src for sid in (row.get("support_ids") or [])][:6],
+            "lead": children_src[0].get("lead"),
+            "publishers": sum(int(row.get("publishers") or 0) for row in children_src),
+            "children": child_rows,
+            "child_event_ids": child_ids,
+            "row": None,
+            "challenge_open": any(row.get("challenge_open") for row in children_src),
+        }
+        topics_view.append(parent)
+        flat.append(parent)
+        flat.extend(child_rows)
+
+    # Unassigned elevated events render as today.
+    for row in escalating_rows:
+        eid = str(row.get("event_id") or "")
+        if eid and eid not in assigned and row.get("row_kind") != "topic_child":
+            flat.append({**row, "row_kind": "event"})
+
+    # Preserve severity ordering: topic parents by worst band, then unassigned events.
+    parents = [row for row in flat if row.get("row_kind") == "topic_parent"]
+    children_by_topic = {
+        row["topic_key"]: [child for child in flat if child.get("row_kind") == "topic_child" and child.get("topic_key") == row["topic_key"]]
+        for row in parents
+    }
+    unassigned = [row for row in flat if row.get("row_kind") == "event"]
+    parents.sort(key=lambda row: (band_sort_key(row.get("reader_band")), str(row.get("item") or "")))
+    unassigned.sort(key=lambda row: (band_sort_key(row.get("reader_band")), str(row.get("item") or "")))
+    ordered: list[dict[str, Any]] = []
+    for parent in parents:
+        ordered.append(parent)
+        ordered.extend(children_by_topic.get(parent["topic_key"]) or parent.get("children") or [])
+    ordered.extend(unassigned)
+    return topics_view, emerging, ordered
 
 
 def jurisdiction_rows(pack: Any, visible: Sequence[Mapping[str, Any]], events: Sequence[Mapping[str, Any]],

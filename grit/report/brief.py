@@ -542,11 +542,38 @@ def build_brief(pool: Pool, run_id: str, profile: Profile) -> dict[str, Any]:
                          [pack.source_register, graph_pack(pack).source_register])
     v2_ids = {signal_id for table in ("escalating", "changes", "priorities") for row in v2[table] for signal_id in row.get("signal_ids") or []}
     v2_ids |= {signal_id for row in v2["escalating"] for signal_id in [*((row.get("row") or {}).get("source_ids") or []), *(row.get("support_ids") or [])]}
+    v2_ids |= {signal_id for row in v2.get("emerging_themes") or [] for signal_id in row.get("event_ids") or []}
     v2_ids |= {signal_id for row in v2["look_ahead"] for signal_id in row["signal_ids"]}
     v2_ids |= {signal_id for line in v2["coverage"] for cell in line["cells"].values() for signal_id in cell["signal_ids"]}
     v2_ids |= {signal_id for row in v2["jurisdictions"] for signal_id in row["signal_ids"]}
     signals.update(_signals(pool, v2_ids - set(signals)))
     for row in v2["escalating"]:
+        kind = row.get("row_kind") or "event"
+        if kind == "topic_parent":
+            # Combined implication from children / STE path; status carries continuity.
+            text = str(row.get("implications_text") or "")
+            row["summary"] = {
+                "plain": f"{row.get('status_vs_last_week') or ''} · {len(row.get('children') or [])} child event(s)".strip(" ·"),
+                "runs": [{"text": f"{row.get('status_vs_last_week') or ''} · {len(row.get('children') or [])} child event(s)".strip(" ·")}],
+            }
+            row["implications"] = {"plain": text, "runs": [{"text": text}]} if text else None
+            row["response"] = None
+            cited = list(row.get("signal_ids") or [])[:6]
+            cited += [signal_id for signal_id in row.get("support_ids") or [] if signal_id not in cited]
+            row["sources"] = [source_ref(signal_id) for signal_id in cited if signal_id in signals]
+            continue
+        if kind == "topic_child":
+            drafted = row.get("row")
+            date_text = str(row.get("event_date") or "")
+            conf = row.get("confidence")
+            conf_text = f"confidence {conf:.2f}" if isinstance(conf, (int, float)) else ""
+            summary_plain = " · ".join(part for part in (date_text, conf_text) if part)
+            row["summary"] = {"plain": summary_plain, "runs": [{"text": summary_plain}]} if summary_plain else None
+            row["implications"] = None
+            row["response"] = (drafted or {}).get("response")
+            cited = list((drafted or {}).get("source_ids") or row.get("signal_ids") or [])[:4]
+            row["sources"] = [source_ref(signal_id) for signal_id in cited if signal_id in signals]
+            continue
         drafted = row.get("row")
         row["summary"] = render(drafted["summary"]) if drafted else None
         row["implications"] = render(drafted["implications"]) if drafted else None

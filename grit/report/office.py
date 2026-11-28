@@ -271,7 +271,11 @@ def render_pptx(brief: Mapping[str, Any], path: Path) -> Path:
     groups = summary_groups(items)
     cover = _blank(deck, COVER_LAYOUT)
     summaries = [_blank(deck, CONTENT_LAYOUT) for _ in groups]
-    elevated_rows = (brief.get("v2") or {}).get("escalating") or []
+    # Deck shows topic parents + unassigned events; indented children stay in the Word brief.
+    elevated_rows = [
+        row for row in ((brief.get("v2") or {}).get("escalating") or [])
+        if (row.get("row_kind") or "event") != "topic_child"
+    ]
     escalation_slide = _blank(deck, CONTENT_LAYOUT) if elevated_rows else None
     outlook = brief.get("scenarios")
     scenario_slide = _blank(deck, CONTENT_LAYOUT) if outlook and outlook.get("shifts") else None
