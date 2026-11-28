@@ -46,7 +46,11 @@ def scorecard(brief: Mapping[str, Any], corrections: Any = None) -> dict[str, An
     selections = {row["signal_id"]: row for row in ((brief.get("method") or {}).get("weekly") or {}).get("selections") or []
                   if isinstance(row, Mapping) and row.get("signal_id")}
     decided = [row.get("editorial") or {} for row in selections.values()]
-    escalating = v2.get("escalating") or []
+    # Topic child rows are indented evidence under a parent; scorecard counts parents + unassigned events only.
+    escalating = [
+        row for row in (v2.get("escalating") or [])
+        if (row.get("row_kind") or "event") != "topic_child"
+    ]
     # A row's score is its event's: the best reviewed score of its members. The lead can be a cited report with a better band.
     escalating_scores = [row["score"] if row.get("score") is not None else _score(selections.get(str(row.get("lead")), {})) for row in escalating]
     unsupported = sum(1 for row in escalating if row.get("signal_ids") and all(tiers.get(key) in {"T4", "CONTESTED"} for key in row["signal_ids"]))

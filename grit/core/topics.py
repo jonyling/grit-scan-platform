@@ -380,3 +380,83 @@ def apply_theme_candidates(
             "band_unchanged": True,
         })
     return out
+
+
+# --- P3 render helpers -----------------------------------------------------------------
+
+_STATUS_WORDS = {
+    "NEW": "new",
+    "CONTINUING": "continuing",
+    "ESCALATING": "escalating",
+    "EASING": "easing",
+}
+
+
+def format_status_vs_last_week(status: str, *, week: int = 1) -> str:
+    """Operator-facing continuity label, e.g. 'Week 3, escalating' (plan P3)."""
+    key = str(status or "NEW").strip().upper()
+    word = _STATUS_WORDS.get(key, key.casefold() or "new")
+    return f"Week {max(1, int(week or 1))}, {word}"
+
+
+def topic_week_number(
+    *,
+    topic_key: str,
+    run_date: str | None = None,
+    prior_run_dates: Sequence[str] | None = None,
+) -> int:
+    """Continuity week index: distinct prior VALIDATED run_dates for this key + 1, else key first-seen."""
+    prior = sorted({str(day)[:10] for day in (prior_run_dates or []) if str(day)[:10]})
+    if prior:
+        return len(prior) + 1
+    # Fallback: mint_topic_key suffix YYYY-MM-DD.
+    match = re.search(r"(20\d{2}-\d{2}-\d{2})$", str(topic_key or ""))
+    if not match:
+        return 1
+    try:
+        first = date.fromisoformat(match.group(1))
+        current = date.fromisoformat(str(run_date or "")[:10]) if run_date else date.today()
+    except ValueError:
+        return 1
+    elapsed = max(0, (current - first).days)
+    return max(1, elapsed // 7 + 1)
+
+
+def worst_reader_band(bands: Sequence[str | None]) -> str:
+    """Worst (most severe) reader band among children."""
+    from grit.core.overrides import BAND_WATCH, band_sort_key
+
+    cleaned = [str(band) for band in bands if band]
+    if not cleaned:
+        return BAND_WATCH
+    return min(cleaned, key=band_sort_key)
+
+
+def combined_implication(
+    topic: Mapping[str, Any],
+    child_rows: Sequence[Mapping[str, Any]],
+) -> str:
+    """Parent implication: drafted child implications when present, else STE path / differences / basis."""
+    parts: list[str] = []
+    for row in child_rows:
+        drafted = row.get("row") if isinstance(row.get("row"), Mapping) else None
+        text = ""
+        if drafted and drafted.get("implications"):
+            impl = drafted["implications"]
+            text = impl.get("plain") if isinstance(impl, Mapping) else str(impl)
+        if text and text.strip():
+            parts.append(" ".join(text.split()))
+    if parts:
+        # De-dupe while preserving order; keep the brief short.
+        unique = list(dict.fromkeys(parts))
+        return " ".join(unique)[:800]
+    for key in ("common_ste_path", "differences", "basis"):
+        value = str(topic.get(key) or "").strip()
+        if value:
+            return value[:800]
+    return ""
+
+
+def first_seen_from_key(topic_key: str) -> str | None:
+    match = re.search(r"(20\d{2}-\d{2}-\d{2})$", str(topic_key or ""))
+    return match.group(1) if match else None

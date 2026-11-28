@@ -731,7 +731,37 @@ def _escalating(document: Any, brief: Mapping[str, Any], title: str, *, dry: boo
         cells = table.add_row().cells
         for cell, width in zip(cells, widths):
             cell.width = Cm(width)
-        _text_cell(cells[0], str(row.get("reader_band") or "Escalating"))
+        kind = row.get("row_kind") or "event"
+        _text_cell(cells[0], str(row.get("reader_band") or ("Escalating" if kind != "topic_child" else "")))
+        if kind == "topic_parent":
+            item_lines = [str(row.get("item") or ""), str(row.get("status_vs_last_week") or "")]
+            if row.get("risk"):
+                item_lines.append(f"[{row['risk']}]")
+            _cell_lines(cells[1], [line for line in item_lines if line], bold_first=True)
+            if row.get("summary"):
+                _runs(cells[2].paragraphs[0], row["summary"], size=8.5)
+            else:
+                _cell_lines(cells[2], [f"{len(row.get('children') or [])} child event(s)."])
+            if row.get("implications"):
+                _runs(cells[3].paragraphs[0], row["implications"], size=8.5)
+            else:
+                _cell_lines(cells[3], [str(row.get("implications_text") or "Not drafted.")])
+            _cell_lines(cells[4], ["See child events."])
+            _marks_cell(cells[5], row.get("sources") or [])
+            continue
+        if kind == "topic_child":
+            conf = row.get("confidence")
+            conf_text = f"confidence {conf:.2f}" if isinstance(conf, (int, float)) else ""
+            item_lines = [str(row.get("item") or row.get("lead_title") or "")]
+            if row.get("band"):
+                item_lines.append(str(row["band"]))
+            _cell_lines(cells[1], item_lines, bold_first=False)
+            detail = " · ".join(part for part in (str(row.get("event_date") or ""), conf_text) if part)
+            _cell_lines(cells[2], [detail or "—"])
+            _cell_lines(cells[3], [""])
+            _cell_lines(cells[4], [""])
+            _marks_cell(cells[5], row.get("sources") or [])
+            continue
         item_lines = [f"{row['band']} {row['item']}", f"[{row['risk']}]" if row["risk"] else "No register risk matched."]
         if row.get("urs_reach_reason"):
             channel = f" ({row['reach_channel']})" if row.get("reach_channel") else ""
@@ -748,6 +778,30 @@ def _escalating(document: Any, brief: Mapping[str, Any], title: str, *, dry: boo
             _cell_lines(cells[4], ["Not drafted."])
         _marks_cell(cells[5], row.get("sources") or [])
     _note(document, V2_NOTE)
+    return True
+
+
+def _emerging_themes(document: Any, brief: Mapping[str, Any], title: str, *, dry: bool) -> bool:
+    rows = (brief.get("v2") or {}).get("emerging_themes") or []
+    if dry:
+        return bool(rows)
+    if not rows:
+        return False
+    _heading(document, title)
+    widths = (4.0, 6.5, 1.8, 4.8)
+    table = _table(document, ("Theme", "Basis", "Confidence", "Near-threshold events"), widths)
+    for row in rows:
+        _row(
+            table,
+            [
+                str(row.get("label") or "Emerging theme (not elevated)"),
+                str(row.get("basis") or ""),
+                f"{float(row.get('confidence') or 0):.2f}",
+                ", ".join(str(eid) for eid in (row.get("event_ids") or [])[:6]) or "—",
+            ],
+            widths,
+        )
+    _note(document, "Near-threshold only. Themes never change band; a human decides whether to elevate.")
     return True
 
 
@@ -960,6 +1014,7 @@ V2_SECTIONS = (
     ("What changed since the last report", _changes),
     ("Look-ahead: the next 30 days", _look_ahead),
     ("Escalating and elevated items", _escalating),
+    ("Emerging themes (not elevated)", _emerging_themes),
     ("Prioritisation", _priorities),
     ("Coverage matrix", _coverage),
     ("Jurisdiction coverage", _jurisdictions),

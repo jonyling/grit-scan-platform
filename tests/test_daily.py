@@ -153,7 +153,7 @@ def test_retention_trims_old_dropped_pages_only(tmp_path: Path, monkeypatch) -> 
     assert lengths["A recipe for mooncakes"] == 500 and lengths["Taiwan reports 30 PLA aircraft near Taiwan Strait"] == 2000
     assert retain(pool, DAY) == 0
     result = nightly(pool, DAY, packs=["urs-tw"])
-    assert set(result) == {"fts_added", "events", "relations", "digests", "retained"}
+    assert set(result) == {"fts_added", "events", "relations", "topics", "digests", "retained"}
 
 
 def test_queue_kept_skips_pages_already_queued(tmp_path: Path, monkeypatch) -> None:

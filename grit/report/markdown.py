@@ -134,11 +134,65 @@ def _v2(brief: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
             head += f"<br>*URS reach{channel}: {row['urs_reach_reason']}*"
         return head
 
-    rows = [[row.get("reader_band") or "Escalating", _item_with_reach(row, bold=True), _md(row["summary"], "Withheld: the draft failed its checks. See the QA log."),
-             _md(row["implications"], "Not drafted."), f"{(row.get('response') or {}).get('action') or 'Not drafted.'} Owner: {(row.get('response') or {}).get('owner') or 'to assign'}.", _refs(row["sources"])]
-            for row in v2["escalating"]]
+    def _escalating_cells(row: Mapping[str, Any]) -> list[str]:
+        kind = row.get("row_kind") or "event"
+        if kind == "topic_parent":
+            item = f"**{row['item']}**"
+            if row.get("status_vs_last_week"):
+                item += f"<br>*{row['status_vs_last_week']}*"
+            if row.get("risk"):
+                item += f" [{row['risk']}]"
+            return [
+                row.get("reader_band") or "Escalating",
+                item,
+                _md(row.get("summary"), f"{len(row.get('children') or [])} child event(s)"),
+                _md(row.get("implications"), row.get("implications_text") or "Not drafted."),
+                "See child events.",
+                _refs(row.get("sources") or []),
+            ]
+        if kind == "topic_child":
+            conf = row.get("confidence")
+            conf_text = f"{conf:.2f}" if isinstance(conf, (int, float)) else ""
+            detail = " · ".join(part for part in (str(row.get("event_date") or ""), conf_text and f"conf {conf_text}") if part)
+            return [
+                row.get("reader_band") or "",
+                row.get("item") or row.get("lead_title") or "",
+                detail or _md(row.get("summary"), ""),
+                "",
+                "",
+                _refs(row.get("sources") or []),
+            ]
+        return [
+            row.get("reader_band") or "Escalating",
+            _item_with_reach(row, bold=True),
+            _md(row.get("summary"), "Withheld: the draft failed its checks. See the QA log."),
+            _md(row.get("implications"), "Not drafted."),
+            f"{(row.get('response') or {}).get('action') or 'Not drafted.'} Owner: {(row.get('response') or {}).get('owner') or 'to assign'}.",
+            _refs(row.get("sources") or []),
+        ]
+
+    rows = [_escalating_cells(row) for row in v2["escalating"]]
     sections.append(("Escalating and elevated items", [*_table(["Band", "Item and risk", "Summary", f"Implications for {short}", "Suggested response", "Sources"], rows), "", f"*{V2_NOTE}*"]
                      if rows else ["No event met the escalation rule this week."]))
+    themes = v2.get("emerging_themes") or []
+    if themes:
+        theme_rows = [
+            [
+                row.get("label") or "Emerging theme (not elevated)",
+                row.get("basis") or "",
+                f"{float(row.get('confidence') or 0):.2f}",
+                ", ".join(str(eid) for eid in (row.get("event_ids") or [])[:6]) or "—",
+            ]
+            for row in themes
+        ]
+        sections.append((
+            "Emerging themes (not elevated)",
+            [
+                *_table(["Theme", "Basis", "Confidence", "Near-threshold events"], theme_rows),
+                "",
+                "*Near-threshold only. Themes never change band; a human decides whether to elevate.*",
+            ],
+        ))
     if v2["priorities"]:
         sections.append(("Prioritisation", _table(["Band", "Item", "Trend", "Risk linkage", "Owner or forum"],
                                                    [[row.get("reader_band") or "", _item_with_reach(row), row["trend"], row["risk"], row["owner"]] for row in v2["priorities"]])))
