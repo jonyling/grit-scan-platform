@@ -842,6 +842,69 @@ class Pool:
             found = [row for row in found if row["status"] == "VALIDATED"]
         return sorted(found, key=lambda row: (row["left_signal_id"], row["right_signal_id"], row["relation_id"]))
 
+    # Event signatures (topic-collapse plan v2 Phase P1) -------------------------------------------------------
+
+    def add_event_signature(
+        self,
+        *,
+        input_hash: str,
+        signature: Mapping[str, Any],
+        signature_source: str,
+        status: str = "VALIDATED",
+        event_id: str | None = None,
+        run_id: str | None = None,
+        model: str | None = None,
+        prompt_version: str | None = None,
+    ) -> dict[str, Any]:
+        """Append a cached event signature. Latest VALIDATED row per input_hash is reused."""
+        row = {
+            "event_id": event_id,
+            "run_id": run_id,
+            "input_hash": input_hash,
+            "signature_json": dict(signature),
+            "signature_source": signature_source,
+            "model": model,
+            "prompt_version": prompt_version,
+            "status": status,
+            "created_at": utc_now(),
+        }
+        row["signature_row_id"] = self.insert("event_signatures", row)
+        return row
+
+    def event_signature_by_hash(self, input_hash: str) -> dict[str, Any] | None:
+        """Latest VALIDATED signature for an anchor input_hash."""
+        return self.one(
+            """SELECT * FROM event_signatures WHERE input_hash = ? AND status = 'VALIDATED'
+               ORDER BY signature_row_id DESC LIMIT 1""",
+            (input_hash,),
+        )
+
+    def event_signatures_by_hashes(self, input_hashes: Sequence[str]) -> dict[str, dict[str, Any]]:
+        """Latest VALIDATED signature per input_hash."""
+        keys = [str(item) for item in dict.fromkeys(input_hashes) if item]
+        if not keys:
+            return {}
+        found: dict[str, dict[str, Any]] = {}
+        chunk = 400
+        for start in range(0, len(keys), chunk):
+            part = keys[start:start + chunk]
+            marks = ",".join("?" for _ in part)
+            rows = self.rows(
+                f"""SELECT * FROM event_signatures WHERE input_hash IN ({marks}) AND status = 'VALIDATED'
+                    ORDER BY signature_row_id""",
+                part,
+            )
+            for row in rows:
+                found[str(row["input_hash"])] = row
+        return found
+
+    def event_signatures_for_run(self, run_id: str) -> list[dict[str, Any]]:
+        """All signature rows recorded for a run (for cost / cache-hit reporting)."""
+        return self.rows(
+            "SELECT * FROM event_signatures WHERE run_id = ? ORDER BY signature_row_id",
+            (run_id,),
+        )
+
     def management_requests(self, *, active_only: bool = False) -> list[dict[str, Any]]:
         """Each request carries "scope": the packs it belongs to. A request raised in chat has no pack, so it belongs to the
         packs of the profile that raised it. Empty means every pack."""

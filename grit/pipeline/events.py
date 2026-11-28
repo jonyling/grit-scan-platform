@@ -299,7 +299,9 @@ def _cited_reports(pool: Pool, run_id: str, rows: Sequence[Mapping[str, Any]], *
 
 
 def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]] | None = None, names: Mapping[str, str] | None = None,
-                   escalating: Sequence[str] = (), merges: Mapping[str, str] | None = None) -> list[dict[str, Any]]:
+                   escalating: Sequence[str] = (), merges: Mapping[str, str] | None = None,
+                   signature_invoke: Callable[..., Any] | None = None,
+                   signature_model: str | None = None) -> list[dict[str, Any]]:
     """The run's events, ▲ first, then =, then ▼. rows: the brief's routed rows (kept signals with their route), so a matched
     management request travels with its event. names: risk id -> name. escalating: the risk ids whose trend is Escalating.
     merges: event id -> the event whose row it joins, as label_merges recorded them when the rows were drafted.
@@ -307,13 +309,16 @@ def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]]
     An event's reports are its members and the other reports of it that a member's selection cites, best band first. A
     cited report can lead and is listed, but the score, band, risks and story merging come from the members alone.
     Internal evidence is excluded from identity; oversized/multi-country merges are split back to pre-merge partitions.
+    P1: signatures (LLM when signature_invoke is set, else cue-list / cache) drive story compare.
     """
-    from grit.core.identity import filter_identity_eligible, is_identity_suspect, split_suspect_to_premerge
+    from grit.core.identity import filter_identity_eligible
     from grit.core.priority import outlet_groups
+    from grit.pipeline.resolve_signatures import attach_event_signatures
 
     run = pool.run(run_id)
     relations_on = _relations_on(pool, run_id)
     nominations: list[tuple[str, str]] = []
+    near_misses: list[dict[str, Any]] = []
     rows = filter_identity_eligible(list(rows if rows is not None else pool.weekly_assessments(run_id)))
     cited = (_cited_reports(pool, run_id, rows, relations_on=relations_on)
              if (run.get("config") or {}).get("weekly_mode") == "reasoned" else {})
@@ -363,12 +368,25 @@ def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]]
             "group_risks": [], "requests": [], "previous_lead": lead,
         })
     pre_merge = {event["event_id"]: dict(event) for event in events if event.get("members")}
+    # P1: attach signatures (cache / LLM / fallback) before deterministic story compare.
+    attached = attach_event_signatures(
+        [event for event in events if event.get("members")],
+        pool=pool, run_id=run_id, invoke=signature_invoke, model=signature_model,
+        near_misses=near_misses,
+    )
+    by_id = {event["event_id"]: event for event in attached["events"]}
+    events = [by_id.get(event["event_id"], event) if event.get("members") else event for event in events]
+    try:
+        pool.update_run_config(run_id, signature_stats=attached["stats"],
+                               signature_near_misses=near_misses[:50])
+    except Exception:
+        pass
     events = _merge_stories(events, names, _places(run.get("pack")), same_pairs=same_pairs,
-                            relations_on=relations_on, nominations=nominations)
+                            relations_on=relations_on, nominations=nominations, near_misses=near_misses)
     events = apply_merges(events, merges or {}, names, relations_on=relations_on, nominations=nominations)
     events = _apply_cluster_guard(events, pre_merge)
     if nominations:
-        # Persist for resolve_event_relations / nightly reuse (word joins nominate; they do not union).
+        # Persist for resolve_event_relations / nightly reuse (signature/word joins nominate; they do not union).
         existing = list((run.get("config") or {}).get("identity_nomination_pairs") or [])
         seen = {tuple(pair) for pair in existing if isinstance(pair, (list, tuple)) and len(pair) == 2}
         for pair in nominations:
@@ -376,7 +394,8 @@ def event_register(pool: Pool, run_id: str, *, rows: Sequence[Mapping[str, Any]]
                 existing.append([pair[0], pair[1]])
                 seen.add(pair)
         try:
-            pool.update_run_config(run_id, identity_nomination_pairs=existing)
+            pool.update_run_config(run_id, identity_nomination_pairs=existing,
+                                   signature_near_misses=near_misses[:50])
         except Exception:
             pass
     order = {UP: 0, SAME: 1, DOWN: 2}
@@ -514,18 +533,18 @@ def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], place
                    same_pairs: Sequence[tuple[str, str]] | None = None, *,
                    relations_on: bool = False,
                    nominations: list[tuple[str, str]] | None = None,
-                   vectors: Mapping[str, Any] | None = None) -> list[dict[str, Any]]:
-    """In a reasoned run, elevated events are one story when SAME links their anchors, or (flag-off) when anchors share
-    ≥2 non-place distinctive terms or a curated alias/identifier within a week. Term bags come from anchors only
-    (lead + ≤2 medoids). When relations are on, word overlaps nominate only; alias/identifier and SAME still union.
-    places is unused (country alone never joins)."""
+                   vectors: Mapping[str, Any] | None = None,
+                   near_misses: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    """In a reasoned run, elevated events are one story when SAME links their anchors, or a curated alias/identifier
+    matches, or (flag-off) when event signatures match via same_event_candidate. When relations are on, signature
+    matches nominate only. P1 replaces P0.5 word-bag joins with signature compare; places is unused."""
+    from grit.core.event_signature import same_event_candidate, signature_for_event, signature_near_miss
     from grit.core.headlines import alias_ids, distinctive_terms, identifiers
     from grit.core.identity import (
         anchor_members,
+        anchor_signal_ids,
         anchor_text,
-        anchors_match,
         curated_overlap,
-        place_tokens,
     )
 
     merging = [event for event in events if event["elevated"] and event["members"] and event.get("score") is not None]
@@ -544,27 +563,15 @@ def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], place
                 if pair not in nominations:
                     nominations.append(pair)
 
-    # P0.5: vocabulary from anchor titles only, never the union of all members.
     titles = {event["event_id"]: anchor_text(event, vectors=vectors) for event in merging}
-    terms = {key: distinctive_terms(text) for key, text in titles.items()}
     aliases = {key: alias_ids(text) for key, text in titles.items()}
     idents = {key: identifiers(text) for key, text in titles.items()}
-
-    def place_text(row: Mapping[str, Any]) -> str:
-        title = str(row.get("title") or "")
-        return title if len(distinctive_terms(title)) >= STORY_TERMS else f"{title} {str(row.get('text') or '')[:300]}"
-
+    # P1: signatures from attached payload or cue-list fallback over anchors.
+    signatures = {event["event_id"]: signature_for_event(event, vectors=vectors) for event in merging}
     for event in merging:
-        if len(terms[event["event_id"]] - place_tokens()) < STORY_TERMS:
-            text = " ".join(place_text(row) for row in anchor_members(event, vectors=vectors))
-            titles[event["event_id"]] = text
-            terms[event["event_id"]] = distinctive_terms(text)
-            aliases[event["event_id"]] = alias_ids(text)
-            idents[event["event_id"]] = identifiers(text)
+        event["signature"] = signatures[event["event_id"]]
 
     def anchors_same(first: Mapping[str, Any], second: Mapping[str, Any]) -> bool:
-        from grit.core.identity import anchor_signal_ids
-
         if not same_pairs:
             return False
         left = anchor_signal_ids(first, vectors=vectors)
@@ -584,19 +591,38 @@ def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], place
                              or idents[seed["event_id"]] & idents[event["event_id"]]
                              or curated_overlap(titles[seed["event_id"]], titles[event["event_id"]]))
             same_hit = anchors_same(seed, event)
-            non_place = (terms[seed["event_id"]] & terms[event["event_id"]]) - place_tokens()
-            word_hit = len(non_place) >= STORY_TERMS and anchors_match(
-                seed, event, same_pairs=same_pairs, vectors=vectors, min_terms=STORY_TERMS)
+            sig_hit = same_event_candidate(signatures[seed["event_id"]], signatures[event["event_id"]])
             if same_hit or alias_hit:
                 home = seed
                 break
             if relations_on:
-                if word_hit or non_place:
+                if sig_hit:
                     nominate_events(seed, event)
+                else:
+                    miss = signature_near_miss(signatures[seed["event_id"]], signatures[event["event_id"]])
+                    if miss is not None:
+                        record = {
+                            **miss,
+                            "left_event_id": seed["event_id"],
+                            "right_event_id": event["event_id"],
+                        }
+                        if near_misses is not None:
+                            near_misses.append(record)
+                        seed.setdefault("signature_near_misses", []).append(record)
                 continue
-            if word_hit:
+            if sig_hit:
                 home = seed
                 break
+            miss = signature_near_miss(signatures[seed["event_id"]], signatures[event["event_id"]])
+            if miss is not None:
+                record = {
+                    **miss,
+                    "left_event_id": seed["event_id"],
+                    "right_event_id": event["event_id"],
+                }
+                if near_misses is not None:
+                    near_misses.append(record)
+                seed.setdefault("signature_near_misses", []).append(record)
         if home is None:
             seeds.append(event)
             groups[event["event_id"]] = [event]
@@ -609,7 +635,8 @@ def _merge_stories(events: list[dict[str, Any]], names: Mapping[str, str], place
                     "candidate": event.get("lead", {}).get("signal_id"),
                     "merged_event": event["event_id"],
                 })
-    seed_terms = {seed_id: terms.get(seed_id, frozenset()) for seed_id in groups}
+    # Lead-matching vocabulary for combined stories still comes from anchors (deterministic).
+    seed_terms = {seed_id: distinctive_terms(titles.get(seed_id, "")) for seed_id in groups}
     return _replace(events, groups, names, seed_terms)
 
 
@@ -617,47 +644,76 @@ def label_merges(events: Sequence[Mapping[str, Any]], rows: Mapping[str, Mapping
                  same_pairs: Sequence[tuple[str, str]] | None = None, *,
                  relations_on: bool = False,
                  nominations: list[tuple[str, str]] | None = None) -> dict[str, str]:
-    """Join drafted events by SAME / curated alias-id first, then by label words (flag-off only).
+    """Join drafted events by SAME / curated alias-id first, then by signature match (flag-off only).
 
-    When relations are on, word overlap nominates only. Place tokens never count toward the word threshold.
+    When relations are on, signature matches nominate only. Location-only overlap never joins.
     events: in report order. rows: event id -> drafted row. Returns event id -> the event it joins, with no chains."""
-    from grit.core.headlines import alias_ids, distinctive_terms, identifiers
-    from grit.core.identity import place_tokens
+    from grit.core.event_signature import fallback_extract, same_event_candidate
+    from grit.core.headlines import alias_ids, identifiers
 
-    seeds: list[tuple[Mapping[str, Any], frozenset[str], frozenset[str], frozenset[str]]] = []
+    def nominate(seed: Mapping[str, Any], event: Mapping[str, Any]) -> None:
+        if nominations is None:
+            return
+        for a in seed.get("members") or []:
+            for b in event.get("members") or []:
+                aid, bid = str(a.get("signal_id") or ""), str(b.get("signal_id") or "")
+                if aid and bid and aid != bid:
+                    pair = (aid, bid) if aid < bid else (bid, aid)
+                    if pair not in nominations:
+                        nominations.append(pair)
+
+    seeds: list[tuple[Mapping[str, Any], Mapping[str, Any], frozenset[str], frozenset[str]]] = []
     joins: dict[str, str] = {}
     for event in events:
         row = rows.get(event["event_id"])
         if not row or not row.get("item"):
             continue
         item = str(row["item"])
-        words = distinctive_terms(item) - place_tokens()
         names, aliases = identifiers(item), alias_ids(item)
+        # Drafted label is the story claim — extract signature from it (P1 replaces word-bag joins).
+        signature = fallback_extract([{
+            "signal_id": event["event_id"], "title": item,
+            "text": str((event.get("lead") or {}).get("title") or ""),
+            "published_at": event.get("first_date") or event.get("last_date"),
+        }])
+        attached = event.get("signature") if isinstance(event.get("signature"), Mapping) else None
+        if attached and attached.get("action_class") not in {None, "", "other"}:
+            # Keep a stronger attached (LLM) action when the label fallback is unknown.
+            if signature.get("action_class") in {None, "", "other"}:
+                signature = {
+                    **signature,
+                    "action_class": attached["action_class"],
+                    "action_text": attached.get("action_text") or signature.get("action_text"),
+                }
+            if attached.get("actor"):
+                signature = {
+                    **signature,
+                    "actor": list(dict.fromkeys([*(signature.get("actor") or []), *attached["actor"]])),
+                }
+            if attached.get("object"):
+                signature = {
+                    **signature,
+                    "object": list(dict.fromkeys([*(signature.get("object") or []), *attached["object"]])),
+                }
         home = None
-        for seed, seed_words, seed_names, seed_aliases in seeds:
+        for seed, seed_sig, seed_names, seed_aliases in seeds:
             if not _near(seed, event):
                 continue
             same_hit = _members_same(seed, event, same_pairs)
             alias_hit = bool(seed_names & names or seed_aliases & aliases)
-            word_hit = len(seed_words & words) >= STORY_TERMS
+            sig_hit = same_event_candidate(seed_sig, signature)
             if same_hit or alias_hit:
                 home = seed
                 break
             if relations_on:
-                if word_hit and nominations is not None:
-                    for a in seed.get("members") or []:
-                        for b in event.get("members") or []:
-                            aid, bid = str(a.get("signal_id") or ""), str(b.get("signal_id") or "")
-                            if aid and bid and aid != bid:
-                                pair = (aid, bid) if aid < bid else (bid, aid)
-                                if pair not in nominations:
-                                    nominations.append(pair)
+                if sig_hit:
+                    nominate(seed, event)
                 continue
-            if word_hit:
+            if sig_hit:
                 home = seed
                 break
         if home is None:
-            seeds.append((event, words, names, aliases))
+            seeds.append((event, signature, names, aliases))
         else:
             joins[event["event_id"]] = home["event_id"]
     return joins
@@ -708,6 +764,8 @@ def draft_rows(pool: Pool, run: Any, *, client: Any, model: str, log: Callable[[
     a section. The Group radar gets its elevated events, at most MAX_ROWS. Rows are saved on the run, keyed by event id,
     with their section. A withheld row is logged to the QA log and left out of the brief."""
     from grit.agents import reader as agents
+    from grit.agents.loop.llm import call_json
+    from grit.agents.signature import PROMPTS as SIGNATURE_PROMPTS
     from grit.daily.index import cluster_events
     from grit.pipeline.reader_scan import _load_pack, business_area_context, graph_pack, owner_roles
     from grit.report.brief import out_of_scope
@@ -716,20 +774,38 @@ def draft_rows(pool: Pool, run: Any, *, client: Any, model: str, log: Callable[[
         cluster_events(pool)
     except Exception as exc:  # events need embeddings, and without them each signal stands alone
         log(f"  Events: clustering skipped ({type(exc).__name__}).")
+
+    def signature_invoke(role: str, task: str, payload: dict[str, Any], validate: Callable[[Any], Any]):
+        """Cheap EventSignature call for P1; failures fall back inside extract_signature."""
+        system = SIGNATURE_PROMPTS[role]
+        raw = call_json(client, model=model, system=system, payload=payload, retries=1, pause=1.0)
+        return validate(raw), None
+
+    # Prefer LLM signatures when a client is present; otherwise cue-list / cache only.
+    invoke = signature_invoke if client is not None else None
     pack = _load_pack(run.pack)
     names = risk_names(pack)
     titles = {row["request_id"]: row["title"] for row in pool.management_requests()}
     if pack.level not in {"BA", "ENTITY"}:
         rising = [row["condition_id"] for row in pool.conditions(run.run_id) if row.get("trend_label") == "Escalating"]
         jobs: list[tuple[str | None, Mapping[str, Any]]] = [
-            (None, event) for event in [event for event in event_register(pool, run.run_id, names=names, escalating=rising) if event["elevated"]][:MAX_ROWS]]
+            (None, event) for event in [
+                event for event in event_register(
+                    pool, run.run_id, names=names, escalating=rising,
+                    signature_invoke=invoke, signature_model=model,
+                ) if event["elevated"]
+            ][:MAX_ROWS]]
     else:
         off_scope = out_of_scope(run.pack)
         rows = [row for row in pool.weekly_assessments(run.run_id)
                 if (row.get("editorial") or {}).get("decision", "INCLUDE") in {"INCLUDE", "WATCH"}
                 and (row.get("red") or not off_scope or not off_scope.search(str(row.get("title") or "")))]
         active = active_requests(pool, run.pack)
-        sections = section_events(event_register(pool, run.run_id, rows=rows, names=names), active, names)
+        sections = section_events(
+            event_register(pool, run.run_id, rows=rows, names=names,
+                           signature_invoke=invoke, signature_model=model),
+            active, names,
+        )
         jobs = [(section, event) for section in SECTIONS for event in sections[section]]
     events = [event for _section, event in jobs]
     area = business_area_context(pack)

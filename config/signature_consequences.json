@@ -1,0 +1,45 @@
+{
+  "note": "R&A-owned closed vocabulary for event-signature-1 consequence_class. The model picks one id; it must not invent classes. cues drive the deterministic fallback extractor.",
+  "classes": [
+    {
+      "id": "physical_harm",
+      "cues": ["casualties", "killed", "wounded", "injury", "fatal", "deaths", "explosion"]
+    },
+    {
+      "id": "operational_disruption",
+      "cues": ["disrupted", "halted", "suspended operations", "closure", "outage", "grounded", "diverted"]
+    },
+    {
+      "id": "market_access",
+      "cues": ["market access", "banned from", "barred", "denied access", "restricted market"]
+    },
+    {
+      "id": "compliance_cost",
+      "cues": ["compliance cost", "fine of", "penalty", "remediation cost", "licence fee"]
+    },
+    {
+      "id": "reputational",
+      "cues": ["reputational", "public criticism", "scandal", "credibility"]
+    },
+    {
+      "id": "schedule_slip",
+      "cues": ["delay", "deferred", "pushed back", "timeline slip", "missed deadline"]
+    },
+    {
+      "id": "cost_overrun",
+      "cues": ["cost overrun", "budget blowout", "over budget", "price surge"]
+    },
+    {
+      "id": "eligibility_damage",
+      "cues": ["ineligible", "disqualified", "lost eligibility", "debarred", "excluded from tender"]
+    },
+    {
+      "id": "none_stated",
+      "cues": []
+    },
+    {
+      "id": "other",
+      "cues": []
+    }
+  ]
+}
